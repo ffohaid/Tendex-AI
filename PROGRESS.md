@@ -7,7 +7,7 @@
 | السبرنت | الحالة | نسبة الإنجاز | ملاحظات |
 | :--- | :--- | :--- | :--- |
 | Sprint 0: التخطيط وإدارة المنتج | ✅ مكتمل | 100% | تم إعداد خطة التنفيذ (Sprint Backlog) وقوالب العمل. |
-| Sprint 1: البنية التحتية | 🏃 قيد التنفيذ | 30% | تم إنجاز TASK-101, TASK-102 |
+| Sprint 1: البنية التحتية | 🏃 قيد التنفيذ | 50% | تم إنجاز TASK-101, TASK-102, TASK-103 |
 | Sprint 2: الخدمات الأساسية | ⏳ لم يبدأ | 0% | - |
 | Sprint 3: سير العمل والتقييم | ⏳ لم يبدأ | 0% | - |
 | Sprint 4: تكامل الذكاء الاصطناعي | ⏳ لم يبدأ | 0% | - |
@@ -20,6 +20,25 @@
 ## سجل المهام المنجزة (Completed Tasks Log)
 
 *يرجى إضافة أحدث مهمة منجزة في أعلى هذه القائمة.*
+
+### 2026-03-28 - TASK-103: تهيئة مشروع الواجهة الخلفية (.NET 10) - Clean Architecture
+- **ما تم إنجازه:**
+  - إنشاء Solution جديد لـ .NET 10 (`TendexAI.slnx`) داخل مجلد `backend/`.
+  - إنشاء 4 مشاريع تمثل طبقات Clean Architecture:
+    - `TendexAI.Domain` (Class Library): يحتوي على BaseEntity<T>, AggregateRoot<T>, ValueObject, IDomainEvent, IRepository, IUnitOfWork, Result pattern. **خالي تماماً من أي اعتماديات خارجية.**
+    - `TendexAI.Application` (Class Library): يحتوي على واجهات CQRS (ICommand, IQuery, ICommandHandler, IQueryHandler) عبر MediatR, وDependencyInjection.
+    - `TendexAI.Infrastructure` (Class Library): يحتوي على DependencyInjection مع مجلدات Persistence و Services جاهزة.
+    - `TendexAI.API` (Web API / Minimal APIs): يحتوي على Program.cs مع Health Check endpoint, ويستخدم Minimal APIs حصراً.
+  - إعداد المراجع بين المشاريع: API → Application + Infrastructure, Infrastructure → Application, Application → Domain.
+  - إنشاء ملفات الجودة: `Directory.Build.props`, `.editorconfig`, `global.json`.
+  - إنشاء هيكل المجلدات الأساسية لكل طبقة (Common, Entities, Enums, ValueObjects, Behaviors, Interfaces, Messaging, Persistence, Services, Endpoints, Middleware).
+- **الاعتماديات التي تم حلها:** لا يوجد (TASK-101 مكتملة مسبقاً).
+- **ملاحظات للوكيل التالي:**
+  - البنية جاهزة ومبنية بنجاح بدون أخطاء.
+  - يمكن البدء في TASK-104 (Vue.js 3 frontend) أو TASK-105 (إعداد قاعدة البيانات).
+  - طبقة Domain نقية تماماً بدون أي NuGet packages.
+  - MediatR مثبت في Application layer فقط.
+  - يجب تثبيت .NET 10 SDK (الإصدار 10.0.201) قبل البناء.
 
 ### 2026-03-28 - TASK-102: إعداد بيئة Docker و Docker Compose
 - **ما تم إنجازه:** إنشاء ملف `docker-compose.yml` داخل مجلد `infrastructure/` يتضمن تعريف 5 خدمات أساسية: SQL Server 2022, Redis 7, RabbitMQ (مع لوحة الإدارة), MinIO (S3-Compatible), و Qdrant (Vector DB). تم إعداد Named Volumes مخصصة لكل خدمة لضمان حفظ البيانات عند إعادة تشغيل الحاويات. تم إعداد Health Checks لجميع الخدمات. تم إنشاء شبكة Docker مخصصة (tendex-network) للتواصل بين الخدمات. كما تم إنشاء ملف `.env.example` يحتوي على جميع متغيرات البيئة المطلوبة مع قيم توضيحية (placeholder) دون أي كلمات مرور حقيقية.

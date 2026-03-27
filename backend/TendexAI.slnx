@@ -1,0 +1,8 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/TendexAI.API/TendexAI.API.csproj" />
+    <Project Path="src/TendexAI.Application/TendexAI.Application.csproj" />
+    <Project Path="src/TendexAI.Domain/TendexAI.Domain.csproj" />
+    <Project Path="src/TendexAI.Infrastructure/TendexAI.Infrastructure.csproj" />
+  </Folder>
+</Solution>
