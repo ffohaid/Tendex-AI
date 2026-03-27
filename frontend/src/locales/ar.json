@@ -1,0 +1,34 @@
+{
+  "app": {
+    "name": "Tendex AI",
+    "title": "منصة تندكس للذكاء الاصطناعي",
+    "welcome": "مرحباً بك في منصة Tendex AI"
+  },
+  "common": {
+    "save": "حفظ",
+    "cancel": "إلغاء",
+    "delete": "حذف",
+    "edit": "تعديل",
+    "create": "إنشاء",
+    "search": "بحث",
+    "filter": "تصفية",
+    "loading": "جارٍ التحميل...",
+    "noData": "لا توجد بيانات",
+    "confirm": "تأكيد",
+    "back": "رجوع",
+    "next": "التالي",
+    "previous": "السابق",
+    "submit": "إرسال",
+    "close": "إغلاق"
+  },
+  "auth": {
+    "login": "تسجيل الدخول",
+    "logout": "تسجيل الخروج",
+    "email": "البريد الإلكتروني",
+    "password": "كلمة المرور"
+  },
+  "nav": {
+    "dashboard": "لوحة التحكم",
+    "settings": "الإعدادات"
+  }
+}

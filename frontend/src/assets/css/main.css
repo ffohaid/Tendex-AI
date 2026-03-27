@@ -1,0 +1,60 @@
+@import "tailwindcss";
+
+/*
+ * Tendex AI - Custom Theme Configuration
+ * Brand colors aligned with SDAIA AI Year 2026 identity guidelines.
+ * Font: Diodrum Arabic (Arabic + English)
+ * All utilities use logical properties for RTL/LTR support.
+ */
+
+@theme {
+  /* Brand Colors */
+  --color-primary: #2BB673;
+  --color-primary-light: #3DC882;
+  --color-primary-dark: #229A5E;
+
+  --color-secondary: #0D2745;
+  --color-secondary-light: #1A3A5C;
+  --color-secondary-dark: #081B30;
+
+  --color-tertiary: #255877;
+  --color-tertiary-light: #337A9E;
+  --color-tertiary-dark: #1B4259;
+
+  --color-surface: #FFFFFF;
+  --color-surface-dim: #DBDBDB;
+  --color-surface-muted: #F5F5F5;
+
+  /* Typography */
+  --font-sans: 'Diodrum Arabic', 'Inter', system-ui, -apple-system, sans-serif;
+
+  /* Border Radius */
+  --radius-sm: 0.25rem;
+  --radius-md: 0.5rem;
+  --radius-lg: 0.75rem;
+  --radius-xl: 1rem;
+}
+
+/*
+ * Base layer: global resets and defaults.
+ * Using logical properties exclusively for RTL/LTR compatibility.
+ */
+@layer base {
+  html {
+    font-family: var(--font-sans);
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  body {
+    @apply bg-surface text-secondary;
+  }
+
+  /* Ensure all elements use border-box */
+  *,
+  *::before,
+  *::after {
+    box-sizing: border-box;
+  }
+}
