@@ -11,8 +11,8 @@ namespace TendexAI.Infrastructure.Tests.AI;
 /// </summary>
 public sealed class AiKeyEncryptionServiceTests
 {
-    // A valid 256-bit key encoded in Base64 (32 bytes)
-    private const string ValidKeyBase64 = "dGVzdC1lbmNyeXB0aW9uLWtleS0yNTYtYml0cyE="; // 32 bytes
+    // A valid 256-bit key: exactly 32 random bytes encoded in Base64
+    private const string ValidKeyBase64 = "Dmf5XXe3xevf9rxgPLom9GMK0oo3RxoS56Emc9XnwAg=";
 
     private static AiKeyEncryptionService CreateService(string? keyBase64 = null)
     {
@@ -131,7 +131,7 @@ public sealed class AiKeyEncryptionServiceTests
         // Act & Assert
         var action = () => new AiKeyEncryptionService(config);
         action.Should().Throw<InvalidOperationException>()
-            .WithMessage("*not configured*");
+            .WithMessage("*is configured*");
     }
 
     [Fact]

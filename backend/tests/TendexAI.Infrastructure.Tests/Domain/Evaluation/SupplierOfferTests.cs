@@ -13,7 +13,7 @@ public sealed class SupplierOfferTests
     private readonly Guid _competitionId = Guid.NewGuid();
     private readonly Guid _tenantId = Guid.NewGuid();
 
-    private SupplierOffer CreateOffer(string blindCode = "OFFER-001")
+    private SupplierOffer CreateOffer()
     {
         return SupplierOffer.Create(
             _competitionId,
@@ -37,7 +37,8 @@ public sealed class SupplierOfferTests
         offer.CompetitionId.Should().Be(_competitionId);
         offer.TenantId.Should().Be(_tenantId);
         offer.SupplierName.Should().Be("Supplier A");
-        offer.BlindCode.Should().Be("OFFER-001");
+        offer.BlindCode.Should().StartWith("OFFER-");
+        offer.BlindCode.Should().HaveLength(10); // "OFFER-" (6) + 4 random chars
         offer.TechnicalResult.Should().Be(OfferTechnicalResult.Pending);
         offer.IsFinancialEnvelopeOpen.Should().BeFalse();
         offer.TechnicalTotalScore.Should().Be(0);
@@ -134,8 +135,8 @@ public sealed class SupplierOfferTests
     [Fact]
     public void BlindCode_Should_Be_Unique_Identifier()
     {
-        var offer1 = CreateOffer("OFFER-001");
-        var offer2 = CreateOffer("OFFER-002");
+        var offer1 = CreateOffer();
+        var offer2 = CreateOffer();
 
         offer1.BlindCode.Should().NotBe(offer2.BlindCode);
     }
@@ -143,7 +144,7 @@ public sealed class SupplierOfferTests
     [Fact]
     public void BlindCode_Should_Not_Reveal_Supplier_Identity()
     {
-        var offer = CreateOffer("OFFER-001");
+        var offer = CreateOffer();
 
         offer.BlindCode.Should().NotContain("Supplier");
         offer.BlindCode.Should().NotContain("CR-123456");

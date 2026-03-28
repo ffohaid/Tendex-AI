@@ -7,6 +7,12 @@ namespace TendexAI.Infrastructure.Tests.Domain.Rfp;
 /// <summary>
 /// Unit tests for the Competition aggregate root domain entity.
 /// Tests creation, status transitions, validation rules, and business logic.
+/// 
+/// State Machine Flow:
+///   Draft → UnderPreparation → PendingApproval → Approved → Published → ...
+///   Draft can only go to UnderPreparation or Cancelled.
+///   UnderPreparation can go to PendingApproval, Draft, or Cancelled.
+///   PendingApproval can go to Approved, Rejected, or Cancelled.
 /// </summary>
 public class CompetitionTests
 {
@@ -96,7 +102,8 @@ public class CompetitionTests
     [Fact]
     public void UpdateBasicInfo_OnApprovedCompetition_ShouldFail()
     {
-        // Arrange
+        // Arrange — follow the correct state machine path:
+        // Draft → UnderPreparation → PendingApproval → Approved
         var competition = CreateApprovedCompetition();
 
         // Act
@@ -118,22 +125,24 @@ public class CompetitionTests
     // ===== Status Transition Tests =====
 
     [Fact]
-    public void SubmitForApproval_FromDraft_ShouldSucceed()
+    public void TransitionTo_UnderPreparation_FromDraft_ShouldSucceed()
     {
         // Arrange
         var competition = CreateDraftCompetition();
-        // Must have at least one section to submit for approval
-        var section = RfpSection.Create(
-            competitionId: competition.Id,
-            titleAr: "قسم اختبار",
-            titleEn: "Test Section",
-            sectionType: RfpSectionType.GeneralInformation,
-            contentHtml: "<p>Content</p>",
-            isMandatory: false,
-            isFromTemplate: false,
-            defaultTextColor: TextColorType.Mandatory,
-            createdBy: _userId);
-        competition.AddSection(section);
+
+        // Act — Draft → UnderPreparation is the first valid transition
+        var result = competition.TransitionTo(CompetitionStatus.UnderPreparation, _userId);
+
+        // Assert
+        result.IsSuccess.Should().BeTrue();
+        competition.Status.Should().Be(CompetitionStatus.UnderPreparation);
+    }
+
+    [Fact]
+    public void SubmitForApproval_FromUnderPreparation_ShouldSucceed()
+    {
+        // Arrange — must go Draft → UnderPreparation first, then submit
+        var competition = CreateUnderPreparationCompetitionWithSection();
 
         // Act
         var result = competition.SubmitForApproval(_userId);
@@ -141,6 +150,19 @@ public class CompetitionTests
         // Assert
         result.IsSuccess.Should().BeTrue();
         competition.Status.Should().Be(CompetitionStatus.PendingApproval);
+    }
+
+    [Fact]
+    public void SubmitForApproval_FromDraft_ShouldFail()
+    {
+        // Arrange — Draft cannot go directly to PendingApproval
+        var competition = CreateDraftCompetitionWithSection();
+
+        // Act
+        var result = competition.SubmitForApproval(_userId);
+
+        // Assert
+        result.IsFailure.Should().BeTrue();
     }
 
     [Fact]
@@ -159,9 +181,8 @@ public class CompetitionTests
     [Fact]
     public void Approve_FromPendingApproval_ShouldSucceed()
     {
-        // Arrange
-        var competition = CreateDraftCompetitionWithSection();
-        competition.SubmitForApproval(_userId);
+        // Arrange — Draft → UnderPreparation → PendingApproval
+        var competition = CreatePendingApprovalCompetition();
 
         // Act
         var result = competition.Approve(_userId);
@@ -189,9 +210,8 @@ public class CompetitionTests
     [Fact]
     public void Reject_FromPendingApproval_ShouldSucceed()
     {
-        // Arrange
-        var competition = CreateDraftCompetitionWithSection();
-        competition.SubmitForApproval(_userId);
+        // Arrange — Draft → UnderPreparation → PendingApproval
+        var competition = CreatePendingApprovalCompetition();
 
         // Act
         var result = competition.Reject(_userId, "Does not meet requirements.");
@@ -236,7 +256,7 @@ public class CompetitionTests
     [Fact]
     public void SoftDelete_ApprovedCompetition_ShouldFail()
     {
-        // Arrange
+        // Arrange — follow the correct state machine path
         var competition = CreateApprovedCompetition();
 
         // Act
@@ -285,16 +305,7 @@ public class CompetitionTests
     {
         // Arrange
         var competition = CreateDraftCompetition();
-        var section = RfpSection.Create(
-            competitionId: competition.Id,
-            titleAr: "الأحكام العامة",
-            titleEn: "General Terms",
-            sectionType: RfpSectionType.TermsAndConditions,
-            contentHtml: "<p>Content</p>",
-            isMandatory: true,
-            isFromTemplate: false,
-            defaultTextColor: TextColorType.Mandatory,
-            createdBy: _userId);
+        var section = CreateTestSection(competition.Id);
 
         // Act
         var result = competition.AddSection(section);
@@ -302,24 +313,15 @@ public class CompetitionTests
         // Assert
         result.IsSuccess.Should().BeTrue();
         competition.Sections.Should().HaveCount(1);
-        competition.Sections.First().TitleAr.Should().Be("الأحكام العامة");
+        competition.Sections.First().TitleAr.Should().Be("قسم اختبار");
     }
 
     [Fact]
     public void AddSection_ToApprovedCompetition_ShouldFail()
     {
-        // Arrange
+        // Arrange — follow the correct state machine path
         var competition = CreateApprovedCompetition();
-        var section = RfpSection.Create(
-            competitionId: competition.Id,
-            titleAr: "قسم",
-            titleEn: "Section",
-            sectionType: RfpSectionType.TermsAndConditions,
-            contentHtml: null,
-            isMandatory: false,
-            isFromTemplate: false,
-            defaultTextColor: TextColorType.Mandatory,
-            createdBy: _userId);
+        var section = CreateTestSection(competition.Id);
 
         // Act
         var result = competition.AddSection(section);
@@ -434,11 +436,10 @@ public class CompetitionTests
             createdByUserId: _userId);
     }
 
-    private Competition CreateDraftCompetitionWithSection()
+    private RfpSection CreateTestSection(Guid competitionId)
     {
-        var competition = CreateDraftCompetition();
-        var section = RfpSection.Create(
-            competitionId: competition.Id,
+        return RfpSection.Create(
+            competitionId: competitionId,
             titleAr: "قسم اختبار",
             titleEn: "Test Section",
             sectionType: RfpSectionType.GeneralInformation,
@@ -447,14 +448,44 @@ public class CompetitionTests
             isFromTemplate: false,
             defaultTextColor: TextColorType.Mandatory,
             createdBy: _userId);
-        competition.AddSection(section);
+    }
+
+    private Competition CreateDraftCompetitionWithSection()
+    {
+        var competition = CreateDraftCompetition();
+        competition.AddSection(CreateTestSection(competition.Id));
         return competition;
     }
 
-    private Competition CreateApprovedCompetition()
+    /// <summary>
+    /// Creates a competition in UnderPreparation status with a section.
+    /// Path: Draft → UnderPreparation
+    /// </summary>
+    private Competition CreateUnderPreparationCompetitionWithSection()
     {
         var competition = CreateDraftCompetitionWithSection();
+        competition.TransitionTo(CompetitionStatus.UnderPreparation, _userId);
+        return competition;
+    }
+
+    /// <summary>
+    /// Creates a competition in PendingApproval status.
+    /// Path: Draft → UnderPreparation → PendingApproval
+    /// </summary>
+    private Competition CreatePendingApprovalCompetition()
+    {
+        var competition = CreateUnderPreparationCompetitionWithSection();
         competition.SubmitForApproval(_userId);
+        return competition;
+    }
+
+    /// <summary>
+    /// Creates a competition in Approved status.
+    /// Path: Draft → UnderPreparation → PendingApproval → Approved
+    /// </summary>
+    private Competition CreateApprovedCompetition()
+    {
+        var competition = CreatePendingApprovalCompetition();
         competition.Approve(_userId);
         return competition;
     }
