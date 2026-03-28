@@ -223,6 +223,12 @@ public static class DependencyInjection
         // ----- AI Offer Analysis Service -----
         services.AddScoped<Application.Common.Interfaces.AI.IAiOfferAnalysisService, AI.AiOfferAnalysisService>();
 
+        // ----- AI Specification Drafting Service (TASK-403) -----
+        services.AddScoped<Application.Common.Interfaces.AI.IAiSpecificationDraftingService, AI.AiSpecificationDraftingService>();
+
+        // ----- AI BOQ Generation Service (TASK-403) -----
+        services.AddScoped<Application.Common.Interfaces.AI.IAiBoqGenerationService, AI.AiBoqGenerationService>();
+
         // ----- Tenant Database Provisioning -----
         services.AddScoped<ITenantDatabaseProvisioner, TenantDatabaseProvisioner>();
 

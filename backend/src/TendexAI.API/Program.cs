@@ -112,4 +112,7 @@ app.MapVideoIntegrityEndpoints();
 // RAG Engine endpoints (indexing, context retrieval, vector store management)
 app.MapRagEndpoints();
 
+// AI Specification Drafting & BOQ Generation endpoints (TASK-403)
+app.MapAiSpecificationDraftingEndpoints();
+
 app.Run();

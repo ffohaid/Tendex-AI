@@ -10,7 +10,7 @@
 | Sprint 1: البنية التحتية | ✅ مكتمل | 100% | تم إنجاز TASK-101, TASK-102, TASK-103, TASK-104, TASK-105, TASK-106 |
 | Sprint 2: الخدمات الأساسية | 🔄 قيد التنفيذ | 86% | تم إنجاز TASK-201, TASK-202, TASK-203, TASK-204, TASK-205, TASK-206 |
 | Sprint 3: سير العمل والتقييم | 🔄 قيد التنفيذ | 71% | تم إنجاز TASK-301, TASK-302, TASK-303, TASK-304, TASK-305 |
-| Sprint 4: تكامل الذكاء الاصطناعي | 🔄 قيد التنفيذ | 57% | تم إنجاز TASK-401, TASK-402, TASK-404, TASK-405 |
+| Sprint 4: تكامل الذكاء الاصطناعي | 🔄 قيد التنفيذ | 71% | تم إنجاز TASK-401, TASK-402, TASK-403, TASK-404, TASK-405 |
 | Sprint 5: الواجهة الأمامية | ⏳ لم يبدأ | 0% | - |
 | Sprint 6: لوحة تحكم المشغل | ⏳ لم يبدأ | 0% | - |
 | Sprint 7: الاختبار والنشر | ⏳ لم يبدأ | 0% | - |
@@ -20,6 +20,50 @@
 ## سجل المهام المنجزة (Completed Tasks Log)
 
 *يرجى إضافة أحدث مهمة منجزة في أعلى هذه القائمة.*
+
+### 2026-03-28 - TASK-403: تطوير ميزات مساعدة الذكاء الاصطناعي في صياغة الشروط والمواصفات وتوليد جداول الكميات (BOQ)
+- **ما تم إنجازه:**
+  - **طبقة Application — واجهات الخدمات (Interfaces):**
+    - إنشاء `IAiSpecificationDraftingService`: واجهة خدمة صياغة الشروط والمواصفات بالذكاء الاصطناعي مع 3 عمليات (GenerateSectionDraft, RefineSectionDraft, GenerateBookletStructure).
+    - إنشاء `IAiBoqGenerationService`: واجهة خدمة توليد جداول الكميات مع عمليتين (GenerateBoq, RefineBoq).
+    - إنشاء نماذج الطلب والاستجابة الكاملة: `AiSpecificationDraftRequest`, `AiSpecificationRefineRequest`, `AiBookletStructureRequest`, `AiSpecificationDraftResult`, `AiBookletStructureResult`, `AiCitation`, `AiRegulatoryReference`, `AiBoqGenerationRequest`, `AiBoqRefineRequest`, `AiBoqGenerationResult`, `GeneratedBoqItem`.
+  - **طبقة Application — CQRS Commands, Handlers, Validators:**
+    - إنشاء `GenerateSectionDraftCommand` + Handler + Validator: توليد مسودة قسم من كراسة الشروط.
+    - إنشاء `RefineSectionDraftCommand` + Handler + Validator: تحسين مسودة قسم بناءً على ملاحظات المستخدم.
+    - إنشاء `GenerateBookletStructureCommand` + Handler + Validator: توليد هيكل كراسة كامل.
+    - إنشاء `GenerateBoqCommand` + Handler + Validator: توليد جدول كميات.
+    - إنشاء `RefineBoqCommand` + Handler + Validator: تحسين جدول كميات بناءً على ملاحظات المستخدم.
+  - **طبقة Infrastructure — خدمات AI:**
+    - إنشاء `AiSpecificationDraftingService` (~850 سطر): خدمة صياغة الشروط والمواصفات مع:
+      - بناء Prompts منظمة بتنسيق XML حسب RAG Guidelines (Section 3.1).
+      - تأريض إلزامي واقتباس من المستندات المرجعية (Section 3.4: extract-then-analyze).
+      - توليد باللغة العربية الفصحى فقط (Section 2.1: Arabic language sovereignty).
+      - منع الهلوسة والتلفيق (Section 2.4: Anti-hallucination).
+      - Few-Shot examples لضمان اتساق المخرجات.
+      - تحليل JSON منظم من استجابات AI مع معالجة أخطاء شاملة.
+      - إثراء الاقتباسات من RAG chunks.
+    - إنشاء `AiBoqGenerationService` (~730 سطر): خدمة توليد جداول الكميات مع:
+      - بناء Prompts متخصصة لجداول الكميات بتنسيق XML.
+      - منع الأسعار التقديرية بدون بيانات تاريخية (Section 5.1).
+      - AI كمساعد وليس صانع قرار (Section 2.2: AI as Copilot).
+      - حرارة منخفضة (Temperature ≤ 0.2) لضمان دقة البيانات المالية.
+      - تحليل JSON منظم مع معالجة أخطاء شاملة.
+  - **طبقة API — Minimal API Endpoints:**
+    - إنشاء `AiSpecificationDraftingEndpoints` مع 5 نقاط نهاية:
+      - `POST /api/v1/ai/specifications/sections/generate`: توليد مسودة قسم.
+      - `POST /api/v1/ai/specifications/sections/refine`: تحسين مسودة قسم.
+      - `POST /api/v1/ai/specifications/structure/generate`: توليد هيكل كراسة.
+      - `POST /api/v1/ai/specifications/boq/generate`: توليد جدول كميات.
+      - `POST /api/v1/ai/specifications/boq/refine`: تحسين جدول كميات.
+    - إنشاء نماذج الطلب: `GenerateSectionDraftRequestModel`, `RefineSectionDraftRequestModel`, `GenerateBookletStructureRequestModel`, `GenerateBoqRequestModel`, `RefineBoqRequestModel`.
+    - تحديث `Program.cs` بتسجيل Endpoints الجديدة.
+    - تحديث `DependencyInjection.cs` بتسجيل الخدمات الجديدة.
+  - **اختبارات الوحدة (Unit Tests) — 46 اختبار (100% نجاح):**
+    - `AiSpecificationDraftingServiceTests`: 18 اختبار (توليد مسودة, تحسين, هيكل كراسة, اقتباسات, مراجع تنظيمية, درجة التأريض, معالجة أخطاء, JSON غير صالح, Markdown wrapping, حالات null).
+    - `AiBoqGenerationServiceTests`: 14 اختبار (توليد BOQ, تحسين, اقتباسات, درجة التأريض, أوصاف عربية, حرارة منخفضة, معالجة أخطاء, JSON غير صالح, Markdown wrapping, حالات null).
+    - `SpecificationDraftingValidatorTests`: 14 اختبار (التحقق من صحة جميع الأوامر: TenantId, CompetitionId, ProjectName, Budget, SectionType, Feedback, ExistingBoq).
+- **الاعتماديات التي تم حلها:** TASK-401 (AI Gateway), TASK-402 (RAG Engine).
+- **ملاحظات للوكيل التالي:** يجب ضبط إعدادات Qdrant في appsettings.json تحت قسم Qdrant (Host, Port, ApiKey) لضمان عمل محرك RAG بشكل صحيح. إعدادات AI يتم جلبها من جدول AiConfiguration في قاعدة البيانات (مشفرة بـ AES-256). الخدمات مسجلة كـ Scoped في DI container. جميع الـ Prompts مبنية بتنسيق XML حسب RAG Guidelines مع Few-Shot examples.
 
 ### 2026-03-28 - TASK-405: تطوير خدمة تحليل مصداقية التسجيلات المرئية (Video Integrity Analysis)
 - **ما تم إنجازه:**
