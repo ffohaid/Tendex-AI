@@ -1,0 +1,122 @@
+# ============================================================================
+# Tendex AI - Frontend CI Pipeline
+# ============================================================================
+# Triggers on every Pull Request that modifies frontend code.
+# Steps: install dependencies, lint, type-check, build.
+# NOTE: This pipeline is CI only. CD (deployment) is deferred to Sprint 7.
+# ============================================================================
+
+name: CI - Frontend (Vue.js)
+
+on:
+  pull_request:
+    branches:
+      - main
+      - develop
+    paths:
+      - "frontend/**"
+      - ".github/workflows/ci-frontend.yml"
+  push:
+    branches:
+      - main
+      - develop
+    paths:
+      - "frontend/**"
+      - ".github/workflows/ci-frontend.yml"
+
+concurrency:
+  group: ci-frontend-${{ github.ref }}
+  cancel-in-progress: true
+
+defaults:
+  run:
+    working-directory: frontend
+
+env:
+  NODE_VERSION: "22"
+
+jobs:
+  build-and-lint:
+    name: Build & Lint (Vue.js 3)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      # ------------------------------------------------------------------
+      # 1. Checkout repository
+      # ------------------------------------------------------------------
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # ------------------------------------------------------------------
+      # 2. Setup Node.js
+      # ------------------------------------------------------------------
+      - name: Setup Node.js ${{ env.NODE_VERSION }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      # ------------------------------------------------------------------
+      # 3. Setup pnpm
+      # ------------------------------------------------------------------
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: latest
+
+      # ------------------------------------------------------------------
+      # 4. Cache pnpm store
+      # ------------------------------------------------------------------
+      - name: Get pnpm store directory
+        id: pnpm-cache
+        shell: bash
+        run: echo "STORE_PATH=$(pnpm store path)" >> $GITHUB_OUTPUT
+
+      - name: Cache pnpm dependencies
+        uses: actions/cache@v4
+        with:
+          path: ${{ steps.pnpm-cache.outputs.STORE_PATH }}
+          key: pnpm-${{ runner.os }}-${{ hashFiles('frontend/pnpm-lock.yaml', 'frontend/package.json') }}
+          restore-keys: |
+            pnpm-${{ runner.os }}-
+
+      # ------------------------------------------------------------------
+      # 5. Install dependencies
+      # ------------------------------------------------------------------
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile --prefer-offline || pnpm install
+
+      # ------------------------------------------------------------------
+      # 6. TypeScript type-check
+      # ------------------------------------------------------------------
+      - name: TypeScript type-check
+        run: npx vue-tsc --noEmit -b
+
+      # ------------------------------------------------------------------
+      # 7. Lint (ESLint) - runs only if eslint is configured
+      # ------------------------------------------------------------------
+      - name: Lint with ESLint
+        run: |
+          if [ -f ".eslintrc.js" ] || [ -f ".eslintrc.cjs" ] || [ -f ".eslintrc.json" ] || [ -f "eslint.config.js" ] || [ -f "eslint.config.mjs" ] || [ -f "eslint.config.ts" ]; then
+            npx eslint . --ext .vue,.ts,.tsx --max-warnings 0
+          else
+            echo "ESLint configuration not found. Skipping lint step."
+            echo "NOTE: ESLint should be configured in a future task for full CI compliance."
+          fi
+
+      # ------------------------------------------------------------------
+      # 8. Build production bundle
+      # ------------------------------------------------------------------
+      - name: Build production bundle
+        run: pnpm run build
+
+      # ------------------------------------------------------------------
+      # 9. Upload build artifacts (optional, for review)
+      # ------------------------------------------------------------------
+      - name: Upload build artifacts
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: frontend-dist
+          path: frontend/dist/
+          retention-days: 7
