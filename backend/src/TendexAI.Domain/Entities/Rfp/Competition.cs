@@ -1,6 +1,7 @@
 using TendexAI.Domain.Common;
 using TendexAI.Domain.Enums;
 using TendexAI.Domain.Events;
+using TendexAI.Domain.StateMachine;
 
 namespace TendexAI.Domain.Entities.Rfp;
 
@@ -8,6 +9,9 @@ namespace TendexAI.Domain.Entities.Rfp;
 /// Aggregate root representing a government procurement competition (المنافسة).
 /// A competition contains an RFP booklet, sections, BOQ items, evaluation criteria,
 /// and attachments. It follows a 9-stage lifecycle defined in the PRD.
+/// 
+/// State transitions are enforced by <see cref="CompetitionStateMachine"/>
+/// and prerequisites are validated by <see cref="PhasePrerequisiteRegistry"/>.
 /// </summary>
 public sealed class Competition : AggregateRoot<Guid>
 {
@@ -44,6 +48,7 @@ public sealed class Competition : AggregateRoot<Guid>
             CompetitionType = competitionType,
             CreationMethod = creationMethod,
             Status = CompetitionStatus.Draft,
+            CurrentPhase = CompetitionPhase.BookletPreparation,
             SourceTemplateId = sourceTemplateId,
             SourceCompetitionId = sourceCompetitionId,
             CreatedAt = DateTime.UtcNow,
@@ -58,7 +63,9 @@ public sealed class Competition : AggregateRoot<Guid>
         return competition;
     }
 
-    // ----- Properties -----
+    // ═════════════════════════════════════════════════════════════
+    //  Properties
+    // ═════════════════════════════════════════════════════════════
 
     public Guid TenantId { get; private set; }
 
@@ -75,6 +82,9 @@ public sealed class Competition : AggregateRoot<Guid>
     public RfpCreationMethod CreationMethod { get; private set; }
 
     public CompetitionStatus Status { get; private set; }
+
+    /// <summary>The current phase of the competition lifecycle (1-9).</summary>
+    public CompetitionPhase CurrentPhase { get; private set; }
 
     /// <summary>Estimated budget in SAR.</summary>
     public decimal? EstimatedBudget { get; private set; }
@@ -112,7 +122,7 @@ public sealed class Competition : AggregateRoot<Guid>
     /// <summary>Current wizard step (1-6) for manual creation method.</summary>
     public int CurrentWizardStep { get; private set; } = 1;
 
-    /// <summary>Reason for rejection or cancellation.</summary>
+    /// <summary>Reason for rejection, cancellation, or suspension.</summary>
     public string? StatusChangeReason { get; private set; }
 
     /// <summary>User ID who approved the competition.</summary>
@@ -120,6 +130,9 @@ public sealed class Competition : AggregateRoot<Guid>
 
     /// <summary>Timestamp when the competition was approved.</summary>
     public DateTime? ApprovedAt { get; private set; }
+
+    /// <summary>The status before suspension (used to resume to the correct state).</summary>
+    public CompetitionStatus? SuspendedFromStatus { get; private set; }
 
     /// <summary>Indicates if the competition is soft-deleted.</summary>
     public bool IsDeleted { get; private set; }
@@ -130,14 +143,151 @@ public sealed class Competition : AggregateRoot<Guid>
     /// <summary>User who performed the soft deletion.</summary>
     public string? DeletedBy { get; private set; }
 
-    // ----- Navigation Properties -----
+    // ═════════════════════════════════════════════════════════════
+    //  Navigation Properties
+    // ═════════════════════════════════════════════════════════════
 
     public IReadOnlyCollection<RfpSection> Sections => _sections.AsReadOnly();
     public IReadOnlyCollection<BoqItem> BoqItems => _boqItems.AsReadOnly();
     public IReadOnlyCollection<EvaluationCriterion> EvaluationCriteria => _evaluationCriteria.AsReadOnly();
     public IReadOnlyCollection<RfpAttachment> Attachments => _attachments.AsReadOnly();
 
-    // ----- Domain Methods -----
+    // ═════════════════════════════════════════════════════════════
+    //  State Machine — Generic Transition Method
+    // ═════════════════════════════════════════════════════════════
+
+    /// <summary>
+    /// Transitions the competition to a new status using the state machine.
+    /// Validates the transition is allowed and raises the appropriate domain event.
+    /// Prerequisites must be validated externally before calling this method.
+    /// </summary>
+    /// <param name="targetStatus">The target status to transition to.</param>
+    /// <param name="changedBy">The user initiating the transition.</param>
+    /// <param name="reason">Optional reason (required for rejection/cancellation/suspension).</param>
+    /// <returns>A result indicating success or failure.</returns>
+    public Result TransitionTo(CompetitionStatus targetStatus, string changedBy, string? reason = null)
+    {
+        // Validate the transition via the state machine
+        var validationResult = CompetitionStateMachine.ValidateTransition(Status, targetStatus);
+        if (validationResult.IsFailure)
+            return validationResult;
+
+        // Require reason for exception states
+        if (targetStatus is CompetitionStatus.Rejected or CompetitionStatus.Cancelled or CompetitionStatus.Suspended
+            && string.IsNullOrWhiteSpace(reason))
+        {
+            return Result.Failure("A reason is required for rejection, cancellation, or suspension.");
+        }
+
+        var previousStatus = Status;
+        var previousPhase = CurrentPhase;
+
+        // Handle suspension: remember the current status for resumption
+        if (targetStatus == CompetitionStatus.Suspended)
+        {
+            SuspendedFromStatus = Status;
+        }
+
+        // Handle approval-specific fields
+        if (targetStatus == CompetitionStatus.Approved)
+        {
+            ApprovedByUserId = changedBy;
+            ApprovedAt = DateTime.UtcNow;
+        }
+
+        // Update status and phase
+        Status = targetStatus;
+        CurrentPhase = CompetitionStateMachine.GetPhase(targetStatus);
+        StatusChangeReason = reason;
+        LastModifiedAt = DateTime.UtcNow;
+        LastModifiedBy = changedBy;
+        Version++;
+
+        // Raise domain event
+        RaiseDomainEvent(new CompetitionStatusChangedEvent(
+            Id, TenantId, previousStatus, targetStatus, changedBy, reason));
+
+        return Result.Success();
+    }
+
+    /// <summary>
+    /// Resumes a suspended competition to its previous status.
+    /// </summary>
+    public Result Resume(string resumedBy)
+    {
+        if (Status != CompetitionStatus.Suspended)
+            return Result.Failure("Cannot resume: competition is not suspended.");
+
+        if (!SuspendedFromStatus.HasValue)
+            return Result.Failure("Cannot resume: no previous status recorded.");
+
+        var targetStatus = SuspendedFromStatus.Value;
+        var previousStatus = Status;
+
+        Status = targetStatus;
+        CurrentPhase = CompetitionStateMachine.GetPhase(targetStatus);
+        SuspendedFromStatus = null;
+        StatusChangeReason = null;
+        LastModifiedAt = DateTime.UtcNow;
+        LastModifiedBy = resumedBy;
+        Version++;
+
+        RaiseDomainEvent(new CompetitionStatusChangedEvent(
+            Id, TenantId, previousStatus, targetStatus, resumedBy, "Resumed from suspension"));
+
+        return Result.Success();
+    }
+
+    // ═════════════════════════════════════════════════════════════
+    //  Legacy Convenience Methods (delegate to TransitionTo)
+    // ═════════════════════════════════════════════════════════════
+
+    /// <summary>
+    /// Submits the competition for approval.
+    /// </summary>
+    public Result SubmitForApproval(string submittedBy)
+    {
+        if (_sections.Count == 0)
+            return Result.Failure("Cannot submit for approval: competition must have at least one section.");
+
+        return TransitionTo(CompetitionStatus.PendingApproval, submittedBy);
+    }
+
+    /// <summary>
+    /// Approves the competition.
+    /// </summary>
+    public Result Approve(string approvedBy)
+    {
+        return TransitionTo(CompetitionStatus.Approved, approvedBy);
+    }
+
+    /// <summary>
+    /// Rejects the competition with a reason.
+    /// </summary>
+    public Result Reject(string rejectedBy, string reason)
+    {
+        return TransitionTo(CompetitionStatus.Rejected, rejectedBy, reason);
+    }
+
+    /// <summary>
+    /// Cancels the competition with a reason.
+    /// </summary>
+    public Result Cancel(string cancelledBy, string reason)
+    {
+        return TransitionTo(CompetitionStatus.Cancelled, cancelledBy, reason);
+    }
+
+    /// <summary>
+    /// Suspends the competition with a reason.
+    /// </summary>
+    public Result Suspend(string suspendedBy, string reason)
+    {
+        return TransitionTo(CompetitionStatus.Suspended, suspendedBy, reason);
+    }
+
+    // ═════════════════════════════════════════════════════════════
+    //  Domain Methods — Basic Info & Settings
+    // ═════════════════════════════════════════════════════════════
 
     /// <summary>
     /// Updates the basic information of the competition.
@@ -208,92 +358,6 @@ public sealed class Competition : AggregateRoot<Guid>
     }
 
     /// <summary>
-    /// Submits the competition for approval.
-    /// </summary>
-    public Result SubmitForApproval(string submittedBy)
-    {
-        if (Status != CompetitionStatus.Draft && Status != CompetitionStatus.UnderPreparation)
-            return Result.Failure("Cannot submit for approval: competition must be in Draft or UnderPreparation status.");
-
-        if (_sections.Count == 0)
-            return Result.Failure("Cannot submit for approval: competition must have at least one section.");
-
-        Status = CompetitionStatus.PendingApproval;
-        LastModifiedAt = DateTime.UtcNow;
-        LastModifiedBy = submittedBy;
-        Version++;
-
-        RaiseDomainEvent(new CompetitionStatusChangedEvent(
-            Id, TenantId, CompetitionStatus.Draft, CompetitionStatus.PendingApproval, submittedBy));
-
-        return Result.Success();
-    }
-
-    /// <summary>
-    /// Approves the competition.
-    /// </summary>
-    public Result Approve(string approvedBy)
-    {
-        if (Status != CompetitionStatus.PendingApproval)
-            return Result.Failure("Cannot approve: competition is not pending approval.");
-
-        var previousStatus = Status;
-        Status = CompetitionStatus.Approved;
-        ApprovedByUserId = approvedBy;
-        ApprovedAt = DateTime.UtcNow;
-        LastModifiedAt = DateTime.UtcNow;
-        LastModifiedBy = approvedBy;
-        Version++;
-
-        RaiseDomainEvent(new CompetitionStatusChangedEvent(
-            Id, TenantId, previousStatus, CompetitionStatus.Approved, approvedBy));
-
-        return Result.Success();
-    }
-
-    /// <summary>
-    /// Rejects the competition with a reason.
-    /// </summary>
-    public Result Reject(string rejectedBy, string reason)
-    {
-        if (Status != CompetitionStatus.PendingApproval)
-            return Result.Failure("Cannot reject: competition is not pending approval.");
-
-        var previousStatus = Status;
-        Status = CompetitionStatus.Rejected;
-        StatusChangeReason = reason;
-        LastModifiedAt = DateTime.UtcNow;
-        LastModifiedBy = rejectedBy;
-        Version++;
-
-        RaiseDomainEvent(new CompetitionStatusChangedEvent(
-            Id, TenantId, previousStatus, CompetitionStatus.Rejected, rejectedBy, reason));
-
-        return Result.Success();
-    }
-
-    /// <summary>
-    /// Cancels the competition with a reason.
-    /// </summary>
-    public Result Cancel(string cancelledBy, string reason)
-    {
-        if (Status == CompetitionStatus.Cancelled || Status == CompetitionStatus.ContractSigned)
-            return Result.Failure("Cannot cancel: competition is already cancelled or contract is signed.");
-
-        var previousStatus = Status;
-        Status = CompetitionStatus.Cancelled;
-        StatusChangeReason = reason;
-        LastModifiedAt = DateTime.UtcNow;
-        LastModifiedBy = cancelledBy;
-        Version++;
-
-        RaiseDomainEvent(new CompetitionStatusChangedEvent(
-            Id, TenantId, previousStatus, CompetitionStatus.Cancelled, cancelledBy, reason));
-
-        return Result.Success();
-    }
-
-    /// <summary>
     /// Soft-deletes the competition.
     /// </summary>
     public Result SoftDelete(string deletedBy)
@@ -309,7 +373,9 @@ public sealed class Competition : AggregateRoot<Guid>
         return Result.Success();
     }
 
-    // ----- Section Management -----
+    // ═════════════════════════════════════════════════════════════
+    //  Section Management
+    // ═════════════════════════════════════════════════════════════
 
     public Result AddSection(RfpSection section)
     {
@@ -337,7 +403,9 @@ public sealed class Competition : AggregateRoot<Guid>
         return Result.Success();
     }
 
-    // ----- BOQ Management -----
+    // ═════════════════════════════════════════════════════════════
+    //  BOQ Management
+    // ═════════════════════════════════════════════════════════════
 
     public Result AddBoqItem(BoqItem item)
     {
@@ -363,7 +431,9 @@ public sealed class Competition : AggregateRoot<Guid>
         return Result.Success();
     }
 
-    // ----- Evaluation Criteria Management -----
+    // ═════════════════════════════════════════════════════════════
+    //  Evaluation Criteria Management
+    // ═════════════════════════════════════════════════════════════
 
     public Result AddEvaluationCriterion(EvaluationCriterion criterion)
     {
@@ -389,7 +459,9 @@ public sealed class Competition : AggregateRoot<Guid>
         return Result.Success();
     }
 
-    // ----- Attachment Management -----
+    // ═════════════════════════════════════════════════════════════
+    //  Attachment Management
+    // ═════════════════════════════════════════════════════════════
 
     public Result AddAttachment(RfpAttachment attachment)
     {
@@ -415,7 +487,36 @@ public sealed class Competition : AggregateRoot<Guid>
         return Result.Success();
     }
 
-    // ----- Private Helpers -----
+    // ═════════════════════════════════════════════════════════════
+    //  Query Helpers
+    // ═════════════════════════════════════════════════════════════
+
+    /// <summary>
+    /// Gets the allowed status transitions from the current status.
+    /// </summary>
+    public IReadOnlySet<CompetitionStatus> GetAllowedTransitions()
+    {
+        return CompetitionStateMachine.GetAllowedTransitions(Status);
+    }
+
+    /// <summary>
+    /// Checks if the competition is in an editable state.
+    /// </summary>
+    public bool IsEditable => Status is CompetitionStatus.Draft or CompetitionStatus.UnderPreparation;
+
+    /// <summary>
+    /// Checks if the competition is in a terminal state.
+    /// </summary>
+    public bool IsTerminal => CompetitionStateMachine.IsTerminal(Status);
+
+    /// <summary>
+    /// Gets the phase number (1-9) of the current status.
+    /// </summary>
+    public int PhaseNumber => CompetitionStateMachine.GetPhaseNumber(Status);
+
+    // ═════════════════════════════════════════════════════════════
+    //  Private Helpers
+    // ═════════════════════════════════════════════════════════════
 
     private void ReorderSections()
     {

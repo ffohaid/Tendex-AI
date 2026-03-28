@@ -9,7 +9,7 @@
 | Sprint 0: التخطيط وإدارة المنتج | ✅ مكتمل | 100% | تم إعداد خطة التنفيذ (Sprint Backlog) وقوالب العمل. |
 | Sprint 1: البنية التحتية | ✅ مكتمل | 100% | تم إنجاز TASK-101, TASK-102, TASK-103, TASK-104, TASK-105, TASK-106 |
 | Sprint 2: الخدمات الأساسية | 🔄 قيد التنفيذ | 86% | تم إنجاز TASK-201, TASK-202, TASK-203, TASK-204, TASK-205, TASK-206 |
-| Sprint 3: سير العمل والتقييم | 🔄 قيد التنفيذ | 14% | تم إنجاز TASK-301 |
+| Sprint 3: سير العمل والتقييم | 🔄 قيد التنفيذ | 29% | تم إنجاز TASK-301, TASK-302 |
 | Sprint 4: تكامل الذكاء الاصطناعي | ⏳ لم يبدأ | 0% | - |
 | Sprint 5: الواجهة الأمامية | ⏳ لم يبدأ | 0% | - |
 | Sprint 6: لوحة تحكم المشغل | ⏳ لم يبدأ | 0% | - |
@@ -20,6 +20,92 @@
 ## سجل المهام المنجزة (Completed Tasks Log)
 
 *يرجى إضافة أحدث مهمة منجزة في أعلى هذه القائمة.*
+
+### 2026-03-28 - TASK-302: نظام State Machine وإدارة مسارات الاعتماد ومصفوفة الصلاحيات رباعية الأبعاد
+- **ما تم إنجازه:**
+  - **طبقة Domain — نظام State Machine (CompetitionStateMachine):**
+    - تحديث `CompetitionStatus` enum ليشمل 20 حالة تغطي دورة حياة المنافسة الكاملة (Draft, UnderPreparation, PendingApproval, Approved, Rejected, Published, InquiryPeriod, ReceivingOffers, OffersClosed, TechnicalAnalysis, TechnicalAnalysisCompleted, FinancialAnalysis, FinancialAnalysisCompleted, AwardNotification, AwardApproved, ContractApproval, ContractApproved, ContractSigned, Cancelled, Suspended).
+    - إنشاء `CompetitionPhase` enum لتمثيل المراحل التسع (BookletPreparation, BookletApproval, BookletPublishing, OfferReception, TechnicalAnalysis, FinancialAnalysis, AwardNotification, ContractApproval, ContractSigning).
+    - بناء `CompetitionStateMachine` كـ static class يحتوي على:
+      - مصفوفة انتقالات (Transition Matrix) تحدد جميع الانتقالات المسموحة بين الحالات.
+      - دعم الانتقالات الاستثنائية (Cancellation من أي حالة غير نهائية، Suspension من حالات ما بعد الموافقة).
+      - دعم إعادة العمل (Rejected → UnderPreparation).
+      - أساليب مساعدة: `CanTransition()`, `ValidateTransition()`, `GetAllowedTransitions()`, `GetPhase()`, `GetPhaseNumber()`, `IsTerminal()`, `IsExceptionState()`.
+      - أسماء المراحل بالعربية والإنجليزية.
+    - تحديث `Competition` aggregate root بدعم كامل لـ State Machine:
+      - خاصية `CurrentPhase` لتتبع المرحلة الحالية.
+      - أسلوب `TransitionTo()` الذي يتحقق من صحة الانتقال عبر State Machine.
+      - دعم التعليق (Suspend) والاستئناف (Resume) مع حفظ الحالة السابقة.
+      - أساليب مساعدة: `GetAllowedTransitions()`, `IsEditable`, `IsTerminal`, `PhaseNumber`.
+  - **طبقة Domain — مصفوفة الصلاحيات رباعية الأبعاد (4D Permission Matrix):**
+    - إنشاء `CommitteeRole` enum (15 دور: PreparationCommitteeChair, PreparationCommitteeMember, TechnicalExamCommitteeChair, TechnicalExamCommitteeMember, FinancialExamCommitteeChair, FinancialExamCommitteeMember, PurchaseCommitteeChair, PurchaseCommitteeMember, CommitteeSecretary, إلخ).
+    - إنشاء `PermissionAction` enum كـ Flags (Read, Create, Update, Delete, Submit, Approve, Reject, Score, Sign, Publish, Download, Comment, Escalate, Configure).
+    - إنشاء `CompetitionPermissionMatrix` entity يمثل إدخال واحد في المصفوفة (Phase × CommitteeRole × SystemRole → AllowedActions).
+    - إنشاء `CompetitionCommitteeMember` entity لربط المستخدمين بأدوار اللجان مع نطاق مراحل فعال.
+    - إنشاء `DefaultPermissionMatrixSeeder` لتوليد مصفوفة صلاحيات افتراضية تغطي جميع المراحل التسع.
+    - إنشاء `ICompetitionPermissionService` interface وتنفيذه في `CompetitionPermissionService`.
+  - **طبقة Domain — نظام الشروط المسبقة (Phase Prerequisites):**
+    - إنشاء `IPhasePrerequisiteContext` interface يحدد جميع الشروط القابلة للتحقق.
+    - إنشاء `PhasePrerequisiteRegistry` مع شروط مسبقة لكل مرحلة:
+      - PendingApproval: أقسام إلزامية مكتملة، جدول كميات، معايير تقييم، أوزان صحيحة.
+      - Published: خطوات الاعتماد مكتملة.
+      - ReceivingOffers: انتهاء فترة الاستفسارات، الرد على جميع الاستفسارات.
+      - OffersClosed: انتهاء موعد التقديم، وجود عروض مستلمة.
+      - TechnicalAnalysisCompleted: اعتماد التقرير الفني.
+      - FinancialAnalysisCompleted: اعتماد التقرير المالي، موافقة المراقب المالي.
+      - AwardApproved: موافقة صاحب الصلاحية.
+      - ContractApproved: إرفاق مسودة العقد.
+      - ContractSigned: إرفاق العقد الموقع.
+    - إنشاء `CompetitionTransitionService` الذي يجمع بين State Machine والشروط المسبقة.
+  - **طبقة Domain — نظام مسارات الاعتماد (Approval Workflow):**
+    - إنشاء `ApprovalWorkflowStep` entity مع حالات (Pending, Approved, Rejected, Skipped).
+    - إنشاء `ApprovalWorkflowTemplate` لتعريف خطوات الاعتماد الافتراضية لكل مرحلة.
+    - إنشاء `PhaseTransitionHistory` entity لتسجيل تاريخ انتقالات المراحل (Immutable Audit Trail).
+  - **طبقة Application (CQRS):**
+    - إنشاء `TransitionCompetitionCommand` + `TransitionCompetitionCommandHandler` لتنفيذ انتقالات المراحل مع التحقق من الصلاحيات والشروط المسبقة.
+    - إنشاء `TransitionCompetitionCommandValidator` (FluentValidation).
+    - إنشاء `GetTransitionFeasibilityQuery` + Handler للتحقق من إمكانية الانتقال قبل تنفيذه.
+    - إنشاء DTOs: `CompetitionTransitionResultDto`, `TransitionFeasibilityDto`, `PrerequisiteCheckDto`.
+    - إنشاء واجهات Repository: `ICompetitionPermissionMatrixRepository`, `ICompetitionCommitteeMemberRepository`, `IUserSystemRoleProvider`, `IPhasePrerequisiteContextFactory`.
+  - **اختبارات الوحدة (170 اختبار — جميعها ناجحة):**
+    - `CompetitionStateMachineTests` (27 اختبار): انتقالات صحيحة، منع تجاوز المراحل، حالات نهائية، حالات استثنائية، ربط المراحل، أسماء محلية، دورة حياة كاملة.
+    - `CompetitionTransitionTests` (16 اختبار): انتقالات aggregate، حقول الموافقة، التعليق والاستئناف، إعادة العمل، أحداث Domain، أساليب Legacy.
+    - `PermissionMatrixAndPrerequisiteTests` (37 اختبار): إنشاء وتحديث مصفوفة الصلاحيات، DefaultSeeder يغطي 9 مراحل، أعضاء اللجان، خطوات الاعتماد، قوالب سير العمل، الشروط المسبقة، CompetitionTransitionService.
+- **الملفات المنشأة/المعدلة:**
+  - `Domain/Enums/CompetitionStatus.cs` (محدث)
+  - `Domain/Enums/CompetitionPhase.cs` (جديد)
+  - `Domain/Enums/CommitteeRole.cs` (جديد)
+  - `Domain/Enums/PermissionAction.cs` (جديد)
+  - `Domain/StateMachine/CompetitionStateMachine.cs` (جديد)
+  - `Domain/StateMachine/PhasePrerequisite.cs` (جديد)
+  - `Domain/StateMachine/CompetitionTransitionService.cs` (جديد)
+  - `Domain/StateMachine/ICompetitionPermissionService.cs` (جديد)
+  - `Domain/StateMachine/DefaultPermissionMatrixSeeder.cs` (جديد)
+  - `Domain/StateMachine/ApprovalWorkflowTemplate.cs` (جديد)
+  - `Domain/Entities/Rfp/Competition.cs` (محدث)
+  - `Domain/Entities/Rfp/CompetitionPermissionMatrix.cs` (جديد)
+  - `Domain/Entities/Rfp/CompetitionCommitteeMember.cs` (جديد)
+  - `Domain/Entities/Rfp/ApprovalWorkflowStep.cs` (جديد)
+  - `Domain/Entities/Rfp/PhaseTransitionHistory.cs` (جديد)
+  - `Application/Features/Rfp/Services/CompetitionPermissionService.cs` (جديد)
+  - `Application/Features/Rfp/Commands/TransitionCompetition/TransitionCompetitionCommand.cs` (جديد)
+  - `Application/Features/Rfp/Commands/TransitionCompetition/TransitionCompetitionCommandHandler.cs` (جديد)
+  - `Application/Features/Rfp/Commands/TransitionCompetition/TransitionCompetitionCommandValidator.cs` (جديد)
+  - `Application/Features/Rfp/Queries/GetTransitionFeasibility/GetTransitionFeasibilityQuery.cs` (جديد)
+  - `Application/Features/Rfp/Queries/GetTransitionFeasibility/GetTransitionFeasibilityQueryHandler.cs` (جديد)
+  - `Application/Features/Rfp/Dtos/CompetitionTransitionDtos.cs` (جديد)
+  - `Tests/Domain/Rfp/CompetitionStateMachineTests.cs` (جديد)
+  - `Tests/Domain/Rfp/CompetitionTransitionTests.cs` (جديد)
+  - `Tests/Domain/Rfp/PermissionMatrixAndPrerequisiteTests.cs` (جديد)
+- **الاعتماديات التي تم حلها:** TASK-301 (Competition aggregate و APIs الأساسية).
+- **ملاحظات للوكيل التالي:**
+  - نظام State Machine مكتمل ومختبر بالكامل في طبقة Domain.
+  - مصفوفة الصلاحيات تدعم التخصيص لكل Tenant عبر `DefaultPermissionMatrixSeeder`.
+  - يجب تسجيل الخدمات الجديدة في `DependencyInjection.cs` (Infrastructure layer): `ICompetitionPermissionService`, `ICompetitionPermissionMatrixRepository`, `ICompetitionCommitteeMemberRepository`, `IUserSystemRoleProvider`, `IPhasePrerequisiteContextFactory`.
+  - يجب إضافة API Endpoints جديدة في `CompetitionEndpoints.cs` لـ `TransitionCompetitionCommand` و `GetTransitionFeasibilityQuery`.
+  - يجب إضافة EF Core configurations للكيانات الجديدة: `CompetitionPermissionMatrix`, `CompetitionCommitteeMember`, `ApprovalWorkflowStep`, `PhaseTransitionHistory`.
+  - يجب إنشاء Migration جديد لإضافة الجداول الجديدة لقاعدة البيانات.
+  - `CompetitionTransitionService.ValidateTransition()` و `GetTransitionDetails()` هي أساليب static.
 
 ### 2026-03-28 - TASK-301: تطوير APIs لإنشاء وإدارة كراسات الشروط والمواصفات (RFP)
 - **ما تم إنجازه:**
