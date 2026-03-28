@@ -8,7 +8,7 @@
 | :--- | :--- | :--- | :--- |
 | Sprint 0: التخطيط وإدارة المنتج | ✅ مكتمل | 100% | تم إعداد خطة التنفيذ (Sprint Backlog) وقوالب العمل. |
 | Sprint 1: البنية التحتية | ✅ مكتمل | 100% | تم إنجاز TASK-101, TASK-102, TASK-103, TASK-104, TASK-105, TASK-106 |
-| Sprint 2: الخدمات الأساسية | 🔄 قيد التنفيذ | 15% | تم إنجاز TASK-204 (Audit Trail) |
+| Sprint 2: الخدمات الأساسية | 🔄 قيد التنفيذ | 28% | تم إنجاز TASK-204 (Audit Trail), TASK-206 (RabbitMQ Integration) |
 | Sprint 3: سير العمل والتقييم | ⏳ لم يبدأ | 0% | - |
 | Sprint 4: تكامل الذكاء الاصطناعي | ⏳ لم يبدأ | 0% | - |
 | Sprint 5: الواجهة الأمامية | ⏳ لم يبدأ | 0% | - |
@@ -82,6 +82,62 @@
   - القيم القديمة والجديدة تُخزَّن بصيغة JSON في أعمدة `nvarchar(max)`.
   - يمكن توسيع `AuditActionType` بإضافة أنواع جديدة حسب الحاجة.
   - جميع الاختبارات (65) تعمل بنجاح.
+
+### 2026-03-28 - TASK-206: دمج RabbitMQ لإدارة الاتصالات غير المتزامنة (Message Broker Integration)
+- **ما تم إنجازه:**
+  - **طبقة Application (Abstractions):**
+    - إنشاء `IEventBus` interface في `Application/Common/Interfaces/` لتجريد ناقل الأحداث.
+    - إنشاء `IntegrationEvent` base record مع خصائص: `Id`, `CreatedAt`, `CorrelationId`, `TenantId`.
+    - إنشاء `IIntegrationEventProcessor<TEvent>` interface لمعالجة الأحداث.
+  - **أحداث التكامل النموذجية (Integration Events):**
+    - `TenantCreatedIntegrationEvent` - عند إنشاء جهة جديدة.
+    - `DocumentIndexRequestedIntegrationEvent` - عند طلب فهرسة مستند في Qdrant.
+    - `RfpStatusChangedIntegrationEvent` - عند تغيير حالة طلب العرض.
+    - `NotificationRequestedIntegrationEvent` - عند طلب إرسال إشعار.
+  - **طبقة Infrastructure (RabbitMQ Implementation):**
+    - `RabbitMqSettings` - إعدادات الاتصال والتبادلات والطوابير.
+    - `RabbitMqConnectionFactory` - مصنع اتصال مُدار مع Polly retry (exponential backoff) وAutomatic Recovery.
+    - `RabbitMqEventBus` - ناشر الأحداث مع Publisher Confirms وPersistent Delivery.
+    - `RabbitMqTopologyInitializer` - إعداد التبادلات (topic exchange + dead-letter exchange).
+    - `RabbitMqConsumerBackgroundService` - خدمة خلفية لاستهلاك الرسائل مع Manual Acknowledgements.
+    - `EventBusSubscriptionManager` - مدير الاشتراكات (thread-safe via ConcurrentDictionary).
+    - `RabbitMqStartupHostedService` - تهيئة topology عند بدء التشغيل.
+    - `RabbitMqSubscriptionHostedService` - تطبيق الاشتراكات عند بدء التشغيل.
+    - `RabbitMqServiceCollectionExtensions` - extension methods لتسجيل خدمات RabbitMQ في DI.
+    - `RabbitMqLogMessages` - LoggerMessage delegates عالية الأداء (CA1848/CA1873 compliant).
+  - **ضمان عدم فقدان الرسائل (Durability & Reliability):**
+    - Durable exchanges (topic, non-auto-delete).
+    - Durable queues مع dead-letter routing.
+    - Persistent message delivery (DeliveryModes.Persistent).
+    - Publisher Confirms مفعّلة عند إنشاء القناة (RabbitMQ.Client 7.x).
+    - Manual Acknowledgements (BasicAck/BasicNack) - لا يتم حذف الرسالة حتى تتم معالجتها.
+    - Retry mechanism مع حد أقصى 3 محاولات قبل التوجيه إلى Dead-Letter Queue.
+    - QoS Prefetch للتحكم في عدد الرسائل غير المؤكدة.
+  - **Docker Compose:**
+    - تحديث `docker-compose.yml` لإضافة volumes لإعدادات RabbitMQ المخصصة.
+    - إنشاء `rabbitmq/rabbitmq.conf` مع إعدادات الذاكرة والقرص والاتصال.
+    - إنشاء `rabbitmq/definitions.json` مع تعريفات التبادلات والسياسات.
+    - إنشاء `rabbitmq/enabled_plugins` لتفعيل الإضافات المطلوبة.
+  - **اختبارات الوحدة (Unit Tests):**
+    - `RabbitMqEventBusRoutingKeyTests` - 7 اختبارات لتحويل PascalCase إلى routing keys.
+    - `EventBusSubscriptionManagerTests` - 5 اختبارات لإدارة الاشتراكات.
+    - `IntegrationEventTests` - 6 اختبارات للفئة الأساسية IntegrationEvent.
+    - `RabbitMqSettingsTests` - 3 اختبارات للإعدادات الافتراضية.
+    - `IntegrationEventsSerializationTests` - 5 اختبارات لتسلسل/فك تسلسل JSON.
+    - **المجموع: 56 اختبار ناجح (26 اختبار جديد + 30 سابق).**
+  - **إعدادات التطبيق:**
+    - تحديث `appsettings.json` و `appsettings.Development.json` بقسم RabbitMQ.
+    - تحديث `DependencyInjection.cs` لتسجيل خدمات RabbitMQ.
+  - **التوافق:** استخدام RabbitMQ.Client 7.2.1 (async-first API) مع Polly 8.6.6.
+- **الاعتماديات التي تم حلها:** TASK-102 (Docker/RabbitMQ), TASK-103 (Clean Architecture), TASK-105 (Database).
+- **ملاحظات للوكيل التالي:**
+  - RabbitMQ جاهز للاستخدام. لنشر حدث: `await _eventBus.PublishAsync(new MyEvent { ... })`.
+  - لإضافة مستهلك جديد: أنشئ handler يطبق `IIntegrationEventProcessor<TEvent>` وسجّله في `RabbitMqServiceCollectionExtensions.AddRabbitMq()`.
+  - الطوابير تُنشأ تلقائياً عند بدء التشغيل بناءً على الاشتراكات المسجلة.
+  - Dead-Letter Queues مُعدة لكل طابور لاستقبال الرسائل الفاشلة.
+  - إعدادات الاتصال في `appsettings.json` تحت قسم `RabbitMQ`.
+  - يجب تشغيل RabbitMQ عبر `docker compose up -d rabbitmq` قبل تشغيل التطبيق.
+  - يمكن الوصول للوحة إدارة RabbitMQ عبر `http://localhost:15672`.
 
 ### 2026-03-28 - TASK-106: إعداد مسارات التكامل المستمر (CI Pipelines)
 - **ما تم إنجازه:**

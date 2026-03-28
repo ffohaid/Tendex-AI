@@ -3,6 +3,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using TendexAI.Application.Common.Interfaces;
 using TendexAI.Domain.Common;
+using TendexAI.Infrastructure.Messaging.RabbitMQ;
 using TendexAI.Infrastructure.MultiTenancy;
 using TendexAI.Infrastructure.Persistence;
 using TendexAI.Infrastructure.Persistence.Interceptors;
@@ -12,7 +13,7 @@ namespace TendexAI.Infrastructure;
 
 /// <summary>
 /// Extension methods for registering Infrastructure layer services in the DI container.
-/// Configures Entity Framework Core, multi-tenancy, and supporting infrastructure services.
+/// Configures Entity Framework Core, multi-tenancy, messaging, and supporting infrastructure services.
 /// </summary>
 public static class DependencyInjection
 {
@@ -84,10 +85,12 @@ public static class DependencyInjection
         services.AddScoped<ITenantProvider, TenantProvider>();
         services.AddScoped<ITenantDbContextFactory, TenantDbContextFactory>();
 
+        // ----- RabbitMQ Message Broker (Event Bus) -----
+        services.AddRabbitMqEventBus(configuration);
+
         // Future registrations:
         // - Redis distributed cache
         // - MinIO file storage
-        // - RabbitMQ message broker
         // - Qdrant vector database client
 
         return services;

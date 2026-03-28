@@ -1,0 +1,49 @@
+{
+  "rabbit_version": "3.13.0",
+  "users": [],
+  "vhosts": [
+    {
+      "name": "tendex"
+    }
+  ],
+  "permissions": [],
+  "exchanges": [
+    {
+      "name": "tendex.events",
+      "vhost": "tendex",
+      "type": "topic",
+      "durable": true,
+      "auto_delete": false,
+      "internal": false,
+      "arguments": {}
+    },
+    {
+      "name": "tendex.events.dlx",
+      "vhost": "tendex",
+      "type": "topic",
+      "durable": true,
+      "auto_delete": false,
+      "internal": false,
+      "arguments": {}
+    }
+  ],
+  "queues": [],
+  "bindings": [],
+  "policies": [
+    {
+      "vhost": "tendex",
+      "name": "ha-tendex-events",
+      "pattern": "^tendex\\.",
+      "apply-to": "queues",
+      "definition": {
+        "ha-mode": "all",
+        "ha-sync-mode": "automatic",
+        "message-ttl": 604800000,
+        "max-length": 1000000
+      },
+      "priority": 0
+    }
+  ],
+  "global_parameters": [],
+  "parameters": []
+}
