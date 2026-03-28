@@ -2,7 +2,10 @@
   "app": {
     "name": "Tendex AI",
     "title": "Tendex AI Platform",
-    "welcome": "Welcome to Tendex AI"
+    "welcome": "Welcome to Tendex AI",
+    "copyright": "All Rights Reserved",
+    "version": "Version",
+    "poweredBy": "Powered by AI"
   },
   "common": {
     "save": "Save",
@@ -19,7 +22,10 @@
     "next": "Next",
     "previous": "Previous",
     "submit": "Submit",
-    "close": "Close"
+    "close": "Close",
+    "notifications": "Notifications",
+    "profile": "Profile",
+    "help": "Help"
   },
   "auth": {
     "login": "Login",
@@ -29,6 +35,46 @@
   },
   "nav": {
     "dashboard": "Dashboard",
-    "settings": "Settings"
+    "rfp": {
+      "title": "Specifications Books",
+      "list": "View Books",
+      "create": "Create New Book"
+    },
+    "committees": {
+      "title": "Committees",
+      "permanent": "Permanent Committees",
+      "temporary": "Temporary Committees"
+    },
+    "evaluation": {
+      "title": "Evaluation",
+      "technical": "Technical Evaluation",
+      "financial": "Financial Evaluation"
+    },
+    "approvals": "Approval Workflows",
+    "inquiries": "Inquiries",
+    "reports": "Reports",
+    "aiAssistant": "AI Assistant",
+    "settings": {
+      "title": "Settings",
+      "organization": "Organization",
+      "users": "User Management",
+      "roles": "Roles & Permissions"
+    },
+    "taskCenter": "Task Center"
+  },
+  "header": {
+    "searchPlaceholder": "Search the platform...",
+    "switchLanguage": "العربية",
+    "aiYearBadge": "AI Year 2026"
+  },
+  "sidebar": {
+    "collapse": "Collapse Menu",
+    "expand": "Expand Menu"
+  },
+  "footer": {
+    "copyright": "© 2026 Tendex AI - All Rights Reserved",
+    "privacyPolicy": "Privacy Policy",
+    "termsOfService": "Terms of Service",
+    "support": "Support"
   }
 }

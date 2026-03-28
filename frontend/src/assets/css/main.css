@@ -25,6 +25,12 @@
   --color-surface-dim: #DBDBDB;
   --color-surface-muted: #F5F5F5;
 
+  /* Semantic Colors */
+  --color-success: #2BB673;
+  --color-warning: #F59E0B;
+  --color-danger: #EF4444;
+  --color-info: #3B82F6;
+
   /* Typography */
   --font-sans: 'Diodrum Arabic', 'Inter', system-ui, -apple-system, sans-serif;
 
@@ -33,6 +39,10 @@
   --radius-md: 0.5rem;
   --radius-lg: 0.75rem;
   --radius-xl: 1rem;
+
+  /* Shadows */
+  --shadow-card: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
+  --shadow-dropdown: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
 }
 
 /*
@@ -56,5 +66,72 @@
   *::before,
   *::after {
     box-sizing: border-box;
+  }
+
+  /*
+   * Force English numerals in all interfaces.
+   * This CSS feature ensures consistent numeral display
+   * regardless of the document language.
+   */
+  * {
+    font-variant-numeric: lining-nums tabular-nums;
+  }
+
+  /* Smooth scrolling */
+  html {
+    scroll-behavior: smooth;
+  }
+
+  /* Custom scrollbar for sidebar */
+  .sidebar-scroll::-webkit-scrollbar {
+    width: 4px;
+  }
+
+  .sidebar-scroll::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  .sidebar-scroll::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 2px;
+  }
+
+  .sidebar-scroll::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.3);
+  }
+}
+
+/*
+ * Component layer: reusable component styles.
+ */
+@layer components {
+  /* Card component */
+  .card {
+    @apply rounded-xl border border-surface-dim bg-white p-6 shadow-sm;
+  }
+
+  /* Badge component */
+  .badge {
+    @apply inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium;
+  }
+
+  .badge-primary {
+    @apply bg-primary/10 text-primary;
+  }
+
+  .badge-secondary {
+    @apply bg-secondary/10 text-secondary;
+  }
+
+  .badge-success {
+    @apply bg-success/10 text-success;
+  }
+
+  .badge-warning {
+    @apply bg-warning/10 text-warning;
+  }
+
+  .badge-danger {
+    @apply bg-danger/10 text-danger;
   }
 }

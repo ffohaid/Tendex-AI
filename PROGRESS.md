@@ -11,7 +11,7 @@
 | Sprint 2: الخدمات الأساسية | 🔄 قيد التنفيذ | 86% | تم إنجاز TASK-201, TASK-202, TASK-203, TASK-204, TASK-205, TASK-206 |
 | Sprint 3: سير العمل والتقييم | 🔄 قيد التنفيذ | 71% | تم إنجاز TASK-301, TASK-302, TASK-303, TASK-304, TASK-305 |
 | Sprint 4: تكامل الذكاء الاصطناعي | 🔄 قيد التنفيذ | 71% | تم إنجاز TASK-401, TASK-402, TASK-403, TASK-404, TASK-405 |
-| Sprint 5: الواجهة الأمامية | ⏳ لم يبدأ | 0% | - |
+| Sprint 5: الواجهة الأمامية | 🔄 قيد التنفيذ | 20% | تم إنجاز TASK-501 |
 | Sprint 6: لوحة تحكم المشغل | ⏳ لم يبدأ | 0% | - |
 | Sprint 7: الاختبار والنشر | ⏳ لم يبدأ | 0% | - |
 
@@ -20,6 +20,43 @@
 ## سجل المهام المنجزة (Completed Tasks Log)
 
 *يرجى إضافة أحدث مهمة منجزة في أعلى هذه القائمة.*
+
+### 2026-03-28 - TASK-501: بناء تخطيط المنصة والتنقل (Layout & Navigation)
+- **ما تم إنجازه:**
+  - **مكون AppHeader:** شريط علوي ثابت يتضمن زر طي/توسيع القائمة الجانبية، شعار المنصة (Tendex AI)، شريط بحث مركزي، شارة عام الذكاء الاصطناعي 2026، أزرار الإشعارات وتبديل اللغة والملف الشخصي.
+  - **مكون AppSidebar:** قائمة جانبية ثابتة بخلفية الأزرق الداكن (#0D2745) تتضمن:
+    - قائمة تنقل كاملة (لوحة التحكم، كراسات الشروط، اللجان، الفحص والتقييم، مسارات الاعتماد، الاستفسارات، التقارير، المساعد الذكي، الإعدادات).
+    - سلوك Accordion: عند فتح قائمة رئيسية تُغلق جميع القوائم الأخرى تلقائياً.
+    - دعم الطي والتوسيع مع انتقالات سلسة.
+  - **مكون SidebarMenuItem:** مكون فرعي قابل لإعادة الاستخدام لعناصر القائمة مع دعم القوائم الفرعية والأيقونات والشارات.
+  - **مكون AppFooter:** تذييل يتضمن حقوق النشر وروابط (سياسة الخصوصية، الشروط والأحكام، الدعم الفني) وشارة عام الذكاء الاصطناعي.
+  - **تخطيط MainLayout:** تخطيط رئيسي يجمع Header + Sidebar + Footer مع منطقة محتوى مرنة.
+  - **تخطيط AuthLayout:** تخطيط بسيط لصفحات المصادقة (بدون sidebar/header).
+  - **دعم RTL/LTR ديناميكي:** استخدام الخصائص المنطقية لـ Tailwind حصرياً (ms-, me-, ps-, pe-, start, end, border-s, border-e, inset-inline-start).
+  - **الهوية البصرية:** تطبيق ألوان الهوية (#2BB673 أخضر أساسي، #0D2745 أزرق داكن، #255877 أزرق متوسط)، خط Diodrum Arabic، أرقام إنجليزية حصرياً.
+  - **ملفات الترجمة:** تحديث ar.json و en.json بجميع مفاتيح التنقل والواجهة.
+  - **بيانات التنقل:** إنشاء ملف config/navigation.ts مع هيكل NavigationItem قابل للتوسع.
+  - **Composable:** إنشاء useSidebarNavigation لإدارة حالة القائمة الجانبية.
+  - **نظام التوجيه:** تحديث router/index.ts مع مسارات placeholder لجميع الصفحات المستقبلية.
+- **الملفات المنشأة/المعدلة:**
+  - `src/components/layout/AppHeader.vue` (جديد)
+  - `src/components/layout/AppSidebar.vue` (جديد)
+  - `src/components/layout/AppFooter.vue` (جديد)
+  - `src/components/layout/SidebarMenuItem.vue` (جديد)
+  - `src/components/layout/index.ts` (جديد)
+  - `src/layouts/MainLayout.vue` (جديد)
+  - `src/layouts/AuthLayout.vue` (جديد)
+  - `src/composables/useSidebarNavigation.ts` (جديد)
+  - `src/config/navigation.ts` (جديد)
+  - `src/types/navigation.ts` (جديد)
+  - `src/views/DashboardView.vue` (جديد)
+  - `src/locales/ar.json` (معدل - إضافة مفاتيح التنقل)
+  - `src/locales/en.json` (معدل - إضافة مفاتيح التنقل)
+  - `src/router/index.ts` (معدل - إضافة layouts والمسارات)
+  - `src/App.vue` (معدل - مزامنة locale مع i18n)
+  - `src/assets/css/main.css` (معدل - إضافة ألوان semantic وأنماط مكونات)
+  - `vite.config.ts` (معدل - إضافة server.allowedHosts)
+- **التحقق:** نجاح vue-tsc --noEmit (بدون أخطاء TypeScript)، نجاح vite build (بناء الإنتاج).
 
 ### 2026-03-28 - TASK-403: تطوير ميزات مساعدة الذكاء الاصطناعي في صياغة الشروط والمواصفات وتوليد جداول الكميات (BOQ)
 - **ما تم إنجازه:**

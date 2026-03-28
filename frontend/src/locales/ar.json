@@ -2,7 +2,10 @@
   "app": {
     "name": "Tendex AI",
     "title": "منصة تندكس للذكاء الاصطناعي",
-    "welcome": "مرحباً بك في منصة Tendex AI"
+    "welcome": "مرحباً بك في منصة Tendex AI",
+    "copyright": "جميع الحقوق محفوظة",
+    "version": "الإصدار",
+    "poweredBy": "مدعوم بالذكاء الاصطناعي"
   },
   "common": {
     "save": "حفظ",
@@ -19,7 +22,10 @@
     "next": "التالي",
     "previous": "السابق",
     "submit": "إرسال",
-    "close": "إغلاق"
+    "close": "إغلاق",
+    "notifications": "الإشعارات",
+    "profile": "الملف الشخصي",
+    "help": "المساعدة"
   },
   "auth": {
     "login": "تسجيل الدخول",
@@ -29,6 +35,46 @@
   },
   "nav": {
     "dashboard": "لوحة التحكم",
-    "settings": "الإعدادات"
+    "rfp": {
+      "title": "كراسات الشروط",
+      "list": "عرض الكراسات",
+      "create": "إنشاء كراسة جديدة"
+    },
+    "committees": {
+      "title": "اللجان",
+      "permanent": "اللجان الدائمة",
+      "temporary": "اللجان المؤقتة"
+    },
+    "evaluation": {
+      "title": "الفحص والتقييم",
+      "technical": "التقييم الفني",
+      "financial": "التقييم المالي"
+    },
+    "approvals": "مسارات الاعتماد",
+    "inquiries": "الاستفسارات",
+    "reports": "التقارير",
+    "aiAssistant": "المساعد الذكي",
+    "settings": {
+      "title": "الإعدادات",
+      "organization": "بيانات الجهة",
+      "users": "إدارة المستخدمين",
+      "roles": "الأدوار والصلاحيات"
+    },
+    "taskCenter": "مركز المهام"
+  },
+  "header": {
+    "searchPlaceholder": "البحث في المنصة...",
+    "switchLanguage": "English",
+    "aiYearBadge": "عام الذكاء الاصطناعي 2026"
+  },
+  "sidebar": {
+    "collapse": "طي القائمة",
+    "expand": "توسيع القائمة"
+  },
+  "footer": {
+    "copyright": "© 2026 Tendex AI - جميع الحقوق محفوظة",
+    "privacyPolicy": "سياسة الخصوصية",
+    "termsOfService": "الشروط والأحكام",
+    "support": "الدعم الفني"
   }
 }
