@@ -21,6 +21,7 @@ using TendexAI.Infrastructure.Services;
 using TendexAI.Infrastructure.Services.Identity;
 using TendexAI.Infrastructure.Services.Email;
 using TendexAI.Infrastructure.AI;
+using TendexAI.Application.Features.VideoAnalysis;
 using TendexAI.Infrastructure.Storage.MinIO;
 
 namespace TendexAI.Infrastructure;
@@ -203,12 +204,16 @@ public static class DependencyInjection
         services.AddScoped<ICommitteeRepository, Persistence.Repositories.CommitteeRepository>();
         services.AddScoped<ITechnicalEvaluationRepository, TechnicalEvaluationRepository>();
         services.AddScoped<ISupplierOfferRepository, SupplierOfferRepository>();
+        services.AddScoped<IVideoIntegrityAnalysisRepository, VideoIntegrityAnalysisRepository>();
 
         // ----- Security Services -----
         services.AddSingleton<IConnectionStringEncryptor, ConnectionStringEncryptor>();
 
         // ----- AI Gateway Services -----
         services.AddAiGatewayServices(configuration);
+
+        // ----- Video Integrity Analysis Services -----
+        services.AddScoped<IVideoIntegrityService, AI.VideoAnalysis.VideoIntegrityService>();
 
         // ----- Tenant Database Provisioning -----
         services.AddScoped<ITenantDatabaseProvisioner, TenantDatabaseProvisioner>();

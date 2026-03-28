@@ -103,4 +103,7 @@ app.MapAiConfigurationEndpoints();
 // AI Gateway endpoints (completions, embeddings, status)
 app.MapAiGatewayEndpoints();
 
+// Video Integrity Analysis endpoints (tamper detection, identity verification)
+app.MapVideoIntegrityEndpoints();
+
 app.Run();

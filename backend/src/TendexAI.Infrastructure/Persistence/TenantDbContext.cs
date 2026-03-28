@@ -48,6 +48,10 @@ public sealed class TenantDbContext : DbContext, IUnitOfWork
     public DbSet<TechnicalScore> TechnicalScores => Set<TechnicalScore>();
     public DbSet<AiTechnicalScore> AiTechnicalScores => Set<AiTechnicalScore>();
 
+    // ----- Video Integrity Analysis DbSets -----
+    public DbSet<VideoIntegrityAnalysis> VideoIntegrityAnalyses => Set<VideoIntegrityAnalysis>();
+    public DbSet<VideoAnalysisFlag> VideoAnalysisFlags => Set<VideoAnalysisFlag>();
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);

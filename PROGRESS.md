@@ -10,7 +10,7 @@
 | Sprint 1: البنية التحتية | ✅ مكتمل | 100% | تم إنجاز TASK-101, TASK-102, TASK-103, TASK-104, TASK-105, TASK-106 |
 | Sprint 2: الخدمات الأساسية | 🔄 قيد التنفيذ | 86% | تم إنجاز TASK-201, TASK-202, TASK-203, TASK-204, TASK-205, TASK-206 |
 | Sprint 3: سير العمل والتقييم | 🔄 قيد التنفيذ | 71% | تم إنجاز TASK-301, TASK-302, TASK-303, TASK-304, TASK-305 |
-| Sprint 4: تكامل الذكاء الاصطناعي | 🔄 قيد التنفيذ | 14% | تم إنجاز TASK-401 |
+| Sprint 4: تكامل الذكاء الاصطناعي | 🔄 قيد التنفيذ | 29% | تم إنجاز TASK-401, TASK-405 |
 | Sprint 5: الواجهة الأمامية | ⏳ لم يبدأ | 0% | - |
 | Sprint 6: لوحة تحكم المشغل | ⏳ لم يبدأ | 0% | - |
 | Sprint 7: الاختبار والنشر | ⏳ لم يبدأ | 0% | - |
@@ -20,6 +20,63 @@
 ## سجل المهام المنجزة (Completed Tasks Log)
 
 *يرجى إضافة أحدث مهمة منجزة في أعلى هذه القائمة.*
+
+### 2026-03-28 - TASK-405: تطوير خدمة تحليل مصداقية التسجيلات المرئية (Video Integrity Analysis)
+- **ما تم إنجازه:**
+  - **طبقة Domain — نماذج البيانات والتعدادات:**
+    - إنشاء 3 تعدادات: `VideoAnalysisStatus` (7 حالات), `TamperDetectionResult` (8 نتائج), `IdentityVerificationResult` (7 نتائج).
+    - إنشاء كيان `VideoIntegrityAnalysis` مع Domain Logic كامل: إدارة حالات التحليل, التحقق من صحة المدخلات, إضافة الأعلام.
+    - إنشاء كيان `VideoAnalysisFlag` لتسجيل الملاحظات والمشاكل المكتشفة.
+    - إنشاء واجهة المستودع `IVideoIntegrityAnalysisRepository`.
+    - إنشاء أحداث النطاق: `VideoAnalysisCompletedEvent`, `VideoTamperDetectedEvent`, `VideoIdentityMismatchEvent`.
+  - **طبقة Application — CQRS Commands, Queries, DTOs, Validators:**
+    - إنشاء `IVideoIntegrityService` كواجهة خدمة التحليل.
+    - إنشاء `RequestVideoAnalysisCommand` + Handler: طلب تحليل فيديو جديد.
+    - إنشاء `RecordManualReviewCommand` + Handler: تسجيل المراجعة اليدوية.
+    - إنشاء `GetVideoAnalysisQuery` + Handler: استعلام تحليل واحد.
+    - إنشاء `GetVideoAnalysesByCompetitionQuery` + Handler: استعلام تحليلات المنافسة.
+    - إنشاء DTOs: `VideoIntegrityAnalysisDto`, `VideoAnalysisFlagDto` مع Mapping Extensions.
+    - إنشاء Validators: `RequestVideoAnalysisCommandValidator`, `RecordManualReviewCommandValidator` باستخدام FluentValidation.
+  - **طبقة Infrastructure — خدمات التحليل:**
+    - إنشاء `VideoIntegrityService`: خدمة التحليل الرئيسية التي تنسق بين AI Gateway وخوارزميات التحليل.
+    - إنشاء `VideoAnalysisPromptBuilder`: بناء البرومبتات المتخصصة للتحليل الجنائي للفيديو (باللغة العربية).
+    - إنشاء `VideoAnalysisModels`: نماذج الاستجابة الداخلية لتحليل AI.
+    - إنشاء `VideoIntegrityAnalysisRepository`: تنفيذ المستودع مع EF Core.
+    - إنشاء EF Core Configurations: `VideoIntegrityAnalysisConfiguration`, `VideoAnalysisFlagConfiguration` مع فهارس محسنة.
+    - تحديث `TenantDbContext` بإضافة DbSets الجديدة.
+    - تحديث `DependencyInjection.cs` بتسجيل الخدمات والمستودعات الجديدة.
+  - **طبقة API — Minimal API Endpoints:**
+    - إنشاء `VideoIntegrityEndpoints` مع 4 نقاط نهاية: POST /analyze, GET /{id}, GET /competition/{id}, POST /{id}/review.
+    - إنشاء نماذج الطلب: `RequestVideoAnalysisRequest`, `RecordManualReviewRequest`.
+    - تحديث `Program.cs` بتسجيل Endpoints الجديدة.
+  - **اختبارات الوحدة (Unit Tests):**
+    - `VideoIntegrityAnalysisEntityTests`: 14 اختبار لكيان Domain (إنشاء, انتقال حالات, تحقق, أعلام).
+    - `VideoIntegrityServiceTests`: 7 اختبارات لخدمة التحليل (نجاح, فشل, أخطاء, أعلام).
+    - `VideoAnalysisValidatorTests`: 7 اختبارات لـ FluentValidation.
+    - `EvaluationIsolationTests`: 5 اختبارات للتأكد من عزل الخدمة عن منطق التقييم الأساسي.
+  - **آلية اكتشاف التلاعب:**
+    - كشف إعادة التسجيل من شاشة (Moiré patterns, refresh lines, bezels).
+    - كشف التعديل والقص (editing, splicing).
+    - كشف التزييف العميق (Deepfake indicators).
+    - التحقق من تناسق البيانات الوصفية (Metadata).
+  - **آلية التحقق من الهوية:**
+    - اكتشاف الوجوه وعدّها.
+    - مقارنة الوجه مع صورة مرجعية.
+    - تقييم جودة صورة الوجه.
+  - **العزل عن منطق التقييم الأساسي:**
+    - الخدمة مستقلة تماماً عن TechnicalScoringService و FinancialScoringService.
+    - لا توجد navigation properties بين VideoIntegrityAnalysis وكيانات التقييم.
+    - جداول قاعدة بيانات منفصلة مع فهارس مخصصة.
+    - اختبارات عزل مخصصة تضمن عدم وجود تبعيات.
+- **الاعتماديات التي تم حلها:** TASK-401 (AI Gateway) مطلوبة لاستخدام IAiGateway.
+- **ملاحظات للوكيل التالي:**
+  - إعدادات AI تُجلب ديناميكياً من قاعدة البيانات عبر AI Gateway (لا يوجد hardcoded keys).
+  - البرومبتات مكتوبة بالعربية وتطلب استجابة JSON منظمة.
+  - درجة الحرارة (Temperature) منخفضة (0.1) لضمان تحليل متسق وموضوعي.
+  - الخدمة تدعم المراجعة اليدوية عندما تكون النتائج غير حاسمة.
+  - جميع قيم الثقة (Confidence) محصورة بين 0.0 و 1.0.
+  - DeleteBehavior.NoAction مطبق على جميع العلاقات.
+  - يمكن البدء في TASK-402 (RAG Pipeline) أو TASK-403 (Technical Scoring AI).
 
 ### 2026-03-28 - TASK-401: تطوير واجهة موحدة للذكاء الاصطناعي (AI Gateway) مع تشفير AES-256
 - **ما تم إنجازه:**
