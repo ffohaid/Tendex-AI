@@ -8,7 +8,7 @@
 | :--- | :--- | :--- | :--- |
 | Sprint 0: التخطيط وإدارة المنتج | ✅ مكتمل | 100% | تم إعداد خطة التنفيذ (Sprint Backlog) وقوالب العمل. |
 | Sprint 1: البنية التحتية | ✅ مكتمل | 100% | تم إنجاز TASK-101, TASK-102, TASK-103, TASK-104, TASK-105, TASK-106 |
-| Sprint 2: الخدمات الأساسية | ⏳ لم يبدأ | 0% | - |
+| Sprint 2: الخدمات الأساسية | 🔄 قيد التنفيذ | 15% | تم إنجاز TASK-204 (Audit Trail) |
 | Sprint 3: سير العمل والتقييم | ⏳ لم يبدأ | 0% | - |
 | Sprint 4: تكامل الذكاء الاصطناعي | ⏳ لم يبدأ | 0% | - |
 | Sprint 5: الواجهة الأمامية | ⏳ لم يبدأ | 0% | - |
@@ -20,6 +20,68 @@
 ## سجل المهام المنجزة (Completed Tasks Log)
 
 *يرجى إضافة أحدث مهمة منجزة في أعلى هذه القائمة.*
+
+### 2026-03-28 - TASK-204: بناء نظام سجل التدقيق غير القابل للتعديل (Immutable Audit Trail)
+- **ما تم إنجازه:**
+  - إنشاء كيان `AuditLogEntry` في Domain Layer مع جميع الحقول المطلوبة (UserId, UserName, IpAddress, ActionType, EntityType, EntityId, OldValues, NewValues, Reason, SessionId, TenantId, TimestampUtc).
+  - إنشاء `AuditActionType` Enum يدعم 11 نوع إجراء: Create, Update, Delete, Approve, Reject, Login, Logout, Access, Export, Impersonate, StateTransition.
+  - إنشاء `IAuditLogService` و `ICurrentUserService` في Application Layer.
+  - إنشاء `AuditLogService` في Infrastructure Layer مع دعم التسجيل، الاستعلام المتقدم (فلترة حسب Tenant, User, ActionType, EntityType, نطاق زمني)، والترقيم (Pagination).
+  - إنشاء `CurrentUserService` لاستخراج بيانات المستخدم الحالي من HttpContext (Claims).
+  - إنشاء `AuditTrailInterceptor` (EF Core SaveChanges Interceptor) لالتقاط جميع تغييرات الكيانات تلقائياً وتسجيلها في سجل التدقيق مع القيم القديمة والجديدة بصيغة JSON.
+  - إنشاء `ImmutableAuditLogInterceptor` لمنع عمليات UPDATE و DELETE على سجل التدقيق برمجياً مع رسالة أمنية واضحة (SECURITY VIOLATION).
+  - إنشاء `AuditLogEntryConfiguration` (EF Core Fluent API) مع:
+    - جدول `AuditLogEntries` في Schema `audit`.
+    - 5 فهارس مُحسّنة للاستعلامات الشائعة (حسب Tenant+Time, User+Time, Entity+Time, ActionType+Time, Time).
+    - تخزين ActionType كنص (String Conversion) لسهولة القراءة.
+    - أعمدة `nvarchar(max)` للقيم القديمة والجديدة.
+  - إنشاء CQRS Queries: `GetAuditLogsQuery` و `GetAuditLogByIdQuery` مع Handlers.
+  - إنشاء Minimal API Endpoints (Read-Only) في `/api/v1/audit-logs`:
+    - `GET /` - استعلام مع فلاتر وترقيم.
+    - `GET /{id}` - جلب سجل واحد.
+    - `GET /entity/{entityType}/{entityId}` - سجلات كيان محدد.
+    - `GET /action-types` - قائمة أنواع الإجراءات.
+  - تسجيل جميع الخدمات والـ Interceptors في DependencyInjection.cs.
+  - إضافة `DbSet<AuditLogEntry>` في `MasterPlatformDbContext`.
+  - كتابة 24 اختبار وحدة جديد (إجمالي 65 اختبار ناجح) تغطي:
+    - صحة كيان AuditLogEntry وعدم قابليته للتعديل (Immutability).
+    - منع UPDATE/DELETE عبر ImmutableAuditLogInterceptor.
+    - تسجيل واستعلام وفلترة وترقيم سجلات التدقيق.
+    - صحة تكوين قاعدة البيانات (Schema, Indexes, Constraints).
+    - صحة CQRS Query Handlers.
+- **الملفات المُنشأة/المعدّلة:**
+  - `Domain/Enums/AuditActionType.cs` (جديد)
+  - `Domain/Entities/AuditLogEntry.cs` (جديد)
+  - `Application/Common/Interfaces/IAuditLogService.cs` (جديد)
+  - `Application/Common/Interfaces/ICurrentUserService.cs` (جديد)
+  - `Application/AuditTrail/Queries/GetAuditLogsQuery.cs` (جديد)
+  - `Application/AuditTrail/Queries/GetAuditLogsQueryHandler.cs` (جديد)
+  - `Application/AuditTrail/Queries/GetAuditLogByIdQuery.cs` (جديد)
+  - `Application/AuditTrail/Queries/GetAuditLogByIdQueryHandler.cs` (جديد)
+  - `Infrastructure/Persistence/Configurations/AuditLogEntryConfiguration.cs` (جديد)
+  - `Infrastructure/Persistence/Interceptors/AuditTrailInterceptor.cs` (جديد)
+  - `Infrastructure/Persistence/Interceptors/ImmutableAuditLogInterceptor.cs` (جديد)
+  - `Infrastructure/Services/AuditLogService.cs` (جديد)
+  - `Infrastructure/Services/CurrentUserService.cs` (جديد)
+  - `Infrastructure/Persistence/MasterPlatformDbContext.cs` (معدّل - إضافة DbSet)
+  - `Infrastructure/DependencyInjection.cs` (معدّل - تسجيل الخدمات)
+  - `API/Endpoints/AuditTrailEndpoints.cs` (جديد)
+  - `API/Program.cs` (معدّل - تسجيل Endpoints)
+  - `Tests/AuditTrail/AuditLogEntryTests.cs` (جديد)
+  - `Tests/AuditTrail/ImmutableAuditLogInterceptorTests.cs` (جديد)
+  - `Tests/AuditTrail/AuditLogServiceTests.cs` (جديد)
+  - `Tests/AuditTrail/AuditLogEntryConfigurationTests.cs` (جديد)
+  - `Tests/AuditTrail/GetAuditLogsQueryHandlerTests.cs` (جديد)
+- **الاعتماديات التي تم حلها:** TASK-105 (قاعدة البيانات المركزية), TASK-103 (Clean Architecture).
+- **ملاحظات للوكيل التالي:**
+  - نظام سجل التدقيق يعمل تلقائياً عبر EF Core Interceptor — أي تغيير على أي كيان يُسجَّل تلقائياً.
+  - سجل التدقيق محمي برمجياً من UPDATE/DELETE عبر `ImmutableAuditLogInterceptor`.
+  - الـ API Endpoints للقراءة فقط (GET) — لا يوجد POST/PUT/DELETE.
+  - يجب إنشاء EF Core Migration جديد لإضافة جدول `AuditLogEntries` عند النشر: `dotnet ef migrations add AddAuditLogEntries --project src/TendexAI.Infrastructure --startup-project src/TendexAI.API --context MasterPlatformDbContext`.
+  - `AuditTrailInterceptor` يتخطى كيان `AuditLogEntry` نفسه لمنع التكرار اللانهائي.
+  - القيم القديمة والجديدة تُخزَّن بصيغة JSON في أعمدة `nvarchar(max)`.
+  - يمكن توسيع `AuditActionType` بإضافة أنواع جديدة حسب الحاجة.
+  - جميع الاختبارات (65) تعمل بنجاح.
 
 ### 2026-03-28 - TASK-106: إعداد مسارات التكامل المستمر (CI Pipelines)
 - **ما تم إنجازه:**

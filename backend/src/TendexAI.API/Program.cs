@@ -1,3 +1,4 @@
+using TendexAI.API.Endpoints;
 using TendexAI.Application;
 using TendexAI.Infrastructure;
 
@@ -41,5 +42,8 @@ app.MapGet("/api/v1/health", () => Results.Ok(new
 }))
 .WithName("HealthCheck")
 .WithTags("System");
+
+// Audit Trail Endpoints (Read-Only)
+app.MapAuditTrailEndpoints();
 
 app.Run();

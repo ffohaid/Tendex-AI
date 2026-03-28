@@ -29,6 +29,8 @@ public sealed class MasterPlatformDbContext : DbContext, IMasterPlatformDbContex
 
     public DbSet<AiConfiguration> AiConfigurations => Set<AiConfiguration>();
 
+    public DbSet<AuditLogEntry> AuditLogEntries => Set<AuditLogEntry>();
+
     // ----- Model Configuration -----
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)

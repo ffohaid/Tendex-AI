@@ -6,6 +6,7 @@ using TendexAI.Domain.Common;
 using TendexAI.Infrastructure.MultiTenancy;
 using TendexAI.Infrastructure.Persistence;
 using TendexAI.Infrastructure.Persistence.Interceptors;
+using TendexAI.Infrastructure.Services;
 
 namespace TendexAI.Infrastructure;
 
@@ -21,6 +22,8 @@ public static class DependencyInjection
     {
         // ----- Interceptors -----
         services.AddSingleton<AuditableEntityInterceptor>();
+        services.AddScoped<AuditTrailInterceptor>();
+        services.AddSingleton<ImmutableAuditLogInterceptor>();
 
         // ----- Master Platform Database (Central) -----
         var masterConnectionString = configuration.GetConnectionString("MasterPlatform");
@@ -40,7 +43,12 @@ public static class DependencyInjection
                     errorNumbersToAdd: null);
             });
 
-            options.AddInterceptors(auditInterceptor);
+            var auditTrailInterceptor = sp.GetRequiredService<AuditTrailInterceptor>();
+            var immutableAuditInterceptor = sp.GetRequiredService<ImmutableAuditLogInterceptor>();
+
+            // CRITICAL: ImmutableAuditLogInterceptor MUST run before AuditTrailInterceptor
+            // to block any UPDATE/DELETE on AuditLogEntry before they are processed.
+            options.AddInterceptors(immutableAuditInterceptor, auditInterceptor, auditTrailInterceptor);
         });
 
         // Register the master DbContext abstraction for Application layer
@@ -66,6 +74,10 @@ public static class DependencyInjection
                         errorNumbersToAdd: null);
                 });
         });
+
+        // ----- Audit Trail Services -----
+        services.AddScoped<ICurrentUserService, CurrentUserService>();
+        services.AddScoped<IAuditLogService, AuditLogService>();
 
         // ----- Multi-Tenancy Services -----
         services.AddHttpContextAccessor();
