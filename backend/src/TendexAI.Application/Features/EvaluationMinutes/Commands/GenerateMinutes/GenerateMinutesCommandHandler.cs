@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Text.Json;
 using Microsoft.Extensions.Logging;
 using TendexAI.Application.Common.Messaging;
@@ -13,6 +14,11 @@ namespace TendexAI.Application.Features.EvaluationMinutes.Commands.GenerateMinut
 public sealed class GenerateMinutesCommandHandler
     : ICommandHandler<GenerateMinutesCommand, EvaluationMinutesDto>
 {
+    private static readonly JsonSerializerOptions s_jsonOptions = new()
+    {
+        WriteIndented = true
+    };
+
     private readonly ICompetitionRepository _competitionRepo;
     private readonly ITechnicalEvaluationRepository _technicalRepo;
     private readonly IFinancialEvaluationRepository _financialRepo;
@@ -121,7 +127,7 @@ public sealed class GenerateMinutesCommandHandler
         {
             CompetitionName = competition.ProjectNameAr,
             CompetitionNumber = competition.ReferenceNumber,
-            MinutesDate = DateTime.UtcNow.ToString("yyyy-MM-dd"),
+            MinutesDate = DateTime.UtcNow.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture),
             EvaluationType = "فني",
             TotalOffers = offers.Count,
             PassedOffers = offers.Count(o => o.TechnicalResult == OfferTechnicalResult.Passed),
@@ -144,8 +150,7 @@ public sealed class GenerateMinutesCommandHandler
             ApprovedBy = technicalEval.ApprovedBy
         };
 
-        return Result.Success((titleAr, JsonSerializer.Serialize(content,
-            new JsonSerializerOptions { WriteIndented = true })));
+        return Result.Success((titleAr, JsonSerializer.Serialize(content, s_jsonOptions)));
     }
 
     private async Task<Result<(string TitleAr, string ContentJson)>> GenerateFinancialMinutes(
@@ -191,7 +196,7 @@ public sealed class GenerateMinutesCommandHandler
         {
             CompetitionName = competition.ProjectNameAr,
             CompetitionNumber = competition.ReferenceNumber,
-            MinutesDate = DateTime.UtcNow.ToString("yyyy-MM-dd"),
+            MinutesDate = DateTime.UtcNow.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture),
             EvaluationType = "مالي",
             EstimatedTotalCost = estimatedTotal,
             TotalEvaluatedOffers = passedOffers.Count,
@@ -205,8 +210,7 @@ public sealed class GenerateMinutesCommandHandler
             Recommendation = "توصي اللجنة باعتماد نتائج التقييم المالي والانتقال لمرحلة الترسية."
         };
 
-        return Result.Success((titleAr, JsonSerializer.Serialize(content,
-            new JsonSerializerOptions { WriteIndented = true })));
+        return Result.Success((titleAr, JsonSerializer.Serialize(content, s_jsonOptions)));
     }
 
     private async Task<Result<(string TitleAr, string ContentJson)>> GenerateFinalComprehensiveMinutes(
@@ -246,7 +250,7 @@ public sealed class GenerateMinutesCommandHandler
         {
             CompetitionName = competition.ProjectNameAr,
             CompetitionNumber = competition.ReferenceNumber,
-            MinutesDate = DateTime.UtcNow.ToString("yyyy-MM-dd"),
+            MinutesDate = DateTime.UtcNow.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture),
             EvaluationType = "شامل",
             EstimatedTotalCost = estimatedTotal,
             TotalSubmittedOffers = offers.Count,
@@ -264,8 +268,8 @@ public sealed class GenerateMinutesCommandHandler
                     ? Math.Round(((r.TotalOfferAmount - estimatedTotal) / estimatedTotal) * 100m, 2)
                     : 0m
             }).ToList(),
-            RecommendedSupplier = rankings.FirstOrDefault()?.SupplierName,
-            RecommendedAmount = rankings.FirstOrDefault()?.TotalOfferAmount ?? 0m,
+            RecommendedSupplier = rankings.Count > 0 ? rankings[0].SupplierName : null,
+            RecommendedAmount = rankings.Count > 0 ? rankings[0].TotalOfferAmount : 0m,
             AwardStatus = award?.Status.ToString() ?? "NotGenerated",
             AwardJustification = award?.Justification,
             Recommendation = rankings.Count > 0
@@ -275,7 +279,6 @@ public sealed class GenerateMinutesCommandHandler
                 : "لا توجد عروض مؤهلة للترسية."
         };
 
-        return Result.Success((titleAr, JsonSerializer.Serialize(content,
-            new JsonSerializerOptions { WriteIndented = true })));
+        return Result.Success((titleAr, JsonSerializer.Serialize(content, s_jsonOptions)));
     }
 }

@@ -1,3 +1,4 @@
+using System.Collections.ObjectModel;
 using Microsoft.Extensions.Logging;
 using TendexAI.Application.Common.Messaging;
 using TendexAI.Application.Features.TechnicalEvaluation.Dtos;
@@ -133,7 +134,7 @@ public sealed class CompleteScoringCommandHandler
         return Result.Success<IReadOnlyList<OfferEvaluationResultDto>>(ranked.AsReadOnly());
     }
 
-    private static IReadOnlyList<CriterionScoreSummaryDto> BuildCriterionSummaries(
+    private static ReadOnlyCollection<CriterionScoreSummaryDto> BuildCriterionSummaries(
         List<EvaluationCriterion> criteria,
         IReadOnlyList<TechnicalScore> offerScores,
         IReadOnlyCollection<AiTechnicalScore> aiScores,

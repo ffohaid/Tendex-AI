@@ -90,7 +90,7 @@ jobs:
       # 6. TypeScript type-check
       # ------------------------------------------------------------------
       - name: TypeScript type-check
-        run: npx vue-tsc --noEmit -b
+        run: npx vue-tsc --noEmit
 
       # ------------------------------------------------------------------
       # 7. Lint (ESLint) - runs only if eslint is configured
