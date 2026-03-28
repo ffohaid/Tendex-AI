@@ -5,7 +5,7 @@ import { createRouter, createWebHistory, type RouteRecordRaw } from 'vue-router'
  *
  * Routes are organized by layout:
  * - MainLayout: authenticated pages with sidebar/header/footer
- * - AuthLayout: authentication pages (login, etc.)
+ * - AuthLayout: authentication pages (login, MFA, password reset)
  *
  * Lazy-loaded components for optimal bundle splitting.
  */
@@ -13,91 +13,92 @@ const routes: RouteRecordRaw[] = [
   {
     path: '/',
     component: () => import('@/layouts/MainLayout.vue'),
+    meta: { requiresAuth: true },
     children: [
       {
         path: '',
         name: 'Dashboard',
         component: () => import('@/views/DashboardView.vue'),
-        meta: { title: 'Tendex AI - Dashboard' },
+        meta: { title: 'Tendex AI - Dashboard', requiresAuth: true },
       },
       /* Placeholder routes for future Sprint 5 tasks */
       {
         path: 'rfp',
         name: 'RfpList',
         component: () => import('@/views/DashboardView.vue'),
-        meta: { title: 'Tendex AI - RFP List' },
+        meta: { title: 'Tendex AI - RFP List', requiresAuth: true },
       },
       {
         path: 'rfp/create',
         name: 'RfpCreate',
         component: () => import('@/views/DashboardView.vue'),
-        meta: { title: 'Tendex AI - Create RFP' },
+        meta: { title: 'Tendex AI - Create RFP', requiresAuth: true },
       },
       {
         path: 'committees/permanent',
         name: 'CommitteesPermanent',
         component: () => import('@/views/DashboardView.vue'),
-        meta: { title: 'Tendex AI - Permanent Committees' },
+        meta: { title: 'Tendex AI - Permanent Committees', requiresAuth: true },
       },
       {
         path: 'committees/temporary',
         name: 'CommitteesTemporary',
         component: () => import('@/views/DashboardView.vue'),
-        meta: { title: 'Tendex AI - Temporary Committees' },
+        meta: { title: 'Tendex AI - Temporary Committees', requiresAuth: true },
       },
       {
         path: 'evaluation/technical',
         name: 'EvaluationTechnical',
         component: () => import('@/views/DashboardView.vue'),
-        meta: { title: 'Tendex AI - Technical Evaluation' },
+        meta: { title: 'Tendex AI - Technical Evaluation', requiresAuth: true },
       },
       {
         path: 'evaluation/financial',
         name: 'EvaluationFinancial',
         component: () => import('@/views/DashboardView.vue'),
-        meta: { title: 'Tendex AI - Financial Evaluation' },
+        meta: { title: 'Tendex AI - Financial Evaluation', requiresAuth: true },
       },
       {
         path: 'approvals',
         name: 'Approvals',
         component: () => import('@/views/DashboardView.vue'),
-        meta: { title: 'Tendex AI - Approvals' },
+        meta: { title: 'Tendex AI - Approvals', requiresAuth: true },
       },
       {
         path: 'inquiries',
         name: 'Inquiries',
         component: () => import('@/views/DashboardView.vue'),
-        meta: { title: 'Tendex AI - Inquiries' },
+        meta: { title: 'Tendex AI - Inquiries', requiresAuth: true },
       },
       {
         path: 'reports',
         name: 'Reports',
         component: () => import('@/views/DashboardView.vue'),
-        meta: { title: 'Tendex AI - Reports' },
+        meta: { title: 'Tendex AI - Reports', requiresAuth: true },
       },
       {
         path: 'ai-assistant',
         name: 'AiAssistant',
         component: () => import('@/views/DashboardView.vue'),
-        meta: { title: 'Tendex AI - AI Assistant' },
+        meta: { title: 'Tendex AI - AI Assistant', requiresAuth: true },
       },
       {
         path: 'settings/organization',
         name: 'SettingsOrganization',
         component: () => import('@/views/DashboardView.vue'),
-        meta: { title: 'Tendex AI - Organization Settings' },
+        meta: { title: 'Tendex AI - Organization Settings', requiresAuth: true },
       },
       {
         path: 'settings/users',
         name: 'SettingsUsers',
         component: () => import('@/views/DashboardView.vue'),
-        meta: { title: 'Tendex AI - User Management' },
+        meta: { title: 'Tendex AI - User Management', requiresAuth: true },
       },
       {
         path: 'settings/roles',
         name: 'SettingsRoles',
         component: () => import('@/views/DashboardView.vue'),
-        meta: { title: 'Tendex AI - Roles & Permissions' },
+        meta: { title: 'Tendex AI - Roles & Permissions', requiresAuth: true },
       },
     ],
   },
@@ -105,8 +106,36 @@ const routes: RouteRecordRaw[] = [
     path: '/auth',
     component: () => import('@/layouts/AuthLayout.vue'),
     children: [
-      /* Auth routes will be added in TASK-502 */
+      {
+        path: 'login',
+        name: 'Login',
+        component: () => import('@/views/auth/LoginView.vue'),
+        meta: { title: 'Tendex AI - Login', guest: true },
+      },
+      {
+        path: 'mfa-verify',
+        name: 'MfaVerify',
+        component: () => import('@/views/auth/MfaVerifyView.vue'),
+        meta: { title: 'Tendex AI - Verify Code', guest: true },
+      },
+      {
+        path: 'forgot-password',
+        name: 'ForgotPassword',
+        component: () => import('@/views/auth/ForgotPasswordView.vue'),
+        meta: { title: 'Tendex AI - Forgot Password', guest: true },
+      },
+      {
+        path: 'reset-password',
+        name: 'ResetPassword',
+        component: () => import('@/views/auth/ResetPasswordView.vue'),
+        meta: { title: 'Tendex AI - Reset Password', guest: true },
+      },
     ],
+  },
+  /* Catch-all redirect */
+  {
+    path: '/:pathMatch(.*)*',
+    redirect: '/',
   },
 ]
 
@@ -116,14 +145,38 @@ const router = createRouter({
 })
 
 /**
- * Global navigation guard to update the document title.
+ * Global navigation guard.
+ *
+ * - Updates document title.
+ * - Redirects unauthenticated users to login.
+ * - Redirects authenticated users away from guest-only pages.
  */
 router.beforeEach((to, _from, next) => {
+  /* Update document title */
   const title = to.meta.title as string | undefined
   if (title) {
     document.title = title
   }
-  next()
+
+  /* Check authentication state from localStorage */
+  const hasToken = !!localStorage.getItem('access_token')
+  const requiresAuth = to.matched.some(
+    (record) => record.meta.requiresAuth,
+  )
+  const isGuestOnly = to.meta.guest === true
+
+  if (requiresAuth && !hasToken) {
+    /* Redirect to login with return URL */
+    next({
+      name: 'Login',
+      query: { redirect: to.fullPath },
+    })
+  } else if (isGuestOnly && hasToken) {
+    /* Already authenticated, redirect to dashboard */
+    next({ name: 'Dashboard' })
+  } else {
+    next()
+  }
 })
 
 export default router

@@ -6,5 +6,7 @@ declare module 'vue-router' {
     title?: string
     /** Whether authentication is required */
     requiresAuth?: boolean
+    /** Whether the route is for guests only (unauthenticated users) */
+    guest?: boolean
   }
 }
