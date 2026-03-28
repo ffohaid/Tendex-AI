@@ -306,6 +306,38 @@ watch(activeTab, () => {
           </div>
         </div>
 
+        <!-- Quick action cards (TASK-604) -->
+        <div class="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <button
+            type="button"
+            class="flex items-center gap-4 rounded-lg border border-surface-dim bg-white p-4 text-start transition-colors hover:border-primary/30 hover:bg-primary/5"
+            @click="router.push({ name: 'TenantFeatureFlags', params: { id: tenantId } })"
+          >
+            <div class="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
+              <i class="pi pi-flag text-lg text-primary"></i>
+            </div>
+            <div>
+              <p class="text-sm font-semibold text-secondary">{{ t('tenants.quickActions.featureFlags') }}</p>
+              <p class="text-xs text-tertiary">{{ t('tenants.quickActions.featureFlagsDesc') }}</p>
+            </div>
+            <i class="pi pi-chevron-left ms-auto text-xs text-tertiary rtl:pi-chevron-right"></i>
+          </button>
+          <button
+            type="button"
+            class="flex items-center gap-4 rounded-lg border border-surface-dim bg-white p-4 text-start transition-colors hover:border-primary/30 hover:bg-primary/5"
+            @click="router.push({ name: 'TenantBranding', params: { id: tenantId } })"
+          >
+            <div class="flex h-10 w-10 items-center justify-center rounded-lg bg-violet-100">
+              <i class="pi pi-palette text-lg text-violet-600"></i>
+            </div>
+            <div>
+              <p class="text-sm font-semibold text-secondary">{{ t('tenants.quickActions.branding') }}</p>
+              <p class="text-xs text-tertiary">{{ t('tenants.quickActions.brandingDesc') }}</p>
+            </div>
+            <i class="pi pi-chevron-left ms-auto text-xs text-tertiary rtl:pi-chevron-right"></i>
+          </button>
+        </div>
+
         <!-- Success message -->
         <div
           v-if="successMessage"

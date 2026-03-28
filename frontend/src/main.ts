@@ -22,4 +22,12 @@ setupPrimeVue(app)
 /* Apply initial locale direction (RTL for Arabic) */
 applyLocaleDirection(DEFAULT_LOCALE)
 
+/**
+ * Restore tenant branding from sessionStorage on app startup.
+ * This prevents a flash of default branding on page refresh.
+ */
+import { useBrandingStore } from '@/stores/branding'
+const brandingStore = useBrandingStore()
+brandingStore.restoreFromStorage()
+
 app.mount('#app')

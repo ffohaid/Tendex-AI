@@ -12,7 +12,7 @@
 | Sprint 3: سير العمل والتقييم | 🔄 قيد التنفيذ | 71% | تم إنجاز TASK-301, TASK-302, TASK-303, TASK-304, TASK-305 |
 | Sprint 4: تكامل الذكاء الاصطناعي | 🔄 قيد التنفيذ | 71% | تم إنجاز TASK-401, TASK-402, TASK-403, TASK-404, TASK-405 |
 | Sprint 5: الواجهة الأمامية | 🔄 قيد التنفيذ | 71% | تم إنجاز TASK-501, TASK-502, TASK-503, TASK-504, TASK-505 |
-| Sprint 6: لوحة تحكم المشغل | 🔄 قيد التنفيذ | 57% | تم إنجاز TASK-601, TASK-602, TASK-603 |
+| Sprint 6: لوحة تحكم المشغل | ✅ مكتمل | 100% | تم إنجاز TASK-601, TASK-602, TASK-603, TASK-604 |
 | Sprint 7: الاختبار والنشر | ⏳ لم يبدأ | 0% | - |
 
 ---
@@ -21,66 +21,87 @@
 
 *يرجى إضافة أحدث مهمة منجزة في أعلى هذه القائمة.*
 
+### 2026-03-28 - TASK-604: إدارة التكوينات والميزات (Feature Flags UI) وتخصيص الهوية البصرية
+- **ما تم إنجازه:**
+  - **الباكند (.NET 10 - Clean Architecture / CQRS):**
+    - **BatchToggleFeatureFlagsCommand + Handler:** أمر CQRS لتفعيل/تعطيل مجموعة من الميزات دفعة واحدة مع تسجيل في Audit Trail.
+    - **GetTenantBrandingQuery + Handler:** استعلام CQRS لجلب إعدادات الهوية البصرية (شعار، ألوان) لجهة محددة.
+    - **TenantBrandingDto:** DTO جديد لنقل بيانات الهوية البصرية.
+    - **BatchToggleFeatureFlagsRequest DTO:** طلب تبديل دفعي للميزات.
+    - **تحديث FeatureFlagEndpoints.cs:** إضافة `POST /api/v1/feature-flags/tenants/{tenantId}/batch-toggle`.
+    - **تحديث TenantEndpoints.cs:** إضافة `GET /api/v1/tenants/{tenantId}/branding`.
+  - **الفرونتند (Vue 3 + TypeScript + Tailwind CSS):**
+    - **TypeScript Types:**
+      - `types/featureFlag.ts`: أنواع شاملة لنظام Feature Flags (FeatureDefinitionDto, TenantFeatureFlagDto, MergedFeatureFlag, BatchToggleFeatureFlagsRequest).
+      - `types/branding.ts`: أنواع الهوية البصرية (TenantBrandingDto, DEFAULT_BRANDING) مع قيم افتراضية.
+    - **API Services:**
+      - `services/featureFlagService.ts`: خدمة API كاملة لجلب التعريفات، جلب ميزات الجهة، تبديل فردي، وتبديل دفعي.
+      - `services/brandingService.ts`: خدمة API لجلب/تحديث الهوية البصرية مع رفع الشعار عبر FileEndpoints (query parameters) وجلب presigned download URL.
+    - **Pinia Stores:**
+      - `stores/featureFlag.ts`: مخزن حالة لإدارة Feature Flags مع دمج التعريفات العامة مع حالة الجهة، تصنيف حسب الفئة، وإحصائيات.
+      - `stores/branding.ts`: مخزن حالة للهوية البصرية مع `loadAndApplyBranding()` لتطبيق CSS variables ديناميكياً وحفظ/استعادة من sessionStorage.
+    - **واجهات المستخدم:**
+      - `TenantFeatureFlagsView.vue`: صفحة إدارة Feature Flags لكل جهة مع تصنيف حسب الفئة، بحث وتصفية، toggle فردي، حفظ دفعي، تفعيل/تعطيل الكل، إعادة تعيين للافتراضي، شريط تغييرات غير محفوظة، وإحصائيات.
+      - `TenantBrandingView.vue`: صفحة تخصيص الهوية البصرية مع رفع الشعار (drag & drop)، منتقي ألوان، معاينة حية، وإعادة تعيين للافتراضي.
+    - **تكامل الهوية البصرية الديناميكية:**
+      - تحديث `AppHeader.vue` لعرض شعار الجهة الحالية ديناميكياً.
+      - تحديث `TenantSelector.vue` لتحميل الهوية البصرية عند تبديل الجهة.
+      - تحديث `impersonation.ts` store لإعادة تحميل الهوية عند بدء/إنهاء الانتحال.
+      - تحديث `auth.ts` store لتنظيف الهوية عند تسجيل الخروج.
+      - تحديث `main.ts` لاستعادة الهوية من sessionStorage عند بدء التطبيق.
+    - **تحديث TenantDetailView.vue:** إضافة أزرار وصول سريع لـ Feature Flags و Branding في هيدر صفحة تفاصيل الجهة.
+    - **تحديث Router:** إضافة مسارين جديدين `/operator/tenants/:id/feature-flags` و `/operator/tenants/:id/branding`.
+    - **تحديث ملفات الترجمة:** إضافة 80+ مفتاح ترجمة جديد في ar.json و en.json لجميع عناصر Feature Flags و Branding.
+- **الملفات المنشأة/المعدلة:**
+  - `backend/src/TendexAI.Application/Features/FeatureFlags/Commands/BatchToggleFeatureFlags/BatchToggleFeatureFlagsCommand.cs` (جديد)
+  - `backend/src/TendexAI.Application/Features/FeatureFlags/Commands/BatchToggleFeatureFlags/BatchToggleFeatureFlagsCommandHandler.cs` (جديد)
+  - `backend/src/TendexAI.Application/Features/Tenants/Queries/GetTenantBranding/GetTenantBrandingQuery.cs` (جديد)
+  - `backend/src/TendexAI.Application/Features/Tenants/Queries/GetTenantBranding/GetTenantBrandingQueryHandler.cs` (جديد)
+  - `backend/src/TendexAI.Application/Features/Tenants/Dtos/TenantDtos.cs` (معدل - إضافة TenantBrandingDto)
+  - `backend/src/TendexAI.Application/Features/FeatureFlags/Dtos/FeatureFlagDtos.cs` (معدل - إضافة BatchToggleFeatureFlagsRequest)
+  - `backend/src/TendexAI.API/Endpoints/FeatureFlagEndpoints.cs` (معدل - إضافة batch-toggle endpoint)
+  - `backend/src/TendexAI.API/Endpoints/TenantEndpoints.cs` (معدل - إضافة branding endpoint)
+  - `frontend/src/types/featureFlag.ts` (جديد)
+  - `frontend/src/types/branding.ts` (جديد)
+  - `frontend/src/services/featureFlagService.ts` (جديد)
+  - `frontend/src/services/brandingService.ts` (جديد)
+  - `frontend/src/stores/featureFlag.ts` (جديد)
+  - `frontend/src/stores/branding.ts` (جديد)
+  - `frontend/src/views/tenants/TenantFeatureFlagsView.vue` (جديد)
+  - `frontend/src/views/tenants/TenantBrandingView.vue` (جديد)
+  - `frontend/src/views/tenants/TenantDetailView.vue` (معدل - إضافة أزرار وصول)
+  - `frontend/src/components/layout/AppHeader.vue` (معدل - شعار ديناميكي)
+  - `frontend/src/components/operator/TenantSelector.vue` (معدل - تحميل branding)
+  - `frontend/src/stores/impersonation.ts` (معدل - branding reload عند الانتحال)
+  - `frontend/src/stores/auth.ts` (معدل - تنظيف branding عند logout)
+  - `frontend/src/main.ts` (معدل - استعادة branding)
+  - `frontend/src/router/index.ts` (معدل - مسارات جديدة)
+  - `frontend/src/locales/ar.json` (معدل - 80+ مفتاح)
+  - `frontend/src/locales/en.json` (معدل - 80+ مفتاح)
+- **الاعتماديات التي تم حلها:** TASK-601 (واجهات إدارة الجهات).
+- **ملاحظات للوكيل التالي:**
+  - جميع الواجهات مربوطة بـ APIs الخلفية عبر خدمات featureFlagService و brandingService. لا توجد بيانات وهمية.
+  - الهوية البصرية تُطبَّق ديناميكياً عبر CSS custom properties في 4 نقاط دخول: تسجيل الدخول (استعادة من sessionStorage)، تبديل الجهة (TenantSelector)، بدء الانتحال، وإنهاء الانتحال.
+  - رفع الشعار يستخدم FileEndpoints.cs مع query parameters (ليس FormData fields) ويجلب presigned download URL.
+  - Feature Flags تدعم التبديل الفردي والدفعي مع تتبع التغييرات غير المحفوظة.
+  - Sprint 6 مكتمل بالكامل (TASK-601, TASK-602, TASK-603, TASK-604).
+
 ### 2026-03-28 - TASK-602: لوحة معلومات المشغل (Super Admin Dashboard) - استهلاك الموارد وأداء المنصة
 - **ما تم إنجازه:**
   - **الباكند (.NET 10 - Clean Architecture / CQRS):**
     - **DTOs (`OperatorDashboardDtos.cs`):** 11 نوع record يغطي جميع بيانات لوحة المعلومات: OperatorDashboardSummaryDto, TenantStatusDistributionDto, MonthlyTrendDto, ExpiringSubscriptionDto, TenantUsageStatisticsDto, SystemHealthStatusDto, ServiceHealthDto, ResourceConsumptionTrendsDto, DailyCountDto, FeatureAdoptionDto, AiProviderUsageDto.
     - **استعلامات CQRS (4 Queries + 4 Handlers):**
-      - `GetOperatorDashboardSummaryQuery` + Handler: تجميع KPIs عبر جميع الجهات (عدد الجهات حسب الحالة، الاشتراكات، أعلام الميزات، إعدادات AI، سجلات التدقيق، جلسات الانتحال، توزيع الحالات، التسجيل الشهري، الاشتراكات المنتهية).
+      - `GetOperatorDashboardSummaryQuery` + Handler: تجميع KPIs عبر جميع الجهات.
       - `GetTenantUsageStatisticsQuery` + Handler: إحصائيات استخدام كل جهة مع ترقيم وبحث.
-      - `GetSystemHealthStatusQuery` + Handler: فحص صحة البنية التحتية (SQL Server) مع قياس زمن الاستجابة.
-      - `GetResourceConsumptionTrendsQuery` + Handler: اتجاهات استهلاك الموارد (سجلات يومية، تسجيلات يومية، معدل تبني الميزات، استخدام مزودي AI).
-    - **Minimal API Endpoints (`OperatorDashboardEndpoints.cs`):** 4 نقاط نهاية تحت `/api/v1/operator/dashboard/*` محمية بـ RequireAuthorization:
-      - `GET /summary` → ملخص KPIs
-      - `GET /tenant-usage?page=&pageSize=&search=` → إحصائيات الجهات
-      - `GET /system-health` → حالة النظام
-      - `GET /resource-trends` → اتجاهات الاستهلاك
-    - **تسجيل Endpoints في Program.cs:** إضافة `app.MapOperatorDashboardEndpoints()`.
+      - `GetSystemHealthStatusQuery` + Handler: فحص صحة البنية التحتية.
+      - `GetResourceConsumptionTrendsQuery` + Handler: اتجاهات استهلاك الموارد.
+    - **Minimal API Endpoints (`OperatorDashboardEndpoints.cs`):** 4 نقاط نهاية تحت `/api/v1/operator/dashboard/*`.
   - **الفرونتند (Vue 3 + TypeScript + Tailwind CSS + Chart.js):**
-    - **TypeScript Types (`types/operatorDashboard.ts`):** تعريف جميع الأنواع المطابقة لـ Backend DTOs.
-    - **API Service (`services/operatorDashboardService.ts`):** 4 دوال HTTP لجلب البيانات من الباكند بدون بيانات وهمية.
-    - **Pinia Store (`stores/operatorDashboard.ts`):** مخزن حالة شامل مع تحميل متوازٍ لجميع البيانات، بحث، ترقيم، وحالات تحميل.
-    - **7 مكونات Vue جديدة:**
-      - `KpiSummaryCards.vue`: 8 بطاقات KPI مع أيقونات ملونة وskeleton loading.
-      - `TenantStatusChart.vue`: رسم بياني Doughnut لتوزيع حالات الجهات.
-      - `MonthlyRegistrationsChart.vue`: رسم بياني Bar للتسجيل الشهري.
-      - `SystemHealthPanel.vue`: لوحة صحة النظام مع أزمنة استجابة.
-      - `ExpiringSubscriptionsTable.vue`: جدول الاشتراكات المنتهية مع مستويات خطورة ملونة.
-      - `ResourceTrendsCharts.vue`: 3 رسوم بيانية (نشاط يومي Line، تبني الميزات Horizontal Bar، مزودي AI Doughnut).
-      - `TenantUsageTable.vue`: جدول إحصائيات استخدام الجهات مع بحث وترقيم.
-    - **تحديث `OperatorDashboardView.vue`:** إعادة بناء كاملة للوحة المعلومات مع تحديث تلقائي كل 5 دقائق وزر تحديث يدوي.
-    - **ملفات الترجمة:** تحديث ar.json و en.json بـ 100+ مفتاح ترجمة جديد للوحة المعلومات.
-    - **دعم RTL/LTR:** استخدام الخصائص المنطقية لـ Tailwind حصرياً (ms-, me-, ps-, pe-, start, end).
-    - **الأرقام الإنجليزية:** جميع الأرقام تستخدم Intl.NumberFormat('en-US').
-- **الملفات المنشأة/المعدلة:**
-  - `backend/src/TendexAI.Application/Features/OperatorDashboard/Dtos/OperatorDashboardDtos.cs` (جديد)
-  - `backend/src/TendexAI.Application/Features/OperatorDashboard/Queries/GetOperatorDashboardSummary/` (جديد - 2 ملف)
-  - `backend/src/TendexAI.Application/Features/OperatorDashboard/Queries/GetTenantUsageStatistics/` (جديد - 2 ملف)
-  - `backend/src/TendexAI.Application/Features/OperatorDashboard/Queries/GetSystemHealthStatus/` (جديد - 2 ملف)
-  - `backend/src/TendexAI.Application/Features/OperatorDashboard/Queries/GetResourceConsumptionTrends/` (جديد - 2 ملف)
-  - `backend/src/TendexAI.API/Endpoints/OperatorDashboard/OperatorDashboardEndpoints.cs` (جديد)
-  - `backend/src/TendexAI.API/Program.cs` (معدل - إضافة MapOperatorDashboardEndpoints)
-  - `frontend/src/types/operatorDashboard.ts` (جديد)
-  - `frontend/src/services/operatorDashboardService.ts` (جديد)
-  - `frontend/src/stores/operatorDashboard.ts` (جديد)
-  - `frontend/src/components/operator/dashboard/KpiSummaryCards.vue` (جديد)
-  - `frontend/src/components/operator/dashboard/TenantStatusChart.vue` (جديد)
-  - `frontend/src/components/operator/dashboard/MonthlyRegistrationsChart.vue` (جديد)
-  - `frontend/src/components/operator/dashboard/SystemHealthPanel.vue` (جديد)
-  - `frontend/src/components/operator/dashboard/ExpiringSubscriptionsTable.vue` (جديد)
-  - `frontend/src/components/operator/dashboard/ResourceTrendsCharts.vue` (جديد)
-  - `frontend/src/components/operator/dashboard/TenantUsageTable.vue` (جديد)
-  - `frontend/src/views/operator/OperatorDashboardView.vue` (معدل - إعادة بناء كاملة)
-  - `frontend/src/locales/ar.json` (معدل - 100+ مفتاح)
-  - `frontend/src/locales/en.json` (معدل - 100+ مفتاح)
-- **الاعتماديات التي تم حلها:** TASK-601 (شاشات لوحة التحكم), TASK-204 (سجل التدقيق), TASK-203 (إدارة الجهات).
+    - 7 مكونات Vue جديدة للوحة المعلومات مع Chart.js.
+    - تحديث تلقائي كل 5 دقائق.
+- **الاعتماديات التي تم حلها:** TASK-601, TASK-204, TASK-203.
 - **ملاحظات للوكيل التالي:**
-  - جميع البيانات تُجلب ديناميكياً من 4 نقاط نهاية API. لا توجد بيانات وهمية (NO MOCK DATA).
-  - الرسوم البيانية تستخدم Chart.js عبر vue-chartjs (مثبت مسبقاً في المشروع).
-  - لوحة المعلومات تتحدث تلقائياً كل 5 دقائق مع زر تحديث يدوي.
-  - فحص صحة النظام يتحقق حالياً من SQL Server فقط. يمكن توسيعه ليشمل Redis, RabbitMQ, MinIO, Qdrant.
-  - جدول إحصائيات الجهات يدعم البحث والترقيم عبر API.
-  - الاشتراكات المنتهية تعرض خلال 90 يوم مع 4 مستويات خطورة (critical/warning/approaching/info).
+  - جميع البيانات تُجلب ديناميكياً من 4 نقاط نهاية API. لا توجد بيانات وهمية.
 
 ### 2026-03-28 - TASK-601: بناء شاشات لوحة تحكم المشغل (Super Admin) لإدارة الجهات وأوامر التعميد
 - **ما تم إنجازه:**

@@ -1,5 +1,6 @@
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
+using TendexAI.Application.Features.FeatureFlags.Commands.BatchToggleFeatureFlags;
 using TendexAI.Application.Features.FeatureFlags.Commands.CreateFeatureDefinition;
 using TendexAI.Application.Features.FeatureFlags.Commands.ToggleFeatureFlag;
 using TendexAI.Application.Features.FeatureFlags.Dtos;
@@ -51,6 +52,13 @@ public static class FeatureFlagEndpoints
             .WithName("ToggleFeatureFlag")
             .WithSummary("Toggles a feature flag for a specific tenant. Creates the flag if it doesn't exist.")
             .Produces<TenantFeatureFlagDto>(StatusCodes.Status200OK)
+            .Produces(StatusCodes.Status400BadRequest)
+            .Produces(StatusCodes.Status404NotFound);
+
+        flagsGroup.MapPut("/", BatchToggleFeatureFlags)
+            .WithName("BatchToggleFeatureFlags")
+            .WithSummary("Batch-toggles multiple feature flags for a specific tenant in a single request.")
+            .Produces<IReadOnlyList<TenantFeatureFlagDto>>(StatusCodes.Status200OK)
             .Produces(StatusCodes.Status400BadRequest)
             .Produces(StatusCodes.Status404NotFound);
 
@@ -134,6 +142,36 @@ public static class FeatureFlagEndpoints
             FeatureKey: featureKey,
             IsEnabled: request.IsEnabled,
             Configuration: request.Configuration);
+
+        var result = await mediator.Send(command);
+
+        if (!result.IsSuccess)
+        {
+            if (result.Error?.Contains("not found") == true)
+                return Results.NotFound(new { result.Error });
+
+            return Results.BadRequest(new { result.Error });
+        }
+
+        return Results.Ok(result.Value);
+    }
+
+    /// <summary>
+    /// Batch-toggles multiple feature flags for a specific tenant.
+    /// </summary>
+    private static async Task<IResult> BatchToggleFeatureFlags(
+        ISender mediator,
+        Guid tenantId,
+        [FromBody] BatchToggleFeatureFlagsRequest request)
+    {
+        var flags = request.Flags.Select(f => new FeatureFlagToggleItem(
+            FeatureKey: f.FeatureKey,
+            IsEnabled: f.IsEnabled,
+            Configuration: f.Configuration)).ToList();
+
+        var command = new BatchToggleFeatureFlagsCommand(
+            TenantId: tenantId,
+            Flags: flags);
 
         var result = await mediator.Send(command);
 

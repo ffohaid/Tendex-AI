@@ -690,7 +690,25 @@
     "labels": {
       "totalTenants": "Total Entities",
       "activeTenants": "Active Entities",
-      "pendingTenants": "Pending Provisioning"
+      "pendingTenants": "Pending Provisioning",
+      "provisioned": "Provisioned",
+      "notProvisioned": "Not Provisioned",
+      "brandingPreview": "Branding Preview",
+      "currentStatus": "Current Status",
+      "availableTransitions": "Available Transitions",
+      "provisioningStatus": "Provisioning Status"
+    },
+    "tabs": {
+      "info": "Basic Info",
+      "branding": "Branding",
+      "status": "Status Management",
+      "provisioning": "Provisioning"
+    },
+    "quickActions": {
+      "featureFlags": "Feature Flags",
+      "featureFlagsDesc": "Manage available features and modules for this entity",
+      "branding": "Visual Identity",
+      "brandingDesc": "Customize logo and brand colors for this entity"
     }
   },
   "purchaseOrders": {
@@ -976,6 +994,144 @@
       "title": "Reject Impersonation Request",
       "reason": "Rejection Reason",
       "reasonPlaceholder": "Explain why this request is being rejected..."
+    }
+  },
+  "featureFlags": {
+    "title": "Feature Flags Management",
+    "subtitle": "Control available features and modules for this entity",
+    "backToDetail": "Back to Entity Details",
+    "search": "Search features...",
+    "filterAll": "All",
+    "enableAll": "Enable All",
+    "disableAll": "Disable All",
+    "enabled": "Enabled",
+    "disabled": "Disabled",
+    "default": "Default",
+    "custom": "Custom",
+    "enabledByDefault": "Enabled by default",
+    "disabledByDefault": "Disabled by default",
+    "noConfiguration": "No custom configuration",
+    "configuration": "Configuration",
+    "editConfiguration": "Edit Configuration",
+    "configurationPlaceholder": "Enter JSON configuration...",
+    "saveConfiguration": "Save Configuration",
+    "cancelConfiguration": "Cancel",
+    "summary": {
+      "title": "Features Summary",
+      "enabled": "Enabled Features",
+      "disabled": "Disabled Features",
+      "total": "Total Features",
+      "customized": "Customized"
+    },
+    "categories": {
+      "AI": "Artificial Intelligence",
+      "Workflow": "Workflow & Processes",
+      "Analytics": "Analytics & Reports",
+      "Security": "Security",
+      "Integration": "Integrations",
+      "Communication": "Communication",
+      "Documents": "Documents",
+      "ai": "Artificial Intelligence",
+      "workflow": "Workflow & Processes",
+      "analytics": "Analytics & Reports",
+      "security": "Security",
+      "integration": "Integrations",
+      "communication": "Communication",
+      "documents": "Documents"
+    },
+    "messages": {
+      "toggleSuccess": "Feature flag updated successfully",
+      "batchSuccess": "Feature flags updated successfully",
+      "definitionCreated": "Feature definition created successfully",
+      "loadError": "Failed to load feature flags",
+      "saveError": "Failed to save changes"
+    },
+    "errors": {
+      "unexpected": "An unexpected error occurred"
+    },
+    "empty": {
+      "title": "No Features Defined",
+      "description": "No feature definitions have been created yet. Create feature definitions from the platform settings."
+    },
+    "noResults": "No features match your search criteria",
+    "searchPlaceholder": "Search features by name or key...",
+    "allCategories": "All Categories",
+    "enabledOf": "enabled",
+    "showing": "Showing {count} of {total} features",
+    "unsavedChanges": "You have {count} unsaved change(s)",
+    "noFeatures": "No feature definitions found",
+    "stats": {
+      "total": "Total Features",
+      "enabled": "Enabled",
+      "disabled": "Disabled",
+      "categories": "Categories"
+    },
+    "actions": {
+      "enableAll": "Enable All",
+      "disableAll": "Disable All",
+      "resetDefaults": "Reset to Defaults",
+      "saveChanges": "Save Changes",
+      "discard": "Discard",
+      "backToTenant": "Back to Entity Details"
+    },
+    "labels": {
+      "default": "Default",
+      "modified": "Modified"
+    }
+  },
+  "branding": {
+    "title": "Visual Identity",
+    "subtitle": "Customize the visual identity for this government entity",
+    "backToDetail": "Back to Entity Details",
+    "sections": {
+      "logo": "Entity Logo",
+      "colors": "Brand Colors",
+      "preview": "Live Preview"
+    },
+    "logo": {
+      "title": "Entity Logo",
+      "description": "Upload the official logo of the government entity. Supported formats: PNG, JPG, SVG. Max size: 2MB.",
+      "upload": "Upload Logo",
+      "change": "Change Logo",
+      "remove": "Remove Logo",
+      "dragDrop": "Drag and drop or click to upload",
+      "requirements": "PNG, JPG, or SVG - Max 2MB",
+      "current": "Current Logo",
+      "noLogo": "No logo uploaded"
+    },
+    "colors": {
+      "title": "Brand Colors",
+      "description": "Define the primary and secondary colors for the entity interface.",
+      "primary": "Primary Color",
+      "primaryDesc": "Used for buttons, links, and active elements",
+      "secondary": "Secondary Color",
+      "secondaryDesc": "Used for headers, text, and backgrounds",
+      "reset": "Reset to Default",
+      "platformDefault": "Platform Default"
+    },
+    "preview": {
+      "title": "Live Preview",
+      "description": "Preview how the branding will appear to entity users",
+      "header": "Header Preview",
+      "sidebar": "Sidebar Preview",
+      "button": "Sample Button",
+      "buttonText": "Primary Action",
+      "menuItem": "Menu Item",
+      "activeItem": "Active Item",
+      "entityName": "Entity Name"
+    },
+    "messages": {
+      "saveSuccess": "Visual identity updated successfully",
+      "saveError": "Failed to update visual identity",
+      "logoUploadSuccess": "Logo uploaded successfully",
+      "logoUploadError": "Failed to upload logo",
+      "logoRemoveSuccess": "Logo removed successfully",
+      "resetSuccess": "Colors reset to platform defaults"
+    },
+    "actions": {
+      "save": "Save Changes",
+      "reset": "Reset to Defaults",
+      "preview": "Preview"
     }
   }
 }

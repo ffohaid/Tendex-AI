@@ -7,6 +7,7 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import * as impersonationApi from '@/services/impersonationApi'
+import { useBrandingStore } from '@/stores/branding'
 import type {
   ImpersonationConsentDto,
   ImpersonationSessionDto,
@@ -192,6 +193,10 @@ export const useImpersonationStore = defineStore('impersonation', () => {
         }),
       )
 
+      // Reload branding for the impersonated user's tenant
+      const brandingStore = useBrandingStore()
+      await brandingStore.loadAndApplyBranding(response.targetUser.tenantId)
+
       return response
     } catch (err) {
       error.value = extractError(err)
@@ -284,6 +289,15 @@ export const useImpersonationStore = defineStore('impersonation', () => {
       localStorage.setItem('tenant_id', state.originalTenantId)
     sessionStorage.removeItem('impersonation_state')
     activeImpersonation.value = null
+
+    // Reload branding for the restored admin's tenant
+    const brandingStore = useBrandingStore()
+    const restoredTenantId = state.originalTenantId
+    if (restoredTenantId) {
+      brandingStore.loadAndApplyBranding(restoredTenantId)
+    } else {
+      brandingStore.resetToDefaults()
+    }
   }
 
   function extractError(err: unknown): string {

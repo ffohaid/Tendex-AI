@@ -690,7 +690,25 @@
     "labels": {
       "totalTenants": "إجمالي الجهات",
       "activeTenants": "الجهات النشطة",
-      "pendingTenants": "قيد التجهيز"
+      "pendingTenants": "قيد التجهيز",
+      "provisioned": "تم التهيئة",
+      "notProvisioned": "لم يتم التهيئة",
+      "brandingPreview": "معاينة الهوية البصرية",
+      "currentStatus": "الحالة الحالية",
+      "availableTransitions": "التحولات المتاحة",
+      "provisioningStatus": "حالة التهيئة"
+    },
+    "tabs": {
+      "info": "المعلومات الأساسية",
+      "branding": "الهوية البصرية",
+      "status": "إدارة الحالة",
+      "provisioning": "التهيئة"
+    },
+    "quickActions": {
+      "featureFlags": "الميزات المتاحة",
+      "featureFlagsDesc": "إدارة الميزات والوحدات المتاحة لهذه الجهة",
+      "branding": "الهوية البصرية",
+      "brandingDesc": "تخصيص الشعار وألوان العلامة التجارية لهذه الجهة"
     }
   },
   "purchaseOrders": {
@@ -976,6 +994,144 @@
       "title": "رفض طلب الانتحال",
       "reason": "سبب الرفض",
       "reasonPlaceholder": "اشرح سبب رفض هذا الطلب..."
+    }
+  },
+  "featureFlags": {
+    "title": "إدارة الميزات المتاحة",
+    "subtitle": "التحكم في الميزات والوحدات المتاحة لهذه الجهة",
+    "backToDetail": "العودة لتفاصيل الجهة",
+    "search": "البحث في الميزات...",
+    "filterAll": "الكل",
+    "enableAll": "تفعيل الكل",
+    "disableAll": "تعطيل الكل",
+    "enabled": "مفعّل",
+    "disabled": "معطّل",
+    "default": "افتراضي",
+    "custom": "مخصص",
+    "enabledByDefault": "مفعّل افتراضياً",
+    "disabledByDefault": "معطّل افتراضياً",
+    "noConfiguration": "لا يوجد تكوين مخصص",
+    "configuration": "التكوين",
+    "editConfiguration": "تعديل التكوين",
+    "configurationPlaceholder": "أدخل تكوين JSON...",
+    "saveConfiguration": "حفظ التكوين",
+    "cancelConfiguration": "إلغاء",
+    "summary": {
+      "title": "ملخص الميزات",
+      "enabled": "الميزات المفعّلة",
+      "disabled": "الميزات المعطّلة",
+      "total": "إجمالي الميزات",
+      "customized": "مخصصة"
+    },
+    "categories": {
+      "AI": "الذكاء الاصطناعي",
+      "Workflow": "سير العمل والعمليات",
+      "Analytics": "التحليلات والتقارير",
+      "Security": "الأمان",
+      "Integration": "التكاملات",
+      "Communication": "الاتصالات",
+      "Documents": "المستندات",
+      "ai": "الذكاء الاصطناعي",
+      "workflow": "سير العمل والعمليات",
+      "analytics": "التحليلات والتقارير",
+      "security": "الأمان",
+      "integration": "التكاملات",
+      "communication": "الاتصالات",
+      "documents": "المستندات"
+    },
+    "messages": {
+      "toggleSuccess": "تم تحديث حالة الميزة بنجاح",
+      "batchSuccess": "تم تحديث حالة الميزات بنجاح",
+      "definitionCreated": "تم إنشاء تعريف الميزة بنجاح",
+      "loadError": "فشل في تحميل الميزات المتاحة",
+      "saveError": "فشل في حفظ التغييرات"
+    },
+    "errors": {
+      "unexpected": "حدث خطأ غير متوقع"
+    },
+    "empty": {
+      "title": "لا توجد ميزات معرّفة",
+      "description": "لم يتم إنشاء تعريفات ميزات بعد. قم بإنشاء تعريفات الميزات من إعدادات المنصة."
+    },
+    "noResults": "لا توجد ميزات تطابق معايير البحث",
+    "searchPlaceholder": "البحث في الميزات بالاسم أو المفتاح...",
+    "allCategories": "جميع الفئات",
+    "enabledOf": "مفعّلة",
+    "showing": "عرض {count} من {total} ميزة",
+    "unsavedChanges": "لديك {count} تغيير(ات) غير محفوظة",
+    "noFeatures": "لم يتم العثور على تعريفات ميزات",
+    "stats": {
+      "total": "إجمالي الميزات",
+      "enabled": "مفعّلة",
+      "disabled": "معطّلة",
+      "categories": "الفئات"
+    },
+    "actions": {
+      "enableAll": "تفعيل الكل",
+      "disableAll": "تعطيل الكل",
+      "resetDefaults": "إعادة تعيين للافتراضي",
+      "saveChanges": "حفظ التغييرات",
+      "discard": "تجاهل",
+      "backToTenant": "العودة لتفاصيل الجهة"
+    },
+    "labels": {
+      "default": "افتراضي",
+      "modified": "تم التعديل"
+    }
+  },
+  "branding": {
+    "title": "الهوية البصرية",
+    "subtitle": "تخصيص الهوية البصرية لهذه الجهة الحكومية",
+    "backToDetail": "العودة لتفاصيل الجهة",
+    "sections": {
+      "logo": "شعار الجهة",
+      "colors": "ألوان العلامة التجارية",
+      "preview": "المعاينة الحية"
+    },
+    "logo": {
+      "title": "شعار الجهة",
+      "description": "ارفع الشعار الرسمي للجهة الحكومية. الصيغ المدعومة: PNG, JPG, SVG. الحد الأقصى: 2 ميجابايت.",
+      "upload": "رفع الشعار",
+      "change": "تغيير الشعار",
+      "remove": "إزالة الشعار",
+      "dragDrop": "اسحب وأفلت أو انقر للرفع",
+      "requirements": "PNG, JPG, أو SVG - الحد الأقصى 2 ميجابايت",
+      "current": "الشعار الحالي",
+      "noLogo": "لم يتم رفع شعار"
+    },
+    "colors": {
+      "title": "ألوان العلامة التجارية",
+      "description": "حدد الألوان الأساسية والثانوية لواجهة الجهة.",
+      "primary": "اللون الأساسي",
+      "primaryDesc": "يُستخدم للأزرار والروابط والعناصر النشطة",
+      "secondary": "اللون الثانوي",
+      "secondaryDesc": "يُستخدم للعناوين والنصوص والخلفيات",
+      "reset": "إعادة تعيين للافتراضي",
+      "platformDefault": "الافتراضي للمنصة"
+    },
+    "preview": {
+      "title": "المعاينة الحية",
+      "description": "معاينة كيف ستظهر الهوية البصرية لمستخدمي الجهة",
+      "header": "معاينة الشريط العلوي",
+      "sidebar": "معاينة القائمة الجانبية",
+      "button": "زر نموذجي",
+      "buttonText": "إجراء أساسي",
+      "menuItem": "عنصر قائمة",
+      "activeItem": "عنصر نشط",
+      "entityName": "اسم الجهة"
+    },
+    "messages": {
+      "saveSuccess": "تم تحديث الهوية البصرية بنجاح",
+      "saveError": "فشل في تحديث الهوية البصرية",
+      "logoUploadSuccess": "تم رفع الشعار بنجاح",
+      "logoUploadError": "فشل في رفع الشعار",
+      "logoRemoveSuccess": "تم إزالة الشعار بنجاح",
+      "resetSuccess": "تم إعادة تعيين الألوان للقيم الافتراضية"
+    },
+    "actions": {
+      "save": "حفظ التغييرات",
+      "reset": "إعادة تعيين",
+      "preview": "معاينة"
     }
   }
 }

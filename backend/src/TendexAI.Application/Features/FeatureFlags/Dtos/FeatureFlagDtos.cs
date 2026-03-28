@@ -49,3 +49,17 @@ public sealed record CreateFeatureDefinitionRequest(
     string? DescriptionEn,
     string Category,
     bool IsEnabledByDefault);
+
+/// <summary>
+/// Request DTO for batch-toggling multiple feature flags.
+/// </summary>
+public sealed record BatchToggleFeatureFlagsRequest(
+    IReadOnlyList<FeatureFlagToggleItemDto> Flags);
+
+/// <summary>
+/// Individual flag toggle item within a batch request.
+/// </summary>
+public sealed record FeatureFlagToggleItemDto(
+    string FeatureKey,
+    bool IsEnabled,
+    string? Configuration);

@@ -177,6 +177,29 @@ const routes: RouteRecordRaw[] = [
         component: () => import('@/views/DashboardView.vue'),
         meta: { title: 'Tendex AI - Roles & Permissions', requiresAuth: true },
       },
+      /* Operator Panel - Tenant Feature Flags & Branding (TASK-604) */
+      {
+        path: 'operator/tenants/:id/feature-flags',
+        name: 'TenantFeatureFlags',
+        component: () => import('@/views/tenants/TenantFeatureFlagsView.vue'),
+        meta: {
+          title: 'Tendex AI - Tenant Feature Flags',
+          requiresAuth: true,
+          requiredRoles: ['SuperAdmin', 'Operator'],
+        },
+        props: true,
+      },
+      {
+        path: 'operator/tenants/:id/branding',
+        name: 'TenantBranding',
+        component: () => import('@/views/tenants/TenantBrandingView.vue'),
+        meta: {
+          title: 'Tendex AI - Tenant Branding',
+          requiresAuth: true,
+          requiredRoles: ['SuperAdmin', 'Operator'],
+        },
+        props: true,
+      },
       /* Operator Panel - User Impersonation (TASK-603) */
       {
         path: 'operator/impersonation',

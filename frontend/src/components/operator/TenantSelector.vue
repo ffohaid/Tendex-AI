@@ -12,11 +12,13 @@ import { ref, computed, onMounted, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { storeToRefs } from 'pinia'
 import { useTenantStore } from '@/stores/tenant'
+import { useBrandingStore } from '@/stores/branding'
 import { TenantStatus } from '@/types/tenant'
 import type { TenantSelectorOption } from '@/types/tenant'
 
 const { t, locale } = useI18n()
 const tenantStore = useTenantStore()
+const brandingStore = useBrandingStore()
 
 const { selectorOptions, selectedTenantId, selectedTenant } =
   storeToRefs(tenantStore)
@@ -59,10 +61,12 @@ function getStatusDot(status: TenantStatus): string {
 }
 
 /** Select a tenant */
-function selectTenant(option: TenantSelectorOption) {
+async function selectTenant(option: TenantSelectorOption) {
   tenantStore.selectTenant(option.id)
   isOpen.value = false
   searchText.value = ''
+  // Reload branding for the newly selected tenant
+  await brandingStore.loadAndApplyBranding()
 }
 
 /** Clear selection (view all tenants mode) */
@@ -70,6 +74,8 @@ function clearSelection() {
   tenantStore.clearTenantSelection()
   isOpen.value = false
   searchText.value = ''
+  // Reset branding to platform defaults
+  brandingStore.resetBranding()
 }
 
 /** Close dropdown on outside click */

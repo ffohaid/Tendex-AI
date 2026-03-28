@@ -6,6 +6,7 @@ using TendexAI.Application.Features.Tenants.Commands.ProvisionTenantDatabase;
 using TendexAI.Application.Features.Tenants.Commands.UpdateTenant;
 using TendexAI.Application.Features.Tenants.Commands.UpdateTenantBranding;
 using TendexAI.Application.Features.Tenants.Dtos;
+using TendexAI.Application.Features.Tenants.Queries.GetTenantBranding;
 using TendexAI.Application.Features.Tenants.Queries.GetTenantById;
 using TendexAI.Application.Features.Tenants.Queries.GetTenantsList;
 using TendexAI.Domain.Enums;
@@ -38,6 +39,13 @@ public static class TenantEndpoints
             .WithName("GetTenantById")
             .WithSummary("Retrieves detailed information about a specific tenant.")
             .Produces<TenantDto>(StatusCodes.Status200OK)
+            .Produces(StatusCodes.Status404NotFound);
+
+        // GET /api/v1/tenants/{id}/branding - Get tenant branding configuration
+        group.MapGet("/{id:guid}/branding", GetTenantBranding)
+            .WithName("GetTenantBranding")
+            .WithSummary("Retrieves the branding configuration (logo, colors) for a specific tenant.")
+            .Produces<TenantBrandingDto>(StatusCodes.Status200OK)
             .Produces(StatusCodes.Status404NotFound);
 
         // POST /api/v1/tenants - Create new tenant
@@ -121,6 +129,22 @@ public static class TenantEndpoints
         Guid id)
     {
         var query = new GetTenantByIdQuery(id);
+        var result = await mediator.Send(query);
+
+        if (!result.IsSuccess)
+            return Results.NotFound(new { result.Error });
+
+        return Results.Ok(result.Value);
+    }
+
+    /// <summary>
+    /// Retrieves the branding configuration for a specific tenant.
+    /// </summary>
+    private static async Task<IResult> GetTenantBranding(
+        ISender mediator,
+        Guid id)
+    {
+        var query = new GetTenantBrandingQuery(id);
         var result = await mediator.Send(query);
 
         if (!result.IsSuccess)

@@ -1,19 +1,47 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+/**
+ * App Header — Main navigation header.
+ *
+ * Features:
+ * - Dynamic branding: shows tenant logo and name when branding is loaded
+ * - Sidebar toggle
+ * - Tenant selector for Super Admin
+ * - Search bar
+ * - Notifications, language switcher, user avatar
+ */
+import { computed, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useAppStore } from '@/stores/app'
 import { useAuthStore } from '@/stores/auth'
+import { useBrandingStore } from '@/stores/branding'
 import TenantSelector from '@/components/operator/TenantSelector.vue'
 
-const { t } = useI18n()
+const { t, locale } = useI18n()
 const appStore = useAppStore()
 const authStore = useAuthStore()
+const brandingStore = useBrandingStore()
 
 /** Check if user is Super Admin to show tenant selector */
 const isSuperAdmin = computed(() => {
   return authStore.user?.roles?.some(
     (r: string) => r === 'SuperAdmin' || r === 'Operator'
   ) ?? false
+})
+
+/** Get the active branding (tenant-specific or default) */
+const activeBranding = computed(() => brandingStore.activeBranding)
+
+/** Whether tenant branding is loaded and has a logo */
+const hasTenantLogo = computed(() => !!activeBranding.value.logoUrl)
+
+/** Get tenant display name based on locale */
+const tenantDisplayName = computed(() => {
+  if (!activeBranding.value.tenantNameAr && !activeBranding.value.tenantNameEn) {
+    return null
+  }
+  return locale.value === 'ar'
+    ? activeBranding.value.tenantNameAr
+    : activeBranding.value.tenantNameEn
 })
 
 /**
@@ -30,6 +58,15 @@ function switchLanguage(): void {
 function toggleSidebar(): void {
   appStore.toggleSidebar()
 }
+
+/** Load branding on mount if user is authenticated */
+onMounted(async () => {
+  const hasToken = !!localStorage.getItem('access_token')
+  const tenantId = localStorage.getItem('tenant_id')
+  if (hasToken && tenantId) {
+    await brandingStore.loadAndApplyBranding()
+  }
+})
 </script>
 
 <template>
@@ -48,16 +85,37 @@ function toggleSidebar(): void {
         <i class="pi pi-bars text-lg"></i>
       </button>
 
-      <!-- Platform Logo -->
+      <!-- Platform Logo — Dynamic Branding -->
       <div class="flex items-center gap-2">
+        <!-- Tenant logo (if available) -->
         <div
+          v-if="hasTenantLogo"
+          class="flex h-9 w-9 items-center justify-center overflow-hidden rounded-lg border border-surface-dim bg-white"
+        >
+          <img
+            :src="activeBranding.logoUrl"
+            :alt="tenantDisplayName || t('app.name')"
+            class="h-full w-full object-contain"
+          />
+        </div>
+        <!-- Default platform icon -->
+        <div
+          v-else
           class="flex h-9 w-9 items-center justify-center rounded-lg bg-primary text-white"
         >
           <i class="pi pi-bolt text-lg"></i>
         </div>
-        <span class="text-lg font-bold text-secondary">
-          {{ t('app.name') }}
-        </span>
+        <div class="flex flex-col">
+          <span class="text-lg font-bold leading-tight text-secondary">
+            {{ tenantDisplayName || t('app.name') }}
+          </span>
+          <span
+            v-if="tenantDisplayName"
+            class="text-[10px] leading-tight text-tertiary"
+          >
+            {{ t('app.name') }}
+          </span>
+        </div>
       </div>
     </div>
 

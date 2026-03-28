@@ -95,6 +95,9 @@ export const useAuthStore = defineStore('auth', () => {
     Object.values(STORAGE_KEYS).forEach((key) =>
       localStorage.removeItem(key),
     )
+
+    // Clear tenant branding from sessionStorage on logout
+    sessionStorage.removeItem('tenant_branding')
   }
 
   function extractErrorMessage(err: unknown): string {

@@ -93,3 +93,15 @@ public sealed record UpdateTenantBrandingRequest(
     string? LogoUrl,
     string? PrimaryColor,
     string? SecondaryColor);
+
+/// <summary>
+/// Lightweight DTO for tenant branding configuration.
+/// Used by the frontend to apply dynamic branding when a tenant user logs in.
+/// </summary>
+public sealed record TenantBrandingDto(
+    Guid TenantId,
+    string NameAr,
+    string NameEn,
+    string? LogoUrl,
+    string? PrimaryColor,
+    string? SecondaryColor);
