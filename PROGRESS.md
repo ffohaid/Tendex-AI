@@ -8,7 +8,7 @@
 | :--- | :--- | :--- | :--- |
 | Sprint 0: التخطيط وإدارة المنتج | ✅ مكتمل | 100% | تم إعداد خطة التنفيذ (Sprint Backlog) وقوالب العمل. |
 | Sprint 1: البنية التحتية | ✅ مكتمل | 100% | تم إنجاز TASK-101, TASK-102, TASK-103, TASK-104, TASK-105, TASK-106 |
-| Sprint 2: الخدمات الأساسية | 🔄 قيد التنفيذ | 42% | تم إنجاز TASK-204 (Audit Trail), TASK-205 (MinIO File Storage), TASK-206 (RabbitMQ) |
+| Sprint 2: الخدمات الأساسية | 🔄 قيد التنفيذ | 57% | تم إنجاز TASK-201, TASK-204, TASK-205, TASK-206 |
 | Sprint 3: سير العمل والتقييم | ⏳ لم يبدأ | 0% | - |
 | Sprint 4: تكامل الذكاء الاصطناعي | ⏳ لم يبدأ | 0% | - |
 | Sprint 5: الواجهة الأمامية | ⏳ لم يبدأ | 0% | - |
@@ -159,6 +159,66 @@
   - إعدادات الاتصال في `appsettings.json` تحت قسم `RabbitMQ`.
   - يجب تشغيل RabbitMQ عبر `docker compose up -d rabbitmq` قبل تشغيل التطبيق.
   - يمكن الوصول للوحة إدارة RabbitMQ عبر `http://localhost:15672`.
+### 2026-03-28 - TASK-201: تنفيذ نظام المصادقة (OpenIddict + MFA + Redis Sessions)
+- **ما تم إنجازه:**
+  - **طبقة Domain:**
+    - إنشاء كيان `ApplicationUser` مع دعم كامل لـ MFA, Lockout, Security Stamp.
+    - إنشاء كيانات `Role`, `UserRole`, `Permission`, `RolePermission` لنظام RBAC.
+    - إنشاء كيان `RefreshToken` مع دعم Token Rotation وكشف إعادة الاستخدام.
+    - إنشاء كيان `MfaRecoveryCode` لأكواد الاسترداد.
+    - إنشاء كيان `AuditLog` لسجل التدقيق غير القابل للتعديل.
+    - إنشاء واجهات المستودعات: `IUserRepository`, `IRefreshTokenRepository`, `IAuditLogRepository`.
+  - **طبقة Application:**
+    - إنشاء واجهات الخدمات: `IPasswordHasher`, `ITotpService`, `ITokenService`, `ISessionStore`.
+    - إنشاء DTOs: `AuthTokenResponse`, `UserInfoDto`, `MfaSetupResponse`.
+    - إنشاء أوامر CQRS مع Handlers:
+      - `LoginCommand` / `LoginCommandHandler` - تسجيل الدخول مع دعم MFA.
+      - `RefreshTokenCommand` / `RefreshTokenCommandHandler` - تحديث التوكن مع Token Rotation.
+      - `LogoutCommand` / `LogoutCommandHandler` - تسجيل الخروج وإبطال الجلسات.
+      - `SetupMfaCommand` / `SetupMfaCommandHandler` - إعداد المصادقة الثنائية TOTP.
+      - `VerifyMfaCommand` / `VerifyMfaCommandHandler` - التحقق من رمز MFA.
+      - `DisableMfaCommand` / `DisableMfaCommandHandler` - تعطيل MFA.
+    - إنشاء `LoginCommandValidator` باستخدام FluentValidation.
+    - إنشاء `AuthLogMessages` باستخدام Source-Generated LoggerMessage delegates.
+  - **طبقة Infrastructure:**
+    - تنفيذ `PasswordHasher` باستخدام BCrypt (Work Factor 12).
+    - تنفيذ `TotpService` باستخدام OTP.NET (RFC 6238 TOTP).
+    - تنفيذ `TokenService` لإنشاء JWT Access Tokens (60 دقيقة) و Refresh Tokens (8 ساعات).
+    - تنفيذ `RedisSessionStore` لتخزين الجلسات في Redis مع دعم إبطال جلسات المستخدم.
+    - تنفيذ مستودعات: `UserRepository`, `RefreshTokenRepository`, `AuditLogRepository`.
+    - إعداد EF Core Configurations لجميع كيانات المصادقة مع `DeleteBehavior.NoAction`.
+    - إعداد OpenIddict Server مع Password Flow و Refresh Token Flow.
+    - إعداد Redis Distributed Cache مع fallback إلى In-Memory Cache.
+    - تسجيل جميع الخدمات في `DependencyInjection.cs`.
+  - **طبقة API:**
+    - إنشاء Minimal API endpoints في `AuthEndpoints.cs`:
+      - `POST /api/v1/auth/login` - تسجيل الدخول.
+      - `POST /api/v1/auth/refresh` - تحديث التوكن.
+      - `POST /api/v1/auth/logout` - تسجيل الخروج (يتطلب مصادقة).
+      - `POST /api/v1/auth/mfa/setup` - إعداد MFA (يتطلب مصادقة).
+      - `POST /api/v1/auth/mfa/verify` - التحقق من MFA.
+      - `POST /api/v1/auth/mfa/disable` - تعطيل MFA (يتطلب مصادقة).
+    - تحديث `Program.cs` لإضافة Authentication/Authorization middleware.
+  - **الاختبارات (61 اختبار ناجح):**
+    - `PasswordHasherTests` - 5 اختبارات لتجزئة كلمات المرور.
+    - `TotpServiceTests` - 5 اختبارات لخدمة TOTP.
+    - `TokenServiceTests` - 6 اختبارات لإنشاء والتحقق من JWT.
+    - `ApplicationUserTests` - 10 اختبارات لكيان المستخدم.
+    - `RefreshTokenTests` - 4 اختبارات لكيان Refresh Token.
+    - `LoginCommandHandlerTests` - 5 اختبارات لمعالج تسجيل الدخول.
+  - **إعدادات الأمان:**
+    - Access Token: 60 دقيقة صلاحية.
+    - Refresh Token: 8 ساعات صلاحية مع Token Rotation.
+    - كشف إعادة استخدام التوكن (Token Reuse Detection) مع إبطال جميع الجلسات.
+    - تخزين الجلسات في Redis مع TTL تلقائي.
+    - سجل تدقيق لجميع عمليات المصادقة.
+- **الاعتماديات التي تم حلها:** TASK-103 (بنية .NET 10), TASK-105 (قاعدة البيانات).
+- **ملاحظات للوكيل التالي:**
+  - يجب تثبيت .NET 10 SDK (الإصدار 10.0.201) قبل البناء.
+  - إعدادات Redis و Authentication موجودة في `appsettings.json`.
+  - يجب إنشاء EF Core Migration لكيانات المصادقة الجديدة عند توفر قاعدة البيانات.
+  - الواجهات (Interfaces) للخدمات موجودة في `Application/Common/Interfaces/Identity/`.
+  - يمكن البدء في TASK-202 (إدارة المستخدمين والأدوار) أو TASK-203 (إدارة المؤسسات).
 
 ### 2026-03-28 - TASK-106: إعداد مسارات التكامل المستمر (CI Pipelines)
 - **ما تم إنجازه:**

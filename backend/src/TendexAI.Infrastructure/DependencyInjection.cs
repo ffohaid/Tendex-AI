@@ -1,21 +1,26 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.IdentityModel.Tokens;
 using Minio;
 using TendexAI.Application.Common.Interfaces;
+using TendexAI.Application.Common.Interfaces.Identity;
 using TendexAI.Domain.Common;
+using TendexAI.Domain.Entities.Identity;
 using TendexAI.Infrastructure.Messaging.RabbitMQ;
 using TendexAI.Infrastructure.MultiTenancy;
 using TendexAI.Infrastructure.Persistence;
 using TendexAI.Infrastructure.Persistence.Interceptors;
+using TendexAI.Infrastructure.Persistence.Repositories;
 using TendexAI.Infrastructure.Services;
+using TendexAI.Infrastructure.Services.Identity;
 using TendexAI.Infrastructure.Storage.MinIO;
 
 namespace TendexAI.Infrastructure;
 
 /// <summary>
 /// Extension methods for registering Infrastructure layer services in the DI container.
-/// Configures Entity Framework Core, multi-tenancy, messaging, MinIO storage, and supporting infrastructure services.
+/// Configures Entity Framework Core, multi-tenancy, OpenIddict, Redis, messaging, MinIO storage, and identity services.
 /// </summary>
 public static class DependencyInjection
 {
@@ -93,9 +98,91 @@ public static class DependencyInjection
         // ----- MinIO Object Storage -----
         services.AddMinioStorage(configuration);
 
-        // Future registrations:
-        // - Redis distributed cache
-        // - Qdrant vector database client
+        // ----- Redis Distributed Cache (Session Storage) -----
+        var redisConnectionString = configuration.GetConnectionString("Redis");
+        if (!string.IsNullOrWhiteSpace(redisConnectionString))
+        {
+            services.AddStackExchangeRedisCache(options =>
+            {
+                options.Configuration = redisConnectionString;
+                options.InstanceName = "TendexAI:";
+            });
+        }
+        else
+        {
+            // Fallback to in-memory distributed cache for development
+            services.AddDistributedMemoryCache();
+        }
+
+        // ----- OpenIddict Configuration -----
+        services.AddOpenIddict()
+            .AddCore(options =>
+            {
+                options.UseEntityFrameworkCore()
+                    .UseDbContext<TenantDbContext>();
+            })
+            .AddServer(options =>
+            {
+                // Enable the token endpoint for password and refresh token flows
+                options.SetTokenEndpointUris("connect/token")
+                    .SetIntrospectionEndpointUris("connect/introspect");
+
+                // Enable the authorization code, refresh token, and client credentials flows
+                options.AllowPasswordFlow()
+                    .AllowRefreshTokenFlow()
+                    .AllowClientCredentialsFlow();
+
+                // Set token lifetimes
+                options.SetAccessTokenLifetime(TimeSpan.FromMinutes(60))  // 60-minute access token
+                    .SetRefreshTokenLifetime(TimeSpan.FromHours(8));      // 8-hour refresh token
+
+                // Register signing and encryption credentials
+                var signingKey = configuration["Authentication:SigningKey"];
+                if (!string.IsNullOrWhiteSpace(signingKey))
+                {
+                    var key = new SymmetricSecurityKey(
+                        System.Text.Encoding.UTF8.GetBytes(signingKey));
+                    options.AddSigningKey(key);
+                    options.AddEncryptionKey(key);
+                }
+                else
+                {
+                    // Development-only: use ephemeral keys
+                    options.AddEphemeralEncryptionKey()
+                        .AddEphemeralSigningKey();
+                }
+
+                // Register ASP.NET Core host
+                options.UseAspNetCore()
+                    .EnableTokenEndpointPassthrough()
+                    .DisableTransportSecurityRequirement();
+            })
+            .AddValidation(options =>
+            {
+                options.UseLocalServer();
+                options.UseAspNetCore();
+            });
+
+        // ----- Authentication & Authorization -----
+        services.AddAuthentication(options =>
+        {
+            options.DefaultScheme = OpenIddict.Validation.AspNetCore.OpenIddictValidationAspNetCoreDefaults.AuthenticationScheme;
+            options.DefaultAuthenticateScheme = OpenIddict.Validation.AspNetCore.OpenIddictValidationAspNetCoreDefaults.AuthenticationScheme;
+            options.DefaultChallengeScheme = OpenIddict.Validation.AspNetCore.OpenIddictValidationAspNetCoreDefaults.AuthenticationScheme;
+        });
+
+        services.AddAuthorization();
+
+        // ----- Identity Services -----
+        services.AddSingleton<IPasswordHasher, PasswordHasher>();
+        services.AddSingleton<ITotpService, TotpService>();
+        services.AddScoped<ITokenService, TokenService>();
+        services.AddScoped<ISessionStore, RedisSessionStore>();
+
+        // ----- Repository Registrations -----
+        services.AddScoped<IUserRepository, UserRepository>();
+        services.AddScoped<IRefreshTokenRepository, RefreshTokenRepository>();
+        services.AddScoped<IAuditLogRepository, AuditLogRepository>();
 
         return services;
     }

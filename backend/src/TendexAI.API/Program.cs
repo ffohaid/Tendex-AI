@@ -1,6 +1,7 @@
 using TendexAI.API.Endpoints;
 using TendexAI.Application;
 using TendexAI.Infrastructure;
+using TendexAI.API.Endpoints.Auth;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -36,6 +37,10 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 
+// Authentication & Authorization middleware
+app.UseAuthentication();
+app.UseAuthorization();
+
 // ---------------------------------------------------------------------------
 // Health Check Endpoints
 // ---------------------------------------------------------------------------
@@ -49,14 +54,19 @@ app.MapHealthChecks("/api/v1/health/storage", new Microsoft.AspNetCore.Diagnosti
 // Minimal API Endpoints
 // ---------------------------------------------------------------------------
 
+// Authentication endpoints
+app.MapAuthEndpoints();
+
 app.MapGet("/api/v1/health", () => Results.Ok(new
 {
     Status = "Healthy",
     Timestamp = DateTime.UtcNow,
-    Service = "TendexAI.API"
+    Service = "TendexAI.API",
+    Version = "1.0.0"
 }))
 .WithName("HealthCheck")
-.WithTags("System");
+.WithTags("System")
+.AllowAnonymous();
 
 // Audit Trail Endpoints (Read-Only)
 app.MapAuditTrailEndpoints();

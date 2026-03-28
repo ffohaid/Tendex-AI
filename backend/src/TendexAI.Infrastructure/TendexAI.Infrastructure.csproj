@@ -12,9 +12,31 @@
     <PackageReference Include="Microsoft.EntityFrameworkCore" Version="10.0.5" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Relational" Version="10.0.5" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="10.0.5" />
+
+    <!-- MinIO -->
     <PackageReference Include="Minio" Version="6.0.4" />
+
+    <!-- RabbitMQ -->
     <PackageReference Include="Polly" Version="8.6.6" />
     <PackageReference Include="RabbitMQ.Client" Version="7.2.1" />
+
+    <!-- OpenIddict for OAuth 2.0 / OIDC -->
+    <PackageReference Include="OpenIddict.AspNetCore" Version="6.3.0" />
+    <PackageReference Include="OpenIddict.EntityFrameworkCore" Version="6.3.0" />
+
+    <!-- Redis for distributed caching and session storage -->
+    <PackageReference Include="Microsoft.Extensions.Caching.StackExchangeRedis" Version="10.0.5" />
+    <PackageReference Include="StackExchange.Redis" Version="2.8.41" />
+
+    <!-- Password hashing -->
+    <PackageReference Include="BCrypt.Net-Next" Version="4.0.3" />
+
+    <!-- TOTP for MFA -->
+    <PackageReference Include="Otp.NET" Version="1.4.0" />
+
+    <!-- FluentValidation -->
+    <PackageReference Include="FluentValidation" Version="11.11.0" />
+    <PackageReference Include="FluentValidation.DependencyInjectionExtensions" Version="11.11.0" />
   </ItemGroup>
 
   <PropertyGroup>

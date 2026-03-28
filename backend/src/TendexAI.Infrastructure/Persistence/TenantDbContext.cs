@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using TendexAI.Domain.Common;
+using TendexAI.Domain.Entities.Identity;
 
 namespace TendexAI.Infrastructure.Persistence;
 
@@ -19,18 +20,22 @@ public sealed class TenantDbContext : DbContext, IUnitOfWork
     {
     }
 
-    // ----- Tenant-specific DbSets will be added in Sprint 3+ -----
-    // Example: public DbSet<Rfp> Rfps => Set<Rfp>();
+    // ----- Identity DbSets -----
+    public DbSet<ApplicationUser> Users => Set<ApplicationUser>();
+    public DbSet<Role> Roles => Set<Role>();
+    public DbSet<UserRole> UserRoles => Set<UserRole>();
+    public DbSet<Permission> Permissions => Set<Permission>();
+    public DbSet<RolePermission> RolePermissions => Set<RolePermission>();
+    public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();
+    public DbSet<MfaRecoveryCode> MfaRecoveryCodes => Set<MfaRecoveryCode>();
+    public DbSet<AuditLog> AuditLogs => Set<AuditLog>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
 
-        // Apply tenant-specific configurations from this assembly
-        // (filtered by namespace or marker interface in future sprints)
-        modelBuilder.ApplyConfigurationsFromAssembly(
-            typeof(TenantDbContext).Assembly,
-            type => type.Namespace?.Contains("TenantConfigurations", StringComparison.Ordinal) == true);
+        // Apply all IEntityTypeConfiguration<T> from the current assembly
+        modelBuilder.ApplyConfigurationsFromAssembly(typeof(TenantDbContext).Assembly);
 
         // CRITICAL: Disable cascade deletes globally
         DisableCascadeDeletes(modelBuilder);
