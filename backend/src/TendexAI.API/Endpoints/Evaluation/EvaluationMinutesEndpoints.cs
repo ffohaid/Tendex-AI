@@ -72,7 +72,7 @@ public static class EvaluationMinutesEndpoints
         var result = await sender.Send(command);
         return result.IsSuccess
             ? Results.Created(
-                $"/api/v1/competitions/{competitionId}/minutes/{result.Value.Id}",
+                $"/api/v1/competitions/{competitionId}/minutes/{result.Value!.Id}",
                 result.Value)
             : Results.Problem(result.Error!, statusCode: StatusCodes.Status400BadRequest);
     }

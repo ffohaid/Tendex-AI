@@ -38,15 +38,15 @@ public class FinancialScoringServiceTests
     }
 
     [Theory]
-    [InlineData(0, PriceDeviationLevel.None)]
-    [InlineData(3, PriceDeviationLevel.Low)]
-    [InlineData(-3, PriceDeviationLevel.Low)]
-    [InlineData(8, PriceDeviationLevel.Medium)]
-    [InlineData(-8, PriceDeviationLevel.Medium)]
-    [InlineData(18, PriceDeviationLevel.High)]
-    [InlineData(-18, PriceDeviationLevel.High)]
-    [InlineData(30, PriceDeviationLevel.Critical)]
-    [InlineData(-30, PriceDeviationLevel.Critical)]
+    [InlineData(0, PriceDeviationLevel.WithinRange)]
+    [InlineData(3, PriceDeviationLevel.WithinRange)]
+    [InlineData(-3, PriceDeviationLevel.WithinRange)]
+    [InlineData(8, PriceDeviationLevel.WithinRange)]
+    [InlineData(-8, PriceDeviationLevel.WithinRange)]
+    [InlineData(18, PriceDeviationLevel.ModerateDeviation)]
+    [InlineData(-18, PriceDeviationLevel.ModerateDeviation)]
+    [InlineData(30, PriceDeviationLevel.SignificantDeviation)]
+    [InlineData(-30, PriceDeviationLevel.SignificantDeviation)]
     public void ClassifyDeviation_ShouldReturnCorrectLevel(
         decimal deviation, PriceDeviationLevel expectedLevel)
     {

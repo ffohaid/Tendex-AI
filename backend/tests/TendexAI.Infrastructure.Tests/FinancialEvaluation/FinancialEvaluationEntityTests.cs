@@ -9,9 +9,9 @@ namespace TendexAI.Infrastructure.Tests.FinancialEvaluation;
 /// </summary>
 public class FinancialEvaluationEntityTests
 {
-    private static Domain.Entities.Evaluation.FinancialEvaluation CreateTestEvaluation()
+    private static TendexAI.Domain.Entities.Evaluation.FinancialEvaluation CreateTestEvaluation()
     {
-        return Domain.Entities.Evaluation.FinancialEvaluation.Create(
+        return TendexAI.Domain.Entities.Evaluation.FinancialEvaluation.Create(
             Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid(), "test-user");
     }
 

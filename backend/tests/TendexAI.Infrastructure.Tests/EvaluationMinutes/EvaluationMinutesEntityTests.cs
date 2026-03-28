@@ -1,4 +1,5 @@
 using FluentAssertions;
+using TendexAI.Domain.Entities.Evaluation;
 using TendexAI.Domain.Enums;
 
 namespace TendexAI.Infrastructure.Tests.EvaluationMinutes;
@@ -8,10 +9,10 @@ namespace TendexAI.Infrastructure.Tests.EvaluationMinutes;
 /// </summary>
 public class EvaluationMinutesEntityTests
 {
-    private static Domain.Entities.Evaluation.EvaluationMinutes CreateTestMinutes(
+    private static TendexAI.Domain.Entities.Evaluation.EvaluationMinutes CreateTestMinutes(
         MinutesType type = MinutesType.FinalComprehensive)
     {
-        return Domain.Entities.Evaluation.EvaluationMinutes.Create(
+        return TendexAI.Domain.Entities.Evaluation.EvaluationMinutes.Create(
             competitionId: Guid.NewGuid(),
             tenantId: Guid.NewGuid(),
             minutesType: type,
@@ -81,7 +82,7 @@ public class EvaluationMinutesEntityTests
     {
         // Arrange
         var minutes = CreateTestMinutes();
-        var signatory = Domain.Entities.Evaluation.MinutesSignatory.Create(
+        var signatory = TendexAI.Domain.Entities.Evaluation.MinutesSignatory.Create(
             minutes.Id, "user-1", "Ahmed Ali", "Committee Chair", "test-user");
 
         // Act
