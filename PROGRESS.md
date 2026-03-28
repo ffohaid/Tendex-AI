@@ -7,7 +7,7 @@
 | السبرنت | الحالة | نسبة الإنجاز | ملاحظات |
 | :--- | :--- | :--- | :--- |
 | Sprint 0: التخطيط وإدارة المنتج | ✅ مكتمل | 100% | تم إعداد خطة التنفيذ (Sprint Backlog) وقوالب العمل. |
-| Sprint 1: البنية التحتية | 🏃 قيد التنفيذ | 65% | تم إنجاز TASK-101, TASK-102, TASK-103, TASK-104 |
+| Sprint 1: البنية التحتية | 🏃 قيد التنفيذ | 83% | تم إنجاز TASK-101, TASK-102, TASK-103, TASK-104, TASK-105 |
 | Sprint 2: الخدمات الأساسية | ⏳ لم يبدأ | 0% | - |
 | Sprint 3: سير العمل والتقييم | ⏳ لم يبدأ | 0% | - |
 | Sprint 4: تكامل الذكاء الاصطناعي | ⏳ لم يبدأ | 0% | - |
@@ -20,6 +20,37 @@
 ## سجل المهام المنجزة (Completed Tasks Log)
 
 *يرجى إضافة أحدث مهمة منجزة في أعلى هذه القائمة.*
+
+### 2026-03-28 - TASK-105: إعداد قاعدة البيانات المركزية (master_platform)
+- **ما تم إنجازه:**
+  - إعداد Entity Framework Core 10.0.5 مع SQL Server في طبقة Infrastructure.
+  - إنشاء `MasterPlatformDbContext` كقاعدة بيانات مركزية تدير الجهات (Tenants)، الاشتراكات (Subscriptions)، وإعدادات الذكاء الاصطناعي (AiConfigurations).
+  - تطبيق نموذج Database-per-Tenant عبر `TenantDbContext` مع `TenantDbContextFactory` لحل سلسلة الاتصال ديناميكياً بناءً على الجهة الحالية.
+  - إنشاء `TenantProvider` لاستخراج هوية الجهة من رأس HTTP (`X-Tenant-Id`) وتخزينها مؤقتاً لكل طلب.
+  - تطبيق **منع الحذف المتسلسل (No Cascade Deletes)** عبر `DeleteBehavior.NoAction` على جميع العلاقات في كلا الـ DbContext.
+  - إنشاء 3 كيانات Domain: `Tenant`, `AiConfiguration`, `Subscription` مع Enums (`TenantStatus`, `AiProvider`).
+  - إنشاء Fluent API Configurations لكل كيان مع فهارس (Indexes)، قيود (Constraints)، واستخدام NVARCHAR للنصوص العربية.
+  - إنشاء `AuditableEntityInterceptor` لملء حقول التدقيق (CreatedAt, LastModifiedAt) تلقائياً.
+  - إنشاء `MasterPlatformDbContextDesignTimeFactory` لدعم أدوات EF Core CLI.
+  - إنشاء `IMasterPlatformDbContext` في Application layer كتجريد للـ DbContext.
+  - إنشاء `ITenantProvider` في Application layer لدعم Multi-Tenancy.
+  - توليد Migration أولي (`InitialMasterPlatform`) يتضمن جداول: Tenants, AiConfigurations, Subscriptions.
+  - تسجيل جميع الخدمات في DependencyInjection.cs مع Connection Resiliency (Retry on Failure).
+  - إنشاء مشروع اختبارات `TendexAI.Infrastructure.Tests` (xUnit) مع 24 اختبار وحدة ناجح يغطي:
+    - منع الحذف المتسلسل (Cascade Delete Prevention)
+    - صحة تكوين الجداول والعلاقات والفهارس
+    - عمليات CRUD الأساسية
+    - منطق Domain Entities (حالات Tenant)
+  - تحديث `appsettings.Development.json` بسلسلة اتصال تطوير (مع متغير بيئة لكلمة المرور).
+- **الاعتماديات التي تم حلها:** TASK-102 (Docker/SQL Server), TASK-103 (Clean Architecture).
+- **ملاحظات للوكيل التالي:**
+  - قاعدة البيانات المركزية جاهزة. يمكن البدء في TASK-106 (CI Pipelines) أو Sprint 2.
+  - لتطبيق Migration على SQL Server: `dotnet ef database update --project src/TendexAI.Infrastructure --startup-project src/TendexAI.API --context MasterPlatformDbContext`.
+  - جميع العلاقات تستخدم `DeleteBehavior.NoAction` حصرياً.
+  - `TenantDbContext` جاهز لإضافة كيانات خاصة بالجهات في Sprint 3+.
+  - `TenantProvider` يعتمد على رأس `X-Tenant-Id` في HTTP Request.
+  - مفاتيح API في جدول `AiConfigurations` يجب تشفيرها بـ AES-256 قبل الحفظ (التشفير سيُنفذ في Sprint 2).
+  - مشروع الاختبارات مضاف إلى Solution ويمكن تشغيله بـ `dotnet test`.
 
 ### 2026-03-28 - TASK-104: تهيئة مشروع الواجهة الأمامية (Vue.js 3)
 - **ما تم إنجازه:**

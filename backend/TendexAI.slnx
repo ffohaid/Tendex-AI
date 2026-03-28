@@ -5,4 +5,7 @@
     <Project Path="src/TendexAI.Domain/TendexAI.Domain.csproj" />
     <Project Path="src/TendexAI.Infrastructure/TendexAI.Infrastructure.csproj" />
   </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/TendexAI.Infrastructure.Tests/TendexAI.Infrastructure.Tests.csproj" />
+  </Folder>
 </Solution>

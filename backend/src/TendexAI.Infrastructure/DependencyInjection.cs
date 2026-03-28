@@ -1,11 +1,17 @@
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using TendexAI.Application.Common.Interfaces;
+using TendexAI.Domain.Common;
+using TendexAI.Infrastructure.MultiTenancy;
+using TendexAI.Infrastructure.Persistence;
+using TendexAI.Infrastructure.Persistence.Interceptors;
 
 namespace TendexAI.Infrastructure;
 
 /// <summary>
 /// Extension methods for registering Infrastructure layer services in the DI container.
-/// This is where external service implementations (EF Core, Redis, MinIO, etc.) will be registered.
+/// Configures Entity Framework Core, multi-tenancy, and supporting infrastructure services.
 /// </summary>
 public static class DependencyInjection
 {
@@ -13,8 +19,60 @@ public static class DependencyInjection
         this IServiceCollection services,
         IConfiguration configuration)
     {
+        // ----- Interceptors -----
+        services.AddSingleton<AuditableEntityInterceptor>();
+
+        // ----- Master Platform Database (Central) -----
+        var masterConnectionString = configuration.GetConnectionString("MasterPlatform");
+
+        services.AddDbContext<MasterPlatformDbContext>((sp, options) =>
+        {
+            var auditInterceptor = sp.GetRequiredService<AuditableEntityInterceptor>();
+
+            options.UseSqlServer(masterConnectionString, sqlOptions =>
+            {
+                sqlOptions.MigrationsAssembly(typeof(MasterPlatformDbContext).Assembly.FullName);
+                sqlOptions.MigrationsHistoryTable("__EFMigrationsHistory", "dbo");
+                sqlOptions.CommandTimeout(30);
+                sqlOptions.EnableRetryOnFailure(
+                    maxRetryCount: 3,
+                    maxRetryDelay: TimeSpan.FromSeconds(5),
+                    errorNumbersToAdd: null);
+            });
+
+            options.AddInterceptors(auditInterceptor);
+        });
+
+        // Register the master DbContext abstraction for Application layer
+        services.AddScoped<IMasterPlatformDbContext>(sp =>
+            sp.GetRequiredService<MasterPlatformDbContext>());
+
+        // Register IUnitOfWork pointing to the master DbContext
+        services.AddScoped<IUnitOfWork>(sp =>
+            sp.GetRequiredService<MasterPlatformDbContext>());
+
+        // ----- Tenant Database (Per-Tenant Isolation) -----
+        // Register a pooled factory for TenantDbContext (connection string resolved at runtime)
+        services.AddDbContextFactory<TenantDbContext>((sp, options) =>
+        {
+            // Default options; actual connection string is overridden by TenantDbContextFactory
+            options.UseSqlServer("Server=.;Database=placeholder;Trusted_Connection=false;",
+                sqlOptions =>
+                {
+                    sqlOptions.CommandTimeout(30);
+                    sqlOptions.EnableRetryOnFailure(
+                        maxRetryCount: 3,
+                        maxRetryDelay: TimeSpan.FromSeconds(5),
+                        errorNumbersToAdd: null);
+                });
+        });
+
+        // ----- Multi-Tenancy Services -----
+        services.AddHttpContextAccessor();
+        services.AddScoped<ITenantProvider, TenantProvider>();
+        services.AddScoped<ITenantDbContextFactory, TenantDbContextFactory>();
+
         // Future registrations:
-        // - Entity Framework Core DbContext
         // - Redis distributed cache
         // - MinIO file storage
         // - RabbitMQ message broker
