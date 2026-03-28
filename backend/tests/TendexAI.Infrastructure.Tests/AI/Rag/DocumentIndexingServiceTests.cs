@@ -81,7 +81,7 @@ public class DocumentIndexingServiceTests
         var request = CreateRequest();
         _fileStorageMock
             .Setup(x => x.DownloadFileAsync(It.IsAny<string>(), It.IsAny<string?>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(Result.Success<byte[]>(new byte[0]));
+            .ReturnsAsync(Result.Success<byte[]>(Array.Empty<byte>()));
 
         // Act
         var result = await _sut.IndexDocumentAsync(request);
@@ -116,7 +116,7 @@ public class DocumentIndexingServiceTests
         _aiGatewayMock
             .Setup(x => x.GenerateEmbeddingAsync(It.IsAny<AiEmbeddingRequest>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(AiEmbeddingResponse.Success(
-                new float[1536], AiProvider.OpenAi, "text-embedding-3-small"));
+                new float[1536], AiProvider.OpenAI, "text-embedding-3-small"));
 
         _vectorStoreMock
             .Setup(x => x.EnsureCollectionExistsAsync(It.IsAny<string>(), It.IsAny<int>(), It.IsAny<CancellationToken>()))
@@ -197,7 +197,7 @@ public class DocumentIndexingServiceTests
         _aiGatewayMock
             .Setup(x => x.GenerateEmbeddingAsync(It.IsAny<AiEmbeddingRequest>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(AiEmbeddingResponse.Success(
-                new float[1536], AiProvider.OpenAi, "text-embedding-3-small"));
+                new float[1536], AiProvider.OpenAI, "text-embedding-3-small"));
 
         _vectorStoreMock
             .Setup(x => x.EnsureCollectionExistsAsync(It.IsAny<string>(), It.IsAny<int>(), It.IsAny<CancellationToken>()))

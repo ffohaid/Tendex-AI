@@ -38,7 +38,7 @@ public class ContextRetrievalServiceTests
 
         _aiGatewayMock
             .Setup(x => x.GenerateEmbeddingAsync(It.IsAny<AiEmbeddingRequest>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(AiEmbeddingResponse.Failure("Embedding error", AiProvider.OpenAi, "text-embedding-3-small"));
+            .ReturnsAsync(AiEmbeddingResponse.Failure("Embedding error", AiProvider.OpenAI, "text-embedding-3-small"));
 
         // Act
         var result = await _sut.RetrieveContextAsync(request);
@@ -57,7 +57,7 @@ public class ContextRetrievalServiceTests
         _aiGatewayMock
             .Setup(x => x.GenerateEmbeddingAsync(It.IsAny<AiEmbeddingRequest>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(AiEmbeddingResponse.Success(
-                new float[1536], AiProvider.OpenAi, "text-embedding-3-small"));
+                new float[1536], AiProvider.OpenAI, "text-embedding-3-small"));
 
         _vectorStoreMock
             .Setup(x => x.SearchAsync(It.IsAny<VectorSearchRequest>(), It.IsAny<CancellationToken>()))
@@ -81,7 +81,7 @@ public class ContextRetrievalServiceTests
         _aiGatewayMock
             .Setup(x => x.GenerateEmbeddingAsync(It.IsAny<AiEmbeddingRequest>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(AiEmbeddingResponse.Success(
-                new float[1536], AiProvider.OpenAi, "text-embedding-3-small"));
+                new float[1536], AiProvider.OpenAI, "text-embedding-3-small"));
 
         var searchResults = new List<VectorSearchResult>
         {
@@ -150,7 +150,7 @@ public class ContextRetrievalServiceTests
         _aiGatewayMock
             .Setup(x => x.GenerateEmbeddingAsync(It.IsAny<AiEmbeddingRequest>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(AiEmbeddingResponse.Success(
-                new float[1536], AiProvider.OpenAi, "text-embedding-3-small"));
+                new float[1536], AiProvider.OpenAI, "text-embedding-3-small"));
 
         _vectorStoreMock
             .Setup(x => x.SearchAsync(It.IsAny<VectorSearchRequest>(), It.IsAny<CancellationToken>()))
@@ -193,7 +193,7 @@ public class ContextRetrievalServiceTests
         _aiGatewayMock
             .Setup(x => x.GenerateEmbeddingAsync(It.IsAny<AiEmbeddingRequest>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(AiEmbeddingResponse.Success(
-                new float[1536], AiProvider.OpenAi, "text-embedding-3-small"));
+                new float[1536], AiProvider.OpenAI, "text-embedding-3-small"));
 
         _vectorStoreMock
             .Setup(x => x.SearchAsync(It.IsAny<VectorSearchRequest>(), It.IsAny<CancellationToken>()))
