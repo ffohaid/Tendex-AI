@@ -812,12 +812,80 @@
   },
   "operatorDashboard": {
     "title": "Operator Dashboard",
-    "subtitle": "Overview of entities, subscriptions, and purchase orders",
+    "subtitle": "Comprehensive overview of resource consumption and platform performance across all entities",
+    "lastRefreshed": "Last refreshed",
+    "refresh": "Refresh",
+    "noData": "No data available",
     "kpi": {
       "totalTenants": "Total Entities",
+      "activeTenants": "Active Entities",
+      "suspendedTenants": "Suspended Entities",
+      "pendingProvisioning": "Pending Provisioning",
+      "activeSubscriptions": "Active Subscriptions",
+      "featureFlags": "Feature Flags",
+      "aiConfigurations": "AI Configurations",
+      "auditLogEntries": "Audit Log Entries",
       "activePOs": "Active POs",
       "pendingPOs": "Pending POs",
       "renewingPOs": "Renewing"
+    },
+    "tenantStatus": {
+      "PendingProvisioning": "Pending Provisioning",
+      "EnvironmentSetup": "Environment Setup",
+      "Training": "Training",
+      "FinalAcceptance": "Final Acceptance",
+      "Active": "Active",
+      "RenewalWindow": "Renewal Window",
+      "Suspended": "Suspended",
+      "Cancelled": "Cancelled",
+      "Archived": "Archived"
+    },
+    "charts": {
+      "tenantStatusDistribution": "Tenant Status Distribution",
+      "monthlyRegistrations": "Monthly Tenant Registrations",
+      "newRegistrations": "New Registrations",
+      "registrations": "Registrations"
+    },
+    "systemHealth": {
+      "title": "System Health",
+      "lastChecked": "Last checked",
+      "status": {
+        "Healthy": "Healthy",
+        "Degraded": "Degraded",
+        "Unhealthy": "Unhealthy"
+      }
+    },
+    "expiring": {
+      "title": "Expiring Subscriptions",
+      "count": "subscriptions",
+      "noExpiring": "No subscriptions expiring within 90 days",
+      "entity": "Entity",
+      "expiryDate": "Expiry Date",
+      "daysLeft": "Days Left",
+      "severity": "Severity",
+      "critical": "Critical",
+      "warning": "Warning",
+      "approaching": "Approaching",
+      "info": "Info"
+    },
+    "trends": {
+      "dailyAuditActivity": "Daily Audit Log Activity",
+      "auditLogEntries": "Audit Log Entries",
+      "featureAdoption": "Feature Adoption Rates",
+      "adoptionRate": "Adoption Rate",
+      "aiProviderUsage": "AI Provider Usage"
+    },
+    "tenantUsage": {
+      "title": "Tenant Usage Statistics",
+      "searchPlaceholder": "Search entities...",
+      "entity": "Entity",
+      "status": "Status",
+      "featureFlags": "Feature Flags",
+      "aiConfigs": "AI Configs",
+      "auditLogs": "Audit Logs",
+      "subscriptionExpiry": "Subscription Expiry",
+      "showing": "Showing",
+      "of": "of"
     },
     "quickActions": {
       "title": "Quick Actions",

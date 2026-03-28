@@ -8,6 +8,7 @@ using TendexAI.API.Endpoints.Committees;
 using TendexAI.API.Endpoints.Evaluation;
 using TendexAI.API.Endpoints.AI;
 using TendexAI.API.Endpoints.Impersonation;
+using TendexAI.API.Endpoints.OperatorDashboard;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -118,5 +119,8 @@ app.MapAiSpecificationDraftingEndpoints();
 
 // Impersonation endpoints (Super Admin only - TASK-603)
 app.MapImpersonationEndpoints();
+
+// Operator Dashboard endpoints (Super Admin only - TASK-602)
+app.MapOperatorDashboardEndpoints();
 
 app.Run();

@@ -12,7 +12,7 @@
 | Sprint 3: سير العمل والتقييم | 🔄 قيد التنفيذ | 71% | تم إنجاز TASK-301, TASK-302, TASK-303, TASK-304, TASK-305 |
 | Sprint 4: تكامل الذكاء الاصطناعي | 🔄 قيد التنفيذ | 71% | تم إنجاز TASK-401, TASK-402, TASK-403, TASK-404, TASK-405 |
 | Sprint 5: الواجهة الأمامية | 🔄 قيد التنفيذ | 71% | تم إنجاز TASK-501, TASK-502, TASK-503, TASK-504, TASK-505 |
-| Sprint 6: لوحة تحكم المشغل | 🔄 قيد التنفيذ | 43% | تم إنجاز TASK-601, TASK-603 |
+| Sprint 6: لوحة تحكم المشغل | 🔄 قيد التنفيذ | 57% | تم إنجاز TASK-601, TASK-602, TASK-603 |
 | Sprint 7: الاختبار والنشر | ⏳ لم يبدأ | 0% | - |
 
 ---
@@ -20,6 +20,67 @@
 ## سجل المهام المنجزة (Completed Tasks Log)
 
 *يرجى إضافة أحدث مهمة منجزة في أعلى هذه القائمة.*
+
+### 2026-03-28 - TASK-602: لوحة معلومات المشغل (Super Admin Dashboard) - استهلاك الموارد وأداء المنصة
+- **ما تم إنجازه:**
+  - **الباكند (.NET 10 - Clean Architecture / CQRS):**
+    - **DTOs (`OperatorDashboardDtos.cs`):** 11 نوع record يغطي جميع بيانات لوحة المعلومات: OperatorDashboardSummaryDto, TenantStatusDistributionDto, MonthlyTrendDto, ExpiringSubscriptionDto, TenantUsageStatisticsDto, SystemHealthStatusDto, ServiceHealthDto, ResourceConsumptionTrendsDto, DailyCountDto, FeatureAdoptionDto, AiProviderUsageDto.
+    - **استعلامات CQRS (4 Queries + 4 Handlers):**
+      - `GetOperatorDashboardSummaryQuery` + Handler: تجميع KPIs عبر جميع الجهات (عدد الجهات حسب الحالة، الاشتراكات، أعلام الميزات، إعدادات AI، سجلات التدقيق، جلسات الانتحال، توزيع الحالات، التسجيل الشهري، الاشتراكات المنتهية).
+      - `GetTenantUsageStatisticsQuery` + Handler: إحصائيات استخدام كل جهة مع ترقيم وبحث.
+      - `GetSystemHealthStatusQuery` + Handler: فحص صحة البنية التحتية (SQL Server) مع قياس زمن الاستجابة.
+      - `GetResourceConsumptionTrendsQuery` + Handler: اتجاهات استهلاك الموارد (سجلات يومية، تسجيلات يومية، معدل تبني الميزات، استخدام مزودي AI).
+    - **Minimal API Endpoints (`OperatorDashboardEndpoints.cs`):** 4 نقاط نهاية تحت `/api/v1/operator/dashboard/*` محمية بـ RequireAuthorization:
+      - `GET /summary` → ملخص KPIs
+      - `GET /tenant-usage?page=&pageSize=&search=` → إحصائيات الجهات
+      - `GET /system-health` → حالة النظام
+      - `GET /resource-trends` → اتجاهات الاستهلاك
+    - **تسجيل Endpoints في Program.cs:** إضافة `app.MapOperatorDashboardEndpoints()`.
+  - **الفرونتند (Vue 3 + TypeScript + Tailwind CSS + Chart.js):**
+    - **TypeScript Types (`types/operatorDashboard.ts`):** تعريف جميع الأنواع المطابقة لـ Backend DTOs.
+    - **API Service (`services/operatorDashboardService.ts`):** 4 دوال HTTP لجلب البيانات من الباكند بدون بيانات وهمية.
+    - **Pinia Store (`stores/operatorDashboard.ts`):** مخزن حالة شامل مع تحميل متوازٍ لجميع البيانات، بحث، ترقيم، وحالات تحميل.
+    - **7 مكونات Vue جديدة:**
+      - `KpiSummaryCards.vue`: 8 بطاقات KPI مع أيقونات ملونة وskeleton loading.
+      - `TenantStatusChart.vue`: رسم بياني Doughnut لتوزيع حالات الجهات.
+      - `MonthlyRegistrationsChart.vue`: رسم بياني Bar للتسجيل الشهري.
+      - `SystemHealthPanel.vue`: لوحة صحة النظام مع أزمنة استجابة.
+      - `ExpiringSubscriptionsTable.vue`: جدول الاشتراكات المنتهية مع مستويات خطورة ملونة.
+      - `ResourceTrendsCharts.vue`: 3 رسوم بيانية (نشاط يومي Line، تبني الميزات Horizontal Bar، مزودي AI Doughnut).
+      - `TenantUsageTable.vue`: جدول إحصائيات استخدام الجهات مع بحث وترقيم.
+    - **تحديث `OperatorDashboardView.vue`:** إعادة بناء كاملة للوحة المعلومات مع تحديث تلقائي كل 5 دقائق وزر تحديث يدوي.
+    - **ملفات الترجمة:** تحديث ar.json و en.json بـ 100+ مفتاح ترجمة جديد للوحة المعلومات.
+    - **دعم RTL/LTR:** استخدام الخصائص المنطقية لـ Tailwind حصرياً (ms-, me-, ps-, pe-, start, end).
+    - **الأرقام الإنجليزية:** جميع الأرقام تستخدم Intl.NumberFormat('en-US').
+- **الملفات المنشأة/المعدلة:**
+  - `backend/src/TendexAI.Application/Features/OperatorDashboard/Dtos/OperatorDashboardDtos.cs` (جديد)
+  - `backend/src/TendexAI.Application/Features/OperatorDashboard/Queries/GetOperatorDashboardSummary/` (جديد - 2 ملف)
+  - `backend/src/TendexAI.Application/Features/OperatorDashboard/Queries/GetTenantUsageStatistics/` (جديد - 2 ملف)
+  - `backend/src/TendexAI.Application/Features/OperatorDashboard/Queries/GetSystemHealthStatus/` (جديد - 2 ملف)
+  - `backend/src/TendexAI.Application/Features/OperatorDashboard/Queries/GetResourceConsumptionTrends/` (جديد - 2 ملف)
+  - `backend/src/TendexAI.API/Endpoints/OperatorDashboard/OperatorDashboardEndpoints.cs` (جديد)
+  - `backend/src/TendexAI.API/Program.cs` (معدل - إضافة MapOperatorDashboardEndpoints)
+  - `frontend/src/types/operatorDashboard.ts` (جديد)
+  - `frontend/src/services/operatorDashboardService.ts` (جديد)
+  - `frontend/src/stores/operatorDashboard.ts` (جديد)
+  - `frontend/src/components/operator/dashboard/KpiSummaryCards.vue` (جديد)
+  - `frontend/src/components/operator/dashboard/TenantStatusChart.vue` (جديد)
+  - `frontend/src/components/operator/dashboard/MonthlyRegistrationsChart.vue` (جديد)
+  - `frontend/src/components/operator/dashboard/SystemHealthPanel.vue` (جديد)
+  - `frontend/src/components/operator/dashboard/ExpiringSubscriptionsTable.vue` (جديد)
+  - `frontend/src/components/operator/dashboard/ResourceTrendsCharts.vue` (جديد)
+  - `frontend/src/components/operator/dashboard/TenantUsageTable.vue` (جديد)
+  - `frontend/src/views/operator/OperatorDashboardView.vue` (معدل - إعادة بناء كاملة)
+  - `frontend/src/locales/ar.json` (معدل - 100+ مفتاح)
+  - `frontend/src/locales/en.json` (معدل - 100+ مفتاح)
+- **الاعتماديات التي تم حلها:** TASK-601 (شاشات لوحة التحكم), TASK-204 (سجل التدقيق), TASK-203 (إدارة الجهات).
+- **ملاحظات للوكيل التالي:**
+  - جميع البيانات تُجلب ديناميكياً من 4 نقاط نهاية API. لا توجد بيانات وهمية (NO MOCK DATA).
+  - الرسوم البيانية تستخدم Chart.js عبر vue-chartjs (مثبت مسبقاً في المشروع).
+  - لوحة المعلومات تتحدث تلقائياً كل 5 دقائق مع زر تحديث يدوي.
+  - فحص صحة النظام يتحقق حالياً من SQL Server فقط. يمكن توسيعه ليشمل Redis, RabbitMQ, MinIO, Qdrant.
+  - جدول إحصائيات الجهات يدعم البحث والترقيم عبر API.
+  - الاشتراكات المنتهية تعرض خلال 90 يوم مع 4 مستويات خطورة (critical/warning/approaching/info).
 
 ### 2026-03-28 - TASK-601: بناء شاشات لوحة تحكم المشغل (Super Admin) لإدارة الجهات وأوامر التعميد
 - **ما تم إنجازه:**

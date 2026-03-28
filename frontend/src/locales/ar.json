@@ -812,12 +812,80 @@
   },
   "operatorDashboard": {
     "title": "لوحة تحكم المشغل",
-    "subtitle": "نظرة عامة على الجهات والاشتراكات وأوامر التعميد",
+    "subtitle": "نظرة شاملة على استهلاك الموارد وأداء المنصة عبر جميع الجهات",
+    "lastRefreshed": "آخر تحديث",
+    "refresh": "تحديث",
+    "noData": "لا توجد بيانات",
     "kpi": {
       "totalTenants": "إجمالي الجهات",
+      "activeTenants": "الجهات النشطة",
+      "suspendedTenants": "الجهات الموقوفة",
+      "pendingProvisioning": "بانتظار التهيئة",
+      "activeSubscriptions": "الاشتراكات النشطة",
+      "featureFlags": "أعلام الميزات",
+      "aiConfigurations": "إعدادات الذكاء الاصطناعي",
+      "auditLogEntries": "سجلات التدقيق",
       "activePOs": "أوامر نشطة",
       "pendingPOs": "أوامر معلقة",
       "renewingPOs": "قيد التجديد"
+    },
+    "tenantStatus": {
+      "PendingProvisioning": "بانتظار التهيئة",
+      "EnvironmentSetup": "إعداد البيئة",
+      "Training": "التدريب",
+      "FinalAcceptance": "القبول النهائي",
+      "Active": "نشط",
+      "RenewalWindow": "فترة التجديد",
+      "Suspended": "موقوف",
+      "Cancelled": "ملغي",
+      "Archived": "مؤرشف"
+    },
+    "charts": {
+      "tenantStatusDistribution": "توزيع حالات الجهات",
+      "monthlyRegistrations": "تسجيل الجهات الشهري",
+      "newRegistrations": "تسجيلات جديدة",
+      "registrations": "التسجيلات"
+    },
+    "systemHealth": {
+      "title": "حالة النظام",
+      "lastChecked": "آخر فحص",
+      "status": {
+        "Healthy": "سليم",
+        "Degraded": "متدهور",
+        "Unhealthy": "غير سليم"
+      }
+    },
+    "expiring": {
+      "title": "الاشتراكات المنتهية قريبا",
+      "count": "اشتراك",
+      "noExpiring": "لا توجد اشتراكات منتهية خلال 90 يوم",
+      "entity": "الجهة",
+      "expiryDate": "تاريخ الانتهاء",
+      "daysLeft": "الأيام المتبقية",
+      "severity": "الأولوية",
+      "critical": "حرج",
+      "warning": "تحذير",
+      "approaching": "يقترب",
+      "info": "معلومات"
+    },
+    "trends": {
+      "dailyAuditActivity": "نشاط سجل التدقيق اليومي",
+      "auditLogEntries": "سجلات التدقيق",
+      "featureAdoption": "معدل تبني الميزات",
+      "adoptionRate": "معدل التبني",
+      "aiProviderUsage": "استخدام مزودي الذكاء الاصطناعي"
+    },
+    "tenantUsage": {
+      "title": "إحصائيات استخدام الجهات",
+      "searchPlaceholder": "البحث عن جهة...",
+      "entity": "الجهة",
+      "status": "الحالة",
+      "featureFlags": "أعلام الميزات",
+      "aiConfigs": "إعدادات AI",
+      "auditLogs": "سجلات التدقيق",
+      "subscriptionExpiry": "انتهاء الاشتراك",
+      "showing": "عرض",
+      "of": "من"
     },
     "quickActions": {
       "title": "الإجراءات السريعة",
