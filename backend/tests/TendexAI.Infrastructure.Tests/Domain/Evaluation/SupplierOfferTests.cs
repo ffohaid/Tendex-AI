@@ -41,7 +41,7 @@ public sealed class SupplierOfferTests
         offer.BlindCode.Should().HaveLength(10); // "OFFER-" (6) + 4 random chars
         offer.TechnicalResult.Should().Be(OfferTechnicalResult.Pending);
         offer.IsFinancialEnvelopeOpen.Should().BeFalse();
-        offer.TechnicalTotalScore.Should().Be(0);
+        offer.TechnicalTotalScore.Should().BeNull();
     }
 
     // ═══════════════════════════════════════════════════════════
