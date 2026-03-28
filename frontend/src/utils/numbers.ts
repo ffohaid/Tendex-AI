@@ -63,7 +63,10 @@ export function formatNumber(
  * Formats a percentage value.
  * Always uses English numerals.
  */
-export function formatPercentage(value: number | null | undefined): string {
+export function formatPercentage(
+  value: number | null | undefined,
+  decimals = 1,
+): string {
   if (value === null || value === undefined) return '0%'
-  return `${value}%`
+  return `${value.toFixed(decimals)}%`
 }

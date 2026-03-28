@@ -11,8 +11,7 @@
 | Sprint 2: الخدمات الأساسية | 🔄 قيد التنفيذ | 86% | تم إنجاز TASK-201, TASK-202, TASK-203, TASK-204, TASK-205, TASK-206 |
 | Sprint 3: سير العمل والتقييم | 🔄 قيد التنفيذ | 71% | تم إنجاز TASK-301, TASK-302, TASK-303, TASK-304, TASK-305 |
 | Sprint 4: تكامل الذكاء الاصطناعي | 🔄 قيد التنفيذ | 71% | تم إنجاز TASK-401, TASK-402, TASK-403, TASK-404, TASK-405 |
-| Sprint 5: الواجهة الأمامية | 🔄 قيد التنفيذ | 60% | تم إنجاز TASK-501, TASK-502, TASK-503 |
-| Sprint 5: الواجهة الأمامية | 🔄 قيد التنفيذ | 40% | تم إنجاز TASK-501, TASK-504 |
+| Sprint 5: الواجهة الأمامية | 🔄 قيد التنفيذ | 71% | تم إنجاز TASK-501, TASK-502, TASK-503, TASK-504, TASK-505 |
 | Sprint 6: لوحة تحكم المشغل | ⏳ لم يبدأ | 0% | - |
 | Sprint 7: الاختبار والنشر | ⏳ لم يبدأ | 0% | - |
 
@@ -21,6 +20,55 @@
 ## سجل المهام المنجزة (Completed Tasks Log)
 
 *يرجى إضافة أحدث مهمة منجزة في أعلى هذه القائمة.*
+
+### 2026-03-28 - TASK-505: بناء شاشات لجان الفحص لتقييم العروض الفنية والمالية
+- **ما تم إنجازه:**
+  - **أنواع TypeScript (`types/evaluation.ts`):** تعريف شامل لجميع أنواع نظام التقييم (Committee, EvaluationCriterion, Vendor, TechnicalScore, FinancialScore, FinancialOffer, AiEvaluation, VarianceAlert, HeatmapCell, ComparisonMatrix, CompetitionEvaluation, DualDate, EvaluationMinutes).
+  - **خدمة API (`services/evaluationApi.ts`):** خدمة API كاملة تغطي جميع نقاط النهاية للتقييم الفني والمالي والذكاء الاصطناعي والمقارنة والمحاضر. لا توجد بيانات وهمية.
+  - **Pinia Store (`stores/evaluation.ts`):** مخزن حالة شامل يدير بيانات التقييم الفني والمالي مع دعم الحفظ التلقائي كل 30 ثانية، وبناء مصفوفة Heatmap.
+  - **مكون DualDateDisplay:** عرض التواريخ بالتقويم المزدوج (هجري أم القرى / ميلادي) مع دعم العرض المضغوط والكامل.
+  - **مكون CalendarToggle:** زر تبديل بين التقويم الهجري والميلادي.
+  - **مكونات التقييم (ScoreInput, EvaluationHeader, CriteriaPanel, VendorScoreCard, StatusBadge):** مكونات قابلة لإعادة الاستخدام لإدخال الدرجات وعرض المعايير وبطاقات الموردين.
+  - **شاشات التقييم الفني (TechnicalEvaluationList, TechnicalEvaluationDetail):** قائمة المنافسات للتقييم الفني مع صفحة تفاصيل شاملة تدعم التقييم الأعمى والحفظ التلقائي.
+  - **شاشات التقييم المالي (FinancialEvaluationList, FinancialEvaluationDetail):** قائمة المنافسات للتقييم المالي مع تدقيق حسابي ومقارنة أسعار.
+  - **شاشات المقارنة (TechnicalComparison, FinancialComparison):** مصفوفة مقارنة فنية بألوان Heatmap ومقارنة مالية تفصيلية بنداً ببند.
+  - **مكونات الذكاء الاصطناعي (AiAssistantPanel, AiInsightBadge, AiRecommendationCard):** لوحة مساعد الذكاء الاصطناعي مع توصيات وتنبيهات تباين ومؤشرات ثقة.
+  - **التقويم المزدوج (`composables/useDualCalendar.ts`):** دعم كامل للتقويم الهجري (أم القرى) والميلادي مع تبديل ديناميكي وأرقام إنجليزية.
+  - **ملفات الترجمة:** تحديث ar.json و en.json بـ 100+ مفتاح ترجمة جديد لجميع عناصر التقييم.
+  - **أدوات الأرقام (`utils/numbers.ts`):** تحسين دوال formatNumber و formatPercentage لدعم الكسور العشرية.
+- **الملفات المنشأة/المعدلة:**
+  - `src/types/evaluation.ts` (جديد)
+  - `src/services/evaluationApi.ts` (جديد)
+  - `src/stores/evaluation.ts` (جديد)
+  - `src/composables/useDualCalendar.ts` (جديد)
+  - `src/components/common/DualDateDisplay.vue` (جديد)
+  - `src/components/common/CalendarToggle.vue` (جديد)
+  - `src/components/common/StatusBadge.vue` (جديد)
+  - `src/components/evaluation/ScoreInput.vue` (جديد)
+  - `src/components/evaluation/EvaluationHeader.vue` (جديد)
+  - `src/components/evaluation/CriteriaPanel.vue` (جديد)
+  - `src/components/evaluation/VendorScoreCard.vue` (جديد)
+  - `src/views/evaluation/technical/TechnicalEvaluationList.vue` (جديد)
+  - `src/views/evaluation/technical/TechnicalEvaluationDetail.vue` (جديد)
+  - `src/views/evaluation/financial/FinancialEvaluationList.vue` (جديد)
+  - `src/views/evaluation/financial/FinancialEvaluationDetail.vue` (جديد)
+  - `src/views/evaluation/comparison/TechnicalComparison.vue` (جديد)
+  - `src/views/evaluation/comparison/FinancialComparison.vue` (جديد)
+  - `src/components/ai/AiAssistantPanel.vue` (جديد)
+  - `src/components/ai/AiInsightBadge.vue` (جديد)
+  - `src/components/ai/AiRecommendationCard.vue` (جديد)
+  - `src/router/index.ts` (معدل - إضافة 6 مسارات تقييم جديدة)
+  - `src/locales/ar.json` (معدل - إضافة 100+ مفتاح ترجمة)
+  - `src/locales/en.json` (معدل - إضافة 100+ مفتاح ترجمة)
+  - `src/utils/numbers.ts` (معدل - تحسين formatNumber و formatPercentage)
+- **التحقق:** نجاح vite build (بناء الإنتاج بدون أخطاء).
+- **الاعتماديات التي تم حلها:** TASK-501 (Layout), TASK-502 (Auth), TASK-503 (Dashboard).
+- **ملاحظات للوكيل التالي:**
+  - جميع الشاشات جاهزة وتنتظر ربط APIs الخلفية. يجب إنشاء Evaluation endpoints في الباكند.
+  - الحفظ التلقائي مفعل كل 30 ثانية للدرجات.
+  - التقييم المالي يشترط اعتماد التقييم الفني أولاً.
+  - التقويم الهجري يستخدم تقويم أم القرى عبر Intl API مع أرقام إنجليزية حصراً.
+  - دعم RTL/LTR كامل عبر الخصائص المنطقية لـ Tailwind.
 
 ### 2026-03-28 - TASK-502: تطوير واجهات المصادقة (Auth UI)
 - **ما تم إنجازه:**

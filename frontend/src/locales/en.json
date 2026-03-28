@@ -448,5 +448,154 @@
       "slaTemplate": "SLA Template",
       "ndaTemplate": "NDA Template"
     }
+  },
+  "evaluation": {
+    "searchPlaceholder": "Search by name or competition number...",
+    "allStatuses": "All Statuses",
+    "noCompetitions": "No competitions available for evaluation",
+    "retry": "Retry",
+    "projectName": "Project Name",
+    "competitionNumber": "Competition Number",
+    "deadline": "Deadline",
+    "vendorCount": "Number of Offers",
+    "passedVendors": "Passed Offers",
+    "estimatedBudget": "Estimated Budget",
+    "committee": "Committee",
+    "progress": "Progress",
+    "committeeMembers": "Committee Members",
+    "scoresSubmitted": "Scores Submitted",
+    "selectCriterion": "Select a criterion from the list to start evaluation",
+    "scoringProgress": "Scoring Progress",
+    "saving": "Saving...",
+    "saved": "Saved",
+    "saveScores": "Save Scores",
+    "notesPlaceholder": "Add your notes here...",
+    "varianceAlert": "{percent}% variance with AI evaluation",
+    "status": {
+      "pending": "Pending",
+      "in_progress": "In Progress",
+      "completed": "Completed",
+      "approved": "Approved",
+      "rejected": "Rejected"
+    },
+    "roles": {
+      "chair": "Committee Chair",
+      "member": "Member",
+      "secretary": "Secretary",
+      "financial_auditor": "Financial Auditor"
+    },
+    "technical": {
+      "title": "Technical Evaluation",
+      "subtitle": "Review and evaluate technical offers for competitions"
+    },
+    "financial": {
+      "title": "Financial Evaluation",
+      "subtitle": "Review and evaluate financial offers for competitions",
+      "prerequisiteNote": "Financial evaluation is only available for competitions with approved technical evaluation.",
+      "noEligible": "No competitions are currently eligible for financial evaluation",
+      "technicalApproved": "Technical Approved",
+      "priceComparison": "Price Comparison",
+      "fullComparison": "Full Comparison",
+      "vendor": "Vendor",
+      "totalAmount": "Total Amount",
+      "arithmeticCheck": "Arithmetic Check",
+      "deviation": "Deviation",
+      "deviationFromEstimate": "Deviation from Estimate",
+      "rank": "Rank",
+      "valid": "Valid",
+      "invalid": "Error Found",
+      "arithmeticOk": "Arithmetic OK",
+      "arithmeticError": "Arithmetic Error",
+      "bestOffer": "Best Offer",
+      "lowest": "Lowest",
+      "itemDetails": "Item Details",
+      "item": "Item",
+      "unit": "Unit",
+      "quantity": "Quantity",
+      "unitPrice": "Unit Price",
+      "totalPrice": "Total Price",
+      "boqPrice": "BOQ Price",
+      "itemCount": "Item Count",
+      "scoringArea": "Financial Scoring Area",
+      "finalRanking": "Final Ranking",
+      "tabs": {
+        "prices": "Prices",
+        "scoring": "Scoring",
+        "ranking": "Ranking",
+        "minutes": "Minutes"
+      }
+    },
+    "tabs": {
+      "scoring": "Scoring",
+      "matrix": "Matrix",
+      "minutes": "Minutes"
+    },
+    "criteria": {
+      "title": "Evaluation Criteria",
+      "totalWeight": "Total Weight",
+      "minimumScore": "Minimum Score",
+      "min": "Min"
+    },
+    "heatmap": {
+      "title": "Evaluation Matrix",
+      "fullView": "Full View",
+      "criterion": "Criterion"
+    },
+    "comparison": {
+      "technicalTitle": "Technical Comparison Matrix",
+      "financialTitle": "Financial Offer Comparison",
+      "legend": "Color Legend",
+      "excellent": "Excellent",
+      "average": "Average",
+      "weak": "Weak",
+      "scores": "Scores",
+      "notes": "Notes",
+      "export": "Export",
+      "criterion": "Criterion",
+      "weight": "Weight",
+      "totalAverage": "Total Average",
+      "noNotes": "No notes",
+      "varianceAlerts": "Variance Alerts",
+      "humanScore": "Human Score",
+      "aiScore": "AI Score",
+      "variance": "Variance",
+      "total": "Total",
+      "summary": "Summary",
+      "detailed": "Detailed",
+      "priceChart": "Price Chart",
+      "itemComparison": "Item Comparison"
+    },
+    "minutes": {
+      "comingSoon": "Minutes will be added soon"
+    },
+    "ai": {
+      "title": "AI Assistant",
+      "subtitle": "AI-powered analysis and recommendations",
+      "suggestedScore": "Suggested Score",
+      "analyze": "Analyze",
+      "analyzeAll": "Full Analysis",
+      "analyzing": "AI analysis in progress...",
+      "justification": "Justification",
+      "references": "References",
+      "acceptSuggestion": "Accept Suggestion",
+      "accept": "Accept",
+      "dismiss": "Dismiss",
+      "noAnalysis": "No analysis performed yet",
+      "clickToAnalyze": "Click the analyze button to start AI evaluation",
+      "highConfidence": "High Confidence",
+      "mediumConfidence": "Medium Confidence",
+      "lowConfidence": "Low Confidence",
+      "varianceAlerts": "Variance Alerts",
+      "humanScore": "Human Score",
+      "aiScore": "AI Score",
+      "variancePercent": "{percent}% variance",
+      "showLess": "Show Less",
+      "showAll": "Show All ({count})"
+    },
+    "calendar": {
+      "toggle": "Toggle Calendar",
+      "hijri": "Hijri",
+      "gregorian": "Gregorian"
+    }
   }
 }

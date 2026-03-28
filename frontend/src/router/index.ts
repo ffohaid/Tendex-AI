@@ -53,17 +53,42 @@ const routes: RouteRecordRaw[] = [
         component: () => import('@/views/DashboardView.vue'),
         meta: { title: 'Tendex AI - Temporary Committees', requiresAuth: true },
       },
+      /* Evaluation routes (TASK-505) */
       {
         path: 'evaluation/technical',
         name: 'EvaluationTechnical',
-        component: () => import('@/views/DashboardView.vue'),
+        component: () => import('@/views/evaluation/technical/TechnicalEvaluationList.vue'),
         meta: { title: 'Tendex AI - Technical Evaluation', requiresAuth: true },
+      },
+      {
+        path: 'evaluation/technical/:id',
+        name: 'TechnicalEvaluationDetail',
+        component: () => import('@/views/evaluation/technical/TechnicalEvaluationDetail.vue'),
+        meta: { title: 'Tendex AI - Technical Evaluation Detail', requiresAuth: true },
+      },
+      {
+        path: 'evaluation/technical/:id/comparison',
+        name: 'TechnicalComparison',
+        component: () => import('@/views/evaluation/comparison/TechnicalComparison.vue'),
+        meta: { title: 'Tendex AI - Technical Comparison', requiresAuth: true },
       },
       {
         path: 'evaluation/financial',
         name: 'EvaluationFinancial',
-        component: () => import('@/views/DashboardView.vue'),
+        component: () => import('@/views/evaluation/financial/FinancialEvaluationList.vue'),
         meta: { title: 'Tendex AI - Financial Evaluation', requiresAuth: true },
+      },
+      {
+        path: 'evaluation/financial/:id',
+        name: 'FinancialEvaluationDetail',
+        component: () => import('@/views/evaluation/financial/FinancialEvaluationDetail.vue'),
+        meta: { title: 'Tendex AI - Financial Evaluation Detail', requiresAuth: true },
+      },
+      {
+        path: 'evaluation/financial/:id/comparison',
+        name: 'FinancialComparison',
+        component: () => import('@/views/evaluation/comparison/FinancialComparison.vue'),
+        meta: { title: 'Tendex AI - Financial Comparison', requiresAuth: true },
       },
       {
         path: 'approvals',

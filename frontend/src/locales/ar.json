@@ -448,5 +448,154 @@
       "slaTemplate": "نموذج اتفاقية مستوى الخدمة",
       "ndaTemplate": "نموذج اتفاقية السرية"
     }
+  },
+  "evaluation": {
+    "searchPlaceholder": "البحث بالاسم أو رقم المنافسة...",
+    "allStatuses": "جميع الحالات",
+    "noCompetitions": "لا توجد منافسات متاحة للتقييم",
+    "retry": "إعادة المحاولة",
+    "projectName": "اسم المشروع",
+    "competitionNumber": "رقم المنافسة",
+    "deadline": "الموعد النهائي",
+    "vendorCount": "عدد العروض",
+    "passedVendors": "العروض المجتازة",
+    "estimatedBudget": "الميزانية التقديرية",
+    "committee": "اللجنة",
+    "progress": "نسبة الإنجاز",
+    "committeeMembers": "أعضاء اللجنة",
+    "scoresSubmitted": "تم تقديم الدرجات",
+    "selectCriterion": "اختر معياراً من القائمة لبدء التقييم",
+    "scoringProgress": "تقدم التقييم",
+    "saving": "جارٍ الحفظ...",
+    "saved": "تم الحفظ",
+    "saveScores": "حفظ الدرجات",
+    "notesPlaceholder": "أضف ملاحظاتك هنا...",
+    "varianceAlert": "تباين {percent}% مع تقييم الذكاء الاصطناعي",
+    "status": {
+      "pending": "قيد الانتظار",
+      "in_progress": "قيد التنفيذ",
+      "completed": "مكتمل",
+      "approved": "معتمد",
+      "rejected": "مرفوض"
+    },
+    "roles": {
+      "chair": "رئيس اللجنة",
+      "member": "عضو",
+      "secretary": "أمين السر",
+      "financial_auditor": "مدقق مالي"
+    },
+    "technical": {
+      "title": "التقييم الفني",
+      "subtitle": "فحص وتقييم العروض الفنية للمنافسات"
+    },
+    "financial": {
+      "title": "التقييم المالي",
+      "subtitle": "فحص وتقييم العروض المالية للمنافسات",
+      "prerequisiteNote": "التقييم المالي متاح فقط للمنافسات التي تم اعتماد تقييمها الفني.",
+      "noEligible": "لا توجد منافسات مؤهلة للتقييم المالي حالياً",
+      "technicalApproved": "الفني معتمد",
+      "priceComparison": "مقارنة الأسعار",
+      "fullComparison": "المقارنة الكاملة",
+      "vendor": "المتنافس",
+      "totalAmount": "المبلغ الإجمالي",
+      "arithmeticCheck": "التدقيق الحسابي",
+      "deviation": "الانحراف",
+      "deviationFromEstimate": "الانحراف عن التقدير",
+      "rank": "الترتيب",
+      "valid": "صحيح",
+      "invalid": "يوجد خطأ",
+      "arithmeticOk": "حسابياً صحيح",
+      "arithmeticError": "خطأ حسابي",
+      "bestOffer": "أفضل عرض",
+      "lowest": "الأقل",
+      "itemDetails": "تفاصيل البنود",
+      "item": "البند",
+      "unit": "الوحدة",
+      "quantity": "الكمية",
+      "unitPrice": "سعر الوحدة",
+      "totalPrice": "السعر الإجمالي",
+      "boqPrice": "سعر جدول الكميات",
+      "itemCount": "عدد البنود",
+      "scoringArea": "منطقة التقييم المالي",
+      "finalRanking": "الترتيب النهائي",
+      "tabs": {
+        "prices": "الأسعار",
+        "scoring": "التقييم",
+        "ranking": "الترتيب",
+        "minutes": "المحاضر"
+      }
+    },
+    "tabs": {
+      "scoring": "التقييم",
+      "matrix": "المصفوفة",
+      "minutes": "المحاضر"
+    },
+    "criteria": {
+      "title": "معايير التقييم",
+      "totalWeight": "الوزن الإجمالي",
+      "minimumScore": "الحد الأدنى",
+      "min": "أدنى"
+    },
+    "heatmap": {
+      "title": "مصفوفة التقييم",
+      "fullView": "العرض الكامل",
+      "criterion": "المعيار"
+    },
+    "comparison": {
+      "technicalTitle": "مصفوفة المقارنة الفنية",
+      "financialTitle": "مقارنة العروض المالية",
+      "legend": "دليل الألوان",
+      "excellent": "ممتاز",
+      "average": "متوسط",
+      "weak": "ضعيف",
+      "scores": "الدرجات",
+      "notes": "الملاحظات",
+      "export": "تصدير",
+      "criterion": "المعيار",
+      "weight": "الوزن",
+      "totalAverage": "المتوسط الإجمالي",
+      "noNotes": "لا توجد ملاحظات",
+      "varianceAlerts": "تنبيهات التباين",
+      "humanScore": "الدرجة البشرية",
+      "aiScore": "درجة الذكاء الاصطناعي",
+      "variance": "التباين",
+      "total": "الإجمالي",
+      "summary": "ملخص",
+      "detailed": "تفصيلي",
+      "priceChart": "مخطط الأسعار",
+      "itemComparison": "مقارنة البنود"
+    },
+    "minutes": {
+      "comingSoon": "سيتم إضافة المحاضر قريباً"
+    },
+    "ai": {
+      "title": "مساعد الذكاء الاصطناعي",
+      "subtitle": "تحليل وتوصيات مدعومة بالذكاء الاصطناعي",
+      "suggestedScore": "الدرجة المقترحة",
+      "analyze": "تحليل",
+      "analyzeAll": "تحليل شامل",
+      "analyzing": "جارٍ التحليل بالذكاء الاصطناعي...",
+      "justification": "المبررات",
+      "references": "المراجع",
+      "acceptSuggestion": "قبول الاقتراح",
+      "accept": "قبول",
+      "dismiss": "تجاهل",
+      "noAnalysis": "لم يتم إجراء تحليل بعد",
+      "clickToAnalyze": "اضغط على زر التحليل لبدء تقييم الذكاء الاصطناعي",
+      "highConfidence": "ثقة عالية",
+      "mediumConfidence": "ثقة متوسطة",
+      "lowConfidence": "ثقة منخفضة",
+      "varianceAlerts": "تنبيهات التباين",
+      "humanScore": "الدرجة البشرية",
+      "aiScore": "درجة الذكاء الاصطناعي",
+      "variancePercent": "تباين {percent}%",
+      "showLess": "عرض أقل",
+      "showAll": "عرض الكل ({count})"
+    },
+    "calendar": {
+      "toggle": "تبديل التقويم",
+      "hijri": "هجري",
+      "gregorian": "ميلادي"
+    }
   }
 }
