@@ -4,6 +4,7 @@ using TendexAI.Infrastructure;
 using TendexAI.API.Endpoints.Auth;
 using TendexAI.API.Endpoints.UserManagement;
 using TendexAI.API.Endpoints.Rfp;
+using TendexAI.API.Endpoints.Committees;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -87,5 +88,8 @@ app.MapFeatureFlagEndpoints();
 
 // Competition (RFP) management endpoints
 app.MapCompetitionEndpoints();
+
+// Committee management endpoints
+app.MapCommitteeEndpoints();
 
 app.Run();

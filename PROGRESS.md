@@ -9,7 +9,7 @@
 | Sprint 0: التخطيط وإدارة المنتج | ✅ مكتمل | 100% | تم إعداد خطة التنفيذ (Sprint Backlog) وقوالب العمل. |
 | Sprint 1: البنية التحتية | ✅ مكتمل | 100% | تم إنجاز TASK-101, TASK-102, TASK-103, TASK-104, TASK-105, TASK-106 |
 | Sprint 2: الخدمات الأساسية | 🔄 قيد التنفيذ | 86% | تم إنجاز TASK-201, TASK-202, TASK-203, TASK-204, TASK-205, TASK-206 |
-| Sprint 3: سير العمل والتقييم | 🔄 قيد التنفيذ | 29% | تم إنجاز TASK-301, TASK-302 |
+| Sprint 3: سير العمل والتقييم | 🔄 قيد التنفيذ | 43% | تم إنجاز TASK-301, TASK-302, TASK-303 |
 | Sprint 4: تكامل الذكاء الاصطناعي | ⏳ لم يبدأ | 0% | - |
 | Sprint 5: الواجهة الأمامية | ⏳ لم يبدأ | 0% | - |
 | Sprint 6: لوحة تحكم المشغل | ⏳ لم يبدأ | 0% | - |
@@ -20,6 +20,66 @@
 ## سجل المهام المنجزة (Completed Tasks Log)
 
 *يرجى إضافة أحدث مهمة منجزة في أعلى هذه القائمة.*
+
+### 2026-03-28 - TASK-303: بناء APIs لإدارة لجان فحص العروض (الفنية والمالية)
+- **ما تم إنجازه:**
+  - **طبقة Domain — كيانات اللجان:**
+    - إنشاء `CommitteeType` enum (7 أنواع: TechnicalEvaluation, FinancialEvaluation, BookletPreparation, PurchaseCommittee, InquiryReview, AwardApproval, GrievanceReview).
+    - إنشاء `CommitteeStatus` enum (4 حالات: Active, Suspended, Dissolved, PendingFormation).
+    - إنشاء `CommitteeMemberRole` enum (4 أدوار: Chair, ViceChair, Secretary, Member).
+    - إنشاء `Committee` كـ Aggregate Root مع دعم كامل لـ:
+      - إدارة دورة حياة اللجنة (Active → Suspended → Reactivated / Dissolved).
+      - إضافة/إزالة الأعضاء مع التحقق من القواعد (رئيس واحد فقط، منع التكرار).
+      - تمديد مدة اللجنة وتحديث بياناتها.
+      - الفصل البرمجي بين اللجان الدائمة والمؤقتة (المرتبطة بمنافسة).
+    - إنشاء `CommitteeMember` entity مع دعم نطاق المراحل (ActiveFromPhase/ActiveToPhase).
+    - إنشاء `ICommitteeRepository` interface.
+  - **طبقة Domain — قواعد تعارض المصالح (ConflictOfInterestRules):**
+    - **القاعدة 1:** منع أن يكون نفس الشخص رئيساً للجنة الفحص الفني ورئيساً للجنة الفحص المالي في نفس المنافسة.
+    - **القاعدة 2:** منع أن يكون معدّ الكراسة رئيساً للجنة تقييم (فنية أو مالية) في نفس المنافسة.
+    - **القاعدة 3:** منع أن يكون رئيس لجنة التقييم عضواً في لجنة إعداد الكراسة لنفس المنافسة.
+    - **التحقق من نطاق المراحل:** التأكد من أن اللجنة الفنية تعمل في مرحلة الفحص الفني واللجنة المالية في مرحلة الفحص المالي.
+  - **طبقة Application — Commands:**
+    - `CreateCommitteeCommand` + Handler + Validator: إنشاء لجنة جديدة مع التحقق من المدخلات.
+    - `UpdateCommitteeCommand` + Handler + Validator: تحديث بيانات اللجنة.
+    - `AddCommitteeMemberCommand` + Handler + Validator: إضافة عضو مع تطبيق قواعد تعارض المصالح.
+    - `RemoveCommitteeMemberCommand` + Handler + Validator: إزالة عضو مع إلزامية ذكر السبب.
+    - `ChangeCommitteeStatusCommand` + Handler + Validator: تغيير حالة اللجنة (تعليق/إعادة تفعيل/حل).
+  - **طبقة Application — Queries:**
+    - `GetCommitteeByIdQuery`: جلب لجنة بالمعرف مع جميع الأعضاء.
+    - `GetCommitteesListQuery`: قائمة مرقمة مع فلاتر (النوع، الحالة، دائمة/مؤقتة، المنافسة، بحث نصي).
+    - `GetCompetitionCommitteesQuery`: جلب جميع لجان منافسة محددة.
+    - `ValidateConflictOfInterestQuery`: فحص تعارض المصالح قبل إضافة عضو (pre-check API).
+  - **طبقة Application — DTOs و Mapping:**
+    - `CommitteeDetailDto`, `CommitteeListItemDto`, `CommitteeMemberDto`, `CommitteePagedResultDto`.
+    - `CommitteeMappingExtensions` لتحويل الكيانات إلى DTOs.
+  - **طبقة Infrastructure — Persistence:**
+    - `CommitteeConfiguration` و `CommitteeMemberConfiguration` لـ EF Core مع فهارس محسّنة.
+    - `CommitteeRepository` مع دعم كامل للاستعلامات المتقدمة (Paged, ByCompetition, ByUser, ConflictCheck).
+    - تحديث `TenantDbContext` بإضافة `DbSet<Committee>` و `DbSet<CommitteeMember>`.
+    - تسجيل `ICommitteeRepository` في `DependencyInjection.cs`.
+  - **طبقة API — Minimal API Endpoints:**
+    - `GET /api/v1/committees` — قائمة مرقمة مع فلاتر.
+    - `GET /api/v1/committees/{id}` — تفاصيل لجنة.
+    - `POST /api/v1/committees` — إنشاء لجنة.
+    - `PUT /api/v1/committees/{id}` — تحديث لجنة.
+    - `PUT /api/v1/committees/{id}/status` — تغيير حالة لجنة.
+    - `POST /api/v1/committees/{id}/members` — إضافة عضو.
+    - `DELETE /api/v1/committees/{id}/members/{userId}` — إزالة عضو.
+    - `GET /api/v1/committees/{id}/conflict-check/{userId}` — فحص تعارض المصالح.
+    - `GET /api/v1/competitions/{id}/committees` — لجان منافسة محددة.
+  - **اختبارات الوحدة (45 اختبار — جميعها ناجحة):**
+    - `CommitteeTests` (19 اختبار): إنشاء، إدارة أعضاء، دورة حياة، تحديث.
+    - `ConflictOfInterestRulesTests` (14 اختبار): قواعد تعارض المصالح ونطاق المراحل.
+    - `CommitteeValidatorTests` (12 اختبار): التحقق من صحة المدخلات لجميع الأوامر.
+- **الاعتماديات التي تم حلها:** TASK-302 (State Machine و CompetitionPhase enum).
+- **ملاحظات للوكيل التالي:**
+  - اللجان مفصولة برمجياً: `CommitteeType.TechnicalEvaluation` و `CommitteeType.FinancialEvaluation`.
+  - قواعد تعارض المصالح مطبقة في `ConflictOfInterestRules` (Domain layer) ومفعّلة في `AddCommitteeMemberCommandHandler`.
+  - الـ API يدعم فحص تعارض المصالح كـ pre-check قبل إضافة العضو عبر `GET /conflict-check/{userId}`.
+  - جميع الـ Endpoints تتطلب مصادقة (`RequireAuthorization()`).
+  - الجداول في schema `committees` (Committees, CommitteeMembers) مع فهارس مركبة للأداء.
+  - يمكن البدء في TASK-304 (نظام التقييم الفني) أو TASK-305 (نظام التقييم المالي).
 
 ### 2026-03-28 - TASK-302: نظام State Machine وإدارة مسارات الاعتماد ومصفوفة الصلاحيات رباعية الأبعاد
 - **ما تم إنجازه:**

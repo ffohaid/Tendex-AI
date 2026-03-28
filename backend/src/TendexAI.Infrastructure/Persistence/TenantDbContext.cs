@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using TendexAI.Domain.Common;
 using TendexAI.Domain.Entities.Identity;
+using TendexAI.Domain.Entities.Committees;
 using TendexAI.Domain.Entities.Rfp;
 
 namespace TendexAI.Infrastructure.Persistence;
@@ -35,6 +36,10 @@ public sealed class TenantDbContext : DbContext, IUnitOfWork
     public DbSet<BoqItem> BoqItems => Set<BoqItem>();
     public DbSet<EvaluationCriterion> EvaluationCriteria => Set<EvaluationCriterion>();
     public DbSet<RfpAttachment> RfpAttachments => Set<RfpAttachment>();
+
+    // ----- Committee DbSets -----
+    public DbSet<Committee> Committees => Set<Committee>();
+    public DbSet<CommitteeMember> CommitteeMembers => Set<CommitteeMember>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
