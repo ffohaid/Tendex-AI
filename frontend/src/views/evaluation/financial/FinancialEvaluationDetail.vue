@@ -10,7 +10,6 @@ import { useI18n } from 'vue-i18n'
 import { useEvaluationStore } from '@/stores/evaluation'
 import { formatCurrency } from '@/utils/numbers'
 import EvaluationHeader from '@/components/evaluation/EvaluationHeader.vue'
-import DualDateDisplay from '@/components/common/DualDateDisplay.vue'
 
 const { t } = useI18n()
 const route = useRoute()
@@ -19,7 +18,6 @@ const store = useEvaluationStore()
 
 const competitionId = computed(() => route.params.id as string)
 const activeTab = ref<'prices' | 'scoring' | 'ranking' | 'minutes'>('prices')
-const savingStatus = ref<'idle' | 'saving' | 'saved' | 'error'>('idle')
 
 onMounted(async () => {
   await store.selectCompetition(competitionId.value)

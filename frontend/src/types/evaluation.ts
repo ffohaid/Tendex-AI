@@ -8,30 +8,34 @@
  * Enums
  * ────────────────────────────────────────────── */
 
-export enum EvaluationStatus {
-  Pending = 'pending',
-  InProgress = 'in_progress',
-  Completed = 'completed',
-  Approved = 'approved',
-  Rejected = 'rejected',
-}
+export const EvaluationStatus = {
+  Pending: 'pending',
+  InProgress: 'in_progress',
+  Completed: 'completed',
+  Approved: 'approved',
+  Rejected: 'rejected',
+} as const
+export type EvaluationStatus = (typeof EvaluationStatus)[keyof typeof EvaluationStatus]
 
-export enum EvaluationType {
-  Technical = 'technical',
-  Financial = 'financial',
-}
+export const EvaluationType = {
+  Technical: 'technical',
+  Financial: 'financial',
+} as const
+export type EvaluationType = (typeof EvaluationType)[keyof typeof EvaluationType]
 
-export enum OfferStatus {
-  Passed = 'passed',
-  Failed = 'failed',
-  UnderReview = 'under_review',
-}
+export const OfferStatus = {
+  Passed: 'passed',
+  Failed: 'failed',
+  UnderReview: 'under_review',
+} as const
+export type OfferStatus = (typeof OfferStatus)[keyof typeof OfferStatus]
 
-export enum HeatmapColor {
-  Excellent = 'excellent', // >= 80%
-  Average = 'average',     // 60-79%
-  Weak = 'weak',           // < 60%
-}
+export const HeatmapColor = {
+  Excellent: 'excellent',  // >= 80%
+  Average: 'average',      // 60-79%
+  Weak: 'weak',            // < 60%
+} as const
+export type HeatmapColor = (typeof HeatmapColor)[keyof typeof HeatmapColor]
 
 /* ──────────────────────────────────────────────
  * Core Entities

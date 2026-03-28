@@ -8,7 +8,7 @@ import { useI18n } from 'vue-i18n'
 import { useDualCalendar } from '@/composables/useDualCalendar'
 
 const { t } = useI18n()
-const { showHijri, toggleCalendar, calendarLabel } = useDualCalendar()
+const { toggleCalendar, calendarLabel } = useDualCalendar()
 </script>
 
 <template>

@@ -50,11 +50,6 @@ const vendorEvaluations = computed(() => {
   return props.aiEvaluations.filter(e => e.vendorId === activeVendorTab.value)
 })
 
-const vendorAlerts = computed(() => {
-  if (!activeVendorTab.value) return []
-  return props.varianceAlerts.filter(a => a.vendorId === activeVendorTab.value)
-})
-
 const visibleAlerts = computed(() =>
   showAllAlerts.value ? props.varianceAlerts : props.varianceAlerts.slice(0, 3)
 )

@@ -5,6 +5,9 @@
  */
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
+import {
+  HeatmapColor,
+} from '@/types/evaluation'
 import type {
   CompetitionEvaluation,
   Committee,
@@ -17,7 +20,6 @@ import type {
   VarianceAlert,
   ComparisonMatrix,
   HeatmapCell,
-  HeatmapColor,
 } from '@/types/evaluation'
 import * as api from '@/services/evaluationApi'
 
@@ -54,9 +56,9 @@ export const useEvaluationStore = defineStore('evaluation', () => {
 
   /* ── Heatmap Helpers ───────────────────────── */
   function getHeatmapColor(percentage: number): HeatmapColor {
-    if (percentage >= 80) return 'excellent'
-    if (percentage >= 60) return 'average'
-    return 'weak'
+    if (percentage >= 80) return HeatmapColor.Excellent
+    if (percentage >= 60) return HeatmapColor.Average
+    return HeatmapColor.Weak
   }
 
   function buildHeatmapCells(): HeatmapCell[][] {
