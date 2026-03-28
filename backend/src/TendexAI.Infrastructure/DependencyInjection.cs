@@ -14,6 +14,7 @@ using TendexAI.Infrastructure.Persistence.Interceptors;
 using TendexAI.Infrastructure.Persistence.Repositories;
 using TendexAI.Infrastructure.Services;
 using TendexAI.Infrastructure.Services.Identity;
+using TendexAI.Infrastructure.Services.Email;
 using TendexAI.Infrastructure.Storage.MinIO;
 
 namespace TendexAI.Infrastructure;
@@ -179,10 +180,16 @@ public static class DependencyInjection
         services.AddScoped<ITokenService, TokenService>();
         services.AddScoped<ISessionStore, RedisSessionStore>();
 
+        // ----- Email Service -----
+        services.Configure<SmtpSettings>(configuration.GetSection(SmtpSettings.SectionName));
+        services.AddScoped<IEmailService, SmtpEmailService>();
+
         // ----- Repository Registrations -----
         services.AddScoped<IUserRepository, UserRepository>();
         services.AddScoped<IRefreshTokenRepository, RefreshTokenRepository>();
         services.AddScoped<IAuditLogRepository, AuditLogRepository>();
+        services.AddScoped<IRoleRepository, RoleRepository>();
+        services.AddScoped<IUserInvitationRepository, UserInvitationRepository>();
 
         return services;
     }

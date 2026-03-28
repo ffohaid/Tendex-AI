@@ -2,6 +2,7 @@ using TendexAI.API.Endpoints;
 using TendexAI.Application;
 using TendexAI.Infrastructure;
 using TendexAI.API.Endpoints.Auth;
+using TendexAI.API.Endpoints.UserManagement;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -73,5 +74,8 @@ app.MapAuditTrailEndpoints();
 
 // File management endpoints
 app.MapFileEndpoints();
+
+// User management endpoints
+app.MapUserManagementEndpoints();
 
 app.Run();

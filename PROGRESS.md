@@ -8,7 +8,7 @@
 | :--- | :--- | :--- | :--- |
 | Sprint 0: التخطيط وإدارة المنتج | ✅ مكتمل | 100% | تم إعداد خطة التنفيذ (Sprint Backlog) وقوالب العمل. |
 | Sprint 1: البنية التحتية | ✅ مكتمل | 100% | تم إنجاز TASK-101, TASK-102, TASK-103, TASK-104, TASK-105, TASK-106 |
-| Sprint 2: الخدمات الأساسية | 🔄 قيد التنفيذ | 57% | تم إنجاز TASK-201, TASK-204, TASK-205, TASK-206 |
+| Sprint 2: الخدمات الأساسية | 🔄 قيد التنفيذ | 71% | تم إنجاز TASK-201, TASK-202, TASK-204, TASK-205, TASK-206 |
 | Sprint 3: سير العمل والتقييم | ⏳ لم يبدأ | 0% | - |
 | Sprint 4: تكامل الذكاء الاصطناعي | ⏳ لم يبدأ | 0% | - |
 | Sprint 5: الواجهة الأمامية | ⏳ لم يبدأ | 0% | - |
@@ -20,6 +20,50 @@
 ## سجل المهام المنجزة (Completed Tasks Log)
 
 *يرجى إضافة أحدث مهمة منجزة في أعلى هذه القائمة.*
+
+### 2026-03-28 - TASK-202: تطوير APIs لإدارة المستخدمين وتعيين الأدوار ودعوات التسجيل
+- **ما تم إنجازه:**
+  - **طبقة Domain:**
+    - إنشاء كيان `UserInvitation` مع دعم كامل لدورة حياة الدعوة (Pending, Accepted, Expired, Revoked).
+    - إنشاء `InvitationStatus` Enum و `SystemRole` Enum (Owner, Admin, SectorRep, FinancialController, Member, Viewer).
+    - إنشاء `IUserInvitationRepository` و `IRoleRepository` interfaces.
+    - توسيع `IUserRepository` بإضافة methods لإدارة الأدوار (AddUserRole, RemoveUserRole, HasRole) والترقيم (GetByTenantId, GetCount).
+  - **طبقة Application (CQRS + FluentValidation):**
+    - **Commands:** SendInvitation, AcceptInvitation, ResendInvitation, RevokeInvitation, UpdateUser, ToggleUserStatus, AssignRole, RemoveRole.
+    - **Queries:** GetUsers (paginated), GetUserById, GetRoles, GetInvitations (paginated).
+    - **Validators:** SendInvitationCommandValidator, AcceptInvitationCommandValidator, UpdateUserCommandValidator, AssignRoleCommandValidator.
+    - **DTOs:** UserDto, UserRoleDto, RoleDto, InvitationDto, PaginatedResult<T>.
+    - **Behaviors:** ValidationBehavior<TRequest, TResponse> pipeline لـ MediatR.
+    - إنشاء `IEmailService` interface.
+  - **طبقة Infrastructure:**
+    - `UserInvitationRepository` مع فهارس محسنة.
+    - `RoleRepository` مع دعم multi-tenant.
+    - توسيع `UserRepository` بالعمليات الجديدة.
+    - `SmtpEmailService` مع قالب بريد HTML احترافي (RTL) لدعوات التسجيل.
+    - `SmtpSettings` للإعدادات.
+    - `UserInvitationConfiguration` لـ EF Core مع فهارس وعلاقات.
+    - إضافة `UserInvitations` DbSet في `TenantDbContext`.
+    - تسجيل جميع الخدمات الجديدة في DI container.
+  - **طبقة API (Minimal APIs):**
+    - 11 endpoint تحت `/api/v1/users`, `/api/v1/roles`, `/api/v1/invitations`.
+    - GET /users (paginated), GET /users/{id}, PUT /users/{id}, PATCH /users/{id}/status.
+    - POST /users/{id}/roles, DELETE /users/{id}/roles/{roleId}.
+    - GET /roles.
+    - GET /invitations (paginated), POST /invitations, POST /invitations/accept (anonymous), POST /invitations/{id}/resend, DELETE /invitations/{id}.
+  - **الاختبارات:**
+    - `UserInvitationTests` (8 tests): اختبار دورة حياة الدعوة.
+    - `SendInvitationCommandHandlerTests` (3 tests): اختبار إرسال الدعوات.
+    - `AcceptInvitationCommandHandlerTests` (3 tests): اختبار قبول الدعوات.
+    - `AssignRoleCommandHandlerTests` (3 tests): اختبار تعيين الأدوار.
+    - `ValidatorTests` (15 tests): اختبار جميع validators.
+- **الاعتماديات التي تم حلها:** TASK-201 (Auth), TASK-105 (DB).
+- **ملاحظات للوكيل التالي:**
+  - نظام الدعوات يمنع التسجيل الذاتي. فقط المسؤولون يمكنهم إضافة مستخدمين.
+  - يجب إنشاء Migration: `dotnet ef migrations add AddUserInvitations`.
+  - إعدادات SMTP تُقرأ من `appsettings.json` قسم `Smtp`. يجب تعبئتها في بيئة النشر.
+  - ValidationBehavior مسجل كـ pipeline behavior في MediatR لتطبيق FluentValidation تلقائياً.
+  - الأدوار الافتراضية (SystemRole enum) يجب أن تُزرع (seed) عند إنشاء tenant جديد.
+  - Accept invitation endpoint هو الوحيد المتاح بدون مصادقة (AllowAnonymous).
 
 ### 2026-03-28 - TASK-205: دمج MinIO لتخزين المرفقات والملفات (MinIO File Storage Integration)
 - **ما تم إنجازه:**
