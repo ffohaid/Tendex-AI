@@ -128,7 +128,13 @@
       "users": "User Management",
       "roles": "Roles & Permissions"
     },
-    "taskCenter": "Task Center"
+    "taskCenter": "Task Center",
+    "operator": {
+      "title": "Operator Panel",
+      "dashboard": "Overview",
+      "tenants": "Government Entities",
+      "purchaseOrders": "Purchase Orders"
+    }
   },
   "header": {
     "searchPlaceholder": "Search the platform...",
@@ -597,5 +603,237 @@
       "hijri": "Hijri",
       "gregorian": "Gregorian"
     }
+  },
+  "tenants": {
+    "titles": {
+      "list": "Government Entities",
+      "listSubtitle": "Manage government entities subscribed to the platform",
+      "create": "Add Government Entity",
+      "createSubtitle": "Enter the new government entity details to register on the platform",
+      "detail": "Entity Details",
+      "edit": "Edit Entity Details"
+    },
+    "fields": {
+      "nameAr": "Entity Name (Arabic)",
+      "nameEn": "Entity Name (English)",
+      "identifier": "Identifier",
+      "email": "Email",
+      "phone": "Phone",
+      "website": "Website",
+      "address": "Address",
+      "city": "City",
+      "status": "Status",
+      "subscriptionPlan": "Subscription Plan",
+      "subscriptionStart": "Subscription Start",
+      "subscriptionEnd": "Subscription End",
+      "maxUsers": "Max Users",
+      "adminName": "Admin Name",
+      "adminEmail": "Admin Email",
+      "adminPhone": "Admin Phone",
+      "createdAt": "Created At",
+      "notes": "Notes"
+    },
+    "placeholders": {
+      "nameAr": "Enter entity name in Arabic",
+      "nameEn": "Enter entity name in English",
+      "identifier": "e.g., GOV-001",
+      "email": "example@gov.sa",
+      "phone": "+966XXXXXXXXX",
+      "website": "https://www.example.gov.sa",
+      "address": "Enter entity address",
+      "city": "Enter city",
+      "maxUsers": "Enter max users",
+      "adminName": "Enter admin name",
+      "adminEmail": "admin@gov.sa",
+      "adminPhone": "+966XXXXXXXXX",
+      "notes": "Enter any additional notes",
+      "search": "Search by name or identifier..."
+    },
+    "sections": {
+      "basicInfo": "Basic Information",
+      "contactInfo": "Contact Information",
+      "subscriptionInfo": "Subscription Information",
+      "adminInfo": "Admin Details",
+      "purchaseOrders": "Purchase Orders",
+      "notes": "Notes"
+    },
+    "statuses": {
+      "active": "Active",
+      "suspended": "Suspended",
+      "pendingProvisioning": "Pending Provisioning",
+      "cancelled": "Cancelled"
+    },
+    "actions": {
+      "create": "Add Entity",
+      "edit": "Edit",
+      "activate": "Activate",
+      "suspend": "Suspend",
+      "backToList": "Back to List",
+      "viewDetails": "View Details"
+    },
+    "validation": {
+      "nameArRequired": "Arabic name is required",
+      "nameEnRequired": "English name is required",
+      "identifierRequired": "Identifier is required",
+      "emailInvalid": "Invalid email address",
+      "maxUsersRequired": "Max users is required"
+    },
+    "messages": {
+      "createSuccess": "Government entity added successfully",
+      "updateSuccess": "Entity details updated successfully",
+      "statusChangeSuccess": "Entity status changed successfully",
+      "noTenants": "No government entities registered",
+      "noTenantsDesc": "Start by adding a new government entity",
+      "noPurchaseOrders": "No purchase orders for this entity"
+    },
+    "labels": {
+      "totalTenants": "Total Entities",
+      "activeTenants": "Active Entities",
+      "pendingTenants": "Pending Provisioning"
+    }
+  },
+  "purchaseOrders": {
+    "titles": {
+      "list": "Purchase Orders",
+      "listSubtitle": "Manage and track purchase orders and subscriptions",
+      "create": "Create Purchase Order",
+      "createSubtitle": "Enter the new purchase order details",
+      "detail": "Purchase Order Details"
+    },
+    "fields": {
+      "poNumber": "PO Number",
+      "tenant": "Government Entity",
+      "totalAmount": "Total Amount",
+      "subscriptionPlan": "Subscription Plan",
+      "poDate": "PO Date",
+      "duration": "Subscription Duration",
+      "subscriptionStart": "Subscription Start",
+      "subscriptionEnd": "Subscription End",
+      "contactName": "Contact Name",
+      "contactEmail": "Contact Email",
+      "contactPhone": "Contact Phone",
+      "status": "Status",
+      "notes": "Notes",
+      "createdAt": "Created At"
+    },
+    "placeholders": {
+      "poNumber": "PO-2026-XXXX",
+      "selectTenant": "Select government entity",
+      "totalAmount": "Enter total amount",
+      "contactName": "Enter contact name",
+      "contactEmail": "contact@gov.sa",
+      "contactPhone": "+966XXXXXXXXX",
+      "notes": "Enter any additional notes",
+      "statusNotes": "Enter notes about the status change",
+      "search": "Search by PO number or entity name..."
+    },
+    "sections": {
+      "poInfo": "Purchase Order Details",
+      "contactInfo": "Contact Information",
+      "notes": "Notes",
+      "document": "PO Document"
+    },
+    "statuses": {
+      "received": "Received",
+      "environmentSetup": "Environment Setup",
+      "training": "Training",
+      "finalAcceptance": "Final Acceptance",
+      "activeOperation": "Active Operation",
+      "renewalWindow": "Renewal Window",
+      "renewed": "Renewed",
+      "cancelled": "Cancelled"
+    },
+    "plans": {
+      "basic": "Basic",
+      "professional": "Professional",
+      "enterprise": "Enterprise"
+    },
+    "durations": {
+      "sixMonths": "6 Months",
+      "oneYear": "1 Year",
+      "twoYears": "2 Years",
+      "threeYears": "3 Years"
+    },
+    "actions": {
+      "create": "Create Purchase Order",
+      "backToList": "Back to List",
+      "uploadDocument": "Upload Document",
+      "changeStatus": "Change Status"
+    },
+    "validation": {
+      "tenantRequired": "Government entity is required",
+      "poNumberRequired": "PO number is required",
+      "amountRequired": "Total amount is required and must be greater than zero",
+      "dateRequired": "PO date is required",
+      "emailInvalid": "Invalid email address"
+    },
+    "labels": {
+      "lifecycle": "Purchase Order Lifecycle",
+      "months": "months",
+      "viewDocument": "View Document",
+      "noDocument": "No document uploaded yet",
+      "statusTransitions": "Change Status"
+    },
+    "dialogs": {
+      "statusChangeTitle": "Confirm Status Change",
+      "statusChangeMessage": "Are you sure you want to change the purchase order status?"
+    },
+    "messages": {
+      "createSuccess": "Purchase order created successfully",
+      "statusChangeSuccess": "Purchase order status changed successfully",
+      "uploadSuccess": "Document uploaded successfully",
+      "noPurchaseOrders": "No purchase orders",
+      "noPurchaseOrdersDesc": "Start by creating a new purchase order"
+    }
+  },
+  "renewalAlerts": {
+    "title": "Renewal Alerts",
+    "subtitle": "Subscriptions approaching expiry date",
+    "severity": {
+      "expired": "Expired",
+      "critical": "Critical",
+      "warning": "Warning",
+      "info": "Info"
+    },
+    "labels": {
+      "critical": "Critical",
+      "warning": "Warning",
+      "total": "Total",
+      "poNumber": "PO Number",
+      "expiryDate": "Expiry Date",
+      "expiredSince": "Expired since {days} days",
+      "expiresIn": "Expires in {days} days"
+    },
+    "messages": {
+      "noAlerts": "No renewal alerts",
+      "noAlertsDesc": "All subscriptions are in good standing"
+    }
+  },
+  "operatorDashboard": {
+    "title": "Operator Dashboard",
+    "subtitle": "Overview of entities, subscriptions, and purchase orders",
+    "kpi": {
+      "totalTenants": "Total Entities",
+      "activePOs": "Active POs",
+      "pendingPOs": "Pending POs",
+      "renewingPOs": "Renewing"
+    },
+    "quickActions": {
+      "title": "Quick Actions",
+      "addTenant": "Add Government Entity",
+      "addTenantDesc": "Register a new government entity on the platform",
+      "addPO": "Create Purchase Order",
+      "addPODesc": "Create a new purchase order for a government entity",
+      "viewTenants": "View Entities",
+      "viewTenantsDesc": "Browse all registered government entities",
+      "viewPOs": "View Purchase Orders",
+      "viewPOsDesc": "Browse all purchase orders"
+    }
+  },
+  "tenantSelector": {
+    "placeholder": "Select Entity",
+    "searchPlaceholder": "Search for entity...",
+    "allTenants": "All Entities",
+    "noResults": "No results found"
   }
 }

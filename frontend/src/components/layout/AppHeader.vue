@@ -1,8 +1,20 @@
 <script setup lang="ts">
+import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useAppStore } from '@/stores/app'
+import { useAuthStore } from '@/stores/auth'
+import TenantSelector from '@/components/operator/TenantSelector.vue'
+
 const { t } = useI18n()
 const appStore = useAppStore()
+const authStore = useAuthStore()
+
+/** Check if user is Super Admin to show tenant selector */
+const isSuperAdmin = computed(() => {
+  return authStore.user?.roles?.some(
+    (r: string) => r === 'SuperAdmin' || r === 'Operator'
+  ) ?? false
+})
 
 /**
  * Toggles between Arabic and English locales.
@@ -47,6 +59,11 @@ function toggleSidebar(): void {
           {{ t('app.name') }}
         </span>
       </div>
+    </div>
+
+    <!-- Tenant Selector for Super Admin -->
+    <div v-if="isSuperAdmin" class="ms-4 hidden md:flex">
+      <TenantSelector />
     </div>
 
     <!-- Center section: Search bar -->

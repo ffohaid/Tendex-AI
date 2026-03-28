@@ -12,7 +12,7 @@
 | Sprint 3: سير العمل والتقييم | 🔄 قيد التنفيذ | 71% | تم إنجاز TASK-301, TASK-302, TASK-303, TASK-304, TASK-305 |
 | Sprint 4: تكامل الذكاء الاصطناعي | 🔄 قيد التنفيذ | 71% | تم إنجاز TASK-401, TASK-402, TASK-403, TASK-404, TASK-405 |
 | Sprint 5: الواجهة الأمامية | 🔄 قيد التنفيذ | 71% | تم إنجاز TASK-501, TASK-502, TASK-503, TASK-504, TASK-505 |
-| Sprint 6: لوحة تحكم المشغل | ⏳ لم يبدأ | 0% | - |
+| Sprint 6: لوحة تحكم المشغل | 🔄 قيد التنفيذ | 33% | تم إنجاز TASK-601 |
 | Sprint 7: الاختبار والنشر | ⏳ لم يبدأ | 0% | - |
 
 ---
@@ -20,6 +20,56 @@
 ## سجل المهام المنجزة (Completed Tasks Log)
 
 *يرجى إضافة أحدث مهمة منجزة في أعلى هذه القائمة.*
+
+### 2026-03-28 - TASK-601: بناء شاشات لوحة تحكم المشغل (Super Admin) لإدارة الجهات وأوامر التعميد
+- **ما تم إنجازه:**
+  - **أنواع TypeScript (`types/tenant.ts`):** تعريف شامل لجميع أنواع نظام إدارة الجهات وأوامر التعميد (TenantDto, TenantDetailDto, TenantSelectorOption, PurchaseOrderDto, PurchaseOrderDetailDto, RenewalAlertDto, PoStatisticsDto, CreateTenantRequest, CreatePurchaseOrderRequest, ChangePurchaseOrderStatusRequest). يشمل enums لـ TenantStatus, SubscriptionPlan, PoStatus, RenewalAlertSeverity.
+  - **خدمات API (`services/tenantService.ts`, `services/purchaseOrderService.ts`):** خدمات API كاملة تغطي جميع نقاط النهاية لإدارة الجهات (CRUD) وأوامر التعميد (CRUD + تغيير الحالة + رفع مستندات + تنبيهات التجديد + إحصائيات). لا توجد بيانات وهمية.
+  - **Pinia Stores (`stores/tenant.ts`, `stores/purchaseOrder.ts`):** مخازن حالة شاملة لإدارة الجهات وأوامر التعميد مع دعم البحث والتصفية والترقيم واختيار الجهة للـ Super Admin. يتضمن tenant store آلية حفظ selectedTenantId في localStorage وإرساله كـ header مع كل طلب API.
+  - **شاشات إدارة الجهات (3 شاشات):**
+    - `TenantListView.vue`: قائمة الجهات الحكومية مع بحث وتصفية حسب الحالة وبطاقات إحصائية وحالة فارغة.
+    - `TenantCreateView.vue`: نموذج إنشاء جهة جديدة مع أقسام (معلومات أساسية، تواصل، اشتراك، مسؤول) وتحقق من المدخلات.
+    - `TenantDetailView.vue`: عرض تفاصيل الجهة مع بطاقة الاشتراك، قائمة أوامر التعميد، وإجراءات (تفعيل/تعليق).
+  - **شاشات أوامر التعميد (3 شاشات):**
+    - `PurchaseOrderListView.vue`: قائمة أوامر التعميد مع بحث وتصفية حسب الحالة وعرض المبلغ برمز الريال.
+    - `PurchaseOrderCreateView.vue`: نموذج إنشاء أمر تعميد مع اختيار الجهة، خطة الاشتراك، المدة، وبيانات التواصل.
+    - `PurchaseOrderDetailView.vue`: عرض تفاصيل أمر التعميد مع Lifecycle Stepper (مستلم → تجهيز → تدريب → استلام → تشغيل)، تغيير الحالة، ورفع المستندات.
+  - **مكون تنبيهات التجديد (`RenewalAlertsWidget.vue`):** نظام تحذير مبكر يعرض الاشتراكات التي تقترب من الانتهاء خلال 60 يوماً مع مستويات خطورة (expired, critical, warning, info) وإحصائيات ملخصة.
+  - **مكون اختيار الجهة (`TenantSelector.vue`):** قائمة منسدلة في الهيدر تتيح للـ Super Admin التبديل بين سياقات الجهات الحكومية مع بحث وتصفية وعرض حالة كل جهة. يحل مشكلة tenantId الفارغ.
+  - **لوحة تحكم المشغل (`OperatorDashboardView.vue`):** لوحة رئيسية مع بطاقات KPI (إجمالي الجهات، أوامر نشطة، معلقة، قيد التجديد) + ويجت تنبيهات التجديد + إجراءات سريعة.
+  - **تعديل AppHeader:** إضافة TenantSelector للهيدر للمستخدمين بدور SuperAdmin/Operator فقط.
+  - **تعديل Router:** إضافة 7 مسارات جديدة تحت /operator (لوحة التحكم، قائمة الجهات، إنشاء جهة، تفاصيل جهة، قائمة أوامر، إنشاء أمر، تفاصيل أمر).
+  - **تعديل Navigation:** إضافة قسم "لوحة المشغل" في القائمة الجانبية مع 3 عناصر فرعية.
+  - **ملفات الترجمة:** تحديث ar.json و en.json بـ 200+ مفتاح ترجمة جديد لجميع عناصر إدارة الجهات وأوامر التعميد وتنبيهات التجديد ولوحة التحكم ومحدد الجهة.
+  - **دعم RTL/LTR:** استخدام الخصائص المنطقية لـ Tailwind حصرياً (ms-, me-, ps-, pe-, start, end, border-s, border-e).
+  - **الأرقام الإنجليزية:** جميع الأرقام والمبالغ المالية تستخدم الأرقام الإنجليزية مع رمز الريال السعودي (﷼).
+- **الملفات المنشأة/المعدلة:**
+  - `src/types/tenant.ts` (جديد)
+  - `src/services/tenantService.ts` (جديد)
+  - `src/services/purchaseOrderService.ts` (جديد)
+  - `src/stores/tenant.ts` (جديد)
+  - `src/stores/purchaseOrder.ts` (جديد)
+  - `src/views/tenants/TenantListView.vue` (جديد)
+  - `src/views/tenants/TenantCreateView.vue` (جديد)
+  - `src/views/tenants/TenantDetailView.vue` (جديد)
+  - `src/views/purchase-orders/PurchaseOrderListView.vue` (جديد)
+  - `src/views/purchase-orders/PurchaseOrderCreateView.vue` (جديد)
+  - `src/views/purchase-orders/PurchaseOrderDetailView.vue` (جديد)
+  - `src/components/operator/RenewalAlertsWidget.vue` (جديد)
+  - `src/components/operator/TenantSelector.vue` (جديد)
+  - `src/views/operator/OperatorDashboardView.vue` (جديد)
+  - `src/components/layout/AppHeader.vue` (معدل - إضافة TenantSelector)
+  - `src/router/index.ts` (معدل - إضافة 7 مسارات جديدة)
+  - `src/config/navigation.ts` (معدل - إضافة قسم لوحة المشغل)
+  - `src/locales/ar.json` (معدل - إضافة 200+ مفتاح ترجمة)
+  - `src/locales/en.json` (معدل - إضافة 200+ مفتاح ترجمة)
+- **الاعتماديات التي تم حلها:** TASK-203 (Tenant Management APIs), TASK-501 (Layout), TASK-502 (Auth).
+- **ملاحظات للوكيل التالي:**
+  - جميع الشاشات مربوطة بـ APIs الخلفية عبر خدمات tenantService و purchaseOrderService. تحتاج للتأكد من توافق نقاط النهاية مع TenantEndpoints.cs.
+  - TenantSelector يحفظ selectedTenantId في localStorage ويرسله كـ X-Tenant-Id header مع كل طلب. هذا يحل مشكلة tenantId الفارغ (empty GUID).
+  - نظام التحذير المبكر يجلب التنبيهات من API بفترة 60 يوماً قبل الانتهاء مع 4 مستويات خطورة.
+  - قسم "لوحة المشغل" في القائمة الجانبية يظهر لجميع المستخدمين حالياً؛ يجب إضافة فلترة أدوار (role-based filtering) في TASK-602 أو TASK-603.
+  - Lifecycle Stepper في PurchaseOrderDetailView يعرض 5 مراحل أساسية (مستلم → تجهيز → تدريب → استلام → تشغيل) مع دعم الانتقالات المشروطة.
 
 ### 2026-03-28 - TASK-505: بناء شاشات لجان الفحص لتقييم العروض الفنية والمالية
 - **ما تم إنجازه:**

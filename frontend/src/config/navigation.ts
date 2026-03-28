@@ -98,6 +98,31 @@ export const sidebarNavigation: NavigationItem[] = [
     route: 'AiAssistant',
   },
   {
+    key: 'operator',
+    labelKey: 'nav.operator.title',
+    icon: 'pi pi-shield',
+    children: [
+      {
+        key: 'operator-dashboard',
+        labelKey: 'nav.operator.dashboard',
+        icon: 'pi pi-chart-pie',
+        route: 'OperatorDashboard',
+      },
+      {
+        key: 'operator-tenants',
+        labelKey: 'nav.operator.tenants',
+        icon: 'pi pi-building',
+        route: 'TenantList',
+      },
+      {
+        key: 'operator-purchase-orders',
+        labelKey: 'nav.operator.purchaseOrders',
+        icon: 'pi pi-file',
+        route: 'PurchaseOrderList',
+      },
+    ],
+  },
+  {
     key: 'settings',
     labelKey: 'nav.settings.title',
     icon: 'pi pi-cog',

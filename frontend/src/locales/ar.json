@@ -128,7 +128,13 @@
       "users": "إدارة المستخدمين",
       "roles": "الأدوار والصلاحيات"
     },
-    "taskCenter": "مركز المهام"
+    "taskCenter": "مركز المهام",
+    "operator": {
+      "title": "لوحة المشغل",
+      "dashboard": "نظرة عامة",
+      "tenants": "الجهات الحكومية",
+      "purchaseOrders": "أوامر التعميد"
+    }
   },
   "header": {
     "searchPlaceholder": "البحث في المنصة...",
@@ -597,5 +603,237 @@
       "hijri": "هجري",
       "gregorian": "ميلادي"
     }
+  },
+  "tenants": {
+    "titles": {
+      "list": "الجهات الحكومية",
+      "listSubtitle": "إدارة الجهات الحكومية المشتركة في المنصة",
+      "create": "إضافة جهة حكومية",
+      "createSubtitle": "أدخل بيانات الجهة الحكومية الجديدة لتسجيلها في المنصة",
+      "detail": "تفاصيل الجهة",
+      "edit": "تعديل بيانات الجهة"
+    },
+    "fields": {
+      "nameAr": "اسم الجهة (عربي)",
+      "nameEn": "اسم الجهة (إنجليزي)",
+      "identifier": "الرقم التعريفي",
+      "email": "البريد الإلكتروني",
+      "phone": "رقم الهاتف",
+      "website": "الموقع الإلكتروني",
+      "address": "العنوان",
+      "city": "المدينة",
+      "status": "الحالة",
+      "subscriptionPlan": "خطة الاشتراك",
+      "subscriptionStart": "بداية الاشتراك",
+      "subscriptionEnd": "نهاية الاشتراك",
+      "maxUsers": "الحد الأقصى للمستخدمين",
+      "adminName": "اسم المسؤول",
+      "adminEmail": "بريد المسؤول",
+      "adminPhone": "هاتف المسؤول",
+      "createdAt": "تاريخ الإنشاء",
+      "notes": "ملاحظات"
+    },
+    "placeholders": {
+      "nameAr": "أدخل اسم الجهة بالعربية",
+      "nameEn": "أدخل اسم الجهة بالإنجليزية",
+      "identifier": "مثال: GOV-001",
+      "email": "example@gov.sa",
+      "phone": "+966XXXXXXXXX",
+      "website": "https://www.example.gov.sa",
+      "address": "أدخل عنوان الجهة",
+      "city": "أدخل المدينة",
+      "maxUsers": "أدخل الحد الأقصى للمستخدمين",
+      "adminName": "أدخل اسم المسؤول",
+      "adminEmail": "admin@gov.sa",
+      "adminPhone": "+966XXXXXXXXX",
+      "notes": "أدخل أي ملاحظات إضافية",
+      "search": "البحث بالاسم أو الرقم التعريفي..."
+    },
+    "sections": {
+      "basicInfo": "المعلومات الأساسية",
+      "contactInfo": "معلومات التواصل",
+      "subscriptionInfo": "معلومات الاشتراك",
+      "adminInfo": "بيانات المسؤول",
+      "purchaseOrders": "أوامر التعميد",
+      "notes": "ملاحظات"
+    },
+    "statuses": {
+      "active": "نشطة",
+      "suspended": "معلقة",
+      "pendingProvisioning": "قيد التجهيز",
+      "cancelled": "ملغاة"
+    },
+    "actions": {
+      "create": "إضافة جهة",
+      "edit": "تعديل",
+      "activate": "تفعيل",
+      "suspend": "تعليق",
+      "backToList": "العودة للقائمة",
+      "viewDetails": "عرض التفاصيل"
+    },
+    "validation": {
+      "nameArRequired": "اسم الجهة بالعربية مطلوب",
+      "nameEnRequired": "اسم الجهة بالإنجليزية مطلوب",
+      "identifierRequired": "الرقم التعريفي مطلوب",
+      "emailInvalid": "البريد الإلكتروني غير صحيح",
+      "maxUsersRequired": "الحد الأقصى للمستخدمين مطلوب"
+    },
+    "messages": {
+      "createSuccess": "تم إضافة الجهة الحكومية بنجاح",
+      "updateSuccess": "تم تحديث بيانات الجهة بنجاح",
+      "statusChangeSuccess": "تم تغيير حالة الجهة بنجاح",
+      "noTenants": "لا توجد جهات حكومية مسجلة",
+      "noTenantsDesc": "ابدأ بإضافة جهة حكومية جديدة",
+      "noPurchaseOrders": "لا توجد أوامر تعميد لهذه الجهة"
+    },
+    "labels": {
+      "totalTenants": "إجمالي الجهات",
+      "activeTenants": "الجهات النشطة",
+      "pendingTenants": "قيد التجهيز"
+    }
+  },
+  "purchaseOrders": {
+    "titles": {
+      "list": "أوامر التعميد",
+      "listSubtitle": "إدارة ومتابعة أوامر التعميد والاشتراكات",
+      "create": "إنشاء أمر تعميد",
+      "createSubtitle": "أدخل بيانات أمر التعميد الجديد",
+      "detail": "تفاصيل أمر التعميد"
+    },
+    "fields": {
+      "poNumber": "رقم أمر التعميد",
+      "tenant": "الجهة الحكومية",
+      "totalAmount": "المبلغ الإجمالي",
+      "subscriptionPlan": "خطة الاشتراك",
+      "poDate": "تاريخ أمر التعميد",
+      "duration": "مدة الاشتراك",
+      "subscriptionStart": "بداية الاشتراك",
+      "subscriptionEnd": "نهاية الاشتراك",
+      "contactName": "اسم جهة الاتصال",
+      "contactEmail": "بريد جهة الاتصال",
+      "contactPhone": "هاتف جهة الاتصال",
+      "status": "الحالة",
+      "notes": "ملاحظات",
+      "createdAt": "تاريخ الإنشاء"
+    },
+    "placeholders": {
+      "poNumber": "PO-2026-XXXX",
+      "selectTenant": "اختر الجهة الحكومية",
+      "totalAmount": "أدخل المبلغ الإجمالي",
+      "contactName": "أدخل اسم جهة الاتصال",
+      "contactEmail": "contact@gov.sa",
+      "contactPhone": "+966XXXXXXXXX",
+      "notes": "أدخل أي ملاحظات إضافية",
+      "statusNotes": "أدخل ملاحظات حول تغيير الحالة",
+      "search": "البحث برقم أمر التعميد أو اسم الجهة..."
+    },
+    "sections": {
+      "poInfo": "بيانات أمر التعميد",
+      "contactInfo": "معلومات التواصل",
+      "notes": "ملاحظات",
+      "document": "مستند أمر التعميد"
+    },
+    "statuses": {
+      "received": "مستلم",
+      "environmentSetup": "تجهيز البيئة",
+      "training": "التدريب",
+      "finalAcceptance": "الاستلام النهائي",
+      "activeOperation": "تشغيل فعلي",
+      "renewalWindow": "فترة التجديد",
+      "renewed": "تم التجديد",
+      "cancelled": "ملغى"
+    },
+    "plans": {
+      "basic": "أساسي",
+      "professional": "احترافي",
+      "enterprise": "مؤسسي"
+    },
+    "durations": {
+      "sixMonths": "6 أشهر",
+      "oneYear": "سنة واحدة",
+      "twoYears": "سنتان",
+      "threeYears": "3 سنوات"
+    },
+    "actions": {
+      "create": "إنشاء أمر تعميد",
+      "backToList": "العودة للقائمة",
+      "uploadDocument": "رفع المستند",
+      "changeStatus": "تغيير الحالة"
+    },
+    "validation": {
+      "tenantRequired": "الجهة الحكومية مطلوبة",
+      "poNumberRequired": "رقم أمر التعميد مطلوب",
+      "amountRequired": "المبلغ الإجمالي مطلوب ويجب أن يكون أكبر من صفر",
+      "dateRequired": "تاريخ أمر التعميد مطلوب",
+      "emailInvalid": "البريد الإلكتروني غير صحيح"
+    },
+    "labels": {
+      "lifecycle": "دورة حياة أمر التعميد",
+      "months": "شهر",
+      "viewDocument": "عرض المستند",
+      "noDocument": "لم يتم رفع مستند بعد",
+      "statusTransitions": "تغيير الحالة"
+    },
+    "dialogs": {
+      "statusChangeTitle": "تأكيد تغيير الحالة",
+      "statusChangeMessage": "هل أنت متأكد من تغيير حالة أمر التعميد؟"
+    },
+    "messages": {
+      "createSuccess": "تم إنشاء أمر التعميد بنجاح",
+      "statusChangeSuccess": "تم تغيير حالة أمر التعميد بنجاح",
+      "uploadSuccess": "تم رفع المستند بنجاح",
+      "noPurchaseOrders": "لا توجد أوامر تعميد",
+      "noPurchaseOrdersDesc": "ابدأ بإنشاء أمر تعميد جديد"
+    }
+  },
+  "renewalAlerts": {
+    "title": "تنبيهات التجديد",
+    "subtitle": "الاشتراكات التي تقترب من تاريخ الانتهاء",
+    "severity": {
+      "expired": "منتهي",
+      "critical": "حرج",
+      "warning": "تحذير",
+      "info": "معلومات"
+    },
+    "labels": {
+      "critical": "حرج",
+      "warning": "تحذير",
+      "total": "الإجمالي",
+      "poNumber": "رقم أمر التعميد",
+      "expiryDate": "تاريخ الانتهاء",
+      "expiredSince": "منتهي منذ {days} يوم",
+      "expiresIn": "ينتهي خلال {days} يوم"
+    },
+    "messages": {
+      "noAlerts": "لا توجد تنبيهات تجديد",
+      "noAlertsDesc": "جميع الاشتراكات في حالة جيدة"
+    }
+  },
+  "operatorDashboard": {
+    "title": "لوحة تحكم المشغل",
+    "subtitle": "نظرة عامة على الجهات والاشتراكات وأوامر التعميد",
+    "kpi": {
+      "totalTenants": "إجمالي الجهات",
+      "activePOs": "أوامر نشطة",
+      "pendingPOs": "أوامر معلقة",
+      "renewingPOs": "قيد التجديد"
+    },
+    "quickActions": {
+      "title": "الإجراءات السريعة",
+      "addTenant": "إضافة جهة حكومية",
+      "addTenantDesc": "تسجيل جهة حكومية جديدة في المنصة",
+      "addPO": "إنشاء أمر تعميد",
+      "addPODesc": "إنشاء أمر تعميد جديد لجهة حكومية",
+      "viewTenants": "عرض الجهات",
+      "viewTenantsDesc": "استعراض جميع الجهات الحكومية المسجلة",
+      "viewPOs": "عرض أوامر التعميد",
+      "viewPOsDesc": "استعراض جميع أوامر التعميد"
+    }
+  },
+  "tenantSelector": {
+    "placeholder": "اختر الجهة",
+    "searchPlaceholder": "البحث عن جهة...",
+    "allTenants": "جميع الجهات",
+    "noResults": "لا توجد نتائج"
   }
 }

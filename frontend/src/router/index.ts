@@ -114,6 +114,51 @@ const routes: RouteRecordRaw[] = [
         component: () => import('@/views/DashboardView.vue'),
         meta: { title: 'Tendex AI - AI Assistant', requiresAuth: true },
       },
+      /* Operator / Super Admin routes (TASK-601) */
+      {
+        path: 'operator',
+        name: 'OperatorDashboard',
+        component: () => import('@/views/operator/OperatorDashboardView.vue'),
+        meta: { title: 'Tendex AI - Operator Dashboard', requiresAuth: true },
+      },
+      {
+        path: 'operator/tenants',
+        name: 'TenantList',
+        component: () => import('@/views/tenants/TenantListView.vue'),
+        meta: { title: 'Tendex AI - Tenants', requiresAuth: true },
+      },
+      {
+        path: 'operator/tenants/create',
+        name: 'TenantCreate',
+        component: () => import('@/views/tenants/TenantCreateView.vue'),
+        meta: { title: 'Tendex AI - Create Tenant', requiresAuth: true },
+      },
+      {
+        path: 'operator/tenants/:id',
+        name: 'TenantDetail',
+        component: () => import('@/views/tenants/TenantDetailView.vue'),
+        meta: { title: 'Tendex AI - Tenant Detail', requiresAuth: true },
+        props: true,
+      },
+      {
+        path: 'operator/purchase-orders',
+        name: 'PurchaseOrderList',
+        component: () => import('@/views/purchase-orders/PurchaseOrderListView.vue'),
+        meta: { title: 'Tendex AI - Purchase Orders', requiresAuth: true },
+      },
+      {
+        path: 'operator/purchase-orders/create',
+        name: 'PurchaseOrderCreate',
+        component: () => import('@/views/purchase-orders/PurchaseOrderCreateView.vue'),
+        meta: { title: 'Tendex AI - Create Purchase Order', requiresAuth: true },
+      },
+      {
+        path: 'operator/purchase-orders/:id',
+        name: 'PurchaseOrderDetail',
+        component: () => import('@/views/purchase-orders/PurchaseOrderDetailView.vue'),
+        meta: { title: 'Tendex AI - Purchase Order Detail', requiresAuth: true },
+        props: true,
+      },
       {
         path: 'settings/organization',
         name: 'SettingsOrganization',
