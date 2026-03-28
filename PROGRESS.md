@@ -21,6 +21,22 @@
 
 *يرجى إضافة أحدث مهمة منجزة في أعلى هذه القائمة.*
 
+### 2026-03-28 - إصلاح أخطاء CI وإعداد Sprint 7
+- **ما تم إنجازه:**
+  - **إصلاح أخطاء الباك إند:** تم إصلاح أخطاء CA1304/CA1305/CA1311/CA1862 و CS8602 في عدة ملفات (GetTenantUsageStatisticsQueryHandler, EndImpersonationCommandHandler, GetResourceConsumptionTrendsQueryHandler, ImpersonationEndpoints).
+  - **التحقق من الفرونت إند:** تم بناء الفرونت إند بنجاح دون أخطاء.
+  - **رفع التغييرات:** تم رفع جميع الإصلاحات إلى GitHub والتأكد من نجاح مسارات CI (الباك إند والفرونت إند كلاهما أخضر).
+  - **إعداد Sprint 7:** تم إنشاء ملف `Manus_Tasks_Guide_Sprint_7.md` الذي يحتوي على البرومبتات الجاهزة لمهام Sprint 7 (TASK-701, TASK-702, TASK-703, TASK-704).
+- **الملفات المنشأة/المعدلة:**
+  - `backend/src/TendexAI.Application/Features/OperatorDashboard/Queries/GetTenantUsageStatistics/GetTenantUsageStatisticsQueryHandler.cs` (معدل)
+  - `backend/src/TendexAI.Application/Features/Impersonation/Commands/EndImpersonation/EndImpersonationCommandHandler.cs` (معدل)
+  - `backend/src/TendexAI.Application/Features/OperatorDashboard/Queries/GetResourceConsumptionTrends/GetResourceConsumptionTrendsQueryHandler.cs` (معدل)
+  - `backend/src/TendexAI.API/Endpoints/Impersonation/ImpersonationEndpoints.cs` (معدل)
+  - `Manus_Tasks_Guide_Sprint_7.md` (جديد)
+- **ملاحظات للوكيل التالي:**
+  - مسارات CI الآن خضراء وجاهزة للبدء في Sprint 7.
+  - يرجى استخدام البرومبتات الموجودة في `Manus_Tasks_Guide_Sprint_7.md` لتنفيذ مهام Sprint 7.
+
 ### 2026-03-28 - TASK-604: إدارة التكوينات والميزات (Feature Flags UI) وتخصيص الهوية البصرية
 - **ما تم إنجازه:**
   - **الباكند (.NET 10 - Clean Architecture / CQRS):**
