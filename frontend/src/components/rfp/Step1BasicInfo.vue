@@ -20,7 +20,7 @@ const rfpStore = useRfpStore()
 
 const schema = toTypedSchema(basicInfoSchema)
 
-const { handleSubmit, errors, validate, meta } = useForm({
+const { errors, validate } = useForm({
   validationSchema: schema,
   initialValues: { ...rfpStore.formData.basicInfo },
   validateOnMount: false,

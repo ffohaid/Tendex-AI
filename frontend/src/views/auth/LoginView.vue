@@ -18,12 +18,11 @@ import { toTypedSchema } from '@vee-validate/zod'
 import { z } from 'zod'
 import { useAuthStore } from '@/stores/auth'
 import InputText from 'primevue/inputtext'
-import Password from 'primevue/password'
 import Button from 'primevue/button'
 import Message from 'primevue/message'
 
 const router = useRouter()
-const { t, locale } = useI18n()
+const { t } = useI18n()
 const authStore = useAuthStore()
 
 /* ------------------------------------------------------------------ */
@@ -43,7 +42,7 @@ const loginSchema = toTypedSchema(
   }),
 )
 
-const { handleSubmit, errors: formErrors, meta } = useForm({
+const { handleSubmit } = useForm({
   validationSchema: loginSchema,
 })
 

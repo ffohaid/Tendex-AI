@@ -177,7 +177,7 @@ defineExpose({
           animation="200"
           @end="onDragEnd"
         >
-          <template #item="{ element: item, index }">
+          <template #item="{ element: item }">
             <tr class="border-t border-surface-dim transition-colors hover:bg-surface-muted/50">
               <td class="px-3 py-2 text-center">
                 <span class="boq-drag-handle cursor-grab text-tertiary hover:text-secondary active:cursor-grabbing">

@@ -21,7 +21,7 @@ const rfpStore = useRfpStore()
 
 const schema = toTypedSchema(attachmentsSchema)
 
-const { errors, validate } = useForm({
+const { validate } = useForm({
   validationSchema: schema,
   initialValues: { ...rfpStore.formData.attachments },
   validateOnMount: false,

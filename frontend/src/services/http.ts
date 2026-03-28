@@ -105,10 +105,11 @@ httpClient.interceptors.response.use(
         localStorage.setItem('refresh_token', data.refreshToken)
 
         /* Retry queued requests */
-        failedQueue.forEach(({ resolve, config }) => {
+        for (const { resolve, config } of failedQueue) {
           config.headers.Authorization = `Bearer ${data.accessToken}`
-          resolve(httpClient(config))
-        })
+          const retryResponse = await httpClient(config)
+          resolve(retryResponse)
+        }
         failedQueue = []
 
         /* Retry original request */

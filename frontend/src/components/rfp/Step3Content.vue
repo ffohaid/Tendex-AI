@@ -8,15 +8,14 @@
  * - Color-coded template compliance
  * - Section assignment to team members
  */
-import { ref, watch } from 'vue'
+import { ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useForm } from 'vee-validate'
 import { toTypedSchema } from '@vee-validate/zod'
 import { contentSchema } from '@/validations/rfp'
 import { useRfpStore } from '@/stores/rfp'
 import draggable from 'vuedraggable'
-import FormField from './FormField.vue'
-import type { RfpSection } from '@/types/rfp'
+
 
 const { t } = useI18n()
 const rfpStore = useRfpStore()

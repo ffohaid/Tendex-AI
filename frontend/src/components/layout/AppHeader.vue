@@ -1,12 +1,8 @@
 <script setup lang="ts">
 import { useI18n } from 'vue-i18n'
 import { useAppStore } from '@/stores/app'
-import { computed } from 'vue'
-
 const { t } = useI18n()
 const appStore = useAppStore()
-
-const isRtl = computed(() => appStore.isRtl)
 
 /**
  * Toggles between Arabic and English locales.

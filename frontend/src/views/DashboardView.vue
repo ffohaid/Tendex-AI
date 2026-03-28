@@ -22,7 +22,7 @@
  * All data is fetched dynamically from APIs.
  * NO mock/hardcoded data is used.
  */
-import { onMounted, onUnmounted, ref, defineAsyncComponent } from 'vue'
+import { onMounted, onUnmounted, defineAsyncComponent } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useDashboardStore } from '@/stores/dashboard'
 import { useFormatters } from '@/composables/useFormatters'

@@ -8,7 +8,7 @@
  * - Error handling
  * - RTL/LTR support
  */
-import { ref, computed } from 'vue'
+import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { useForm, useField } from 'vee-validate'

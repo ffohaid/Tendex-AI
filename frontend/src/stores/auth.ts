@@ -9,11 +9,9 @@
  */
 import { ref, computed } from 'vue'
 import { defineStore } from 'pinia'
-import { useRouter } from 'vue-router'
 import * as authService from '@/services/authService'
 import type {
   LoginRequest,
-  VerifyMfaRequest,
   UserInfo,
   AuthTokenResponse,
   ApiProblemDetails,

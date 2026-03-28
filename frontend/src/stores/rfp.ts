@@ -26,7 +26,6 @@ import type {
 } from '@/types/rfp'
 import {
   createRfp,
-  updateRfp,
   autoSaveDraft,
   fetchRfpById,
 } from '@/services/rfpService'
