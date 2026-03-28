@@ -9,7 +9,7 @@
 | Sprint 0: التخطيط وإدارة المنتج | ✅ مكتمل | 100% | تم إعداد خطة التنفيذ (Sprint Backlog) وقوالب العمل. |
 | Sprint 1: البنية التحتية | ✅ مكتمل | 100% | تم إنجاز TASK-101, TASK-102, TASK-103, TASK-104, TASK-105, TASK-106 |
 | Sprint 2: الخدمات الأساسية | 🔄 قيد التنفيذ | 86% | تم إنجاز TASK-201, TASK-202, TASK-203, TASK-204, TASK-205, TASK-206 |
-| Sprint 3: سير العمل والتقييم | 🔄 قيد التنفيذ | 57% | تم إنجاز TASK-301, TASK-302, TASK-303, TASK-304 |
+| Sprint 3: سير العمل والتقييم | 🔄 قيد التنفيذ | 71% | تم إنجاز TASK-301, TASK-302, TASK-303, TASK-304, TASK-305 |
 | Sprint 4: تكامل الذكاء الاصطناعي | ⏳ لم يبدأ | 0% | - |
 | Sprint 5: الواجهة الأمامية | ⏳ لم يبدأ | 0% | - |
 | Sprint 6: لوحة تحكم المشغل | ⏳ لم يبدأ | 0% | - |
@@ -20,6 +20,89 @@
 ## سجل المهام المنجزة (Completed Tasks Log)
 
 *يرجى إضافة أحدث مهمة منجزة في أعلى هذه القائمة.*
+
+### 2026-03-28 - TASK-305: تطوير APIs لفتح وتقييم العروض المالية وإصدار توصيات الترسية وإنشاء المحاضر
+- **ما تم إنجازه:**
+  - **طبقة Domain — كيانات التقييم المالي والترسية:**
+    - إنشاء `FinancialEvaluationStatus` enum (7 حالات: Pending, InProgress, AllScoresSubmitted, PendingApproval, Approved, Rejected, Cancelled).
+    - إنشاء `AwardStatus` enum (6 حالات: Draft, PendingApproval, Approved, Rejected, Cancelled, Superseded).
+    - إنشاء `PriceDeviationLevel` enum (5 مستويات: None, Low, Medium, High, Critical).
+    - إنشاء `MinutesType` enum (3 أنواع: TechnicalEvaluation, FinancialEvaluation, FinalComprehensive).
+    - إنشاء `MinutesStatus` enum (4 حالات: Draft, PendingApproval, Approved, Rejected).
+    - إنشاء `FinancialEvaluation` كـ Aggregate Root مع دورة حياة كاملة وإدارة البنود والدرجات.
+    - إنشاء `FinancialScore` entity لدرجات التقييم المالي.
+    - إنشاء `FinancialOfferItem` entity لبنود العرض المالي مع التحقق الحسابي وحساب الانحرافات.
+    - إنشاء `AwardRecommendation` كـ Aggregate Root مع دورة حياة الاعتماد.
+    - إنشاء `AwardRanking` entity لترتيب العروض النهائي.
+    - إنشاء `EvaluationMinutes` entity لمحاضر التقييم مع دعم التوقيع الإلكتروني.
+    - إنشاء `MinutesSignatory` entity لموقعي المحاضر.
+    - إنشاء `IFinancialEvaluationRepository`, `IAwardRecommendationRepository`, `IEvaluationMinutesRepository` interfaces.
+  - **طبقة Domain — خدمة مقارنة الأسعار (FinancialScoringService):**
+    - حساب الانحراف السعري بين العرض والتكلفة التقديرية.
+    - تصنيف مستوى الانحراف (None/Low/Medium/High/Critical) بعتبات 5%, 10%, 20%.
+    - التحقق الحسابي الآلي (سعر الوحدة × الكمية = الإجمالي).
+    - حساب الدرجة المالية (أقل سعر = 100%).
+    - حساب الدرجة المجمعة (فني + مالي) بأوزان قابلة للتخصيص.
+    - توليد مصفوفة المقارنة المالية (Comparison Matrix) مع ألوان الانحراف.
+    - توليد الترتيب النهائي للعروض.
+    - حساب التكلفة التقديرية الإجمالية من BOQ.
+  - **طبقة Domain — أحداث النطاق (Domain Events):**
+    - `FinancialEvaluationStartedEvent`, `FinancialEvaluationCompletedEvent`.
+    - `FinancialReportApprovedEvent`, `FinancialReportRejectedEvent`.
+    - `AwardRecommendationGeneratedEvent`, `AwardApprovedEvent`, `AwardRejectedEvent`.
+    - `MinutesGeneratedEvent`, `MinutesApprovedEvent`.
+  - **طبقة Application — Commands (CQRS) للتقييم المالي:**
+    - `StartFinancialEvaluationCommand` + Handler: بدء جلسة التقييم المالي وفتح المظاريف.
+    - `SubmitFinancialOfferItemsCommand` + Handler: إدخال بنود العرض المالي.
+    - `VerifyArithmeticCommand` + Handler: التحقق الحسابي الآلي.
+    - `SubmitFinancialScoreCommand` + Handler: إضافة درجة تقييم مالي.
+    - `CompleteFinancialScoringCommand` + Handler: إكمال التقييم وتقديمه للاعتماد.
+    - `ApproveFinancialReportCommand` + Handler: اعتماد التقرير المالي.
+    - `RejectFinancialReportCommand` + Handler: رفض التقرير المالي.
+  - **طبقة Application — Queries (CQRS) للتقييم المالي:**
+    - `GetFinancialEvaluationDetailsQuery`: تفاصيل جلسة التقييم المالي.
+    - `GetFinancialComparisonMatrixQuery`: مصفوفة المقارنة المالية الشاملة.
+    - `GetFinancialOfferItemsQuery`: بنود العرض المالي لمورد محدد.
+  - **طبقة Application — Commands (CQRS) للترسية:**
+    - `GenerateAwardRecommendationCommand` + Handler: إصدار توصية الترسية آلياً بناءً على الدرجات المجمعة.
+    - `ApproveAwardCommand` + Handler: اعتماد توصية الترسية.
+    - `RejectAwardCommand` + Handler: رفض توصية الترسية.
+  - **طبقة Application — Queries (CQRS) للترسية:**
+    - `GetAwardRecommendationQuery`: تفاصيل توصية الترسية.
+    - `GetFinalRankingQuery`: الترتيب النهائي لجميع العروض.
+  - **طبقة Application — Commands (CQRS) للمحاضر:**
+    - `GenerateMinutesCommand` + Handler: إنشاء محاضر تلقائية (فنية/مالية/شاملة).
+    - `ApproveMinutesCommand` + Handler: اعتماد المحضر.
+    - `SignMinutesCommand` + Handler: التوقيع الإلكتروني على المحضر.
+  - **طبقة Application — Queries (CQRS) للمحاضر:**
+    - `GetMinutesQuery`: تفاصيل محضر محدد.
+    - `GetMinutesListQuery`: قائمة محاضر المنافسة.
+  - **طبقة Application — DTOs:**
+    - `FinancialEvaluationDetailDto`, `FinancialScoreDto`, `FinancialOfferItemDto`.
+    - `FinancialComparisonMatrixDto`, `FinancialComparisonRowDto`, `SupplierPriceCellDto`.
+    - `SupplierTotalSummaryDto`, `ArithmeticVerificationResultDto`, `ArithmeticErrorDto`.
+    - `AwardRecommendationDto`, `AwardRankingDto`, `FinalRankingDto`.
+    - `EvaluationMinutesDto`, `MinutesSignatoryDto`, `MinutesListItemDto`.
+  - **طبقة API — Minimal API Endpoints:**
+    - `FinancialEvaluationEndpoints`: 9 endpoints لدورة حياة التقييم المالي الكاملة.
+    - `AwardEndpoints`: 5 endpoints لإصدار واعتماد توصيات الترسية.
+    - `EvaluationMinutesEndpoints`: 5 endpoints لإنشاء واعتماد وتوقيع المحاضر.
+  - **اختبارات الوحدة (Unit Tests):**
+    - `FinancialScoringServiceTests`: 10 اختبارات لمنطق مقارنة الأسعار والحسابات.
+    - `FinancialEvaluationEntityTests`: 9 اختبارات لدورة حياة التقييم المالي.
+    - `FinancialOfferItemTests`: 6 اختبارات للتحقق الحسابي والانحرافات.
+    - `AwardRecommendationEntityTests`: 8 اختبارات لدورة حياة الترسية.
+    - `EvaluationMinutesEntityTests`: 7 اختبارات لدورة حياة المحاضر.
+    - `MinutesSignatoryTests`: 4 اختبارات للتوقيع الإلكتروني.
+- **الاعتماديات التي تم حلها:** TASK-304 (التقييم الفني).
+- **ملاحظات للوكيل التالي:**
+  - نظام التقييم المالي مكتمل ومتكامل مع نظام التقييم الفني (TASK-304).
+  - منطق الترسية يدعم أوزان قابلة للتخصيص (افتراضي: 70% فني، 30% مالي).
+  - محاضر الترسية تُنشأ تلقائياً بثلاثة أنواع: فني، مالي، شامل.
+  - المحاضر تدعم التوقيع الإلكتروني من أعضاء اللجنة.
+  - يجب إنشاء EF Core Configurations و Repositories في طبقة Infrastructure.
+  - يجب تسجيل الـ Endpoints الجديدة في Program.cs.
+  - يمكن البدء في TASK-306 (تكامل الذكاء الاصطناعي) أو Sprint 4.
 
 ### 2026-03-28 - TASK-304: بناء APIs لتقييم العروض الفنية (Blind Evaluation & Scoring)
 - **ما تم إنجازه:**
