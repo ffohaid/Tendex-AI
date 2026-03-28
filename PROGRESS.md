@@ -8,7 +8,7 @@
 | :--- | :--- | :--- | :--- |
 | Sprint 0: التخطيط وإدارة المنتج | ✅ مكتمل | 100% | تم إعداد خطة التنفيذ (Sprint Backlog) وقوالب العمل. |
 | Sprint 1: البنية التحتية | ✅ مكتمل | 100% | تم إنجاز TASK-101, TASK-102, TASK-103, TASK-104, TASK-105, TASK-106 |
-| Sprint 2: الخدمات الأساسية | 🔄 قيد التنفيذ | 28% | تم إنجاز TASK-204 (Audit Trail), TASK-206 (RabbitMQ Integration) |
+| Sprint 2: الخدمات الأساسية | 🔄 قيد التنفيذ | 42% | تم إنجاز TASK-204 (Audit Trail), TASK-205 (MinIO File Storage), TASK-206 (RabbitMQ) |
 | Sprint 3: سير العمل والتقييم | ⏳ لم يبدأ | 0% | - |
 | Sprint 4: تكامل الذكاء الاصطناعي | ⏳ لم يبدأ | 0% | - |
 | Sprint 5: الواجهة الأمامية | ⏳ لم يبدأ | 0% | - |
@@ -20,6 +20,27 @@
 ## سجل المهام المنجزة (Completed Tasks Log)
 
 *يرجى إضافة أحدث مهمة منجزة في أعلى هذه القائمة.*
+
+### 2026-03-28 - TASK-205: دمج MinIO لتخزين المرفقات والملفات (MinIO File Storage Integration)
+- **ما تم إنجازه:**
+  - **طبقة Infrastructure (MinIO Storage):**
+    - إنشاء `MinioSettings` لإدارة إعدادات MinIO من `appsettings.json`.
+    - إنشاء `MinioFileStorageService` كتنفيذ لـ `IFileStorageService` يوفر: Upload, Delete, FileExists, EnsureBucket, Presigned URLs.
+    - إنشاء `FileValidationService` للتحقق من الحجم والنوع والامتداد ومنع MIME spoofing.
+    - إنشاء `MinioHealthCheck` و `MinioStartupInitializer`.
+    - استخدام LoggerMessage delegates (CA1848 compliant).
+  - **طبقة Domain:** كيان `FileAttachment` مع Soft Delete و `FileCategory` Enum.
+  - **طبقة Application (CQRS):** UploadFile, DeleteFile, GetPresignedDownloadUrl, GetPresignedUploadUrl, GetFileInfo.
+  - **طبقة API:** 6 Minimal API endpoints تحت `/api/v1/files`.
+  - **طبقة Persistence:** `FileAttachmentConfiguration` مع فهارس محسنة.
+  - **الاختبارات:** 33 اختبار جديد (FileValidationServiceTests, MinioFileStorageServiceTests, FileAttachmentEntityTests).
+- **الاعتماديات التي تم حلها:** TASK-102, TASK-103, TASK-105.
+- **ملاحظات للوكيل التالي:**
+  - خدمة MinIO جاهزة. يمكن استخدام `IFileStorageService` من Application layer.
+  - بنية الملفات: `tenants/{tenantId}/{folder}/{date}/{uniqueId}_{fileName}`.
+  - Presigned URLs تنتهي بعد 60 دقيقة. الحد الأقصى: 50 MB.
+  - يجب إنشاء Migration: `dotnet ef migrations add AddFileAttachments`.
+  - Health Check: `/api/v1/health/storage`.
 
 ### 2026-03-28 - TASK-204: بناء نظام سجل التدقيق غير القابل للتعديل (Immutable Audit Trail)
 - **ما تم إنجازه:**

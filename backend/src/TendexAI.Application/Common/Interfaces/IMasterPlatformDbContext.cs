@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using TendexAI.Domain.Entities;
 
 namespace TendexAI.Application.Common.Interfaces;
 
@@ -9,5 +10,11 @@ namespace TendexAI.Application.Common.Interfaces;
 public interface IMasterPlatformDbContext
 {
     DbSet<TEntity> GetDbSet<TEntity>() where TEntity : class;
+
+    /// <summary>
+    /// File attachments stored in MinIO object storage.
+    /// </summary>
+    DbSet<FileAttachment> FileAttachments { get; }
+
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
 }

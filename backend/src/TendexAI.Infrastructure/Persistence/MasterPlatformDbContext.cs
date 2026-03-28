@@ -31,6 +31,8 @@ public sealed class MasterPlatformDbContext : DbContext, IMasterPlatformDbContex
 
     public DbSet<AuditLogEntry> AuditLogEntries => Set<AuditLogEntry>();
 
+    public DbSet<FileAttachment> FileAttachments => Set<FileAttachment>();
+
     // ----- Model Configuration -----
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)

@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Minio;
 using TendexAI.Application.Common.Interfaces;
 using TendexAI.Domain.Common;
 using TendexAI.Infrastructure.Messaging.RabbitMQ;
@@ -8,12 +9,13 @@ using TendexAI.Infrastructure.MultiTenancy;
 using TendexAI.Infrastructure.Persistence;
 using TendexAI.Infrastructure.Persistence.Interceptors;
 using TendexAI.Infrastructure.Services;
+using TendexAI.Infrastructure.Storage.MinIO;
 
 namespace TendexAI.Infrastructure;
 
 /// <summary>
 /// Extension methods for registering Infrastructure layer services in the DI container.
-/// Configures Entity Framework Core, multi-tenancy, messaging, and supporting infrastructure services.
+/// Configures Entity Framework Core, multi-tenancy, messaging, MinIO storage, and supporting infrastructure services.
 /// </summary>
 public static class DependencyInjection
 {
@@ -88,10 +90,56 @@ public static class DependencyInjection
         // ----- RabbitMQ Message Broker (Event Bus) -----
         services.AddRabbitMqEventBus(configuration);
 
+        // ----- MinIO Object Storage -----
+        services.AddMinioStorage(configuration);
+
         // Future registrations:
         // - Redis distributed cache
-        // - MinIO file storage
         // - Qdrant vector database client
+
+        return services;
+    }
+
+    /// <summary>
+    /// Registers MinIO S3-compatible object storage services.
+    /// </summary>
+    private static IServiceCollection AddMinioStorage(
+        this IServiceCollection services,
+        IConfiguration configuration)
+    {
+        // Bind MinIO configuration from appsettings
+        var minioSection = configuration.GetSection(MinioSettings.SectionName);
+        services.Configure<MinioSettings>(minioSection);
+
+        var minioSettings = minioSection.Get<MinioSettings>() ?? new MinioSettings();
+
+        // Register MinIO client as singleton (thread-safe, connection-pooled)
+        services.AddSingleton<IMinioClient>(_ =>
+        {
+            var clientBuilder = new MinioClient()
+                .WithEndpoint(minioSettings.Endpoint)
+                .WithCredentials(minioSettings.AccessKey, minioSettings.SecretKey);
+
+            if (minioSettings.UseSsl)
+            {
+                clientBuilder = clientBuilder.WithSSL();
+            }
+
+            return clientBuilder.Build();
+        });
+
+        // Register file validation service
+        services.AddSingleton<IFileValidationService, FileValidationService>();
+
+        // Register file storage service
+        services.AddScoped<IFileStorageService, MinioFileStorageService>();
+
+        // Register MinIO health check
+        services.AddHealthChecks()
+            .AddCheck<MinioHealthCheck>("minio", tags: ["storage", "infrastructure"]);
+
+        // Register startup initializer to ensure bucket exists
+        services.AddHostedService<MinioStartupInitializer>();
 
         return services;
     }
