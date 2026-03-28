@@ -59,9 +59,9 @@ public sealed class EvaluationIsolationTests
         var entityType = typeof(VideoIntegrityAnalysis);
 
         // Verify it doesn't inherit from any evaluation entity
-        entityType.BaseType.Should().NotBe(typeof(TechnicalEvaluation));
-        entityType.BaseType.Should().NotBe(typeof(TechnicalScore));
-        entityType.BaseType.Should().NotBe(typeof(AiTechnicalScore));
+        entityType.BaseType.Should().NotBe<TechnicalEvaluation>();
+        entityType.BaseType.Should().NotBe<TechnicalScore>();
+        entityType.BaseType.Should().NotBe<AiTechnicalScore>();
     }
 
     [Fact]

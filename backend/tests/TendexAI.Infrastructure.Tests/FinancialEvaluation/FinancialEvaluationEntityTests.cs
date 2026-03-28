@@ -12,7 +12,7 @@ public class FinancialEvaluationEntityTests
     private static TendexAI.Domain.Entities.Evaluation.FinancialEvaluation CreateTestEvaluation()
     {
         return TendexAI.Domain.Entities.Evaluation.FinancialEvaluation.Create(
-            Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid(), "test-user");
+            Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid(), "test-user");
     }
 
     [Fact]
@@ -28,13 +28,13 @@ public class FinancialEvaluationEntityTests
     }
 
     [Fact]
-    public void StartEvaluation_ShouldTransitionToInProgress()
+    public void Start_ShouldTransitionToInProgress()
     {
         // Arrange
         var evaluation = CreateTestEvaluation();
 
         // Act
-        var result = evaluation.StartEvaluation("test-user");
+        var result = evaluation.Start("test-user");
 
         // Assert
         result.IsSuccess.Should().BeTrue();
@@ -43,14 +43,14 @@ public class FinancialEvaluationEntityTests
     }
 
     [Fact]
-    public void StartEvaluation_WhenAlreadyStarted_ShouldFail()
+    public void Start_WhenAlreadyStarted_ShouldFail()
     {
         // Arrange
         var evaluation = CreateTestEvaluation();
-        evaluation.StartEvaluation("test-user");
+        evaluation.Start("test-user");
 
         // Act
-        var result = evaluation.StartEvaluation("test-user");
+        var result = evaluation.Start("test-user");
 
         // Assert
         result.IsFailure.Should().BeTrue();
@@ -61,7 +61,7 @@ public class FinancialEvaluationEntityTests
     {
         // Arrange
         var evaluation = CreateTestEvaluation();
-        evaluation.StartEvaluation("test-user");
+        evaluation.Start("test-user");
 
         var item = FinancialOfferItem.Create(
             evaluation.Id, Guid.NewGuid(), Guid.NewGuid(),
@@ -76,7 +76,7 @@ public class FinancialEvaluationEntityTests
     }
 
     [Fact]
-    public void AddOfferItem_ShouldFail_WhenNotInProgress()
+    public void AddOfferItem_ShouldSucceed_WhenPending()
     {
         // Arrange
         var evaluation = CreateTestEvaluation();
@@ -89,7 +89,7 @@ public class FinancialEvaluationEntityTests
         var result = evaluation.AddOfferItem(item);
 
         // Assert
-        result.IsFailure.Should().BeTrue();
+        result.IsSuccess.Should().BeTrue();
     }
 
     [Fact]
@@ -97,7 +97,13 @@ public class FinancialEvaluationEntityTests
     {
         // Arrange
         var evaluation = CreateTestEvaluation();
-        evaluation.StartEvaluation("test-user");
+        evaluation.Start("test-user");
+
+        // Add a score to allow marking as submitted
+        var score = FinancialScore.Create(
+            evaluation.Id, Guid.NewGuid(), "evaluator-user", 85m, 100m, null, "test-user");
+        evaluation.AddScore(score);
+
         evaluation.MarkAllScoresSubmitted("test-user");
 
         // Act
@@ -113,7 +119,12 @@ public class FinancialEvaluationEntityTests
     {
         // Arrange
         var evaluation = CreateTestEvaluation();
-        evaluation.StartEvaluation("test-user");
+        evaluation.Start("test-user");
+
+        var score = FinancialScore.Create(
+            evaluation.Id, Guid.NewGuid(), "evaluator-user", 85m, 100m, null, "test-user");
+        evaluation.AddScore(score);
+
         evaluation.MarkAllScoresSubmitted("test-user");
         evaluation.SubmitForApproval("test-user");
 
@@ -133,7 +144,12 @@ public class FinancialEvaluationEntityTests
     {
         // Arrange
         var evaluation = CreateTestEvaluation();
-        evaluation.StartEvaluation("test-user");
+        evaluation.Start("test-user");
+
+        var score = FinancialScore.Create(
+            evaluation.Id, Guid.NewGuid(), "evaluator-user", 85m, 100m, null, "test-user");
+        evaluation.AddScore(score);
+
         evaluation.MarkAllScoresSubmitted("test-user");
         evaluation.SubmitForApproval("test-user");
 
@@ -151,7 +167,12 @@ public class FinancialEvaluationEntityTests
     {
         // Arrange
         var evaluation = CreateTestEvaluation();
-        evaluation.StartEvaluation("test-user");
+        evaluation.Start("test-user");
+
+        var score = FinancialScore.Create(
+            evaluation.Id, Guid.NewGuid(), "evaluator-user", 85m, 100m, null, "test-user");
+        evaluation.AddScore(score);
+
         evaluation.MarkAllScoresSubmitted("test-user");
         evaluation.SubmitForApproval("test-user");
 

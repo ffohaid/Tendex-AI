@@ -74,7 +74,7 @@ public sealed class VideoIntegrityServiceTests
         result.Status.Should().Be(VideoAnalysisStatus.Passed);
         result.TamperResult.Should().Be(TamperDetectionResult.Genuine);
         result.IdentityResult.Should().Be(IdentityVerificationResult.Confirmed);
-        result.OverallConfidenceScore.Should().BeGreaterOrEqualTo(0.7m);
+        result.OverallConfidenceScore.Should().BeGreaterThanOrEqualTo(0.7m);
     }
 
     [Fact]
