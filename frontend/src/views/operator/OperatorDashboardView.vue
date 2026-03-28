@@ -14,18 +14,32 @@
  *
  * All data is fetched dynamically from the API — NO mock data.
  */
-import { onMounted, ref } from 'vue'
+import { onMounted, ref, defineAsyncComponent } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
 import { storeToRefs } from 'pinia'
 import { useOperatorDashboardStore } from '@/stores/operatorDashboard'
 import KpiSummaryCards from '@/components/operator/dashboard/KpiSummaryCards.vue'
-import TenantStatusChart from '@/components/operator/dashboard/TenantStatusChart.vue'
-import MonthlyRegistrationsChart from '@/components/operator/dashboard/MonthlyRegistrationsChart.vue'
-import SystemHealthPanel from '@/components/operator/dashboard/SystemHealthPanel.vue'
-import ExpiringSubscriptionsTable from '@/components/operator/dashboard/ExpiringSubscriptionsTable.vue'
-import ResourceTrendsCharts from '@/components/operator/dashboard/ResourceTrendsCharts.vue'
-import TenantUsageTable from '@/components/operator/dashboard/TenantUsageTable.vue'
+
+/* TASK-703: Lazy-load chart and table components for better initial load performance */
+const TenantStatusChart = defineAsyncComponent(
+  () => import('@/components/operator/dashboard/TenantStatusChart.vue'),
+)
+const MonthlyRegistrationsChart = defineAsyncComponent(
+  () => import('@/components/operator/dashboard/MonthlyRegistrationsChart.vue'),
+)
+const SystemHealthPanel = defineAsyncComponent(
+  () => import('@/components/operator/dashboard/SystemHealthPanel.vue'),
+)
+const ExpiringSubscriptionsTable = defineAsyncComponent(
+  () => import('@/components/operator/dashboard/ExpiringSubscriptionsTable.vue'),
+)
+const ResourceTrendsCharts = defineAsyncComponent(
+  () => import('@/components/operator/dashboard/ResourceTrendsCharts.vue'),
+)
+const TenantUsageTable = defineAsyncComponent(
+  () => import('@/components/operator/dashboard/TenantUsageTable.vue'),
+)
 
 const { t } = useI18n()
 const router = useRouter()

@@ -13,13 +13,52 @@
 | Sprint 4: تكامل الذكاء الاصطناعي | 🔄 قيد التنفيذ | 71% | تم إنجاز TASK-401, TASK-402, TASK-403, TASK-404, TASK-405 |
 | Sprint 5: الواجهة الأمامية | 🔄 قيد التنفيذ | 71% | تم إنجاز TASK-501, TASK-502, TASK-503, TASK-504, TASK-505 |
 | Sprint 6: لوحة تحكم المشغل | ✅ مكتمل | 100% | تم إنجاز TASK-601, TASK-602, TASK-603, TASK-604 |
-| Sprint 7: الاختبار والنشر | 🔄 قيد التنفيذ | 50% | تم إنجاز TASK-701, TASK-702 |
+| Sprint 7: الاختبار والنشر | 🔄 قيد التنفيذ | 67% | تم إنجاز TASK-701, TASK-702, TASK-703 |
 
 ---
 
 ## سجل المهام المنجزة (Completed Tasks Log)
 
 *يرجى إضافة أحدث مهمة منجزة في أعلى هذه القائمة.*
+
+### 2026-03-28 - TASK-703: Performance Testing & Optimization
+- **ما تم إنجازه:**
+  - **اختبارات أداء k6:**
+    - إنشاء مجموعة اختبارات أداء شاملة باستخدام k6 في `tests/performance/k6/`.
+    - اختبارات RFP endpoints: استرجاع القائمة، التصفية، التفاصيل.
+    - اختبارات RAG/Qdrant search: البحث الدلالي في قاعدة المتجهات.
+    - اختبارات المصادقة: تسجيل الدخول، تجديد التوكن، إدارة الجلسات.
+    - اختبار شامل يجمع جميع السيناريوهات مع حدود أداء محددة.
+    - سكربت تشغيل `run-tests.sh` لتنفيذ جميع الاختبارات.
+  - **تحسينات Entity Framework Core:**
+    - إضافة `AsNoTracking()` لجميع استعلامات القراءة في: `CompetitionRepository`, `CommitteeRepository`, `TenantRepository`, `SupplierOfferRepository`, `TechnicalEvaluationRepository`, `RoleRepository`, `UserRepository`.
+    - إضافة `AsSplitQuery()` للاستعلامات متعددة الـ Include لمنع Cartesian explosion.
+    - إضافة فهرس مركب `IX_Competitions_TenantId_IsDeleted_CreatedAt` لتحسين أداء الاستعلامات المرقمة.
+    - إزالة `ToLower()` غير الضرورية في `TenantRepository` (SQL Server case-insensitive بشكل افتراضي).
+    - إنشاء `QueryPerformanceBehavior` في MediatR pipeline لرصد الاستعلامات البطيئة.
+  - **تحسينات الفرونت إند:**
+    - تحسين `vite.config.ts`: تقسيم chunks محسن (vendor-vue, vendor-i18n, vendor-charts, vendor-primevue, vendor-forms, vendor-http, vendor-dnd).
+    - تفعيل Terser minification مع إزالة console.log وتعليقات.
+    - تحويل مكونات `RfpCreateView` (6 خطوات wizard) إلى `defineAsyncComponent` للتحميل الكسول.
+    - تحويل مكونات `OperatorDashboardView` (الرسوم البيانية والجداول) إلى `defineAsyncComponent`.
+    - إضافة debounce (350ms) لحقل البحث في `RfpListView` لتقليل طلبات API.
+    - إنشاء `useImageOptimization` composable: lazy loading بـ IntersectionObserver، كشف WebP، srcset.
+    - إنشاء `usePerformance` composable: debounce, throttle, request deduplication, Web Vitals metrics.
+  - **تحسينات Redis Caching:**
+    - إنشاء `ICacheService` interface في Application layer.
+    - إنشاء `RedisCacheService` implementation مع JSON serialization وgraceful degradation.
+    - إنشاء `CacheKeys` static class لتوحيد مفاتيح الكاش وTTL.
+    - إنشاء `CachingBehavior` في MediatR pipeline للتخزين المؤقت التلقائي للاستعلامات.
+    - إنشاء `CacheInvalidationBehavior` لإبطال الكاش تلقائياً عند تنفيذ الأوامر.
+    - تسجيل الخدمات في DI container.
+  - **التوثيق:**
+    - إنشاء `docs/Performance_Report.md` يوثق جميع التحسينات والنتائج.
+- **الاعتماديات التي تم حلها:** TASK-701 (Unit Tests), TASK-702 (E2E Tests).
+- **ملاحظات للوكيل التالي:**
+  - اختبارات k6 جاهزة للتشغيل على بيئة staging. يجب تعديل `BASE_URL` في `config.js`.
+  - الاستعلامات المحسنة تحتاج إلى migration جديد لتطبيق الفهرس المركب الجديد.
+  - `ICacheableQuery` و `ICacheInvalidatingCommand` جاهزان للاستخدام في أي query/command handler.
+  - يجب مراجعة أداء الـ frontend build بعد التحسينات باستخدام `pnpm build`.
 
 ### 2026-03-28 - TASK-702: End-to-End Testing (Playwright)
 - **ما تم إنجازه:**

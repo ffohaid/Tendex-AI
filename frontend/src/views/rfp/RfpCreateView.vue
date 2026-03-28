@@ -8,20 +8,39 @@
  * - Auto-save every 30 seconds
  * - Per-step validation before advancing
  * - Final submission for approval
+ *
+ * Performance optimizations (TASK-703):
+ * - Wizard steps loaded via defineAsyncComponent for code splitting.
+ * - Only the active step component is loaded, reducing initial bundle size.
+ * - v-if ensures inactive steps are not rendered in the DOM.
  */
-import { ref, onMounted, onUnmounted } from 'vue'
+import { ref, onMounted, onUnmounted, defineAsyncComponent } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRouter, useRoute } from 'vue-router'
 import { useRfpStore } from '@/stores/rfp'
 import WizardStepper from '@/components/rfp/WizardStepper.vue'
 import AutoSaveIndicator from '@/components/rfp/AutoSaveIndicator.vue'
-import Step1BasicInfo from '@/components/rfp/Step1BasicInfo.vue'
-import Step2Settings from '@/components/rfp/Step2Settings.vue'
-import Step3Content from '@/components/rfp/Step3Content.vue'
-import Step4Boq from '@/components/rfp/Step4Boq.vue'
-import Step5Attachments from '@/components/rfp/Step5Attachments.vue'
-import Step6Review from '@/components/rfp/Step6Review.vue'
 import { submitRfpForApproval } from '@/services/rfpService'
+
+/* Lazy-loaded step components (TASK-703: Code splitting per wizard step) */
+const Step1BasicInfo = defineAsyncComponent(
+  () => import('@/components/rfp/Step1BasicInfo.vue'),
+)
+const Step2Settings = defineAsyncComponent(
+  () => import('@/components/rfp/Step2Settings.vue'),
+)
+const Step3Content = defineAsyncComponent(
+  () => import('@/components/rfp/Step3Content.vue'),
+)
+const Step4Boq = defineAsyncComponent(
+  () => import('@/components/rfp/Step4Boq.vue'),
+)
+const Step5Attachments = defineAsyncComponent(
+  () => import('@/components/rfp/Step5Attachments.vue'),
+)
+const Step6Review = defineAsyncComponent(
+  () => import('@/components/rfp/Step6Review.vue'),
+)
 
 const { t } = useI18n()
 const router = useRouter()

@@ -5,7 +5,7 @@
  * Displays a paginated, filterable list of all specifications booklets.
  * Data is fetched dynamically from the API (no mock data).
  */
-import { ref, onMounted, computed, watch } from 'vue'
+import { ref, onMounted, computed, watch, onUnmounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
 import { fetchRfpList, deleteRfp } from '@/services/rfpService'
@@ -112,10 +112,28 @@ function formatDate(dateStr: string): string {
   })
 }
 
-/** Watch filters */
-watch([searchQuery, statusFilter], () => {
+/**
+ * Watch filters with debounce for search input (TASK-703: Performance optimization).
+ * Search input is debounced to prevent excessive API calls on every keystroke.
+ * Status filter changes trigger immediate reload.
+ */
+let searchDebounceTimer: ReturnType<typeof setTimeout> | null = null
+
+watch(searchQuery, () => {
+  if (searchDebounceTimer) clearTimeout(searchDebounceTimer)
+  searchDebounceTimer = setTimeout(() => {
+    currentPage.value = 1
+    loadRfpList()
+  }, 350)
+})
+
+watch(statusFilter, () => {
   currentPage.value = 1
   loadRfpList()
+})
+
+onUnmounted(() => {
+  if (searchDebounceTimer) clearTimeout(searchDebounceTimer)
 })
 
 watch(currentPage, () => {

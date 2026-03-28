@@ -6,6 +6,10 @@ namespace TendexAI.Infrastructure.Persistence.Repositories;
 /// <summary>
 /// EF Core implementation of <see cref="IUserRepository"/>.
 /// Operates against the tenant-specific database context.
+///
+/// Performance optimizations (TASK-703):
+/// - AsSplitQuery() on multi-level Include chains to prevent Cartesian explosion.
+/// - AsNoTracking() on read-only queries to reduce change tracker overhead.
 /// </summary>
 public sealed class UserRepository : IUserRepository
 {
@@ -23,6 +27,7 @@ public sealed class UserRepository : IUserRepository
                 .ThenInclude(ur => ur.Role)
                     .ThenInclude(r => r.RolePermissions)
                         .ThenInclude(rp => rp.Permission)
+            .AsSplitQuery()
             .FirstOrDefaultAsync(u => u.Id == id, cancellationToken);
     }
 
@@ -34,6 +39,7 @@ public sealed class UserRepository : IUserRepository
                 .ThenInclude(ur => ur.Role)
                     .ThenInclude(r => r.RolePermissions)
                         .ThenInclude(rp => rp.Permission)
+            .AsSplitQuery()
             .FirstOrDefaultAsync(u => u.NormalizedEmail == normalizedEmail, cancellationToken);
     }
 
@@ -43,6 +49,7 @@ public sealed class UserRepository : IUserRepository
         return await _context.Users
             .Include(u => u.UserRoles)
                 .ThenInclude(ur => ur.Role)
+            .AsSplitQuery()
             .FirstOrDefaultAsync(u => u.NormalizedUserName == normalizedUserName, cancellationToken);
     }
 
@@ -63,6 +70,7 @@ public sealed class UserRepository : IUserRepository
             .OrderByDescending(u => u.CreatedAt)
             .Skip((page - 1) * pageSize)
             .Take(pageSize)
+            .AsSplitQuery()
             .AsNoTracking()
             .ToListAsync(cancellationToken);
     }

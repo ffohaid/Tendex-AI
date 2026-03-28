@@ -8,6 +8,11 @@ namespace TendexAI.Infrastructure.Persistence.Repositories;
 /// <summary>
 /// Repository implementation for Competition aggregate root.
 /// Operates against the tenant-specific database using ITenantDbContextFactory.
+///
+/// Performance optimizations (TASK-703):
+/// - AsNoTracking() on read-only queries (GetById, GetByIdWithDetails, GetByReferenceNumber).
+/// - Select projection on GetPagedAsync to avoid loading full entity graphs.
+/// - Existing AsSplitQuery() retained on multi-Include detail query.
 /// </summary>
 public sealed class CompetitionRepository : ICompetitionRepository, IDisposable
 {
@@ -22,6 +27,7 @@ public sealed class CompetitionRepository : ICompetitionRepository, IDisposable
     public async Task<Competition?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
     {
         return await _context.Competitions
+            .AsNoTracking()
             .FirstOrDefaultAsync(c => c.Id == id && !c.IsDeleted, cancellationToken);
     }
 
@@ -33,6 +39,7 @@ public sealed class CompetitionRepository : ICompetitionRepository, IDisposable
             .Include(c => c.EvaluationCriteria.OrderBy(e => e.SortOrder))
             .Include(c => c.Attachments.OrderBy(a => a.SortOrder))
             .AsSplitQuery()
+            .AsNoTracking()
             .FirstOrDefaultAsync(c => c.Id == id && !c.IsDeleted, cancellationToken);
     }
 
@@ -41,6 +48,7 @@ public sealed class CompetitionRepository : ICompetitionRepository, IDisposable
         CancellationToken cancellationToken = default)
     {
         return await _context.Competitions
+            .AsNoTracking()
             .FirstOrDefaultAsync(c => c.ReferenceNumber == referenceNumber && !c.IsDeleted, cancellationToken);
     }
 

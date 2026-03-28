@@ -19,6 +19,7 @@ using TendexAI.Infrastructure.Persistence.Repositories;
 using TendexAI.Infrastructure.Security;
 using TendexAI.Infrastructure.Services;
 using TendexAI.Infrastructure.Services.Identity;
+using TendexAI.Infrastructure.Services.Caching;
 using TendexAI.Infrastructure.Services.Email;
 using TendexAI.Infrastructure.AI;
 using TendexAI.Application.Features.VideoAnalysis;
@@ -191,6 +192,9 @@ public static class DependencyInjection
         services.AddSingleton<ITotpService, TotpService>();
         services.AddScoped<ITokenService, TokenService>();
         services.AddScoped<ISessionStore, RedisSessionStore>();
+
+        // ----- TASK-703: Cache Service for query result caching -----
+        services.AddSingleton<ICacheService, RedisCacheService>();
 
         // ----- Email Service -----
         services.Configure<SmtpSettings>(configuration.GetSection(SmtpSettings.SectionName));

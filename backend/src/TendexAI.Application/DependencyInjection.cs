@@ -21,6 +21,13 @@ public static class DependencyInjection
         // Register the validation pipeline behavior to auto-validate commands/queries
         services.AddTransient(typeof(IPipelineBehavior<,>), typeof(ValidationBehavior<,>));
 
+        // Register the performance monitoring pipeline behavior to log slow queries
+        services.AddTransient(typeof(IPipelineBehavior<,>), typeof(QueryPerformanceBehavior<,>));
+
+        // TASK-703: Register caching pipeline behaviors for automatic query caching and cache invalidation
+        services.AddTransient(typeof(IPipelineBehavior<,>), typeof(CachingBehavior<,>));
+        services.AddTransient(typeof(IPipelineBehavior<,>), typeof(CacheInvalidationBehavior<,>));
+
         return services;
     }
 }

@@ -8,6 +8,10 @@ namespace TendexAI.Infrastructure.Persistence.Repositories;
 /// <summary>
 /// Repository implementation for Committee aggregate root.
 /// Operates against the tenant-specific database using ITenantDbContextFactory.
+///
+/// Performance optimizations (TASK-703):
+/// - AsNoTracking() on read-only queries (GetById, GetPaged, GetByCompetitionId).
+/// - AsSplitQuery() retained on Include queries to prevent Cartesian explosion.
 /// </summary>
 public sealed class CommitteeRepository : ICommitteeRepository, IDisposable
 {
@@ -22,6 +26,7 @@ public sealed class CommitteeRepository : ICommitteeRepository, IDisposable
     public async Task<Committee?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
     {
         return await _context.Committees
+            .AsNoTracking()
             .FirstOrDefaultAsync(c => c.Id == id, cancellationToken);
     }
 
@@ -75,6 +80,7 @@ public sealed class CommitteeRepository : ICommitteeRepository, IDisposable
             .Skip((pageNumber - 1) * pageSize)
             .Take(pageSize)
             .AsSplitQuery()
+            .AsNoTracking()
             .ToListAsync(cancellationToken);
 
         return (items, totalCount);
@@ -89,6 +95,7 @@ public sealed class CommitteeRepository : ICommitteeRepository, IDisposable
             .Where(c => c.CompetitionId == competitionId)
             .OrderBy(c => c.Type)
             .AsSplitQuery()
+            .AsNoTracking()
             .ToListAsync(cancellationToken);
     }
 
@@ -132,6 +139,7 @@ public sealed class CommitteeRepository : ICommitteeRepository, IDisposable
 
         return await query
             .AsSplitQuery()
+            .AsNoTracking()
             .ToListAsync(cancellationToken);
     }
 

@@ -105,6 +105,10 @@ public sealed class CompetitionConfiguration : IEntityTypeConfiguration<Competit
             .HasFilter("[IsDeleted] = 0")
             .HasDatabaseName("IX_Competitions_Active");
 
+        // TASK-703: Composite index for paginated list queries with CreatedAt ordering
+        builder.HasIndex(c => new { c.TenantId, c.IsDeleted, c.CreatedAt })
+            .HasDatabaseName("IX_Competitions_TenantId_IsDeleted_CreatedAt");
+
         // ----- Relationships -----
 
         builder.HasMany(c => c.Sections)

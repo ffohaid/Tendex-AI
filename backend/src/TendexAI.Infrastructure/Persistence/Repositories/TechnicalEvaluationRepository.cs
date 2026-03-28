@@ -7,6 +7,10 @@ namespace TendexAI.Infrastructure.Persistence.Repositories;
 /// <summary>
 /// Repository implementation for TechnicalEvaluation aggregate root.
 /// Operates against the tenant-specific database using ITenantDbContextFactory.
+///
+/// Performance optimizations (TASK-703):
+/// - AsNoTracking() on read-only queries to reduce change tracker overhead.
+/// - AsSplitQuery() retained on multi-Include queries.
 /// </summary>
 public sealed class TechnicalEvaluationRepository : ITechnicalEvaluationRepository, IDisposable
 {
@@ -22,6 +26,7 @@ public sealed class TechnicalEvaluationRepository : ITechnicalEvaluationReposito
         Guid id, CancellationToken cancellationToken = default)
     {
         return await _context.TechnicalEvaluations
+            .AsNoTracking()
             .FirstOrDefaultAsync(e => e.Id == id, cancellationToken);
     }
 
@@ -32,6 +37,7 @@ public sealed class TechnicalEvaluationRepository : ITechnicalEvaluationReposito
             .Include(e => e.Scores)
             .Include(e => e.AiScores)
             .AsSplitQuery()
+            .AsNoTracking()
             .FirstOrDefaultAsync(e => e.Id == id, cancellationToken);
     }
 
@@ -39,6 +45,7 @@ public sealed class TechnicalEvaluationRepository : ITechnicalEvaluationReposito
         Guid competitionId, CancellationToken cancellationToken = default)
     {
         return await _context.TechnicalEvaluations
+            .AsNoTracking()
             .FirstOrDefaultAsync(e => e.CompetitionId == competitionId, cancellationToken);
     }
 
@@ -49,6 +56,7 @@ public sealed class TechnicalEvaluationRepository : ITechnicalEvaluationReposito
             .Include(e => e.Scores)
             .Include(e => e.AiScores)
             .AsSplitQuery()
+            .AsNoTracking()
             .FirstOrDefaultAsync(e => e.CompetitionId == competitionId, cancellationToken);
     }
 

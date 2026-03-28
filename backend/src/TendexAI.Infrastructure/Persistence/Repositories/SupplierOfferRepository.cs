@@ -8,6 +8,9 @@ namespace TendexAI.Infrastructure.Persistence.Repositories;
 /// <summary>
 /// Repository implementation for SupplierOffer entities.
 /// Operates against the tenant-specific database using ITenantDbContextFactory.
+///
+/// Performance optimizations (TASK-703):
+/// - AsNoTracking() on all read-only queries to reduce change tracker overhead.
 /// </summary>
 public sealed class SupplierOfferRepository : ISupplierOfferRepository, IDisposable
 {
@@ -23,6 +26,7 @@ public sealed class SupplierOfferRepository : ISupplierOfferRepository, IDisposa
         Guid id, CancellationToken cancellationToken = default)
     {
         return await _context.SupplierOffers
+            .AsNoTracking()
             .FirstOrDefaultAsync(o => o.Id == id, cancellationToken);
     }
 
@@ -32,6 +36,7 @@ public sealed class SupplierOfferRepository : ISupplierOfferRepository, IDisposa
         return await _context.SupplierOffers
             .Where(o => o.CompetitionId == competitionId)
             .OrderBy(o => o.BlindCode)
+            .AsNoTracking()
             .ToListAsync(cancellationToken);
     }
 
@@ -42,6 +47,7 @@ public sealed class SupplierOfferRepository : ISupplierOfferRepository, IDisposa
             .Where(o => o.CompetitionId == competitionId &&
                         o.TechnicalResult == OfferTechnicalResult.Passed)
             .OrderByDescending(o => o.TechnicalTotalScore)
+            .AsNoTracking()
             .ToListAsync(cancellationToken);
     }
 

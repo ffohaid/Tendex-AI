@@ -6,6 +6,10 @@ namespace TendexAI.Infrastructure.Persistence.Repositories;
 /// <summary>
 /// EF Core implementation of <see cref="IRoleRepository"/>.
 /// Operates against the tenant-specific database context.
+///
+/// Performance optimizations (TASK-703):
+/// - AsSplitQuery() on multi-Include queries to prevent Cartesian explosion.
+/// - AsNoTracking() on read-only list queries to reduce change tracker overhead.
 /// </summary>
 public sealed class RoleRepository : IRoleRepository
 {
@@ -22,6 +26,7 @@ public sealed class RoleRepository : IRoleRepository
             .Include(r => r.UserRoles)
             .Include(r => r.RolePermissions)
                 .ThenInclude(rp => rp.Permission)
+            .AsSplitQuery()
             .FirstOrDefaultAsync(r => r.Id == id, cancellationToken);
     }
 
@@ -38,6 +43,7 @@ public sealed class RoleRepository : IRoleRepository
             .Where(r => r.TenantId == tenantId)
             .Include(r => r.UserRoles)
             .OrderBy(r => r.NameEn)
+            .AsSplitQuery()
             .AsNoTracking()
             .ToListAsync(cancellationToken);
     }

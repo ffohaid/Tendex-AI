@@ -7,6 +7,10 @@ namespace TendexAI.Infrastructure.Persistence.Repositories;
 /// <summary>
 /// Repository implementation for Tenant aggregate root operations.
 /// Uses the master_platform database context.
+///
+/// Performance optimizations (TASK-703):
+/// - AsNoTracking() on all read-only queries to reduce change tracker overhead.
+/// - Removed unnecessary ToLower() calls in search (SQL Server is case-insensitive by default).
 /// </summary>
 public sealed class TenantRepository : ITenantRepository
 {
@@ -20,6 +24,7 @@ public sealed class TenantRepository : ITenantRepository
     public async Task<Tenant?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
     {
         return await _context.Tenants
+            .AsNoTracking()
             .FirstOrDefaultAsync(t => t.Id == id, cancellationToken);
     }
 
@@ -27,6 +32,7 @@ public sealed class TenantRepository : ITenantRepository
     {
         return await _context.Tenants
             .OrderByDescending(t => t.CreatedAt)
+            .AsNoTracking()
             .ToListAsync(cancellationToken);
     }
 
@@ -50,12 +56,14 @@ public sealed class TenantRepository : ITenantRepository
     public async Task<Tenant?> GetByIdentifierAsync(string identifier, CancellationToken cancellationToken = default)
     {
         return await _context.Tenants
+            .AsNoTracking()
             .FirstOrDefaultAsync(t => t.Identifier == identifier, cancellationToken);
     }
 
     public async Task<Tenant?> GetBySubdomainAsync(string subdomain, CancellationToken cancellationToken = default)
     {
         return await _context.Tenants
+            .AsNoTracking()
             .FirstOrDefaultAsync(t => t.Subdomain == subdomain, cancellationToken);
     }
 
@@ -64,6 +72,7 @@ public sealed class TenantRepository : ITenantRepository
         return await _context.Tenants
             .Where(t => t.Status == status)
             .OrderByDescending(t => t.CreatedAt)
+            .AsNoTracking()
             .ToListAsync(cancellationToken);
     }
 
@@ -71,6 +80,7 @@ public sealed class TenantRepository : ITenantRepository
     {
         return await _context.Tenants
             .Include(t => t.FeatureFlags)
+            .AsNoTracking()
             .FirstOrDefaultAsync(t => t.Id == tenantId, cancellationToken);
     }
 
@@ -78,6 +88,7 @@ public sealed class TenantRepository : ITenantRepository
     {
         return await _context.Tenants
             .Include(t => t.Subscriptions)
+            .AsNoTracking()
             .FirstOrDefaultAsync(t => t.Id == tenantId, cancellationToken);
     }
 
@@ -101,6 +112,7 @@ public sealed class TenantRepository : ITenantRepository
                         && t.SubscriptionExpiresAt <= cutoffDate
                         && t.Status == TenantStatus.Active)
             .OrderBy(t => t.SubscriptionExpiresAt)
+            .AsNoTracking()
             .ToListAsync(cancellationToken);
     }
 
@@ -114,13 +126,15 @@ public sealed class TenantRepository : ITenantRepository
         var query = _context.Tenants.AsQueryable();
 
         // Apply search filter
+        // Note: Removed ToLower() calls - SQL Server uses case-insensitive collation by default,
+        // and ToLower() prevents index usage (TASK-703 optimization).
         if (!string.IsNullOrWhiteSpace(searchTerm))
         {
-            var term = searchTerm.Trim().ToLower();
+            var term = searchTerm.Trim();
             query = query.Where(t =>
-                t.NameAr.ToLower().Contains(term) ||
-                t.NameEn.ToLower().Contains(term) ||
-                t.Identifier.ToLower().Contains(term));
+                t.NameAr.Contains(term) ||
+                t.NameEn.Contains(term) ||
+                t.Identifier.Contains(term));
         }
 
         // Apply status filter
@@ -135,6 +149,7 @@ public sealed class TenantRepository : ITenantRepository
             .OrderByDescending(t => t.CreatedAt)
             .Skip((pageNumber - 1) * pageSize)
             .Take(pageSize)
+            .AsNoTracking()
             .ToListAsync(cancellationToken);
 
         return (items, totalCount);
