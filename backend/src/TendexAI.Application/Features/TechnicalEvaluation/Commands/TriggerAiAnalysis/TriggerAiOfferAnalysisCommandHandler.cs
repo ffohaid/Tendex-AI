@@ -317,14 +317,14 @@ public sealed class TriggerAiOfferAnalysisCommandHandler
     private static string BuildBookletContent(Competition competition)
     {
         var sb = new System.Text.StringBuilder();
-        sb.AppendLine($"اسم المشروع: {competition.ProjectNameAr}");
-        sb.AppendLine($"نوع المنافسة: {competition.CompetitionType}");
+        sb.Append(System.Globalization.CultureInfo.InvariantCulture, $"اسم المشروع: {competition.ProjectNameAr}").AppendLine();
+        sb.Append(System.Globalization.CultureInfo.InvariantCulture, $"نوع المنافسة: {competition.CompetitionType}").AppendLine();
 
         if (competition.EstimatedBudget.HasValue)
-            sb.AppendLine($"الميزانية التقديرية: {competition.EstimatedBudget.Value:N2} ﷼");
+            sb.Append(System.Globalization.CultureInfo.InvariantCulture, $"الميزانية التقديرية: {competition.EstimatedBudget.Value.ToString("N2", System.Globalization.CultureInfo.InvariantCulture)} ﷼").AppendLine();
 
         if (competition.ProjectDurationDays.HasValue)
-            sb.AppendLine($"مدة المشروع: {competition.ProjectDurationDays.Value} يوم");
+            sb.Append(System.Globalization.CultureInfo.InvariantCulture, $"مدة المشروع: {competition.ProjectDurationDays.Value} يوم").AppendLine();
 
         sb.AppendLine();
         sb.AppendLine("=== أقسام كراسة الشروط والمواصفات ===");
@@ -332,7 +332,7 @@ public sealed class TriggerAiOfferAnalysisCommandHandler
         foreach (var section in competition.Sections.OrderBy(s => s.SortOrder))
         {
             sb.AppendLine();
-            sb.AppendLine($"--- {section.TitleAr} ---");
+            sb.Append(System.Globalization.CultureInfo.InvariantCulture, $"--- {section.TitleAr} ---").AppendLine();
             if (!string.IsNullOrWhiteSpace(section.ContentHtml))
             {
                 // Strip HTML tags for plain text analysis
@@ -348,9 +348,9 @@ public sealed class TriggerAiOfferAnalysisCommandHandler
             .Where(c => c.IsActive && c.ParentCriterionId == null)
             .OrderBy(c => c.SortOrder))
         {
-            sb.AppendLine($"- {criterion.NameAr} (الوزن: {criterion.WeightPercentage}%، الحد الأدنى: {criterion.MinimumPassingScore?.ToString() ?? "غير محدد"})");
+            sb.Append(System.Globalization.CultureInfo.InvariantCulture, $"- {criterion.NameAr} (الوزن: {criterion.WeightPercentage.ToString(System.Globalization.CultureInfo.InvariantCulture)}%، الحد الأدنى: {criterion.MinimumPassingScore?.ToString(System.Globalization.CultureInfo.InvariantCulture) ?? "غير محدد"})").AppendLine();
             if (!string.IsNullOrWhiteSpace(criterion.DescriptionAr))
-                sb.AppendLine($"  الوصف: {criterion.DescriptionAr}");
+                sb.Append(System.Globalization.CultureInfo.InvariantCulture, $"  الوصف: {criterion.DescriptionAr}").AppendLine();
         }
 
         return sb.ToString();
@@ -364,9 +364,9 @@ public sealed class TriggerAiOfferAnalysisCommandHandler
     private static string BuildOfferContent(SupplierOffer offer)
     {
         var sb = new System.Text.StringBuilder();
-        sb.AppendLine($"رمز العرض: {offer.BlindCode}");
-        sb.AppendLine($"رقم مرجع العرض: {offer.OfferReferenceNumber}");
-        sb.AppendLine($"تاريخ التقديم: {offer.SubmissionDate:yyyy-MM-dd}");
+        sb.Append(System.Globalization.CultureInfo.InvariantCulture, $"رمز العرض: {offer.BlindCode}").AppendLine();
+        sb.Append(System.Globalization.CultureInfo.InvariantCulture, $"رقم مرجع العرض: {offer.OfferReferenceNumber}").AppendLine();
+        sb.Append(System.Globalization.CultureInfo.InvariantCulture, $"تاريخ التقديم: {offer.SubmissionDate.ToString("yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture)}").AppendLine();
         sb.AppendLine();
         sb.AppendLine("ملاحظة: محتوى العرض الفني التفصيلي يتم استخراجه من المستندات المرفقة.");
         sb.AppendLine("يتم تحليل العرض بناءً على المستندات المتاحة في نظام إدارة الملفات.");
