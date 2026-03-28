@@ -12,6 +12,7 @@
 | Sprint 3: سير العمل والتقييم | 🔄 قيد التنفيذ | 71% | تم إنجاز TASK-301, TASK-302, TASK-303, TASK-304, TASK-305 |
 | Sprint 4: تكامل الذكاء الاصطناعي | 🔄 قيد التنفيذ | 71% | تم إنجاز TASK-401, TASK-402, TASK-403, TASK-404, TASK-405 |
 | Sprint 5: الواجهة الأمامية | 🔄 قيد التنفيذ | 60% | تم إنجاز TASK-501, TASK-502, TASK-503 |
+| Sprint 5: الواجهة الأمامية | 🔄 قيد التنفيذ | 40% | تم إنجاز TASK-501, TASK-504 |
 | Sprint 6: لوحة تحكم المشغل | ⏳ لم يبدأ | 0% | - |
 | Sprint 7: الاختبار والنشر | ⏳ لم يبدأ | 0% | - |
 
@@ -146,6 +147,62 @@
   - Chart.js مقسم في حزمة منفصلة (vendor-charts) ويتم تحميله بشكل كسول.
   - الأرقام الإنجليزية مضمونة عبر useFormatters composable.
   - دعم RTL/LTR كامل عبر الخصائص المنطقية لـ Tailwind (ms-, me-, ps-, pe-, start, end).
+### 2026-03-28 - TASK-504: بناء النماذج التفاعلية لإنشاء كراسات الشروط والمواصفات
+- **ما تم إنجازه:**
+  - **TypeScript Types (`types/rfp.ts`):** تعريفات شاملة لجميع نماذج بيانات كراسة الشروط والمواصفات تشمل: RfpFormData (6 خطوات), RfpBasicInfo, RfpSettings, RfpContent, RfpBoq, RfpAttachments, RfpSection, BoqItem, EvaluationCriterion, RfpAttachment, WizardStep, وأنواع الحالات والتعدادات.
+  - **Zod Validation Schemas (`validations/rfp.ts`):** مخططات تحقق لكل خطوة من خطوات المعالج (5 مخططات) مع رسائل خطأ باللغة العربية بالكامل. يشمل: basicInfoSchema, settingsSchema, contentSchema, boqSchema, attachmentsSchema مع تحقق مخصص (مثل: تاريخ الانتهاء بعد البداية، مجموع الأوزان = 100%).
+  - **API Service Layer (`services/rfpService.ts`):** طبقة خدمات API كاملة تتضمن: CRUD operations (fetchRfpList, fetchRfpById, createRfp, updateRfp, deleteRfp), auto-save endpoint (autoSaveDraft), submission (submitRfpForApproval), attachment operations (uploadAttachment, deleteAttachment), template/clone operations. جميع البيانات تُجلب ديناميكياً من API (لا بيانات وهمية).
+  - **Pinia Store (`stores/rfp.ts`):** مخزن حالة شامل يدير: بيانات النموذج للخطوات الست، التنقل بين الخطوات، الحفظ التلقائي كل 30 ثانية، إدارة الأقسام (إضافة/حذف/تحديث/إعادة ترتيب)، إدارة بنود جدول الكميات، إدارة معايير التقييم، إدارة المرفقات، حساب الإجماليات والنسب.
+  - **Composable (`composables/useRfpValidation.ts`):** دالة تكوينية لربط VeeValidate مع Zod لكل خطوة مع دعم التحقق الفوري.
+  - **مكون WizardStepper:** شريط تنقل أفقي للخطوات الست مع مؤشرات بصرية (مكتمل/نشط/غير متاح)، دعم RTL/LTR، وإمكانية الوصول (ARIA).
+  - **مكون AutoSaveIndicator:** مؤشر حالة الحفظ التلقائي (خامل/جارٍ الحفظ/تم الحفظ/خطأ) مع عرض وقت آخر حفظ.
+  - **مكون FormField:** غلاف موحد لحقول النموذج مع عنوان ورسالة خطأ ونص مساعدة.
+  - **Step1BasicInfo:** نموذج المعلومات الأساسية (اسم المشروع، الوصف، نوع المنافسة، القيمة التقديرية بالريال السعودي ﷼، التواريخ، الرقم المرجعي، الإدارة، السنة المالية) مع تحقق فوري.
+  - **Step2Settings:** إعدادات المنافسة (طريقة التقييم، أوزان فني/مالي بشريط تمرير مع حساب تلقائي، الحد الأدنى للدرجة الفنية، الضمان البنكي، فترة الاستفسارات، معايير التقييم الديناميكية مع إضافة/حذف).
+  - **Step3Content:** محتوى الكراسة مع Drag & Drop (vuedraggable) لإعادة ترتيب الأقسام، نظام الألوان المرمزة (أسود=ثابت، أخضر=قابل للتعديل، أحمر=مثال، أزرق=تعليمات) حسب PRD، تحرير محتوى كل قسم، إسناد الأقسام لأعضاء الفريق، أقسام افتراضية (8 أقسام).
+  - **Step4Boq:** جدول الكميات التفاعلي مع Drag & Drop لإعادة ترتيب البنود، تحرير مباشر (inline editing)، 13 وحدة قياس، حساب تلقائي للإجماليات، دعم ضريبة القيمة المضافة (15%).
+  - **Step5Attachments:** منطقة رفع ملفات بالسحب والإفلات (Drag & Drop)، قائمة المرفقات الإلزامية (10 مرفقات)، تحقق من نوع وحجم الملف (25 MB)، عرض الملفات المرفوعة مع أيقونات حسب النوع.
+  - **Step6Review:** ملخص شامل لجميع البيانات المدخلة، فحص اكتمال البيانات (5 فحوصات)، روابط سريعة للتعديل، زر التقديم للاعتماد.
+  - **صفحة RfpCreateView:** الصفحة الرئيسية للمعالج تجمع جميع المكونات مع: تنقل بين الخطوات مع تحقق قبل الانتقال، حفظ تلقائي كل 30 ثانية، حفظ يدوي، شريط تقدم.
+  - **صفحة RfpListView:** قائمة كراسات الشروط مع: جدول بيانات ديناميكي، بحث وتصفية حسب الحالة، ترقيم صفحات، شارات حالة ملونة، نسبة إنجاز بصرية، حوار تأكيد الحذف.
+  - **ملفات الترجمة:** تحديث ar.json و en.json بأكثر من 200 مفتاح ترجمة جديد يشمل جميع النصوص ورسائل الخطأ والتلميحات.
+  - **Utility (`utils/numbers.ts`):** تحديث دوال تنسيق الأرقام بإضافة formatNumber و formatPercentage مع دعم null/undefined.
+  - **Router:** تحديث مسارات RFP لتشير إلى المكونات الحقيقية (rfp-list, rfp-create, rfp-edit).
+- **التبعيات المثبتة:**
+  - `vee-validate@4.15.1` - مكتبة التحقق من النماذج
+  - `@vee-validate/zod@4.15.1` - محول Zod لـ VeeValidate
+  - `zod@3.25.76` - مكتبة التحقق من المخططات
+  - `vuedraggable@4.1.0` - مكتبة السحب والإفلات لـ Vue 3
+- **الملفات المنشأة/المعدلة:**
+  - `src/types/rfp.ts` (جديد)
+  - `src/validations/rfp.ts` (جديد)
+  - `src/services/rfpService.ts` (جديد)
+  - `src/stores/rfp.ts` (جديد)
+  - `src/composables/useRfpValidation.ts` (جديد)
+  - `src/components/rfp/WizardStepper.vue` (جديد)
+  - `src/components/rfp/AutoSaveIndicator.vue` (جديد)
+  - `src/components/rfp/FormField.vue` (جديد)
+  - `src/components/rfp/Step1BasicInfo.vue` (جديد)
+  - `src/components/rfp/Step2Settings.vue` (جديد)
+  - `src/components/rfp/Step3Content.vue` (جديد)
+  - `src/components/rfp/Step4Boq.vue` (جديد)
+  - `src/components/rfp/Step5Attachments.vue` (جديد)
+  - `src/components/rfp/Step6Review.vue` (جديد)
+  - `src/views/rfp/RfpCreateView.vue` (جديد)
+  - `src/views/rfp/RfpListView.vue` (جديد)
+  - `src/locales/ar.json` (معدل - إضافة 200+ مفتاح ترجمة RFP)
+  - `src/locales/en.json` (معدل - إضافة 200+ مفتاح ترجمة RFP)
+  - `src/utils/numbers.ts` (معدل - إضافة formatNumber, formatPercentage)
+  - `src/router/index.ts` (معدل - تحديث مسارات RFP)
+  - `package.json` (معدل - إضافة التبعيات الجديدة)
+- **التحقق:** نجاح `vue-tsc --noEmit` (بدون أخطاء TypeScript)، نجاح `vite build` (بناء الإنتاج بنجاح).
+- **ملاحظات للوكيل التالي:**
+  - جميع المكونات تستخدم الخصائص المنطقية لـ Tailwind (ms-, me-, ps-, pe-, start, end) لدعم RTL/LTR.
+  - الأرقام تُعرض بالتنسيق الإنجليزي حصرياً مع رمز الريال السعودي (﷼).
+  - API Service جاهز للربط مع Backend (TASK-301) - يستخدم VITE_API_BASE_URL.
+  - الحفظ التلقائي يعمل كل 30 ثانية عبر Pinia store.
+  - Drag & Drop يعمل في Step3 (الأقسام) و Step4 (جدول الكميات) و Step5 (رفع الملفات).
+  - رسائل الخطأ باللغة العربية بالكامل عبر Zod schemas.
 
 ### 2026-03-28 - TASK-501: بناء تخطيط المنصة والتنقل (Layout & Navigation)
 - **ما تم إنجازه:**

@@ -21,18 +21,25 @@ const routes: RouteRecordRaw[] = [
         component: () => import('@/views/DashboardView.vue'),
         meta: { title: 'Tendex AI - Dashboard', requiresAuth: true },
       },
-      /* Placeholder routes for future Sprint 5 tasks */
+      /* RFP Specification Booklet routes (TASK-504) */
       {
         path: 'rfp',
-        name: 'RfpList',
-        component: () => import('@/views/DashboardView.vue'),
+        name: 'rfp-list',
+        component: () => import('@/views/rfp/RfpListView.vue'),
         meta: { title: 'Tendex AI - RFP List', requiresAuth: true },
       },
       {
         path: 'rfp/create',
-        name: 'RfpCreate',
-        component: () => import('@/views/DashboardView.vue'),
+        name: 'rfp-create',
+        component: () => import('@/views/rfp/RfpCreateView.vue'),
         meta: { title: 'Tendex AI - Create RFP', requiresAuth: true },
+      },
+      {
+        path: 'rfp/:id/edit',
+        name: 'rfp-edit',
+        component: () => import('@/views/rfp/RfpCreateView.vue'),
+        meta: { title: 'Tendex AI - Edit RFP', requiresAuth: true },
+        props: true,
       },
       {
         path: 'committees/permanent',

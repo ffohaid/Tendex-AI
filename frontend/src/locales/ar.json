@@ -25,7 +25,8 @@
     "close": "إغلاق",
     "notifications": "الإشعارات",
     "profile": "الملف الشخصي",
-    "help": "المساعدة"
+    "help": "المساعدة",
+    "retry": "إعادة المحاولة"
   },
   "auth": {
     "login": "تسجيل الدخول",
@@ -219,6 +220,233 @@
       "avgEvalTime": "متوسط زمن التقييم",
       "slaCompliance": "الالتزام بالمهل الزمنية",
       "days": "يوم"
+    }
+  },
+  "rfp": {
+    "titles": {
+      "list": "كراسات الشروط والمواصفات",
+      "listSubtitle": "إدارة وإنشاء كراسات الشروط والمواصفات للمنافسات",
+      "create": "إنشاء كراسة شروط ومواصفات",
+      "edit": "تعديل كراسة الشروط والمواصفات",
+      "subtitle": "قم بتعبئة البيانات المطلوبة لإنشاء كراسة الشروط والمواصفات"
+    },
+    "steps": {
+      "basicInfo": "المعلومات الأساسية",
+      "basicInfoDesc": "أدخل البيانات الأساسية للمنافسة والمشروع",
+      "settings": "إعدادات المنافسة",
+      "settingsDesc": "حدد طريقة التقييم ومعايير المفاضلة وشروط الضمان",
+      "content": "محتوى الكراسة",
+      "contentDesc": "أضف أقسام الكراسة ومحتواها مع إمكانية السحب والإفلات لترتيب الأقسام",
+      "boq": "جدول الكميات",
+      "boqDesc": "أضف بنود جدول الكميات والأسعار التقديرية",
+      "attachments": "المرفقات",
+      "attachmentsDesc": "ارفق المستندات المطلوبة والاختيارية",
+      "review": "المراجعة والتقديم",
+      "reviewDesc": "راجع جميع البيانات المدخلة قبل تقديم الكراسة للاعتماد"
+    },
+    "fields": {
+      "projectName": "اسم المشروع",
+      "projectDescription": "وصف المشروع",
+      "competitionType": "نوع المنافسة",
+      "estimatedValue": "القيمة التقديرية",
+      "referenceNumber": "الرقم المرجعي",
+      "department": "الإدارة المسؤولة",
+      "fiscalYear": "السنة المالية",
+      "startDate": "تاريخ البداية",
+      "endDate": "تاريخ الانتهاء",
+      "submissionDeadline": "آخر موعد لتقديم العروض",
+      "evaluationMethod": "طريقة التقييم",
+      "technicalWeight": "وزن التقييم الفني",
+      "financialWeight": "وزن التقييم المالي",
+      "minimumTechnicalScore": "الحد الأدنى للدرجة الفنية",
+      "allowPartialOffers": "السماح بالعروض الجزئية",
+      "requireBankGuarantee": "اشتراط ضمان بنكي",
+      "guaranteePercentage": "نسبة الضمان البنكي (%)",
+      "inquiryPeriodDays": "مدة فترة الاستفسارات (أيام)",
+      "evaluationCriteria": "معايير التقييم",
+      "colorCode": "تصنيف النص",
+      "assignedTo": "مسند إلى",
+      "sectionContent": "محتوى القسم",
+      "includesVat": "شامل ضريبة القيمة المضافة"
+    },
+    "placeholders": {
+      "projectName": "أدخل اسم المشروع",
+      "projectDescription": "أدخل وصفاً تفصيلياً للمشروع ونطاق العمل المطلوب",
+      "selectCompetitionType": "اختر نوع المنافسة",
+      "estimatedValue": "أدخل القيمة التقديرية",
+      "referenceNumber": "أدخل الرقم المرجعي",
+      "department": "أدخل اسم الإدارة المسؤولة",
+      "selectFiscalYear": "اختر السنة المالية",
+      "selectEvaluationMethod": "اختر طريقة التقييم",
+      "criterionName": "اسم المعيار",
+      "criterionWeight": "الوزن (%)",
+      "criterionDescription": "وصف المعيار",
+      "sectionTitle": "عنوان القسم",
+      "sectionContent": "اكتب محتوى القسم هنا...",
+      "assignedTo": "اسم العضو المسؤول",
+      "boqCategory": "التصنيف",
+      "boqDescription": "وصف البند",
+      "search": "البحث في كراسات الشروط..."
+    },
+    "competitionTypes": {
+      "publicTender": "منافسة عامة",
+      "limitedTender": "منافسة محدودة",
+      "directPurchase": "شراء مباشر",
+      "frameworkAgreement": "اتفاقية إطارية",
+      "reverseAuction": "مزايدة عكسية"
+    },
+    "evaluationMethods": {
+      "lowestPrice": "أقل الأسعار",
+      "weightedCriteria": "المعايير الموزونة",
+      "qualityCostBased": "الجودة والتكلفة"
+    },
+    "colorCodes": {
+      "mandatory": "نص ثابت (إلزامي)",
+      "editable": "نص قابل للتعديل",
+      "example": "مثال (يجب استبداله)",
+      "instruction": "تعليمات (تُحذف تلقائياً)"
+    },
+    "units": {
+      "unit": "وحدة",
+      "meter": "متر",
+      "sqm": "متر مربع",
+      "cbm": "متر مكعب",
+      "kg": "كيلوغرام",
+      "ton": "طن",
+      "liter": "لتر",
+      "hour": "ساعة",
+      "day": "يوم",
+      "month": "شهر",
+      "lumpSum": "مقطوعية",
+      "trip": "رحلة",
+      "set": "طقم"
+    },
+    "boqFields": {
+      "category": "التصنيف",
+      "description": "الوصف",
+      "unit": "الوحدة",
+      "quantity": "الكمية",
+      "estimatedPrice": "السعر التقديري",
+      "totalPrice": "الإجمالي",
+      "actions": "الإجراءات",
+      "subtotal": "المجموع الفرعي",
+      "vat": "ضريبة القيمة المضافة",
+      "grandTotal": "المجموع الكلي"
+    },
+    "statuses": {
+      "all": "جميع الحالات",
+      "draft": "مسودة",
+      "pendingApproval": "بانتظار الاعتماد",
+      "approved": "معتمدة",
+      "published": "منشورة",
+      "receivingOffers": "استقبال العروض",
+      "cancelled": "ملغاة"
+    },
+    "actions": {
+      "createNew": "إنشاء كراسة جديدة",
+      "createFirst": "إنشاء أول كراسة",
+      "saveDraft": "حفظ المسودة",
+      "submitForApproval": "تقديم للاعتماد",
+      "next": "التالي",
+      "previous": "السابق",
+      "addSection": "إضافة قسم",
+      "addDefaultSections": "إضافة الأقسام الافتراضية",
+      "addBoqItem": "إضافة بند",
+      "addCriterion": "إضافة معيار",
+      "dragToReorder": "اسحب لإعادة الترتيب",
+      "goToStep": "الانتقال للخطوة"
+    },
+    "labels": {
+      "required": "إلزامي",
+      "requiredAttachments": "المرفقات الإلزامية",
+      "uploadedFiles": "الملفات المرفوعة",
+      "markAsCompleted": "تحديد كمكتمل",
+      "step": "الخطوة",
+      "of": "من",
+      "sections": "أقسام",
+      "completed": "مكتمل",
+      "items": "بنود",
+      "criteria": "معايير",
+      "days": "أيام",
+      "filesUploaded": "ملفات مرفوعة",
+      "untitledSection": "قسم بدون عنوان"
+    },
+    "messages": {
+      "noSections": "لا توجد أقسام بعد",
+      "dragDropHint": "أضف أقساماً جديدة أو استخدم الأقسام الافتراضية",
+      "noBoqItems": "لا توجد بنود في جدول الكميات بعد",
+      "noCriteria": "لا توجد معايير تقييم بعد. أضف معياراً جديداً للبدء.",
+      "criteriaWeightTotal": "مجموع أوزان المعايير",
+      "dropFilesHere": "اسحب الملفات وأفلتها هنا أو انقر للاختيار",
+      "allowedFileTypes": "PDF, Word, Excel, PNG, JPEG",
+      "maxFileSize": "الحد الأقصى لحجم الملف: 25 ميجابايت",
+      "noRfps": "لا توجد كراسات شروط بعد",
+      "noRfpsDesc": "ابدأ بإنشاء أول كراسة شروط ومواصفات",
+      "completeAllSteps": "يرجى إكمال جميع الخطوات المطلوبة قبل التقديم"
+    },
+    "errors": {
+      "invalidFileType": "نوع الملف غير مدعوم. يرجى رفع ملفات PDF أو Word أو Excel أو صور فقط.",
+      "fileTooLarge": "حجم الملف يتجاوز الحد المسموح (25 ميجابايت)",
+      "submitFailed": "فشل تقديم الكراسة. يرجى المحاولة مرة أخرى.",
+      "saveFirst": "يرجى حفظ الكراسة أولاً قبل التقديم"
+    },
+    "autoSave": {
+      "idle": "تغييرات غير محفوظة",
+      "saving": "جارٍ الحفظ التلقائي...",
+      "saved": "تم الحفظ تلقائياً",
+      "error": "فشل الحفظ التلقائي"
+    },
+    "hints": {
+      "weightSum": "يتم حساب الوزن المالي تلقائياً ليكون المجموع 100%"
+    },
+    "review": {
+      "completenessCheck": "فحص اكتمال البيانات",
+      "basicInfoComplete": "المعلومات الأساسية مكتملة",
+      "settingsComplete": "إعدادات المنافسة مكتملة",
+      "contentComplete": "محتوى الكراسة مضاف",
+      "boqComplete": "جدول الكميات مضاف",
+      "attachmentsComplete": "المرفقات مرفوعة"
+    },
+    "tableHeaders": {
+      "projectName": "اسم المشروع",
+      "referenceNumber": "الرقم المرجعي",
+      "status": "الحالة",
+      "estimatedValue": "القيمة التقديرية",
+      "createdAt": "تاريخ الإنشاء",
+      "completion": "نسبة الإنجاز",
+      "actions": "الإجراءات"
+    },
+    "pagination": {
+      "showing": "عرض",
+      "of": "من",
+      "previous": "السابق",
+      "next": "التالي"
+    },
+    "dialogs": {
+      "deleteTitle": "تأكيد الحذف",
+      "deleteMessage": "هل أنت متأكد من حذف هذه الكراسة؟ لا يمكن التراجع عن هذا الإجراء."
+    },
+    "defaultSections": {
+      "introduction": "المقدمة والتعريف بالمشروع",
+      "scope": "نطاق العمل",
+      "technicalRequirements": "المتطلبات الفنية",
+      "qualifications": "مؤهلات وخبرات المتنافسين",
+      "timeline": "الجدول الزمني للتنفيذ",
+      "termsAndConditions": "الشروط والأحكام العامة",
+      "evaluationCriteria": "معايير التقييم والمفاضلة",
+      "submissionInstructions": "تعليمات تقديم العروض"
+    },
+    "requiredAttachments": {
+      "technicalProposalForm": "نموذج العرض الفني",
+      "financialProposalForm": "نموذج العرض المالي",
+      "bankGuaranteeForm": "نموذج الضمان البنكي",
+      "complianceDeclaration": "إقرار الالتزام بالشروط",
+      "conflictOfInterest": "إقرار عدم تعارض المصالح",
+      "companyProfileForm": "نموذج بيانات المنشأة",
+      "experienceForm": "نموذج الخبرات السابقة",
+      "teamQualifications": "مؤهلات فريق العمل",
+      "slaTemplate": "نموذج اتفاقية مستوى الخدمة",
+      "ndaTemplate": "نموذج اتفاقية السرية"
     }
   }
 }

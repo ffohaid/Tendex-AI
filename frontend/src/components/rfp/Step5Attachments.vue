@@ -1,0 +1,256 @@
+<script setup lang="ts">
+/**
+ * Step 5: Attachments.
+ *
+ * Manages file uploads for the RFP booklet with:
+ * - Drag & Drop file upload zone
+ * - Required/optional attachment tracking
+ * - File type and size validation
+ * - Upload progress indication
+ */
+import { ref, computed } from 'vue'
+import { useI18n } from 'vue-i18n'
+import { useForm } from 'vee-validate'
+import { toTypedSchema } from '@vee-validate/zod'
+import { attachmentsSchema } from '@/validations/rfp'
+import { useRfpStore } from '@/stores/rfp'
+import type { RfpAttachment } from '@/types/rfp'
+
+const { t } = useI18n()
+const rfpStore = useRfpStore()
+
+const schema = toTypedSchema(attachmentsSchema)
+
+const { errors, validate } = useForm({
+  validationSchema: schema,
+  initialValues: { ...rfpStore.formData.attachments },
+  validateOnMount: false,
+})
+
+const isDragOver = ref(false)
+const uploadError = ref('')
+
+/** Required attachments list per PRD */
+const requiredAttachments = computed(() => [
+  { key: 'technical_proposal_form', label: t('rfp.requiredAttachments.technicalProposalForm') },
+  { key: 'financial_proposal_form', label: t('rfp.requiredAttachments.financialProposalForm') },
+  { key: 'bank_guarantee_form', label: t('rfp.requiredAttachments.bankGuaranteeForm') },
+  { key: 'compliance_declaration', label: t('rfp.requiredAttachments.complianceDeclaration') },
+  { key: 'conflict_of_interest', label: t('rfp.requiredAttachments.conflictOfInterest') },
+  { key: 'company_profile_form', label: t('rfp.requiredAttachments.companyProfileForm') },
+  { key: 'experience_form', label: t('rfp.requiredAttachments.experienceForm') },
+  { key: 'team_qualifications', label: t('rfp.requiredAttachments.teamQualifications') },
+  { key: 'sla_template', label: t('rfp.requiredAttachments.slaTemplate') },
+  { key: 'nda_template', label: t('rfp.requiredAttachments.ndaTemplate') },
+])
+
+/** Check if a required attachment has been uploaded */
+function isRequiredAttachmentUploaded(key: string): boolean {
+  return rfpStore.formData.attachments.files.some(
+    (f) => f.name.toLowerCase().includes(key.replace(/_/g, ' ')) || f.id === key,
+  )
+}
+
+/** Allowed file types */
+const allowedTypes = [
+  'application/pdf',
+  'application/msword',
+  'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+  'application/vnd.ms-excel',
+  'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+  'image/png',
+  'image/jpeg',
+]
+
+const maxFileSize = 25 * 1024 * 1024 // 25 MB
+
+/** Format file size */
+function formatFileSize(bytes: number): string {
+  if (bytes === 0) return '0 B'
+  const k = 1024
+  const sizes = ['B', 'KB', 'MB', 'GB']
+  const i = Math.floor(Math.log(bytes) / Math.log(k))
+  return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i]
+}
+
+/** Get file icon */
+function getFileIcon(fileType: string): string {
+  if (fileType.includes('pdf')) return 'pi pi-file-pdf'
+  if (fileType.includes('word') || fileType.includes('document')) return 'pi pi-file-word'
+  if (fileType.includes('excel') || fileType.includes('sheet')) return 'pi pi-file-excel'
+  if (fileType.includes('image')) return 'pi pi-image'
+  return 'pi pi-file'
+}
+
+/** Handle file selection */
+function handleFiles(files: FileList | null) {
+  if (!files) return
+  uploadError.value = ''
+
+  Array.from(files).forEach((file) => {
+    // Validate file type
+    if (!allowedTypes.includes(file.type)) {
+      uploadError.value = t('rfp.errors.invalidFileType')
+      return
+    }
+
+    // Validate file size
+    if (file.size > maxFileSize) {
+      uploadError.value = t('rfp.errors.fileTooLarge')
+      return
+    }
+
+    // Create attachment record
+    const attachment: RfpAttachment = {
+      id: `${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
+      name: file.name,
+      fileUrl: URL.createObjectURL(file),
+      fileSize: file.size,
+      fileType: file.type,
+      isRequired: false,
+      uploadedAt: new Date().toISOString(),
+      uploadedBy: 'current-user',
+    }
+
+    rfpStore.addAttachment(attachment)
+  })
+}
+
+/** Handle drag events */
+function onDragOver(event: DragEvent) {
+  event.preventDefault()
+  isDragOver.value = true
+}
+
+function onDragLeave() {
+  isDragOver.value = false
+}
+
+function onDrop(event: DragEvent) {
+  event.preventDefault()
+  isDragOver.value = false
+  handleFiles(event.dataTransfer?.files || null)
+}
+
+/** Handle file input change */
+function onFileInputChange(event: Event) {
+  const input = event.target as HTMLInputElement
+  handleFiles(input.files)
+  input.value = '' // Reset for re-upload
+}
+
+/** Remove attachment */
+function removeAttachment(id: string) {
+  rfpStore.removeAttachment(id)
+}
+
+defineExpose({
+  validate: async () => {
+    const result = await validate()
+    return result.valid
+  },
+})
+</script>
+
+<template>
+  <div class="space-y-6">
+    <div class="mb-6">
+      <h2 class="text-xl font-bold text-secondary">
+        {{ t('rfp.steps.attachments') }}
+      </h2>
+      <p class="mt-1 text-sm text-tertiary">
+        {{ t('rfp.steps.attachmentsDesc') }}
+      </p>
+    </div>
+
+    <!-- Required attachments checklist -->
+    <div class="rounded-lg border border-surface-dim bg-surface-muted p-4">
+      <h3 class="mb-3 text-sm font-bold text-secondary">
+        {{ t('rfp.labels.requiredAttachments') }}
+      </h3>
+      <div class="grid grid-cols-1 gap-2 sm:grid-cols-2">
+        <div
+          v-for="req in requiredAttachments"
+          :key="req.key"
+          class="flex items-center gap-2 text-sm"
+        >
+          <i
+            :class="isRequiredAttachmentUploaded(req.key)
+              ? 'pi pi-check-circle text-success'
+              : 'pi pi-circle text-tertiary'"
+          ></i>
+          <span :class="isRequiredAttachmentUploaded(req.key) ? 'text-secondary' : 'text-tertiary'">
+            {{ req.label }}
+          </span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Drop zone -->
+    <div
+      class="relative rounded-lg border-2 border-dashed p-8 text-center transition-colors"
+      :class="{
+        'border-primary bg-primary/5': isDragOver,
+        'border-surface-dim hover:border-primary/40': !isDragOver,
+      }"
+      @dragover="onDragOver"
+      @dragleave="onDragLeave"
+      @drop="onDrop"
+    >
+      <input
+        id="fileUpload"
+        type="file"
+        multiple
+        :accept="allowedTypes.join(',')"
+        class="absolute inset-0 cursor-pointer opacity-0"
+        @change="onFileInputChange"
+      />
+      <div class="pointer-events-none">
+        <i class="pi pi-cloud-upload mb-3 text-4xl text-tertiary"></i>
+        <p class="text-sm font-medium text-secondary">
+          {{ t('rfp.messages.dropFilesHere') }}
+        </p>
+        <p class="mt-1 text-xs text-tertiary">
+          {{ t('rfp.messages.allowedFileTypes') }}
+        </p>
+        <p class="text-xs text-tertiary">
+          {{ t('rfp.messages.maxFileSize') }}
+        </p>
+      </div>
+    </div>
+
+    <!-- Upload error -->
+    <p v-if="uploadError" class="text-sm text-danger">
+      <i class="pi pi-exclamation-circle me-1"></i>
+      {{ uploadError }}
+    </p>
+
+    <!-- Uploaded files list -->
+    <div v-if="rfpStore.formData.attachments.files.length > 0" class="space-y-2">
+      <h3 class="text-sm font-bold text-secondary">
+        {{ t('rfp.labels.uploadedFiles') }}
+        ({{ rfpStore.formData.attachments.files.length }})
+      </h3>
+
+      <div
+        v-for="file in rfpStore.formData.attachments.files"
+        :key="file.id"
+        class="flex items-center gap-3 rounded-lg border border-surface-dim bg-white p-3 transition-colors hover:bg-surface-muted/50"
+      >
+        <i :class="[getFileIcon(file.fileType), 'text-xl text-primary']"></i>
+        <div class="min-w-0 flex-1">
+          <p class="truncate text-sm font-medium text-secondary">{{ file.name }}</p>
+          <p class="text-xs text-tertiary">{{ formatFileSize(file.fileSize) }}</p>
+        </div>
+        <button
+          type="button"
+          class="flex h-8 w-8 items-center justify-center rounded-lg text-danger transition-colors hover:bg-danger/10"
+          :title="t('common.delete')"
+          @click="removeAttachment(file.id)"
+        >
+          <i class="pi pi-trash text-sm"></i>
+        </button>
+      </div>
+    </div>
+  </div>
+</template>

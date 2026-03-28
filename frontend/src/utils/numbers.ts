@@ -29,11 +29,41 @@ export function toEnglishNumerals(value: string): string {
  * Formats a number as currency using the Saudi Riyal symbol.
  * Always uses English numerals.
  */
-export function formatCurrency(amount: number): string {
+export function formatCurrency(
+  amount: number | null | undefined,
+  decimals = 2,
+): string {
+  if (amount === null || amount === undefined) return '0.00 \uFDFC'
+
   const formatted = new Intl.NumberFormat('en-SA', {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
+    minimumFractionDigits: decimals,
+    maximumFractionDigits: decimals,
   }).format(amount)
 
   return `${formatted} \uFDFC`
+}
+
+/**
+ * Formats a number with thousand separators.
+ * Always uses English numerals.
+ */
+export function formatNumber(
+  value: number | null | undefined,
+  decimals = 0,
+): string {
+  if (value === null || value === undefined) return '0'
+
+  return new Intl.NumberFormat('en-SA', {
+    minimumFractionDigits: decimals,
+    maximumFractionDigits: decimals,
+  }).format(value)
+}
+
+/**
+ * Formats a percentage value.
+ * Always uses English numerals.
+ */
+export function formatPercentage(value: number | null | undefined): string {
+  if (value === null || value === undefined) return '0%'
+  return `${value}%`
 }

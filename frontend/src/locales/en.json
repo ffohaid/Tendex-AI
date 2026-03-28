@@ -25,7 +25,8 @@
     "close": "Close",
     "notifications": "Notifications",
     "profile": "Profile",
-    "help": "Help"
+    "help": "Help",
+    "retry": "Retry"
   },
   "auth": {
     "login": "Login",
@@ -219,6 +220,233 @@
       "avgEvalTime": "Avg. Evaluation Time",
       "slaCompliance": "SLA Compliance",
       "days": "days"
+    }
+  },
+  "rfp": {
+    "titles": {
+      "list": "Specifications Booklets",
+      "listSubtitle": "Manage and create specifications booklets for competitions",
+      "create": "Create Specifications Booklet",
+      "edit": "Edit Specifications Booklet",
+      "subtitle": "Fill in the required data to create a specifications booklet"
+    },
+    "steps": {
+      "basicInfo": "Basic Information",
+      "basicInfoDesc": "Enter the basic competition and project data",
+      "settings": "Competition Settings",
+      "settingsDesc": "Define evaluation method, criteria weights, and guarantee requirements",
+      "content": "Booklet Content",
+      "contentDesc": "Add booklet sections and content with drag & drop reordering",
+      "boq": "Bill of Quantities",
+      "boqDesc": "Add BOQ items and estimated prices",
+      "attachments": "Attachments",
+      "attachmentsDesc": "Upload required and optional documents",
+      "review": "Review & Submit",
+      "reviewDesc": "Review all entered data before submitting for approval"
+    },
+    "fields": {
+      "projectName": "Project Name",
+      "projectDescription": "Project Description",
+      "competitionType": "Competition Type",
+      "estimatedValue": "Estimated Value",
+      "referenceNumber": "Reference Number",
+      "department": "Responsible Department",
+      "fiscalYear": "Fiscal Year",
+      "startDate": "Start Date",
+      "endDate": "End Date",
+      "submissionDeadline": "Submission Deadline",
+      "evaluationMethod": "Evaluation Method",
+      "technicalWeight": "Technical Weight",
+      "financialWeight": "Financial Weight",
+      "minimumTechnicalScore": "Minimum Technical Score",
+      "allowPartialOffers": "Allow Partial Offers",
+      "requireBankGuarantee": "Require Bank Guarantee",
+      "guaranteePercentage": "Guarantee Percentage (%)",
+      "inquiryPeriodDays": "Inquiry Period (Days)",
+      "evaluationCriteria": "Evaluation Criteria",
+      "colorCode": "Text Classification",
+      "assignedTo": "Assigned To",
+      "sectionContent": "Section Content",
+      "includesVat": "Includes VAT"
+    },
+    "placeholders": {
+      "projectName": "Enter project name",
+      "projectDescription": "Enter a detailed description of the project and scope of work",
+      "selectCompetitionType": "Select competition type",
+      "estimatedValue": "Enter estimated value",
+      "referenceNumber": "Enter reference number",
+      "department": "Enter responsible department name",
+      "selectFiscalYear": "Select fiscal year",
+      "selectEvaluationMethod": "Select evaluation method",
+      "criterionName": "Criterion name",
+      "criterionWeight": "Weight (%)",
+      "criterionDescription": "Criterion description",
+      "sectionTitle": "Section title",
+      "sectionContent": "Write section content here...",
+      "assignedTo": "Responsible member name",
+      "boqCategory": "Category",
+      "boqDescription": "Item description",
+      "search": "Search specifications booklets..."
+    },
+    "competitionTypes": {
+      "publicTender": "Public Tender",
+      "limitedTender": "Limited Tender",
+      "directPurchase": "Direct Purchase",
+      "frameworkAgreement": "Framework Agreement",
+      "reverseAuction": "Reverse Auction"
+    },
+    "evaluationMethods": {
+      "lowestPrice": "Lowest Price",
+      "weightedCriteria": "Weighted Criteria",
+      "qualityCostBased": "Quality & Cost Based"
+    },
+    "colorCodes": {
+      "mandatory": "Fixed Text (Mandatory)",
+      "editable": "Editable Text",
+      "example": "Example (Must Replace)",
+      "instruction": "Instructions (Auto-removed)"
+    },
+    "units": {
+      "unit": "Unit",
+      "meter": "Meter",
+      "sqm": "Square Meter",
+      "cbm": "Cubic Meter",
+      "kg": "Kilogram",
+      "ton": "Ton",
+      "liter": "Liter",
+      "hour": "Hour",
+      "day": "Day",
+      "month": "Month",
+      "lumpSum": "Lump Sum",
+      "trip": "Trip",
+      "set": "Set"
+    },
+    "boqFields": {
+      "category": "Category",
+      "description": "Description",
+      "unit": "Unit",
+      "quantity": "Quantity",
+      "estimatedPrice": "Estimated Price",
+      "totalPrice": "Total",
+      "actions": "Actions",
+      "subtotal": "Subtotal",
+      "vat": "VAT",
+      "grandTotal": "Grand Total"
+    },
+    "statuses": {
+      "all": "All Statuses",
+      "draft": "Draft",
+      "pendingApproval": "Pending Approval",
+      "approved": "Approved",
+      "published": "Published",
+      "receivingOffers": "Receiving Offers",
+      "cancelled": "Cancelled"
+    },
+    "actions": {
+      "createNew": "Create New Booklet",
+      "createFirst": "Create First Booklet",
+      "saveDraft": "Save Draft",
+      "submitForApproval": "Submit for Approval",
+      "next": "Next",
+      "previous": "Previous",
+      "addSection": "Add Section",
+      "addDefaultSections": "Add Default Sections",
+      "addBoqItem": "Add Item",
+      "addCriterion": "Add Criterion",
+      "dragToReorder": "Drag to reorder",
+      "goToStep": "Go to step"
+    },
+    "labels": {
+      "required": "Required",
+      "requiredAttachments": "Required Attachments",
+      "uploadedFiles": "Uploaded Files",
+      "markAsCompleted": "Mark as completed",
+      "step": "Step",
+      "of": "of",
+      "sections": "sections",
+      "completed": "completed",
+      "items": "items",
+      "criteria": "criteria",
+      "days": "days",
+      "filesUploaded": "files uploaded",
+      "untitledSection": "Untitled Section"
+    },
+    "messages": {
+      "noSections": "No sections added yet",
+      "dragDropHint": "Add new sections or use default sections",
+      "noBoqItems": "No items in the bill of quantities yet",
+      "noCriteria": "No evaluation criteria yet. Add a new criterion to start.",
+      "criteriaWeightTotal": "Total criteria weight",
+      "dropFilesHere": "Drag and drop files here or click to browse",
+      "allowedFileTypes": "PDF, Word, Excel, PNG, JPEG",
+      "maxFileSize": "Maximum file size: 25 MB",
+      "noRfps": "No specifications booklets yet",
+      "noRfpsDesc": "Start by creating your first specifications booklet",
+      "completeAllSteps": "Please complete all required steps before submitting"
+    },
+    "errors": {
+      "invalidFileType": "Unsupported file type. Please upload PDF, Word, Excel, or image files only.",
+      "fileTooLarge": "File size exceeds the maximum limit (25 MB)",
+      "submitFailed": "Failed to submit the booklet. Please try again.",
+      "saveFirst": "Please save the booklet first before submitting"
+    },
+    "autoSave": {
+      "idle": "Unsaved changes",
+      "saving": "Auto-saving...",
+      "saved": "Auto-saved",
+      "error": "Auto-save failed"
+    },
+    "hints": {
+      "weightSum": "Financial weight is auto-calculated to total 100%"
+    },
+    "review": {
+      "completenessCheck": "Completeness Check",
+      "basicInfoComplete": "Basic information is complete",
+      "settingsComplete": "Competition settings are complete",
+      "contentComplete": "Booklet content is added",
+      "boqComplete": "Bill of quantities is added",
+      "attachmentsComplete": "Attachments are uploaded"
+    },
+    "tableHeaders": {
+      "projectName": "Project Name",
+      "referenceNumber": "Reference Number",
+      "status": "Status",
+      "estimatedValue": "Estimated Value",
+      "createdAt": "Created At",
+      "completion": "Completion",
+      "actions": "Actions"
+    },
+    "pagination": {
+      "showing": "Showing",
+      "of": "of",
+      "previous": "Previous",
+      "next": "Next"
+    },
+    "dialogs": {
+      "deleteTitle": "Confirm Deletion",
+      "deleteMessage": "Are you sure you want to delete this booklet? This action cannot be undone."
+    },
+    "defaultSections": {
+      "introduction": "Introduction & Project Overview",
+      "scope": "Scope of Work",
+      "technicalRequirements": "Technical Requirements",
+      "qualifications": "Bidder Qualifications & Experience",
+      "timeline": "Implementation Timeline",
+      "termsAndConditions": "General Terms & Conditions",
+      "evaluationCriteria": "Evaluation & Selection Criteria",
+      "submissionInstructions": "Submission Instructions"
+    },
+    "requiredAttachments": {
+      "technicalProposalForm": "Technical Proposal Form",
+      "financialProposalForm": "Financial Proposal Form",
+      "bankGuaranteeForm": "Bank Guarantee Form",
+      "complianceDeclaration": "Compliance Declaration",
+      "conflictOfInterest": "Conflict of Interest Declaration",
+      "companyProfileForm": "Company Profile Form",
+      "experienceForm": "Previous Experience Form",
+      "teamQualifications": "Team Qualifications",
+      "slaTemplate": "SLA Template",
+      "ndaTemplate": "NDA Template"
     }
   }
 }
