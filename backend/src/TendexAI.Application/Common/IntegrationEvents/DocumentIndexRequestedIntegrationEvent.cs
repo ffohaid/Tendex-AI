@@ -33,4 +33,9 @@ public sealed record DocumentIndexRequestedIntegrationEvent : IntegrationEvent
     /// The Qdrant collection name where the document should be indexed.
     /// </summary>
     public required string CollectionName { get; init; }
+
+    /// <summary>
+    /// Optional document category for metadata enrichment (e.g., regulations, templates, proposals).
+    /// </summary>
+    public string? Category { get; init; }
 }

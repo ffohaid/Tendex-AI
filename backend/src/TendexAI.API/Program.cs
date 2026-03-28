@@ -106,4 +106,7 @@ app.MapAiGatewayEndpoints();
 // Video Integrity Analysis endpoints (tamper detection, identity verification)
 app.MapVideoIntegrityEndpoints();
 
+// RAG Engine endpoints (indexing, context retrieval, vector store management)
+app.MapRagEndpoints();
+
 app.Run();

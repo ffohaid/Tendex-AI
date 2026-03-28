@@ -10,7 +10,7 @@
 | Sprint 1: البنية التحتية | ✅ مكتمل | 100% | تم إنجاز TASK-101, TASK-102, TASK-103, TASK-104, TASK-105, TASK-106 |
 | Sprint 2: الخدمات الأساسية | 🔄 قيد التنفيذ | 86% | تم إنجاز TASK-201, TASK-202, TASK-203, TASK-204, TASK-205, TASK-206 |
 | Sprint 3: سير العمل والتقييم | 🔄 قيد التنفيذ | 71% | تم إنجاز TASK-301, TASK-302, TASK-303, TASK-304, TASK-305 |
-| Sprint 4: تكامل الذكاء الاصطناعي | 🔄 قيد التنفيذ | 29% | تم إنجاز TASK-401, TASK-405 |
+| Sprint 4: تكامل الذكاء الاصطناعي | 🔄 قيد التنفيذ | 43% | تم إنجاز TASK-401, TASK-402, TASK-405 |
 | Sprint 5: الواجهة الأمامية | ⏳ لم يبدأ | 0% | - |
 | Sprint 6: لوحة تحكم المشغل | ⏳ لم يبدأ | 0% | - |
 | Sprint 7: الاختبار والنشر | ⏳ لم يبدأ | 0% | - |
@@ -77,6 +77,61 @@
   - جميع قيم الثقة (Confidence) محصورة بين 0.0 و 1.0.
   - DeleteBehavior.NoAction مطبق على جميع العلاقات.
   - يمكن البدء في TASK-402 (RAG Pipeline) أو TASK-403 (Technical Scoring AI).
+
+### 2026-03-28 - TASK-402: بناء محرك RAG (Retrieval-Augmented Generation) مع Qdrant Vector DB
+- **ما تم إنجازه:**
+  - **طبقة Application — واجهات RAG:**
+    - إنشاء `IVectorStoreService` لعمليات قاعدة بيانات المتجهات (Qdrant) مع دعم عزل المستأجرين.
+    - إنشاء `IDocumentChunkingService` لتقطيع المستندات بذكاء مع مراعاة حدود الجمل.
+    - إنشاء `IDocumentIndexingService` لتنسيق خط أنابيب الفهرسة الكامل.
+    - إنشاء `IContextRetrievalService` لاسترجاع السياق مع إعادة الترتيب.
+    - إنشاء نماذج البيانات: `VectorPoint`, `VectorPointPayload`, `VectorSearchRequest`, `VectorSearchResult`, `DocumentChunk`, `DocumentChunkingRequest`, `DocumentIndexingRequest`, `DocumentIndexingResult`, `ContextRetrievalRequest`, `ContextRetrievalResult`, `RetrievedChunk`.
+  - **طبقة Application — CQRS Commands & Queries:**
+    - `IndexDocumentCommand` + Handler + Validator: فهرسة مستند في قاعدة بيانات المتجهات.
+    - `RemoveDocumentCommand` + Handler: إزالة مستند مفهرس من قاعدة المتجهات.
+    - `RetrieveContextQuery` + Handler: استرجاع السياق الأكثر صلة لاستعلام معين.
+    - `GetVectorStoreStatusQuery` + Handler: فحص حالة صحة Qdrant.
+  - **طبقة Infrastructure — Qdrant Vector Store:**
+    - `QdrantSettings`: إعدادات الاتصال بـ Qdrant.
+    - `QdrantVectorStoreService`: تنفيذ كامل باستخدام Qdrant gRPC Client مع إنشاء المجموعات، Batch Upsert، بحث دلالي مع فلاتر، وحذف نقاط المستند.
+  - **طبقة Infrastructure — خدمات RAG:**
+    - `DocumentTextExtractor`: استخراج النص من PDF (PdfPig), DOCX, TXT, CSV, Markdown.
+    - `DocumentChunkingService`: تقطيع ذكي مع كشف حدود الجمل العربية، كشف الأقسام، تداخل 15%، ورؤوس سياقية.
+    - `DocumentIndexingService`: خط أنابيب الفهرسة الكامل (MinIO → Extract → Chunk → Embed → Qdrant) مع دعم إعادة الفهرسة.
+    - `ContextRetrievalService`: استرجاع السياق مع AI Reranking وتنسيق XML.
+    - `DocumentIndexRequestedEventProcessor`: معالج حدث RabbitMQ للفهرسة التلقائية.
+  - **طبقة Infrastructure — تسجيل الخدمات:**
+    - `RagServiceRegistration`: تسجيل جميع خدمات RAG في DI Container.
+    - تحديث `DependencyInjection.cs` لاستدعاء `AddRagServices()`.
+  - **طبقة Infrastructure — تحسين MinIO:**
+    - إضافة `DownloadFileAsync` إلى `IFileStorageService` و `MinioFileStorageService`.
+  - **طبقة API — Minimal API Endpoints:**
+    - `RagEndpoints`: 4 endpoints لمحرك RAG:
+      - `POST /api/v1/rag/index`: فهرسة مستند.
+      - `POST /api/v1/rag/retrieve`: استرجاع السياق.
+      - `DELETE /api/v1/rag/documents/{documentId}`: إزالة مستند مفهرس.
+      - `GET /api/v1/rag/status`: فحص حالة Qdrant.
+    - تسجيل الـ Endpoints في `Program.cs`.
+  - **حزم NuGet المضافة:**
+    - `Qdrant.Client` (v1.13.0): عميل gRPC لـ Qdrant.
+    - `UglyToad.PdfPig` (v0.1.9): استخراج النص من ملفات PDF.
+  - **تحديث Integration Event:**
+    - إضافة حقل `Category` إلى `DocumentIndexRequestedIntegrationEvent`.
+  - **اختبارات الوحدة (Unit Tests):**
+    - `DocumentChunkingServiceTests`: 11 اختبار لتقطيع المستندات (نص قصير، طويل، عربي، أقسام، صفحات، حجم القطع، التداخل).
+    - `DocumentTextExtractorTests`: 11 اختبار لاستخراج النص (أنواع مدعومة وغير مدعومة، نص فارغ).
+    - `DocumentIndexingServiceTests`: 7 اختبارات لخط أنابيب الفهرسة (نجاح، فشل تنزيل، نوع غير مدعوم، إلغاء، إعادة فهرسة).
+    - `ContextRetrievalServiceTests`: 6 اختبارات لاسترجاع السياق (نجاح، فشل التضمين، بدون نتائج، فلترة، استثناء).
+    - `IndexDocumentCommandValidatorTests`: 9 اختبارات للتحقق من صحة أمر الفهرسة.
+- **الاعتماديات التي تم حلها:** TASK-401 (AI Gateway), Qdrant في docker-compose.yml (TASK-106).
+- **ملاحظات للوكيل التالي:**
+  - محرك RAG مكتمل ويدعم: فهرسة المستندات، استرجاع السياق، إعادة الفهرسة، وإزالة المستندات.
+  - يدعم أنواع الملفات: PDF, DOCX, TXT, CSV, Markdown.
+  - التقطيع يراعي حدود الجمل العربية ويكشف الأقسام (المادة، الفصل، الباب) تلقائياً.
+  - إعادة الترتيب (Reranking) تستخدم AI Gateway لتحسين دقة النتائج.
+  - السياق المسترجع يُنسق بصيغة XML جاهزة للحقن في prompts الذكاء الاصطناعي.
+  - يجب ضبط إعدادات Qdrant في `appsettings.json` تحت قسم `Qdrant` (Host, Port, ApiKey).
+  - يمكن البدء في TASK-403 (AI-Powered Document Analysis) الذي يعتمد على هذا المحرك.
 
 ### 2026-03-28 - TASK-401: تطوير واجهة موحدة للذكاء الاصطناعي (AI Gateway) مع تشفير AES-256
 - **ما تم إنجازه:**

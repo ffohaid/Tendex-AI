@@ -22,6 +22,7 @@ using TendexAI.Infrastructure.Services.Identity;
 using TendexAI.Infrastructure.Services.Email;
 using TendexAI.Infrastructure.AI;
 using TendexAI.Application.Features.VideoAnalysis;
+using TendexAI.Infrastructure.AI.Rag;
 using TendexAI.Infrastructure.Storage.MinIO;
 
 namespace TendexAI.Infrastructure;
@@ -214,6 +215,9 @@ public static class DependencyInjection
 
         // ----- Video Integrity Analysis Services -----
         services.AddScoped<IVideoIntegrityService, AI.VideoAnalysis.VideoIntegrityService>();
+
+        // ----- RAG Engine Services (Qdrant, Indexing, Retrieval) -----
+        services.AddRagServices(configuration);
 
         // ----- Tenant Database Provisioning -----
         services.AddScoped<ITenantDatabaseProvisioner, TenantDatabaseProvisioner>();

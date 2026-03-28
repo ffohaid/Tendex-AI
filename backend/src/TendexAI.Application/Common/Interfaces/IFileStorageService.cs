@@ -73,6 +73,19 @@ public interface IFileStorageService
         CancellationToken cancellationToken = default);
 
     /// <summary>
+    /// Downloads a file from object storage as a byte array.
+    /// Used by background services (e.g., document indexing) that need raw file content.
+    /// </summary>
+    /// <param name="objectKey">The object key (path) in storage.</param>
+    /// <param name="bucketName">Optional bucket name override.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>Result containing the file bytes on success.</returns>
+    Task<Result<byte[]>> DownloadFileAsync(
+        string objectKey,
+        string? bucketName = null,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>
     /// Ensures the specified bucket exists, creating it if necessary.
     /// </summary>
     /// <param name="bucketName">Optional bucket name override.</param>

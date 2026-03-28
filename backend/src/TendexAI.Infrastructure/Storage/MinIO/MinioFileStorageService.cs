@@ -242,6 +242,45 @@ public sealed partial class MinioFileStorageService : IFileStorageService
         }
     }
 
+    /// <inheritdoc />
+    public async Task<Result<byte[]>> DownloadFileAsync(
+        string objectKey,
+        string? bucketName = null,
+        CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            var bucket = bucketName ?? _settings.DefaultBucket;
+
+            var exists = await FileExistsAsync(objectKey, bucket, cancellationToken);
+            if (!exists)
+            {
+                return Result.Failure<byte[]>($"File with key '{objectKey}' not found in bucket '{bucket}'.");
+            }
+
+            using var memoryStream = new MemoryStream();
+
+            var getObjectArgs = new GetObjectArgs()
+                .WithBucket(bucket)
+                .WithObject(objectKey)
+                .WithCallbackStream(async (stream, ct) =>
+                {
+                    await stream.CopyToAsync(memoryStream, ct);
+                });
+
+            await _minioClient.GetObjectAsync(getObjectArgs, cancellationToken);
+
+            LogFileDownloaded(_logger, objectKey, bucket, memoryStream.Length);
+
+            return Result.Success(memoryStream.ToArray());
+        }
+        catch (Exception ex)
+        {
+            LogDownloadFailed(_logger, ex, objectKey);
+            return Result.Failure<byte[]>($"Failed to download file: {ex.Message}");
+        }
+    }
+
     /// <summary>
     /// Builds a unique object key with tenant isolation and folder structure.
     /// Format: tenants/{tenantId}/{folderPath}/{yyyy/MM/dd}/{guid}_{sanitizedFileName}
@@ -343,4 +382,10 @@ public sealed partial class MinioFileStorageService : IFileStorageService
 
     [LoggerMessage(Level = LogLevel.Information, Message = "Bucket '{BucketName}' created successfully")]
     private static partial void LogBucketCreated(ILogger logger, string bucketName);
+
+    [LoggerMessage(Level = LogLevel.Information, Message = "Successfully downloaded file '{ObjectKey}' from bucket '{BucketName}'. Size: {FileSize} bytes")]
+    private static partial void LogFileDownloaded(ILogger logger, string objectKey, string bucketName, long fileSize);
+
+    [LoggerMessage(Level = LogLevel.Error, Message = "Failed to download file '{ObjectKey}'")]
+    private static partial void LogDownloadFailed(ILogger logger, Exception ex, string objectKey);
 }
