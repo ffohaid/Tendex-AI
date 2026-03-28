@@ -5,6 +5,7 @@ using TendexAI.API.Endpoints.Auth;
 using TendexAI.API.Endpoints.UserManagement;
 using TendexAI.API.Endpoints.Rfp;
 using TendexAI.API.Endpoints.Committees;
+using TendexAI.API.Endpoints.Evaluation;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -91,5 +92,8 @@ app.MapCompetitionEndpoints();
 
 // Committee management endpoints
 app.MapCommitteeEndpoints();
+
+// Technical Evaluation endpoints
+app.MapTechnicalEvaluationEndpoints();
 
 app.Run();

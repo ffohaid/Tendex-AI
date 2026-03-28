@@ -9,7 +9,7 @@
 | Sprint 0: التخطيط وإدارة المنتج | ✅ مكتمل | 100% | تم إعداد خطة التنفيذ (Sprint Backlog) وقوالب العمل. |
 | Sprint 1: البنية التحتية | ✅ مكتمل | 100% | تم إنجاز TASK-101, TASK-102, TASK-103, TASK-104, TASK-105, TASK-106 |
 | Sprint 2: الخدمات الأساسية | 🔄 قيد التنفيذ | 86% | تم إنجاز TASK-201, TASK-202, TASK-203, TASK-204, TASK-205, TASK-206 |
-| Sprint 3: سير العمل والتقييم | 🔄 قيد التنفيذ | 43% | تم إنجاز TASK-301, TASK-302, TASK-303 |
+| Sprint 3: سير العمل والتقييم | 🔄 قيد التنفيذ | 57% | تم إنجاز TASK-301, TASK-302, TASK-303, TASK-304 |
 | Sprint 4: تكامل الذكاء الاصطناعي | ⏳ لم يبدأ | 0% | - |
 | Sprint 5: الواجهة الأمامية | ⏳ لم يبدأ | 0% | - |
 | Sprint 6: لوحة تحكم المشغل | ⏳ لم يبدأ | 0% | - |
@@ -20,6 +20,95 @@
 ## سجل المهام المنجزة (Completed Tasks Log)
 
 *يرجى إضافة أحدث مهمة منجزة في أعلى هذه القائمة.*
+
+### 2026-03-28 - TASK-304: بناء APIs لتقييم العروض الفنية (Blind Evaluation & Scoring)
+- **ما تم إنجازه:**
+  - **طبقة Domain — كيانات التقييم الفني:**
+    - إنشاء `TechnicalEvaluationStatus` enum (7 حالات: Pending, InProgress, AllScoresSubmitted, PendingApproval, Approved, Rejected, Cancelled).
+    - إنشاء `OfferTechnicalResult` enum (3 حالات: Pending, Passed, Failed).
+    - إنشاء `TechnicalEvaluation` كـ Aggregate Root مع:
+      - دورة حياة كاملة (Pending → InProgress → AllScoresSubmitted → PendingApproval → Approved/Rejected).
+      - تفعيل التقييم الأعمى (Blind Evaluation) تلقائياً عند الإنشاء وإلغائه فقط عند الاعتماد.
+      - إدارة الدرجات مع منع التكرار (evaluator + criterion + offer).
+      - تحديث الدرجات مع التحقق من أن المقيّم الأصلي هو من يقوم بالتعديل.
+      - اعتماد/رفض التقرير مع دعم إعادة الفتح للتقييم.
+    - إنشاء `SupplierOffer` entity مع:
+      - تعيين رمز أعمى (BlindCode) لإخفاء هوية المورد.
+      - تحديد نتيجة التقييم الفني (Passed/Failed) مع الدرجة.
+      - بوابة فتح المظاريف المالية (لا يمكن الفتح إلا للعروض الناجحة فنياً).
+    - إنشاء `TechnicalScore` entity لدرجات أعضاء اللجنة.
+    - إنشاء `AiTechnicalScore` entity لدرجات الذكاء الاصطناعي المقترحة.
+    - إنشاء `ITechnicalEvaluationRepository` و `ISupplierOfferRepository` interfaces.
+  - **طبقة Domain — خدمة حساب الدرجات (TechnicalScoringService):**
+    - حساب الدرجة الموزونة الإجمالية (Weighted Total Score) لكل عرض.
+    - كشف التباين بين المقيّمين (عتبة 20% حسب PRD 9.2).
+    - كشف التباين بين الدرجات البشرية ودرجات الذكاء الاصطناعي.
+    - تحديد النجاح/الرسوب بناءً على الحد الأدنى للنجاح.
+    - توليد ألوان الخريطة الحرارية (أخضر >= 80%, أصفر 60-79%, أحمر < 60%).
+    - توليد خلايا الخريطة الحرارية (Heatmap) للمقارنة البصرية.
+  - **طبقة Domain — أحداث النطاق (Domain Events):**
+    - `TechnicalEvaluationStartedEvent`, `TechnicalEvaluationCompletedEvent`.
+    - `TechnicalReportApprovedEvent`, `TechnicalReportRejectedEvent`.
+    - `FinancialEnvelopeOpenedEvent`.
+  - **طبقة Application — Commands (CQRS):**
+    - `StartTechnicalEvaluationCommand` + Handler + Validator: بدء جلسة التقييم الفني.
+    - `SubmitTechnicalScoreCommand` + Handler + Validator: إضافة درجة من عضو لجنة.
+    - `CompleteScoringCommand` + Handler: إكمال التقييم وحساب النتائج.
+    - `ApproveTechnicalReportCommand` + Handler: اعتماد التقرير الفني.
+    - `RejectTechnicalReportCommand` + Handler + Validator: رفض التقرير مع ذكر السبب.
+    - `OpenFinancialEnvelopesCommand` + Handler: فتح المظاريف المالية (مع فرض قاعدة اعتماد التقييم الفني أولاً).
+  - **طبقة Application — Queries (CQRS):**
+    - `GetTechnicalEvaluationDetailsQuery`: تفاصيل جلسة التقييم.
+    - `GetBlindOffersQuery`: قائمة العروض بالأكواد العمياء (إخفاء هوية الموردين).
+    - `GetEvaluationResultsQuery`: النتائج النهائية مع الترتيب.
+    - `GetTechnicalHeatmapQuery`: الخريطة الحرارية الملونة.
+    - `GetVarianceAlertsQuery`: تنبيهات التباين (عتبة 20%).
+  - **طبقة Application — DTOs:**
+    - `TechnicalEvaluationDetailDto`, `BlindOfferSummaryDto`, `TechnicalScoreDto`.
+    - `OfferEvaluationResultDto`, `CriterionScoreSummaryDto`, `EvaluatorScoreDto`.
+    - `TechnicalHeatmapDto`, `HeatmapCellDto`, `CriterionHeaderDto`.
+    - `VarianceAlertDto`.
+  - **طبقة Infrastructure — تكوينات قاعدة البيانات:**
+    - `SupplierOfferConfiguration`: جدول evaluation.SupplierOffers مع فهارس فريدة.
+    - `TechnicalEvaluationConfiguration`: جدول evaluation.TechnicalEvaluations.
+    - `TechnicalScoreConfiguration`: جدول evaluation.TechnicalScores مع قيد فريد.
+    - `AiTechnicalScoreConfiguration`: جدول evaluation.AiTechnicalScores.
+    - تسجيل DbSets الجديدة في TenantDbContext.
+  - **طبقة Infrastructure — المستودعات:**
+    - `TechnicalEvaluationRepository`: تنفيذ ITechnicalEvaluationRepository.
+    - `SupplierOfferRepository`: تنفيذ ISupplierOfferRepository.
+    - تسجيل المستودعات في DependencyInjection.cs.
+  - **طبقة API — نقاط النهاية (Minimal APIs):**
+    - `POST /api/v1/competitions/{id}/technical-evaluation/start`: بدء التقييم.
+    - `GET /api/v1/competitions/{id}/technical-evaluation`: تفاصيل التقييم.
+    - `GET /api/v1/competitions/{id}/technical-evaluation/offers`: العروض بالأكواد العمياء.
+    - `POST /api/v1/competitions/{id}/technical-evaluation/scores`: إضافة درجة.
+    - `POST /api/v1/competitions/{id}/technical-evaluation/complete-scoring`: إكمال التقييم.
+    - `POST /api/v1/competitions/{id}/technical-evaluation/approve`: اعتماد التقرير.
+    - `POST /api/v1/competitions/{id}/technical-evaluation/reject`: رفض التقرير.
+    - `GET /api/v1/competitions/{id}/technical-evaluation/results`: النتائج.
+    - `GET /api/v1/competitions/{id}/technical-evaluation/heatmap`: الخريطة الحرارية.
+    - `GET /api/v1/competitions/{id}/technical-evaluation/variance-alerts`: تنبيهات التباين.
+    - `POST /api/v1/competitions/{id}/technical-evaluation/open-financial-envelopes`: فتح المظاريف المالية.
+  - **اختبارات الوحدة (Unit Tests):**
+    - `TechnicalEvaluationTests`: 15 اختبار لدورة حياة التقييم والتقييم الأعمى.
+    - `SupplierOfferTests`: 8 اختبارات لكيان العرض وبوابة المظاريف المالية.
+    - `TechnicalScoringServiceTests`: 12 اختبار لحساب الدرجات وكشف التباين والخريطة الحرارية.
+    - `FinancialEnvelopeGateTests`: 4 اختبارات تكاملية للقاعدة الحرجة (منع فتح المظاريف قبل الاعتماد).
+- **القواعد الحرجة المطبقة:**
+  - ✅ التقييم الأعمى (Blind Evaluation): إخفاء هوية الموردين طوال فترة التقييم وكشفها فقط بعد الاعتماد.
+  - ✅ منع فتح المظاريف المالية قبل اعتماد التقييم الفني (PRD Section 10.1).
+  - ✅ حساب الدرجات الموزونة بدقة مع دعم معايير متعددة بأوزان مختلفة.
+  - ✅ كشف التباين بين المقيّمين (عتبة 20% حسب PRD 9.2).
+  - ✅ DeleteBehavior.NoAction في جميع العلاقات.
+  - ✅ جميع أسماء المتغيرات والجداول والتعليقات باللغة الإنجليزية.
+- **الاعتماديات التي تم حلها:** TASK-303 (لجان فحص العروض).
+- **ملاحظات للوكيل التالي:**
+  - نظام التقييم الفني مكتمل ومتكامل مع نظام اللجان (TASK-303).
+  - يمكن البدء في TASK-305 (التقييم المالي) أو TASK-306 (تكامل الذكاء الاصطناعي).
+  - الخريطة الحرارية وتنبيهات التباين جاهزة للاستخدام من الواجهة الأمامية.
+  - يجب إنشاء EF Core Migration جديدة لإضافة جداول evaluation schema.
+  - كيان EvaluationCriterion يحتاج factory method `Create` مع parameter `id` اختياري لدعم الاختبارات.
 
 ### 2026-03-28 - TASK-303: بناء APIs لإدارة لجان فحص العروض (الفنية والمالية)
 - **ما تم إنجازه:**

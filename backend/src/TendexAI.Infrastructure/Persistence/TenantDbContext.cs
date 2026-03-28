@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using TendexAI.Domain.Common;
 using TendexAI.Domain.Entities.Identity;
 using TendexAI.Domain.Entities.Committees;
+using TendexAI.Domain.Entities.Evaluation;
 using TendexAI.Domain.Entities.Rfp;
 
 namespace TendexAI.Infrastructure.Persistence;
@@ -40,6 +41,12 @@ public sealed class TenantDbContext : DbContext, IUnitOfWork
     // ----- Committee DbSets -----
     public DbSet<Committee> Committees => Set<Committee>();
     public DbSet<CommitteeMember> CommitteeMembers => Set<CommitteeMember>();
+
+    // ----- Evaluation DbSets -----
+    public DbSet<SupplierOffer> SupplierOffers => Set<SupplierOffer>();
+    public DbSet<TechnicalEvaluation> TechnicalEvaluations => Set<TechnicalEvaluation>();
+    public DbSet<TechnicalScore> TechnicalScores => Set<TechnicalScore>();
+    public DbSet<AiTechnicalScore> AiTechnicalScores => Set<AiTechnicalScore>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
