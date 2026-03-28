@@ -12,5 +12,5 @@ public sealed record UpdateAiConfigurationCommand : IRequest<bool>
     public string? Endpoint { get; init; }
     public int MaxTokens { get; init; } = 4096;
     public double Temperature { get; init; } = 0.3;
-    public int Priority { get; init; } = 0;
+    public int Priority { get; init; }
 }
