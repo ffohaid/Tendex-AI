@@ -13,13 +13,118 @@
 | Sprint 4: تكامل الذكاء الاصطناعي | 🔄 قيد التنفيذ | 71% | تم إنجاز TASK-401, TASK-402, TASK-403, TASK-404, TASK-405 |
 | Sprint 5: الواجهة الأمامية | 🔄 قيد التنفيذ | 71% | تم إنجاز TASK-501, TASK-502, TASK-503, TASK-504, TASK-505 |
 | Sprint 6: لوحة تحكم المشغل | ✅ مكتمل | 100% | تم إنجاز TASK-601, TASK-602, TASK-603, TASK-604 |
-| Sprint 7: الاختبار والنشر | 🔄 قيد التنفيذ | 25% | تم إنجاز TASK-701 |
+| Sprint 7: الاختبار والنشر | 🔄 قيد التنفيذ | 50% | تم إنجاز TASK-701, TASK-702 |
 
 ---
 
 ## سجل المهام المنجزة (Completed Tasks Log)
 
 *يرجى إضافة أحدث مهمة منجزة في أعلى هذه القائمة.*
+
+### 2026-03-28 - TASK-702: End-to-End Testing (Playwright)
+- **ما تم إنجازه:**
+  - **إعداد Playwright E2E Testing Framework:**
+    - تثبيت `@playwright/test` v1.58.2 مع Chromium browser.
+    - إنشاء `playwright.config.ts` مع دعم مشروعين: `chromium-ar` (Arabic RTL) و `chromium-en` (English LTR).
+    - تكوين Web Server auto-start، trace on first retry، screenshots on failure، video retain on failure.
+    - إضافة سكربتات npm: `test:e2e`, `test:e2e:ar`, `test:e2e:en`, `test:e2e:ui`, `test:e2e:report`.
+    - تحديث `.gitignore` لاستبعاد مجلدات نتائج الاختبارات.
+  - **إنشاء بنية اختبارات E2E شاملة:**
+    - **`e2e/fixtures/mock-data.ts`:** بيانات اختبار شاملة تغطي Auth, Dashboard, RFP, Evaluation, Operator, Impersonation.
+    - **`e2e/helpers/test-utils.ts`:** أدوات مساعدة مشتركة (API mocking, auth state setup, language switching, number assertions).
+    - **`e2e/helpers/i18n-helpers.ts`:** أدوات اختبار ثنائية اللغة (RTL/LTR layout assertions, Arabic/English content verification).
+  - **اختبارات تسجيل الدخول وإدارة الجلسة (`e2e/auth/login.spec.ts`):**
+    - عرض نموذج تسجيل الدخول بالعربية.
+    - التحقق من أخطاء الحقول الفارغة.
+    - التعامل مع بيانات اعتماد غير صحيحة.
+    - تسجيل الدخول الناجح والتوجيه للوحة التحكم.
+    - تدفق التحقق بخطوتين (MFA).
+    - التحقق من استخدام الأرقام الإنجليزية.
+    - إعادة توجيه المستخدمين غير المصادقين.
+    - الحفاظ على حالة المصادقة عبر إعادة التحميل.
+    - تسجيل الخروج وتنظيف الجلسة.
+    - تجديد التوكن التلقائي.
+    - إعادة التوجيه للصفحة الأصلية بعد تسجيل الدخول.
+    - تدفق استعادة كلمة المرور.
+    - تدفق إعادة تعيين كلمة المرور مع التحقق.
+    - اختبارات تسجيل الدخول بالإنجليزية (LTR).
+  - **اختبارات إنشاء طلب العرض (`e2e/rfp/rfp-create.spec.ts`):**
+    - عرض قائمة طلبات العروض.
+    - التنقل لصفحة الإنشاء.
+    - عرض Wizard Stepper بـ 6 خطوات.
+    - الخطوة 1: تعبئة المعلومات الأساسية.
+    - الخطوة 1: التحقق من الحقول المطلوبة.
+    - الخطوة 2: إعدادات المنافسة (أوزان التقييم).
+    - الخطوة 3: إدارة أقسام المحتوى.
+    - الخطوة 4: جدول الكميات (BOQ).
+    - الخطوة 5: المرفقات.
+    - الخطوة 6: المراجعة والتقديم.
+    - مؤشر الحفظ التلقائي.
+    - اتجاه RTL للنماذج العربية.
+    - رمز العملة SAR للقيم المالية.
+    - التنقل بالإنجليزية (LTR).
+  - **اختبارات تقييم العروض (`e2e/evaluation/evaluation.spec.ts`):**
+    - عرض قائمة التقييم الفني.
+    - عرض معايير التقييم.
+    - عرض قائمة الموردين للتسجيل.
+    - إدخال الدرجات للمعايير.
+    - التحقق من نطاق الدرجات (0-100).
+    - حفظ درجات التقييم.
+    - التقييم الأعمى (إخفاء هوية الموردين).
+    - عرض التقييم المالي.
+    - منع فتح المالي قبل اعتماد الفني.
+    - مصفوفة المقارنة الفنية والمالية.
+    - ترتيب الموردين.
+    - التقييم بمساعدة الذكاء الاصطناعي.
+    - اختبارات ثنائية اللغة.
+  - **اختبارات لوحة تحكم المشغل والانتحال (`e2e/operator/operator-dashboard.spec.ts`):**
+    - عرض لوحة المشغل مع بطاقات KPI.
+    - لوحة صحة النظام.
+    - تنبيهات الاشتراكات المنتهية.
+    - إحصائيات استخدام الجهات.
+    - التنقل لقائمة الجهات.
+    - عرض قائمة الجهات.
+    - تفاصيل الجهة.
+    - إنشاء جهة جديدة.
+    - إدارة Feature Flags.
+    - إعدادات الهوية البصرية.
+    - مراقبة استهلاك التوكنات.
+    - صفحة انتحال المستخدم.
+    - البحث عن مستخدمين للانتحال.
+    - طلب موافقة الانتحال.
+    - سجل جلسات الانتحال.
+    - إنهاء جلسة انتحال نشطة.
+    - شريط تنبيه الانتحال.
+    - التحقق من الصلاحيات (RBAC).
+    - أوامر التعميد.
+    - اختبارات RTL/LTR ثنائية اللغة.
+  - **دمج Playwright في CI Pipeline:**
+    - إنشاء `.github/workflows/ci-e2e.yml` مع matrix strategy لـ `chromium-ar` و `chromium-en`.
+    - تخزين مؤقت لـ Playwright browsers و pnpm store.
+    - رفع HTML report و JUnit XML و screenshots و videos كـ artifacts.
+    - إضافة E2E Smoke Test job في `ci-frontend.yml` يعمل بعد Build & Lint.
+- **الملفات المنشأة/المعدلة:**
+  - `frontend/playwright.config.ts` (جديد)
+  - `frontend/e2e/fixtures/mock-data.ts` (جديد)
+  - `frontend/e2e/helpers/test-utils.ts` (جديد)
+  - `frontend/e2e/helpers/i18n-helpers.ts` (جديد)
+  - `frontend/e2e/auth/login.spec.ts` (جديد)
+  - `frontend/e2e/rfp/rfp-create.spec.ts` (جديد)
+  - `frontend/e2e/evaluation/evaluation.spec.ts` (جديد)
+  - `frontend/e2e/operator/operator-dashboard.spec.ts` (جديد)
+  - `.github/workflows/ci-e2e.yml` (جديد)
+  - `.github/workflows/ci-frontend.yml` (معدل - إضافة E2E Smoke Test job)
+  - `frontend/package.json` (معدل - إضافة سكربتات E2E)
+  - `frontend/.gitignore` (معدل - إضافة مجلدات Playwright)
+- **الاعتماديات التي تم حلها:** لا يوجد.
+- **ملاحظات للوكيل التالي:**
+  - إجمالي الاختبارات: ~70 اختبار E2E يغطي 4 سيناريوهات رئيسية.
+  - جميع الاختبارات تستخدم API route mocking (لا تحتاج backend حقيقي).
+  - لتشغيل الاختبارات: `cd frontend && pnpm test:e2e` أو `pnpm test:e2e:ar` / `pnpm test:e2e:en`.
+  - لعرض التقرير: `pnpm test:e2e:report`.
+  - CI pipeline يشغل الاختبارات تلقائياً عند كل PR/push يعدل ملفات الفرونت إند.
+  - الاختبارات تدعم RTL/LTR وتتحقق من استخدام الأرقام الإنجليزية ورمز العملة SAR.
+  - يمكن إضافة اختبارات إضافية لسيناريوهات أخرى حسب الحاجة.
 
 ### 2026-03-28 - TASK-701: Integration Testing Suite
 - **ما تم إنجازه:**

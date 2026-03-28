@@ -1,12 +1,17 @@
 # ============================================================================
-# Tendex AI - Frontend CI Pipeline
+# Tendex AI - E2E Tests Pipeline (Playwright)
 # ============================================================================
-# Triggers on every Pull Request that modifies frontend code.
-# Steps: install dependencies, lint, type-check, build.
-# NOTE: This pipeline is CI only. CD (deployment) is deferred to Sprint 7.
+# Runs Playwright E2E tests for the frontend application.
+# Triggers on PRs and pushes that modify frontend or E2E test code.
+#
+# Features:
+# - Dual-language testing (Arabic RTL / English LTR)
+# - Chromium-based testing for speed
+# - HTML report and JUnit XML artifacts
+# - Playwright browser caching for faster CI runs
 # ============================================================================
 
-name: CI - Frontend (Vue.js)
+name: CI - E2E Tests (Playwright)
 
 on:
   pull_request:
@@ -15,17 +20,17 @@ on:
       - develop
     paths:
       - "frontend/**"
-      - ".github/workflows/ci-frontend.yml"
+      - ".github/workflows/ci-e2e.yml"
   push:
     branches:
       - main
       - develop
     paths:
       - "frontend/**"
-      - ".github/workflows/ci-frontend.yml"
+      - ".github/workflows/ci-e2e.yml"
 
 concurrency:
-  group: ci-frontend-${{ github.ref }}
+  group: ci-e2e-${{ github.ref }}
   cancel-in-progress: true
 
 defaults:
@@ -34,12 +39,18 @@ defaults:
 
 env:
   NODE_VERSION: "22"
+  CI: true
 
 jobs:
-  build-and-lint:
-    name: Build & Lint (Vue.js 3)
+  e2e-tests:
+    name: E2E Tests (Playwright)
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 30
+
+    strategy:
+      fail-fast: false
+      matrix:
+        project: [chromium-ar, chromium-en]
 
     steps:
       # ------------------------------------------------------------------
@@ -87,83 +98,68 @@ jobs:
         run: pnpm install --frozen-lockfile --prefer-offline || pnpm install
 
       # ------------------------------------------------------------------
-      # 6. TypeScript type-check
+      # 6. Cache Playwright browsers
       # ------------------------------------------------------------------
-      - name: TypeScript type-check
-        run: npx vue-tsc --noEmit
+      - name: Get Playwright version
+        id: playwright-version
+        shell: bash
+        run: echo "PLAYWRIGHT_VERSION=$(node -e "console.log(require('@playwright/test/package.json').version)")" >> $GITHUB_OUTPUT
 
-      # ------------------------------------------------------------------
-      # 7. Lint (ESLint) - runs only if eslint is configured
-      # ------------------------------------------------------------------
-      - name: Lint with ESLint
-        run: |
-          if [ -f ".eslintrc.js" ] || [ -f ".eslintrc.cjs" ] || [ -f ".eslintrc.json" ] || [ -f "eslint.config.js" ] || [ -f "eslint.config.mjs" ] || [ -f "eslint.config.ts" ]; then
-            npx eslint . --ext .vue,.ts,.tsx --max-warnings 0
-          else
-            echo "ESLint configuration not found. Skipping lint step."
-            echo "NOTE: ESLint should be configured in a future task for full CI compliance."
-          fi
-
-      # ------------------------------------------------------------------
-      # 8. Build production bundle
-      # ------------------------------------------------------------------
-      - name: Build production bundle
-        run: pnpm run build
-
-      # ------------------------------------------------------------------
-      # 9. Upload build artifacts (optional, for review)
-      # ------------------------------------------------------------------
-      - name: Upload build artifacts
-        if: success()
-        uses: actions/upload-artifact@v4
+      - name: Cache Playwright browsers
+        uses: actions/cache@v4
+        id: playwright-cache
         with:
-          name: frontend-dist
-          path: frontend/dist/
-          retention-days: 7
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ steps.playwright-version.outputs.PLAYWRIGHT_VERSION }}
 
-  # ====================================================================
-  # E2E Tests (Playwright) - Smoke tests on main build
-  # Full E2E suite runs in ci-e2e.yml; this runs a quick smoke check.
-  # ====================================================================
-  e2e-smoke:
-    name: E2E Smoke Test (Playwright)
-    runs-on: ubuntu-latest
-    needs: build-and-lint
-    timeout-minutes: 20
-
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Setup Node.js ${{ env.NODE_VERSION }}
-        uses: actions/setup-node@v4
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v4
-        with:
-          version: latest
-
-      - name: Install dependencies
-        working-directory: frontend
-        run: pnpm install --frozen-lockfile --prefer-offline || pnpm install
-
+      # ------------------------------------------------------------------
+      # 7. Install Playwright browsers (if not cached)
+      # ------------------------------------------------------------------
       - name: Install Playwright browsers
-        working-directory: frontend
+        if: steps.playwright-cache.outputs.cache-hit != 'true'
         run: npx playwright install --with-deps chromium
 
-      - name: Run E2E smoke tests (Arabic)
-        working-directory: frontend
-        run: npx playwright test --project=chromium-ar --grep="@smoke"
-        env:
-          CI: true
-        continue-on-error: true
+      - name: Install Playwright system dependencies
+        if: steps.playwright-cache.outputs.cache-hit == 'true'
+        run: npx playwright install-deps chromium
 
-      - name: Upload smoke test report
+      # ------------------------------------------------------------------
+      # 8. Run E2E tests
+      # ------------------------------------------------------------------
+      - name: Run Playwright E2E tests (${{ matrix.project }})
+        run: npx playwright test --project=${{ matrix.project }}
+
+      # ------------------------------------------------------------------
+      # 9. Upload test results
+      # ------------------------------------------------------------------
+      - name: Upload Playwright HTML report
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: e2e-smoke-report
+          name: playwright-report-${{ matrix.project }}
           path: frontend/playwright-report/
+          retention-days: 14
+
+      - name: Upload JUnit test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: e2e-junit-${{ matrix.project }}
+          path: frontend/e2e-results/junit.xml
+          retention-days: 14
+
+      - name: Upload test screenshots
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: e2e-screenshots-${{ matrix.project }}
+          path: frontend/e2e-results/screenshots/
+          retention-days: 7
+
+      - name: Upload test videos
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: e2e-videos-${{ matrix.project }}
+          path: frontend/test-results/
           retention-days: 7
