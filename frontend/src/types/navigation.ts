@@ -16,4 +16,6 @@ export interface NavigationItem {
   permission?: string
   /** Badge count (for notifications, tasks, etc.) */
   badge?: number
+  /** Required roles to see this navigation item */
+  requiredRoles?: string[]
 }

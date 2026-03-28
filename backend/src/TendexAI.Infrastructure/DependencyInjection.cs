@@ -180,7 +180,11 @@ public static class DependencyInjection
             options.DefaultChallengeScheme = OpenIddict.Validation.AspNetCore.OpenIddictValidationAspNetCoreDefaults.AuthenticationScheme;
         });
 
-        services.AddAuthorization();
+        services.AddAuthorization(options =>
+        {
+            options.AddPolicy("SuperAdminPolicy", policy =>
+                policy.RequireRole("SuperAdmin", "SupportAdmin"));
+        });
 
         // ----- Identity Services -----
         services.AddSingleton<IPasswordHasher, PasswordHasher>();

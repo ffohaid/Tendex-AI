@@ -133,7 +133,8 @@
       "title": "Operator Panel",
       "dashboard": "Overview",
       "tenants": "Government Entities",
-      "purchaseOrders": "Purchase Orders"
+      "purchaseOrders": "Purchase Orders",
+      "impersonation": "User Impersonation"
     }
   },
   "header": {
@@ -835,5 +836,78 @@
     "searchPlaceholder": "Search for entity...",
     "allTenants": "All Entities",
     "noResults": "No results found"
+  },
+  "impersonation": {
+    "title": "User Impersonation",
+    "description": "Manage user impersonation sessions for technical support purposes. Documented consent is required before starting.",
+    "accessDenied": "Access Denied",
+    "accessDeniedDesc": "You do not have permission to access this feature. Super Admin or Support Admin role is required.",
+    "activeSession": "Active Impersonation Session",
+    "activeSessionDesc": "You are currently impersonating a user. All actions are logged in the audit trail.",
+    "endSession": "End Session",
+    "tabs": {
+      "search": "User Search",
+      "consents": "Consent Requests",
+      "sessions": "Session Log"
+    },
+    "searchPlaceholder": "Search by name or email...",
+    "search": "Search",
+    "requestConsent": "Request Impersonation",
+    "noResults": "No results found. Use search to find users.",
+    "noConsents": "No consent requests found.",
+    "noSessions": "No impersonation sessions found.",
+    "active": "Active",
+    "inactive": "Inactive",
+    "allStatuses": "All Statuses",
+    "approve": "Approve",
+    "reject": "Reject",
+    "startSession": "Start Impersonation",
+    "cancel": "Cancel",
+    "submitRequest": "Submit Request",
+    "confirmReject": "Confirm Rejection",
+    "confirmApprove": "Are you sure you want to approve this impersonation request?",
+    "confirmStart": "Are you sure you want to start the impersonation session? All actions will be logged.",
+    "confirmEnd": "Are you sure you want to end the impersonation session?",
+    "loading": "Loading...",
+    "showing": "Showing {count} of {total}",
+    "previous": "Previous",
+    "next": "Next",
+    "status": {
+      "pending": "Pending",
+      "approved": "Approved",
+      "rejected": "Rejected",
+      "expired": "Expired",
+      "active": "Active",
+      "ended": "Ended"
+    },
+    "table": {
+      "user": "User",
+      "email": "Email",
+      "tenant": "Tenant",
+      "status": "Status",
+      "lastLogin": "Last Login",
+      "actions": "Actions",
+      "targetUser": "Target User",
+      "requestedBy": "Requested By",
+      "reason": "Reason",
+      "ticket": "Ticket Reference",
+      "requestedAt": "Requested At",
+      "admin": "Admin",
+      "startedAt": "Started At",
+      "endedAt": "Ended At"
+    },
+    "consentDialog": {
+      "title": "Request User Impersonation Consent",
+      "reason": "Reason for Impersonation",
+      "reasonPlaceholder": "Explain why you need to access this user's account...",
+      "reasonMinLength": "Reason must be at least 10 characters",
+      "ticket": "Support Ticket Reference (Optional)",
+      "ticketPlaceholder": "e.g., TICKET-12345"
+    },
+    "rejectDialog": {
+      "title": "Reject Impersonation Request",
+      "reason": "Rejection Reason",
+      "reasonPlaceholder": "Explain why this request is being rejected..."
+    }
   }
 }

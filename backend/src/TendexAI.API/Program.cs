@@ -7,6 +7,7 @@ using TendexAI.API.Endpoints.Rfp;
 using TendexAI.API.Endpoints.Committees;
 using TendexAI.API.Endpoints.Evaluation;
 using TendexAI.API.Endpoints.AI;
+using TendexAI.API.Endpoints.Impersonation;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -114,5 +115,8 @@ app.MapRagEndpoints();
 
 // AI Specification Drafting & BOQ Generation endpoints (TASK-403)
 app.MapAiSpecificationDraftingEndpoints();
+
+// Impersonation endpoints (Super Admin only - TASK-603)
+app.MapImpersonationEndpoints();
 
 app.Run();

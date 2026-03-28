@@ -1,17 +1,31 @@
 <script setup lang="ts">
 import { useI18n } from 'vue-i18n'
 import { useAppStore } from '@/stores/app'
+import { useAuthStore } from '@/stores/auth'
 import { computed } from 'vue'
 import { sidebarNavigation } from '@/config/navigation'
 import { useSidebarNavigation } from '@/composables/useSidebarNavigation'
 import SidebarMenuItem from './SidebarMenuItem.vue'
+import type { NavigationItem } from '@/types/navigation'
 
 const { t } = useI18n()
 const appStore = useAppStore()
+const authStore = useAuthStore()
 
 const isCollapsed = computed(() => appStore.sidebarCollapsed)
 
-const { toggleExpand, isExpanded } = useSidebarNavigation(sidebarNavigation)
+/**
+ * Filter navigation items based on user roles.
+ * Items with requiredRoles are only shown if the user has at least one of the required roles.
+ */
+const filteredNavigation = computed<NavigationItem[]>(() => {
+  return sidebarNavigation.filter((item) => {
+    if (!item.requiredRoles || item.requiredRoles.length === 0) return true
+    return item.requiredRoles.some((role) => authStore.hasRole(role))
+  })
+})
+
+const { toggleExpand, isExpanded } = useSidebarNavigation(filteredNavigation.value)
 </script>
 
 <template>
@@ -24,7 +38,7 @@ const { toggleExpand, isExpanded } = useSidebarNavigation(sidebarNavigation)
     <nav class="flex-1 overflow-y-auto px-2 py-4" :aria-label="t('nav.dashboard')">
       <ul class="space-y-0.5">
         <SidebarMenuItem
-          v-for="item in sidebarNavigation"
+          v-for="item in filteredNavigation"
           :key="item.key"
           :item="item"
           :is-expanded="isExpanded(item.key)"

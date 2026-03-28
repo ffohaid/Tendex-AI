@@ -12,7 +12,7 @@
 | Sprint 3: سير العمل والتقييم | 🔄 قيد التنفيذ | 71% | تم إنجاز TASK-301, TASK-302, TASK-303, TASK-304, TASK-305 |
 | Sprint 4: تكامل الذكاء الاصطناعي | 🔄 قيد التنفيذ | 71% | تم إنجاز TASK-401, TASK-402, TASK-403, TASK-404, TASK-405 |
 | Sprint 5: الواجهة الأمامية | 🔄 قيد التنفيذ | 71% | تم إنجاز TASK-501, TASK-502, TASK-503, TASK-504, TASK-505 |
-| Sprint 6: لوحة تحكم المشغل | 🔄 قيد التنفيذ | 33% | تم إنجاز TASK-601 |
+| Sprint 6: لوحة تحكم المشغل | 🔄 قيد التنفيذ | 43% | تم إنجاز TASK-601, TASK-603 |
 | Sprint 7: الاختبار والنشر | ⏳ لم يبدأ | 0% | - |
 
 ---
@@ -68,8 +68,72 @@
   - جميع الشاشات مربوطة بـ APIs الخلفية عبر خدمات tenantService و purchaseOrderService. تحتاج للتأكد من توافق نقاط النهاية مع TenantEndpoints.cs.
   - TenantSelector يحفظ selectedTenantId في localStorage ويرسله كـ X-Tenant-Id header مع كل طلب. هذا يحل مشكلة tenantId الفارغ (empty GUID).
   - نظام التحذير المبكر يجلب التنبيهات من API بفترة 60 يوماً قبل الانتهاء مع 4 مستويات خطورة.
-  - قسم "لوحة المشغل" في القائمة الجانبية يظهر لجميع المستخدمين حالياً؛ يجب إضافة فلترة أدوار (role-based filtering) في TASK-602 أو TASK-603.
+  - تم تنفيذ فلترة الأدوار (role-based filtering) في TASK-603 عبر `requiredRoles` في NavigationItem و AppSidebar.
   - Lifecycle Stepper في PurchaseOrderDetailView يعرض 5 مراحل أساسية (مستلم → تجهيز → تدريب → استلام → تشغيل) مع دعم الانتقالات المشروطة.
+
+### 2026-03-28 - TASK-603: آلية انتحال المستخدم الآمنة (User Impersonation)
+- **ما تم إنجازه:**
+  - **الباكند (.NET 10 - Clean Architecture / CQRS):**
+    - **كيانات Domain:** `ImpersonationSession` و `ImpersonationConsent` مع حالات (`ConsentStatus`, `ImpersonationStatus`) ومنطق أعمال مغلف (Approve, Reject, EndSession).
+    - **EF Core Configurations:** `ImpersonationSessionConfiguration` و `ImpersonationConsentConfiguration` مع فهارس محسنة و `DeleteBehavior.NoAction`.
+    - **DbContext:** إضافة `DbSet<ImpersonationSession>` و `DbSet<ImpersonationConsent>` في `MasterPlatformDbContext`.
+    - **DTOs:** `ImpersonationConsentDto`, `ImpersonationSessionDto`, `UserSearchResultDto`, `ImpersonationStartResponseDto`.
+    - **أوامر CQRS (Commands):**
+      - `RequestImpersonationConsentCommand` + Handler + FluentValidation Validator (طلب موافقة).
+      - `ApproveImpersonationConsentCommand` + Handler (موافقة على الطلب).
+      - `RejectImpersonationConsentCommand` + Handler + Validator (رفض الطلب).
+      - `StartImpersonationCommand` + Handler (بدء جلسة الانتحال مع إصدار JWT يحمل claim `impersonating=true`).
+      - `EndImpersonationCommand` + Handler (إنهاء الجلسة).
+    - **استعلامات CQRS (Queries):**
+      - `GetImpersonationConsentsQuery` + Handler (جلب طلبات الموافقة مع فلاتر).
+      - `GetImpersonationSessionsQuery` + Handler (جلب جلسات الانتحال مع فلاتر).
+      - `SearchUsersQuery` + Handler (بحث المستخدمين عبر جميع الجهات).
+    - **Minimal API Endpoints:** `ImpersonationEndpoints.cs` مع 9 نقاط نهاية تحت `/api/v1/impersonation/*` محمية بـ `SuperAdminPolicy`.
+    - **Authorization Policy:** إضافة `SuperAdminPolicy` في `DependencyInjection.cs` تتطلب دور `SuperAdmin` أو `SupportAdmin`.
+    - **Audit Trail:** تسجيل جميع إجراءات الانتحال في سجل التدقيق غير القابل للتعديل عبر `IAuditLogService` (المبني في TASK-204).
+    - **اختبارات الوحدة:** `ImpersonationTests.cs` يغطي اختبارات الكيانات والموافقة/الرفض والجلسات والمدققات (Validators).
+  - **الفرونتند (Vue 3 + TypeScript + Tailwind CSS):**
+    - **TypeScript Types:** `types/impersonation.ts` يعرف جميع أنواع الانتحال (ConsentDto, SessionDto, UserSearchResultDto, PaginatedResponse).
+    - **API Service:** `services/impersonationApi.ts` يغلف جميع استدعاءات HTTP للباكند.
+    - **Pinia Store:** `stores/impersonation.ts` يدير حالة الانتحال مع حفظ/استعادة جلسة المشرف الأصلية عبر sessionStorage.
+    - **واجهة المستخدم:** `views/operator/impersonation/ImpersonationView.vue` - صفحة شاملة بثلاث تبويبات:
+      1. **البحث عن مستخدم:** بحث عبر جميع الجهات مع طلب انتحال.
+      2. **طلبات الموافقة:** عرض/موافقة/رفض طلبات الانتحال مع بدء الجلسة.
+      3. **سجل الجلسات:** عرض جميع جلسات الانتحال مع إمكانية إنهاء الجلسات النشطة.
+    - **حماية الواجهة:** استخدام `authStore.hasRole()` للتحقق من صلاحية SuperAdmin/SupportAdmin.
+    - **التنقل:** إضافة مسار `/operator/impersonation` في Router مع `requiredRoles` meta.
+    - **القائمة الجانبية:** إضافة قسم "لوحة المشغل" في `config/navigation.ts` مع فلترة الأدوار في `AppSidebar.vue`.
+    - **الترجمة:** إضافة 70+ مفتاح ترجمة في `ar.json` و `en.json` لجميع عناصر الانتحال.
+    - **نوع NavigationItem:** إضافة حقل `requiredRoles` في `types/navigation.ts`.
+- **الملفات المنشأة/المعدلة:**
+  - `backend/src/TendexAI.Domain/Entities/ImpersonationSession.cs` (جديد)
+  - `backend/src/TendexAI.Domain/Entities/ImpersonationConsent.cs` (جديد)
+  - `backend/src/TendexAI.Infrastructure/Persistence/Configurations/ImpersonationSessionConfiguration.cs` (جديد)
+  - `backend/src/TendexAI.Infrastructure/Persistence/Configurations/ImpersonationConsentConfiguration.cs` (جديد)
+  - `backend/src/TendexAI.Infrastructure/Persistence/MasterPlatformDbContext.cs` (معدل)
+  - `backend/src/TendexAI.Infrastructure/DependencyInjection.cs` (معدل - SuperAdminPolicy)
+  - `backend/src/TendexAI.Application/Features/Impersonation/` (جديد - 19 ملف)
+  - `backend/src/TendexAI.API/Endpoints/Impersonation/ImpersonationEndpoints.cs` (جديد)
+  - `backend/src/TendexAI.API/Program.cs` (معدل)
+  - `backend/tests/TendexAI.Application.Tests/Features/Impersonation/ImpersonationTests.cs` (جديد)
+  - `frontend/src/types/impersonation.ts` (جديد)
+  - `frontend/src/services/impersonationApi.ts` (جديد)
+  - `frontend/src/stores/impersonation.ts` (جديد)
+  - `frontend/src/views/operator/impersonation/ImpersonationView.vue` (جديد)
+  - `frontend/src/router/index.ts` (معدل)
+  - `frontend/src/config/navigation.ts` (معدل)
+  - `frontend/src/types/navigation.ts` (معدل - requiredRoles)
+  - `frontend/src/components/layout/AppSidebar.vue` (معدل - role filtering)
+  - `frontend/src/locales/ar.json` (معدل - 70+ مفتاح)
+  - `frontend/src/locales/en.json` (معدل - 70+ مفتاح)
+- **الاعتماديات التي تم حلها:** TASK-204 (سجل التدقيق), TASK-201 (المصادقة والتفويض).
+- **ملاحظات للوكيل التالي:**
+  - الميزة محمية بـ `SuperAdminPolicy` في الباكند و `hasRole('SuperAdmin')` في الفرونتند.
+  - جلسة الانتحال تصدر JWT يحمل claims إضافية: `impersonating=true`, `original_admin_id`, `impersonation_session_id`.
+  - الموافقة مطلوبة قبل الانتحال وتنتهي صلاحيتها خلال 4 ساعات.
+  - جميع الإجراءات مسجلة في Audit Trail عبر `AuditActionType.Impersonate`.
+  - يجب تشغيل EF Core Migration لإنشاء جداول `ImpersonationSessions` و `ImpersonationConsents` في قاعدة البيانات.
+  - الفرونتند يحفظ جلسة المشرف الأصلية في sessionStorage ويستعيدها عند إنهاء الانتحال.
 
 ### 2026-03-28 - TASK-505: بناء شاشات لجان الفحص لتقييم العروض الفنية والمالية
 - **ما تم إنجازه:**

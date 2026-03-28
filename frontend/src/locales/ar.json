@@ -133,7 +133,8 @@
       "title": "لوحة المشغل",
       "dashboard": "نظرة عامة",
       "tenants": "الجهات الحكومية",
-      "purchaseOrders": "أوامر التعميد"
+      "purchaseOrders": "أوامر التعميد",
+      "impersonation": "انتحال المستخدم"
     }
   },
   "header": {
@@ -835,5 +836,78 @@
     "searchPlaceholder": "البحث عن جهة...",
     "allTenants": "جميع الجهات",
     "noResults": "لا توجد نتائج"
+  },
+  "impersonation": {
+    "title": "انتحال المستخدم",
+    "description": "إدارة جلسات انتحال المستخدمين لأغراض الدعم الفني. يتطلب موافقة موثقة قبل البدء.",
+    "accessDenied": "الوصول مرفوض",
+    "accessDeniedDesc": "ليس لديك صلاحية الوصول إلى هذه الميزة. يتطلب الأمر دور مدير النظام أو مدير الدعم الفني.",
+    "activeSession": "جلسة انتحال نشطة",
+    "activeSessionDesc": "أنت حالياً في وضع انتحال مستخدم. جميع الإجراءات مسجلة في سجل التدقيق.",
+    "endSession": "إنهاء الجلسة",
+    "tabs": {
+      "search": "البحث عن مستخدم",
+      "consents": "طلبات الموافقة",
+      "sessions": "سجل الجلسات"
+    },
+    "searchPlaceholder": "ابحث بالاسم أو البريد الإلكتروني...",
+    "search": "بحث",
+    "requestConsent": "طلب انتحال",
+    "noResults": "لا توجد نتائج. استخدم البحث للعثور على المستخدمين.",
+    "noConsents": "لا توجد طلبات موافقة.",
+    "noSessions": "لا توجد جلسات انتحال.",
+    "active": "نشط",
+    "inactive": "غير نشط",
+    "allStatuses": "جميع الحالات",
+    "approve": "موافقة",
+    "reject": "رفض",
+    "startSession": "بدء الانتحال",
+    "cancel": "إلغاء",
+    "submitRequest": "إرسال الطلب",
+    "confirmReject": "تأكيد الرفض",
+    "confirmApprove": "هل أنت متأكد من الموافقة على طلب الانتحال هذا؟",
+    "confirmStart": "هل أنت متأكد من بدء جلسة الانتحال؟ سيتم تسجيل جميع الإجراءات.",
+    "confirmEnd": "هل أنت متأكد من إنهاء جلسة الانتحال؟",
+    "loading": "جاري التحميل...",
+    "showing": "عرض {count} من {total}",
+    "previous": "السابق",
+    "next": "التالي",
+    "status": {
+      "pending": "قيد الانتظار",
+      "approved": "تمت الموافقة",
+      "rejected": "مرفوض",
+      "expired": "منتهي الصلاحية",
+      "active": "نشط",
+      "ended": "منتهي"
+    },
+    "table": {
+      "user": "المستخدم",
+      "email": "البريد الإلكتروني",
+      "tenant": "الجهة",
+      "status": "الحالة",
+      "lastLogin": "آخر تسجيل دخول",
+      "actions": "الإجراءات",
+      "targetUser": "المستخدم المستهدف",
+      "requestedBy": "مقدم الطلب",
+      "reason": "السبب",
+      "ticket": "رقم التذكرة",
+      "requestedAt": "تاريخ الطلب",
+      "admin": "المسؤول",
+      "startedAt": "تاريخ البدء",
+      "endedAt": "تاريخ الانتهاء"
+    },
+    "consentDialog": {
+      "title": "طلب موافقة انتحال المستخدم",
+      "reason": "سبب الانتحال",
+      "reasonPlaceholder": "اشرح سبب الحاجة للدخول إلى حساب هذا المستخدم...",
+      "reasonMinLength": "يجب أن يكون السبب 10 أحرف على الأقل",
+      "ticket": "رقم تذكرة الدعم (اختياري)",
+      "ticketPlaceholder": "مثال: TICKET-12345"
+    },
+    "rejectDialog": {
+      "title": "رفض طلب الانتحال",
+      "reason": "سبب الرفض",
+      "reasonPlaceholder": "اشرح سبب رفض هذا الطلب..."
+    }
   }
 }

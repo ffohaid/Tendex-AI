@@ -147,4 +147,19 @@ export const sidebarNavigation: NavigationItem[] = [
       },
     ],
   },
+  {
+    key: 'operator',
+    labelKey: 'nav.operator.title',
+    icon: 'pi pi-shield',
+    requiredRoles: ['SuperAdmin', 'SupportAdmin'],
+    children: [
+      {
+        key: 'operator-impersonation',
+        labelKey: 'nav.operator.impersonation',
+        icon: 'pi pi-user-edit',
+        route: 'OperatorImpersonation',
+        requiredRoles: ['SuperAdmin', 'SupportAdmin'],
+      },
+    ],
+  },
 ]

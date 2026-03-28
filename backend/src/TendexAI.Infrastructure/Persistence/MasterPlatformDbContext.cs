@@ -37,6 +37,10 @@ public sealed class MasterPlatformDbContext : DbContext, IMasterPlatformDbContex
 
     public DbSet<FileAttachment> FileAttachments => Set<FileAttachment>();
 
+    public DbSet<ImpersonationSession> ImpersonationSessions => Set<ImpersonationSession>();
+
+    public DbSet<ImpersonationConsent> ImpersonationConsents => Set<ImpersonationConsent>();
+
     // ----- Model Configuration -----
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)

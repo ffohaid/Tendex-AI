@@ -177,6 +177,17 @@ const routes: RouteRecordRaw[] = [
         component: () => import('@/views/DashboardView.vue'),
         meta: { title: 'Tendex AI - Roles & Permissions', requiresAuth: true },
       },
+      /* Operator Panel - User Impersonation (TASK-603) */
+      {
+        path: 'operator/impersonation',
+        name: 'OperatorImpersonation',
+        component: () => import('@/views/operator/impersonation/ImpersonationView.vue'),
+        meta: {
+          title: 'Tendex AI - User Impersonation',
+          requiresAuth: true,
+          requiredRoles: ['SuperAdmin', 'SupportAdmin'],
+        },
+      },
     ],
   },
   {
