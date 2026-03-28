@@ -65,7 +65,7 @@ public class FinancialEvaluationEntityTests
 
         var item = FinancialOfferItem.Create(
             evaluation.Id, Guid.NewGuid(), Guid.NewGuid(),
-            100m, 5m, null, "test-user");
+            100m, 5m, "test-user");
 
         // Act
         var result = evaluation.AddOfferItem(item);
@@ -83,7 +83,7 @@ public class FinancialEvaluationEntityTests
 
         var item = FinancialOfferItem.Create(
             evaluation.Id, Guid.NewGuid(), Guid.NewGuid(),
-            100m, 5m, null, "test-user");
+            100m, 5m, "test-user");
 
         // Act
         var result = evaluation.AddOfferItem(item);

@@ -7,44 +7,19 @@ namespace TendexAI.Infrastructure.Tests.FinancialEvaluation;
 
 /// <summary>
 /// Unit tests for FinancialScoringService domain service.
-/// Tests price comparison, deviation calculation, and ranking logic.
+/// Tests price comparison, deviation classification, and ranking logic.
 /// </summary>
 public class FinancialScoringServiceTests
 {
     [Theory]
-    [InlineData(100, 120, 20.0)]
-    [InlineData(100, 80, -20.0)]
-    [InlineData(100, 100, 0.0)]
-    [InlineData(200, 250, 25.0)]
-    [InlineData(1000, 1150, 15.0)]
-    public void CalculateDeviation_ShouldReturnCorrectPercentage(
-        decimal estimated, decimal actual, decimal expectedDeviation)
-    {
-        // Act
-        var result = FinancialScoringService.CalculateDeviation(estimated, actual);
-
-        // Assert
-        result.Should().Be(expectedDeviation);
-    }
-
-    [Fact]
-    public void CalculateDeviation_WhenEstimatedIsZero_ShouldReturnZero()
-    {
-        // Act
-        var result = FinancialScoringService.CalculateDeviation(0, 100);
-
-        // Assert
-        result.Should().Be(0m);
-    }
-
-    [Theory]
     [InlineData(0, PriceDeviationLevel.WithinRange)]
     [InlineData(3, PriceDeviationLevel.WithinRange)]
     [InlineData(-3, PriceDeviationLevel.WithinRange)]
-    [InlineData(8, PriceDeviationLevel.WithinRange)]
-    [InlineData(-8, PriceDeviationLevel.WithinRange)]
+    [InlineData(10, PriceDeviationLevel.WithinRange)]
+    [InlineData(-10, PriceDeviationLevel.WithinRange)]
     [InlineData(18, PriceDeviationLevel.ModerateDeviation)]
     [InlineData(-18, PriceDeviationLevel.ModerateDeviation)]
+    [InlineData(25, PriceDeviationLevel.ModerateDeviation)]
     [InlineData(30, PriceDeviationLevel.SignificantDeviation)]
     [InlineData(-30, PriceDeviationLevel.SignificantDeviation)]
     public void ClassifyDeviation_ShouldReturnCorrectLevel(
@@ -58,56 +33,6 @@ public class FinancialScoringServiceTests
     }
 
     [Fact]
-    public void VerifyArithmetic_WhenCorrect_ShouldReturnNoError()
-    {
-        // Arrange
-        decimal unitPrice = 50m;
-        decimal quantity = 10m;
-        decimal submittedTotal = 500m;
-
-        // Act
-        var (hasError, calculatedTotal) =
-            FinancialScoringService.VerifyArithmetic(unitPrice, quantity, submittedTotal);
-
-        // Assert
-        hasError.Should().BeFalse();
-        calculatedTotal.Should().Be(500m);
-    }
-
-    [Fact]
-    public void VerifyArithmetic_WhenIncorrect_ShouldReturnError()
-    {
-        // Arrange
-        decimal unitPrice = 50m;
-        decimal quantity = 10m;
-        decimal submittedTotal = 600m; // Wrong
-
-        // Act
-        var (hasError, calculatedTotal) =
-            FinancialScoringService.VerifyArithmetic(unitPrice, quantity, submittedTotal);
-
-        // Assert
-        hasError.Should().BeTrue();
-        calculatedTotal.Should().Be(500m);
-    }
-
-    [Fact]
-    public void VerifyArithmetic_WhenNoSubmittedTotal_ShouldReturnNoError()
-    {
-        // Arrange
-        decimal unitPrice = 50m;
-        decimal quantity = 10m;
-
-        // Act
-        var (hasError, calculatedTotal) =
-            FinancialScoringService.VerifyArithmetic(unitPrice, quantity, null);
-
-        // Assert
-        hasError.Should().BeFalse();
-        calculatedTotal.Should().Be(500m);
-    }
-
-    [Fact]
     public void CalculateFinancialScore_LowestPrice_ShouldGetHighestScore()
     {
         // Arrange
@@ -115,7 +40,7 @@ public class FinancialScoringServiceTests
         decimal offerAmount = 100_000m;
 
         // Act
-        var score = FinancialScoringService.CalculateFinancialScore(lowestAmount, offerAmount);
+        var score = FinancialScoringService.CalculateFinancialScore(offerAmount, lowestAmount);
 
         // Assert
         score.Should().Be(100m);
@@ -129,7 +54,7 @@ public class FinancialScoringServiceTests
         decimal offerAmount = 200_000m;
 
         // Act
-        var score = FinancialScoringService.CalculateFinancialScore(lowestAmount, offerAmount);
+        var score = FinancialScoringService.CalculateFinancialScore(offerAmount, lowestAmount);
 
         // Assert
         score.Should().Be(50m);
@@ -166,5 +91,15 @@ public class FinancialScoringServiceTests
 
         // Assert
         combined.Should().Be(70m);
+    }
+
+    [Fact]
+    public void CalculateFinancialScore_WhenZeroAmount_ShouldReturnZero()
+    {
+        // Act
+        var score = FinancialScoringService.CalculateFinancialScore(0m, 100_000m);
+
+        // Assert
+        score.Should().Be(0m);
     }
 }

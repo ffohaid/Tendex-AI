@@ -16,7 +16,6 @@ public class FinancialOfferItemTests
         var item = FinancialOfferItem.Create(
             Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid(),
             unitPrice: 100m, quantity: 5m,
-            supplierSubmittedTotal: null,
             createdBy: "test-user");
 
         // Assert
@@ -32,11 +31,10 @@ public class FinancialOfferItemTests
         var item = FinancialOfferItem.Create(
             Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid(),
             unitPrice: 50m, quantity: 10m,
-            supplierSubmittedTotal: 500m,
             createdBy: "test-user");
 
         // Act
-        item.VerifyArithmetic("verifier-user");
+        item.VerifyArithmetic(500m, "verifier-user");
 
         // Assert
         item.IsArithmeticallyVerified.Should().BeTrue();
@@ -50,11 +48,10 @@ public class FinancialOfferItemTests
         var item = FinancialOfferItem.Create(
             Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid(),
             unitPrice: 50m, quantity: 10m,
-            supplierSubmittedTotal: 600m, // Wrong: should be 500
             createdBy: "test-user");
 
         // Act
-        item.VerifyArithmetic("verifier-user");
+        item.VerifyArithmetic(600m, "verifier-user"); // Wrong: should be 500
 
         // Assert
         item.IsArithmeticallyVerified.Should().BeTrue();
@@ -62,21 +59,20 @@ public class FinancialOfferItemTests
     }
 
     [Fact]
-    public void SetDeviation_ShouldStoreValues()
+    public void CalculateDeviation_ShouldStoreValues()
     {
         // Arrange
         var item = FinancialOfferItem.Create(
             Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid(),
             unitPrice: 120m, quantity: 1m,
-            supplierSubmittedTotal: null,
             createdBy: "test-user");
 
         // Act
-        item.SetDeviation(20m, PriceDeviationLevel.High);
+        item.CalculateDeviation(100m, "test-user");
 
         // Assert
         item.DeviationPercentage.Should().Be(20m);
-        item.DeviationLevel.Should().Be(PriceDeviationLevel.High);
+        item.DeviationLevel.Should().Be(PriceDeviationLevel.ModerateDeviation);
     }
 
     [Fact]
@@ -86,7 +82,6 @@ public class FinancialOfferItemTests
         var item = FinancialOfferItem.Create(
             Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid(),
             unitPrice: 1_500.50m, quantity: 1_000m,
-            supplierSubmittedTotal: null,
             createdBy: "test-user");
 
         // Assert
@@ -100,7 +95,6 @@ public class FinancialOfferItemTests
         var item = FinancialOfferItem.Create(
             Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid(),
             unitPrice: 33.33m, quantity: 3m,
-            supplierSubmittedTotal: null,
             createdBy: "test-user");
 
         // Assert
