@@ -13,13 +13,78 @@
 | Sprint 4: تكامل الذكاء الاصطناعي | 🔄 قيد التنفيذ | 71% | تم إنجاز TASK-401, TASK-402, TASK-403, TASK-404, TASK-405 |
 | Sprint 5: الواجهة الأمامية | 🔄 قيد التنفيذ | 71% | تم إنجاز TASK-501, TASK-502, TASK-503, TASK-504, TASK-505 |
 | Sprint 6: لوحة تحكم المشغل | ✅ مكتمل | 100% | تم إنجاز TASK-601, TASK-602, TASK-603, TASK-604 |
-| Sprint 7: الاختبار والنشر | ⏳ لم يبدأ | 0% | - |
+| Sprint 7: الاختبار والنشر | 🔄 قيد التنفيذ | 25% | تم إنجاز TASK-701 |
 
 ---
 
 ## سجل المهام المنجزة (Completed Tasks Log)
 
 *يرجى إضافة أحدث مهمة منجزة في أعلى هذه القائمة.*
+
+### 2026-03-28 - TASK-701: Integration Testing Suite
+- **ما تم إنجازه:**
+  - **إعداد مشروع اختبارات التكامل (Integration Tests):**
+    - إنشاء مشروع `TendexAI.IntegrationTests` باستخدام xUnit و Testcontainers.
+    - إعداد `TendexWebApplicationFactory` مع Testcontainers لـ SQL Server و Redis و RabbitMQ.
+    - إنشاء `IntegrationTestBase` كقاعدة مشتركة لجميع الاختبارات مع seed data وhelper methods.
+    - إنشاء `IntegrationTestCollection` لمشاركة الـ Factory بين الاختبارات.
+    - إضافة DTOs مشتركة (`AuthTokenResponseDto`, `UserInfoDto`) لفك تشفير استجابات API.
+  - **تنفيذ نقاط النهاية المفقودة (forgot-password و reset-password):**
+    - إنشاء `ForgotPasswordCommand` و `ForgotPasswordCommandHandler` مع توليد token وحفظه في Redis.
+    - إنشاء `ResetPasswordCommand` و `ResetPasswordCommandHandler` مع التحقق من Token وتحديث كلمة المرور.
+    - إنشاء Validators لكلا الأمرين (`ForgotPasswordCommandValidator`, `ResetPasswordCommandValidator`).
+    - تحديث `AuthEndpoints.cs` بإضافة `/api/v1/auth/forgot-password` و `/api/v1/auth/reset-password`.
+    - تحديث `AuthRequestModels.cs` بإضافة `ForgotPasswordRequest` و `ResetPasswordRequest`.
+    - تطبيق حماية ضد تعداد البريد الإلكتروني (Email Enumeration Prevention).
+  - **إنشاء EF Core Migrations:**
+    - توليد Migration `AddImpersonationTables` لجداول `ImpersonationSessions` و `ImpersonationConsents`.
+    - يتضمن أيضاً جداول: AuditLogEntries, AuditLogs, Committees, Competitions, EvaluationCriteria, وغيرها.
+    - إضافة الفهارس المناسبة لجميع الجداول الجديدة.
+  - **كتابة اختبارات تكامل شاملة:**
+    - **Auth Tests (13 اختبار):** Login (valid/invalid/empty/wrong-tenant), Token Refresh, Logout, Protected Endpoints, Account Lockout.
+    - **Session Management Tests (5 اختبارات):** Session Creation, Multiple Sessions, Session Revocation, Token Validation, Concurrent Sessions.
+    - **Password Reset Tests (9 اختبارات):** Forgot Password (valid/non-existent/empty/invalid-format/wrong-tenant), Reset Password (invalid-session/mismatched/weak/edge-cases).
+    - **Competition (RFP) Tests (11 اختبار):** Create (valid/minimal/unauthorized/missing-fields), Get (list/by-id/non-existent), Update, Delete (draft/non-existent), Auto-Save, Pagination.
+    - **Committee Tests (11 اختبار):** Create (permanent/temporary-with-competition/unauthorized/missing-fields/wrong-dates), Get (list/by-id/non-existent), Update, Add Member, Status Change, Competition-Committee Link.
+  - **تحديث CI Pipeline:**
+    - فصل Unit Tests و Integration Tests في jobs منفصلة.
+    - إضافة job `integration-test` يعتمد على `build-and-unit-test`.
+    - إعداد Docker verification step لـ Testcontainers.
+    - تحديد timeout 30 دقيقة لاختبارات التكامل.
+- **الملفات المنشأة/المعدلة:**
+  - `backend/tests/TendexAI.IntegrationTests/TendexAI.IntegrationTests.csproj` (جديد)
+  - `backend/tests/TendexAI.IntegrationTests/Infrastructure/TendexWebApplicationFactory.cs` (جديد)
+  - `backend/tests/TendexAI.IntegrationTests/Infrastructure/IntegrationTestBase.cs` (جديد)
+  - `backend/tests/TendexAI.IntegrationTests/Infrastructure/IntegrationTestCollection.cs` (جديد)
+  - `backend/tests/TendexAI.IntegrationTests/Infrastructure/ProgramAccessor.cs` (جديد)
+  - `backend/tests/TendexAI.IntegrationTests/Auth/AuthenticationIntegrationTests.cs` (جديد)
+  - `backend/tests/TendexAI.IntegrationTests/Auth/SessionManagementIntegrationTests.cs` (جديد)
+  - `backend/tests/TendexAI.IntegrationTests/Auth/PasswordResetIntegrationTests.cs` (جديد)
+  - `backend/tests/TendexAI.IntegrationTests/Rfp/CompetitionIntegrationTests.cs` (جديد)
+  - `backend/tests/TendexAI.IntegrationTests/Committees/CommitteeIntegrationTests.cs` (جديد)
+  - `backend/src/TendexAI.Application/Features/Auth/Commands/ForgotPasswordCommand.cs` (جديد)
+  - `backend/src/TendexAI.Application/Features/Auth/Commands/ForgotPasswordCommandHandler.cs` (جديد)
+  - `backend/src/TendexAI.Application/Features/Auth/Commands/ResetPasswordCommand.cs` (جديد)
+  - `backend/src/TendexAI.Application/Features/Auth/Commands/ResetPasswordCommandHandler.cs` (جديد)
+  - `backend/src/TendexAI.Application/Features/Auth/Validators/ForgotPasswordCommandValidator.cs` (جديد)
+  - `backend/src/TendexAI.Application/Features/Auth/Validators/ResetPasswordCommandValidator.cs` (جديد)
+  - `backend/src/TendexAI.API/Endpoints/Auth/AuthEndpoints.cs` (معدل)
+  - `backend/src/TendexAI.API/Endpoints/Auth/AuthRequestModels.cs` (معدل)
+  - `backend/src/TendexAI.API/TendexAI.API.csproj` (معدل - InternalsVisibleTo)
+  - `backend/src/TendexAI.Infrastructure/TendexAI.Infrastructure.csproj` (معدل - NoWarn)
+  - `backend/src/TendexAI.Infrastructure/Persistence/Migrations/20260328133307_AddImpersonationTables.cs` (جديد)
+  - `backend/src/TendexAI.Infrastructure/Persistence/Migrations/20260328133307_AddImpersonationTables.Designer.cs` (جديد)
+  - `backend/src/TendexAI.Infrastructure/Persistence/Migrations/MasterPlatformDbContextModelSnapshot.cs` (معدل)
+  - `backend/TendexAI.slnx` (معدل - إضافة مشروع IntegrationTests)
+  - `.github/workflows/ci-backend.yml` (معدل - إضافة integration-test job)
+- **الاعتماديات التي تم حلها:** TASK-603 (Impersonation entities - تم إنشاء Migrations), TASK-502 (Frontend forgot/reset password - تم تنفيذ Backend endpoints).
+- **ملاحظات للوكيل التالي:**
+  - مشروع اختبارات التكامل جاهز ومبني بنجاح (49 اختبار تكامل).
+  - الاختبارات تتطلب Docker لتشغيل Testcontainers (SQL Server, Redis, RabbitMQ).
+  - لتشغيل الاختبارات محلياً: `dotnet test backend/tests/TendexAI.IntegrationTests/`.
+  - نقاط النهاية forgot-password و reset-password جاهزة ومتكاملة مع الفرونت إند.
+  - Migration جاهز للتطبيق على قاعدة البيانات الإنتاجية عند النشر.
+  - CI Pipeline محدث بـ job منفصل لاختبارات التكامل.
 
 ### 2026-03-28 - إصلاح أخطاء CI وإعداد Sprint 7
 - **ما تم إنجازه:**

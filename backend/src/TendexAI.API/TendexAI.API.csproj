@@ -20,4 +20,8 @@
     <ProjectReference Include="..\TendexAI.Infrastructure\TendexAI.Infrastructure.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <InternalsVisibleTo Include="TendexAI.IntegrationTests" />
+  </ItemGroup>
+
 </Project>

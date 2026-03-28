@@ -42,3 +42,20 @@ public sealed record SetupMfaRequest(
 public sealed record DisableMfaRequest(
     string Code,
     Guid TenantId);
+
+/// <summary>
+/// Request model for initiating a password reset (forgot password).
+/// </summary>
+public sealed record ForgotPasswordRequest(
+    string Email,
+    Guid TenantId);
+
+/// <summary>
+/// Request model for resetting the password with a valid token.
+/// </summary>
+public sealed record ResetPasswordRequest(
+    string SessionId,
+    string Token,
+    string NewPassword,
+    string ConfirmPassword,
+    Guid TenantId);

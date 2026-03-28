@@ -63,6 +63,22 @@ public static class AuthEndpoints
             .Produces(StatusCodes.Status204NoContent)
             .Produces<ProblemDetails>(StatusCodes.Status400BadRequest);
 
+        group.MapPost("/forgot-password", ForgotPasswordAsync)
+            .WithName("ForgotPassword")
+            .WithSummary("Request a password reset email")
+            .WithDescription("Sends a password reset link to the user's registered email address. Always returns 200 OK to prevent email enumeration.")
+            .AllowAnonymous()
+            .Produces(StatusCodes.Status200OK)
+            .Produces<ProblemDetails>(StatusCodes.Status400BadRequest);
+
+        group.MapPost("/reset-password", ResetPasswordAsync)
+            .WithName("ResetPassword")
+            .WithSummary("Reset password using a valid reset token")
+            .WithDescription("Resets the user's password using the token received via email. Revokes all existing sessions after successful reset.")
+            .AllowAnonymous()
+            .Produces(StatusCodes.Status200OK)
+            .Produces<ProblemDetails>(StatusCodes.Status400BadRequest);
+
         return app;
     }
 
@@ -283,6 +299,72 @@ public static class AuthEndpoints
         }
 
         return Results.NoContent();
+    }
+
+    /// <summary>
+    /// POST /api/v1/auth/forgot-password
+    /// Initiates the password reset flow by sending a reset email.
+    /// Always returns 200 OK to prevent email enumeration attacks.
+    /// </summary>
+    private static async Task<IResult> ForgotPasswordAsync(
+        [FromBody] ForgotPasswordRequest request,
+        ISender mediator,
+        HttpContext httpContext)
+    {
+        var ipAddress = GetIpAddress(httpContext);
+        var userAgent = httpContext.Request.Headers.UserAgent.ToString();
+
+        var command = new ForgotPasswordCommand(
+            request.Email,
+            request.TenantId,
+            ipAddress,
+            userAgent);
+
+        var result = await mediator.Send(command);
+
+        if (result.IsFailure)
+        {
+            return Results.Problem(
+                detail: result.Error,
+                statusCode: StatusCodes.Status400BadRequest,
+                title: "Forgot Password Failed");
+        }
+
+        return Results.Ok(new { Message = "إذا كان البريد الإلكتروني مسجلاً لدينا، فسيتم إرسال رابط إعادة تعيين كلمة المرور." });
+    }
+
+    /// <summary>
+    /// POST /api/v1/auth/reset-password
+    /// Resets the user's password using a valid reset token.
+    /// </summary>
+    private static async Task<IResult> ResetPasswordAsync(
+        [FromBody] ResetPasswordRequest request,
+        ISender mediator,
+        HttpContext httpContext)
+    {
+        var ipAddress = GetIpAddress(httpContext);
+        var userAgent = httpContext.Request.Headers.UserAgent.ToString();
+
+        var command = new ResetPasswordCommand(
+            request.SessionId,
+            request.Token,
+            request.NewPassword,
+            request.ConfirmPassword,
+            request.TenantId,
+            ipAddress,
+            userAgent);
+
+        var result = await mediator.Send(command);
+
+        if (result.IsFailure)
+        {
+            return Results.Problem(
+                detail: result.Error,
+                statusCode: StatusCodes.Status400BadRequest,
+                title: "Password Reset Failed");
+        }
+
+        return Results.Ok(new { Message = "تم إعادة تعيين كلمة المرور بنجاح. يرجى تسجيل الدخول بكلمة المرور الجديدة." });
     }
 
     // ----- Helper Methods -----

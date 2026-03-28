@@ -7,5 +7,6 @@
   </Folder>
   <Folder Name="/tests/">
     <Project Path="tests/TendexAI.Infrastructure.Tests/TendexAI.Infrastructure.Tests.csproj" />
+    <Project Path="tests/TendexAI.IntegrationTests/TendexAI.IntegrationTests.csproj" />
   </Folder>
 </Solution>
