@@ -314,7 +314,7 @@ public sealed partial class QdrantVectorStoreService : IVectorStoreService
     }
 
     private static string? GetPayloadString(
-        IDictionary<string, Value> payload,
+        Google.Protobuf.Collections.MapField<string, Value> payload,
         string key)
     {
         return payload.TryGetValue(key, out var value) ? value.StringValue : null;

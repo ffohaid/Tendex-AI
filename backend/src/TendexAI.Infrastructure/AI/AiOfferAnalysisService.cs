@@ -29,6 +29,12 @@ namespace TendexAI.Infrastructure.AI;
 /// </summary>
 public sealed class AiOfferAnalysisService : IAiOfferAnalysisService
 {
+    private static readonly JsonSerializerOptions s_jsonOptions = new()
+    {
+        PropertyNameCaseInsensitive = true,
+        PropertyNamingPolicy = JsonNamingPolicy.CamelCase
+    };
+
     private readonly IAiGateway _aiGateway;
     private readonly ILogger<AiOfferAnalysisService> _logger;
 
@@ -293,13 +299,7 @@ public sealed class AiOfferAnalysisService : IAiOfferAnalysisService
                     "AI response did not contain valid JSON content.");
             }
 
-            var options = new JsonSerializerOptions
-            {
-                PropertyNameCaseInsensitive = true,
-                PropertyNamingPolicy = JsonNamingPolicy.CamelCase
-            };
-
-            var parsed = JsonSerializer.Deserialize<AiAnalysisJsonResponse>(jsonContent, options);
+            var parsed = JsonSerializer.Deserialize<AiAnalysisJsonResponse>(jsonContent, s_jsonOptions);
 
             if (parsed is null)
             {

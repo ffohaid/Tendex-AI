@@ -146,7 +146,7 @@ public sealed partial class DocumentIndexingService : IDocumentIndexingService
                         continue;
                     }
 
-                    embeddingModel = embeddingResponse.Model ?? embeddingModel;
+                    embeddingModel = embeddingResponse.ModelName ?? embeddingModel;
                     vectorDimensions = embeddingResponse.Embedding.Length;
 
                     vectorPoints.Add(new VectorPoint
