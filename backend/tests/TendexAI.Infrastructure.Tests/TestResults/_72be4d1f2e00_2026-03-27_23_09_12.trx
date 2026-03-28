@@ -1,0 +1,489 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TestRun id="c47e3607-0b2d-49c7-92aa-470e0e4d4e4e" name="@72be4d1f2e00 2026-03-27 23:09:12" xmlns="http://microsoft.com/schemas/VisualStudio/TeamTest/2010">
+  <Times creation="2026-03-27T23:09:12.6732089-04:00" queuing="2026-03-27T23:09:12.6732091-04:00" start="2026-03-27T23:09:09.9411800-04:00" finish="2026-03-27T23:09:26.2308265-04:00" />
+  <TestSettings name="default" id="2af45673-2c8f-4948-95d7-30fb77b2f7b2">
+    <Deployment runDeploymentRoot="_72be4d1f2e00_2026-03-27_23_09_12" />
+  </TestSettings>
+  <Results>
+    <UnitTestResult executionId="0ddcef66-e592-4e39-b9ce-ab7173c0dcce" testId="368bb0cc-55e5-067c-1725-8d15c2a9168d" testName="TendexAI.Infrastructure.Tests.Domain.Rfp.CompetitionTests.UpdateEvaluationSettings_ValidWeights_ShouldSucceed" computerName="72be4d1f2e00" duration="00:00:00.0012512" startTime="2026-03-27T23:09:26.0888888-04:00" endTime="2026-03-27T23:09:26.0897742-04:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="0ddcef66-e592-4e39-b9ce-ab7173c0dcce" />
+    <UnitTestResult executionId="ab3524a4-e787-4529-bea8-3d33bea17e7b" testId="c5054cb8-a0f6-10fb-ac44-fccd1bb79449" testName="TendexAI.Infrastructure.Tests.Application.Rfp.Validators.UpdateEvaluationSettingsCommandValidatorTests.Validate_EmptyCompetitionId_ShouldHaveError" computerName="72be4d1f2e00" duration="00:00:00.0017147" startTime="2026-03-27T23:09:26.1404125-04:00" endTime="2026-03-27T23:09:26.1406052-04:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="ab3524a4-e787-4529-bea8-3d33bea17e7b" />
+    <UnitTestResult executionId="89a65a46-4225-45b2-9901-cf6c55942816" testId="f7956780-929d-5971-ba59-258d48244204" testName="TendexAI.Infrastructure.Tests.Application.Rfp.Validators.CreateCompetitionCommandValidatorTests.Validate_EmptyCreatedByUserId_ShouldHaveError" computerName="72be4d1f2e00" duration="00:00:00.0006636" startTime="2026-03-27T23:09:26.1544919-04:00" endTime="2026-03-27T23:09:26.1545794-04:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="89a65a46-4225-45b2-9901-cf6c55942816" />
+    <UnitTestResult executionId="382b9967-7081-4055-ae32-21e954ee0f2e" testId="642bcf10-4825-d326-af10-a87fc7694a19" testName="TendexAI.Infrastructure.Tests.Domain.Rfp.CompetitionTests.SubmitForApproval_FromDraft_ShouldSucceed" computerName="72be4d1f2e00" duration="00:00:00.0007354" startTime="2026-03-27T23:09:26.0975388-04:00" endTime="2026-03-27T23:09:26.0976281-04:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Failed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="382b9967-7081-4055-ae32-21e954ee0f2e">
+      <Output>
+        <ErrorInfo>
+          <Message>Expected result.IsSuccess to be True, but found False.</Message>
+          <StackTrace>   at FluentAssertions.Execution.LateBoundTestFramework.Throw(String message)
+   at FluentAssertions.Execution.DefaultAssertionStrategy.HandleFailure(String message)
+   at FluentAssertions.Execution.AssertionScope.AddPreFormattedFailure(String formattedFailureMessage)
+   at FluentAssertions.Execution.AssertionChain.FailWith(Func`1 getFailureReason)
+   at FluentAssertions.Execution.AssertionChain.FailWith(Func`1 getFailureReason)
+   at FluentAssertions.Execution.AssertionChain.FailWith(String message, Object[] args)
+   at FluentAssertions.Primitives.BooleanAssertions`1.BeTrue(String because, Object[] becauseArgs)
+   at TendexAI.Infrastructure.Tests.Domain.Rfp.CompetitionTests.SubmitForApproval_FromDraft_ShouldSucceed() in /home/ubuntu/Tendex-AI/backend/tests/TendexAI.Infrastructure.Tests/Domain/Rfp/CompetitionTests.cs:line 130
+   at System.Reflection.MethodBaseInvoker.InterpretedInvoke_Method(Object obj, IntPtr* args)
+   at System.Reflection.RuntimeMethodInfo.Invoke(Object obj, BindingFlags invokeAttr, Binder binder, Object[] parameters, CultureInfo culture)</StackTrace>
+        </ErrorInfo>
+      </Output>
+    </UnitTestResult>
+    <UnitTestResult executionId="54a951ac-cefa-49b9-9458-2fb5fe912da6" testId="21463409-9c72-6368-c047-fb7aa0925780" testName="TendexAI.Infrastructure.Tests.Application.Rfp.Validators.AutoSaveCompetitionCommandValidatorTests.Validate_EmptyCompetitionId_ShouldHaveError" computerName="72be4d1f2e00" duration="00:00:00.0017156" startTime="2026-03-27T23:09:26.1404776-04:00" endTime="2026-03-27T23:09:26.1407825-04:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="54a951ac-cefa-49b9-9458-2fb5fe912da6" />
+    <UnitTestResult executionId="8756d8c6-da5d-4374-b423-285c5c4413ef" testId="dff77b23-4523-04fb-ff4a-4acda4921c05" testName="TendexAI.Infrastructure.Tests.Domain.Rfp.CompetitionTests.RecordAutoSave_ShouldUpdateTimestampAndVersion" computerName="72be4d1f2e00" duration="00:00:00.0003200" startTime="2026-03-27T23:09:26.0917505-04:00" endTime="2026-03-27T23:09:26.0918387-04:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="8756d8c6-da5d-4374-b423-285c5c4413ef" />
+    <UnitTestResult executionId="abea07c3-fb92-47a2-bccc-7922f69324ad" testId="7ac5edd5-f7e5-ceb7-c7d9-41b6b2b88f17" testName="TendexAI.Infrastructure.Tests.Domain.Rfp.CompetitionTests.UpdateBasicInfo_OnApprovedCompetition_ShouldFail" computerName="72be4d1f2e00" duration="00:00:00.0019692" startTime="2026-03-27T23:09:26.0855348-04:00" endTime="2026-03-27T23:09:26.0856869-04:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Failed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="abea07c3-fb92-47a2-bccc-7922f69324ad">
+      <Output>
+        <ErrorInfo>
+          <Message>Expected result.IsFailure to be True, but found False.</Message>
+          <StackTrace>   at FluentAssertions.Execution.LateBoundTestFramework.Throw(String message)
+   at FluentAssertions.Execution.DefaultAssertionStrategy.HandleFailure(String message)
+   at FluentAssertions.Execution.AssertionScope.AddPreFormattedFailure(String formattedFailureMessage)
+   at FluentAssertions.Execution.AssertionChain.FailWith(Func`1 getFailureReason)
+   at FluentAssertions.Execution.AssertionChain.FailWith(Func`1 getFailureReason)
+   at FluentAssertions.Execution.AssertionChain.FailWith(String message, Object[] args)
+   at FluentAssertions.Primitives.BooleanAssertions`1.BeTrue(String because, Object[] becauseArgs)
+   at TendexAI.Infrastructure.Tests.Domain.Rfp.CompetitionTests.UpdateBasicInfo_OnApprovedCompetition_ShouldFail() in /home/ubuntu/Tendex-AI/backend/tests/TendexAI.Infrastructure.Tests/Domain/Rfp/CompetitionTests.cs:line 114
+   at System.Reflection.MethodBaseInvoker.InterpretedInvoke_Method(Object obj, IntPtr* args)
+   at System.Reflection.RuntimeMethodInfo.Invoke(Object obj, BindingFlags invokeAttr, Binder binder, Object[] parameters, CultureInfo culture)</StackTrace>
+        </ErrorInfo>
+      </Output>
+    </UnitTestResult>
+    <UnitTestResult executionId="d46bfc80-3187-43a0-9c82-fee9ae2da197" testId="ef106bcd-2c54-d54d-ac04-e7f568b22ff3" testName="TendexAI.Infrastructure.Tests.Application.Rfp.Validators.CreateCompetitionCommandValidatorTests.Validate_ValidCommand_ShouldHaveNoErrors" computerName="72be4d1f2e00" duration="00:00:00.0006757" startTime="2026-03-27T23:09:26.1563483-04:00" endTime="2026-03-27T23:09:26.1568783-04:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="d46bfc80-3187-43a0-9c82-fee9ae2da197" />
+    <UnitTestResult executionId="ad1495e3-0888-4ab6-afca-4c6824486ded" testId="41e7e7a5-1a49-ab6b-b9cc-753cb1cdf1cc" testName="TendexAI.Infrastructure.Tests.Application.Rfp.Validators.AutoSaveCompetitionCommandValidatorTests.Validate_EmptyModifiedByUserId_ShouldHaveError" computerName="72be4d1f2e00" duration="00:00:00.0015594" startTime="2026-03-27T23:09:26.1411213-04:00" endTime="2026-03-27T23:09:26.1422130-04:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="ad1495e3-0888-4ab6-afca-4c6824486ded" />
+    <UnitTestResult executionId="1bc588e3-19fa-49a5-a412-c88d472e5c85" testId="8ac384f8-0a35-f1eb-1471-f0234380c22d" testName="TendexAI.Infrastructure.Tests.Application.Rfp.Validators.CreateCompetitionCommandValidatorTests.Validate_EmptyProjectNameAr_ShouldHaveError" computerName="72be4d1f2e00" duration="00:00:00.0007094" startTime="2026-03-27T23:09:26.1480339-04:00" endTime="2026-03-27T23:09:26.1484390-04:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="1bc588e3-19fa-49a5-a412-c88d472e5c85" />
+    <UnitTestResult executionId="ce30c78c-37a4-4602-b43b-3c02e017177c" testId="7ee006db-4bc5-79a0-d80f-ab2563391004" testName="TendexAI.Infrastructure.Tests.Application.Rfp.Validators.CreateCompetitionCommandValidatorTests.Validate_ZeroProjectDuration_ShouldHaveError" computerName="72be4d1f2e00" duration="00:00:00.0011640" startTime="2026-03-27T23:09:26.1493292-04:00" endTime="2026-03-27T23:09:26.1504409-04:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="ce30c78c-37a4-4602-b43b-3c02e017177c" />
+    <UnitTestResult executionId="66a8a839-24ed-4604-91b6-d7d07bbc0dd6" testId="77bd6545-a895-7a37-3def-53401e76bc8b" testName="TendexAI.Infrastructure.Tests.Application.Rfp.Validators.CreateCompetitionCommandValidatorTests.Validate_NegativeEstimatedBudget_ShouldHaveError" computerName="72be4d1f2e00" duration="00:00:00.0021136" startTime="2026-03-27T23:09:26.1465998-04:00" endTime="2026-03-27T23:09:26.1475327-04:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="66a8a839-24ed-4604-91b6-d7d07bbc0dd6" />
+    <UnitTestResult executionId="4c2a0d3a-d50b-403c-92b7-2c864f12435f" testId="225b7515-c1de-5aa3-6037-e2d47c7f7611" testName="TendexAI.Infrastructure.Tests.Domain.Rfp.CompetitionTests.SoftDelete_DraftCompetition_ShouldSucceed" computerName="72be4d1f2e00" duration="00:00:00.0006459" startTime="2026-03-27T23:09:26.0848834-04:00" endTime="2026-03-27T23:09:26.0850882-04:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="4c2a0d3a-d50b-403c-92b7-2c864f12435f" />
+    <UnitTestResult executionId="389eaaa5-4ff2-49a3-be32-5a41a0545adf" testId="bde67e14-5e2d-574f-1d82-c50b77098f43" testName="TendexAI.Infrastructure.Tests.Domain.Rfp.CompetitionTests.AddSection_ToApprovedCompetition_ShouldFail" computerName="72be4d1f2e00" duration="00:00:04.4188625" startTime="2026-03-27T23:09:11.6779158-04:00" endTime="2026-03-27T23:09:16.1077059-04:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Failed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="389eaaa5-4ff2-49a3-be32-5a41a0545adf">
+      <Output>
+        <ErrorInfo>
+          <Message>Expected result.IsFailure to be True, but found False.</Message>
+          <StackTrace>   at FluentAssertions.Execution.LateBoundTestFramework.Throw(String message)
+   at FluentAssertions.Execution.DefaultAssertionStrategy.HandleFailure(String message)
+   at FluentAssertions.Execution.AssertionScope.AddPreFormattedFailure(String formattedFailureMessage)
+   at FluentAssertions.Execution.AssertionChain.FailWith(Func`1 getFailureReason)
+   at FluentAssertions.Execution.AssertionChain.FailWith(Func`1 getFailureReason)
+   at FluentAssertions.Execution.AssertionChain.FailWith(String message, Object[] args)
+   at FluentAssertions.Primitives.BooleanAssertions`1.BeTrue(String because, Object[] becauseArgs)
+   at TendexAI.Infrastructure.Tests.Domain.Rfp.CompetitionTests.AddSection_ToApprovedCompetition_ShouldFail() in /home/ubuntu/Tendex-AI/backend/tests/TendexAI.Infrastructure.Tests/Domain/Rfp/CompetitionTests.cs:line 316
+   at System.Reflection.MethodBaseInvoker.InterpretedInvoke_Method(Object obj, IntPtr* args)
+   at System.Reflection.RuntimeMethodInfo.Invoke(Object obj, BindingFlags invokeAttr, Binder binder, Object[] parameters, CultureInfo culture)</StackTrace>
+        </ErrorInfo>
+      </Output>
+    </UnitTestResult>
+    <UnitTestResult executionId="73b6c626-3737-4b19-8d73-1524ed081542" testId="2001096f-5574-b4a6-e446-6dd53d8c1272" testName="TendexAI.Infrastructure.Tests.Domain.Rfp.CompetitionTests.Cancel_FromDraft_ShouldSucceed" computerName="72be4d1f2e00" duration="00:00:00.0006456" startTime="2026-03-27T23:09:26.0987885-04:00" endTime="2026-03-27T23:09:26.0988834-04:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="73b6c626-3737-4b19-8d73-1524ed081542" />
+    <UnitTestResult executionId="11dcc7e5-5484-4b84-ac83-90a55dca16d5" testId="0d6b3dda-5d81-6299-ce16-65ac04ec10df" testName="TendexAI.Infrastructure.Tests.Domain.Rfp.CompetitionTests.SoftDelete_ApprovedCompetition_ShouldFail" computerName="72be4d1f2e00" duration="00:00:00.0009097" startTime="2026-03-27T23:09:26.0900368-04:00" endTime="2026-03-27T23:09:26.0908443-04:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Failed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="11dcc7e5-5484-4b84-ac83-90a55dca16d5">
+      <Output>
+        <ErrorInfo>
+          <Message>Expected result.IsFailure to be True, but found False.</Message>
+          <StackTrace>   at FluentAssertions.Execution.LateBoundTestFramework.Throw(String message)
+   at FluentAssertions.Execution.DefaultAssertionStrategy.HandleFailure(String message)
+   at FluentAssertions.Execution.AssertionScope.AddPreFormattedFailure(String formattedFailureMessage)
+   at FluentAssertions.Execution.AssertionChain.FailWith(Func`1 getFailureReason)
+   at FluentAssertions.Execution.AssertionChain.FailWith(Func`1 getFailureReason)
+   at FluentAssertions.Execution.AssertionChain.FailWith(String message, Object[] args)
+   at FluentAssertions.Primitives.BooleanAssertions`1.BeTrue(String because, Object[] becauseArgs)
+   at TendexAI.Infrastructure.Tests.Domain.Rfp.CompetitionTests.SoftDelete_ApprovedCompetition_ShouldFail() in /home/ubuntu/Tendex-AI/backend/tests/TendexAI.Infrastructure.Tests/Domain/Rfp/CompetitionTests.cs:line 234
+   at System.Reflection.MethodBaseInvoker.InterpretedInvoke_Method(Object obj, IntPtr* args)
+   at System.Reflection.RuntimeMethodInfo.Invoke(Object obj, BindingFlags invokeAttr, Binder binder, Object[] parameters, CultureInfo culture)</StackTrace>
+        </ErrorInfo>
+      </Output>
+    </UnitTestResult>
+    <UnitTestResult executionId="aef3c033-050b-4062-b71d-99dc4c34b95b" testId="dcbd496c-d64c-07c5-89f6-bcc571bd24aa" testName="TendexAI.Infrastructure.Tests.Domain.Rfp.CompetitionTests.AddBoqItem_ToDraftCompetition_ShouldSucceed" computerName="72be4d1f2e00" duration="00:00:00.0014952" startTime="2026-03-27T23:09:26.0991072-04:00" endTime="2026-03-27T23:09:26.1002856-04:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="aef3c033-050b-4062-b71d-99dc4c34b95b" />
+    <UnitTestResult executionId="d852552a-8c4e-4ba5-bfd4-cfb7c4c31355" testId="75cc3787-8b28-5fe3-309a-4a306b8b0e7c" testName="TendexAI.Infrastructure.Tests.Application.Rfp.Validators.CreateCompetitionCommandValidatorTests.Validate_NullOptionalFields_ShouldNotHaveErrors" computerName="72be4d1f2e00" duration="00:00:14.4648097" startTime="2026-03-27T23:09:11.6800747-04:00" endTime="2026-03-27T23:09:26.1453374-04:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="d852552a-8c4e-4ba5-bfd4-cfb7c4c31355" />
+    <UnitTestResult executionId="4062aed5-ffa1-4f5b-8e9b-63f62c13b4f1" testId="d462f616-1362-2cbc-2848-f07abdbfeba9" testName="TendexAI.Infrastructure.Tests.Application.Rfp.Validators.CreateCompetitionCommandValidatorTests.Validate_EmptyTenantId_ShouldHaveError" computerName="72be4d1f2e00" duration="00:00:00.0005772" startTime="2026-03-27T23:09:26.1486769-04:00" endTime="2026-03-27T23:09:26.1491036-04:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="4062aed5-ffa1-4f5b-8e9b-63f62c13b4f1" />
+    <UnitTestResult executionId="851ae5b2-15cd-46f9-ac1c-3a06dbc306dd" testId="731d3e46-0613-6ab6-5734-fa9c78d958c1" testName="TendexAI.Infrastructure.Tests.Application.Rfp.Validators.UpdateEvaluationSettingsCommandValidatorTests.Validate_TechnicalPassingScoreOutOfRange_ShouldHaveError" computerName="72be4d1f2e00" duration="00:00:14.3851466" startTime="2026-03-27T23:09:11.7660614-04:00" endTime="2026-03-27T23:09:26.1388476-04:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="851ae5b2-15cd-46f9-ac1c-3a06dbc306dd" />
+    <UnitTestResult executionId="10a60ff3-7ecc-44b3-9d6e-583e90c54f34" testId="ea736ac0-e14a-c607-01cc-d5bcee6fe891" testName="TendexAI.Infrastructure.Tests.Application.Rfp.Validators.AutoSaveCompetitionCommandValidatorTests.Validate_WizardStepOutOfRange_ShouldHaveError" computerName="72be4d1f2e00" duration="00:00:00.0004222" startTime="2026-03-27T23:09:26.1430449-04:00" endTime="2026-03-27T23:09:26.1433050-04:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="10a60ff3-7ecc-44b3-9d6e-583e90c54f34" />
+    <UnitTestResult executionId="03e61ad6-d92c-4570-b07e-08b729d12787" testId="240ec5f0-dc52-474f-e6c1-a371ee213e8d" testName="TendexAI.Infrastructure.Tests.Application.Rfp.Validators.CreateCompetitionCommandValidatorTests.Validate_ExcessiveProjectDuration_ShouldHaveError" computerName="72be4d1f2e00" duration="00:00:00.0007776" startTime="2026-03-27T23:09:26.1559561-04:00" endTime="2026-03-27T23:09:26.1561183-04:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="03e61ad6-d92c-4570-b07e-08b729d12787" />
+    <UnitTestResult executionId="fd42dc1a-21c6-4fdf-b7c4-16ecac744bdc" testId="5502bb76-f33f-9ace-30f7-5117fef08ff5" testName="TendexAI.Infrastructure.Tests.Application.Rfp.Validators.AutoSaveCompetitionCommandValidatorTests.Validate_WizardStepZero_ShouldHaveError" computerName="72be4d1f2e00" duration="00:00:00.0084342" startTime="2026-03-27T23:09:26.1305472-04:00" endTime="2026-03-27T23:09:26.1387567-04:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="fd42dc1a-21c6-4fdf-b7c4-16ecac744bdc" />
+    <UnitTestResult executionId="2e1b7db6-e48a-4e18-b9f5-ad5b24724de7" testId="21dfe903-586d-2b0a-2cd7-7e62e633de2e" testName="TendexAI.Infrastructure.Tests.Domain.Rfp.CompetitionTests.Create_WithTemplateSource_ShouldSetSourceTemplateId" computerName="72be4d1f2e00" duration="00:00:00.0010313" startTime="2026-03-27T23:09:26.0984375-04:00" endTime="2026-03-27T23:09:26.0985424-04:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="2e1b7db6-e48a-4e18-b9f5-ad5b24724de7" />
+    <UnitTestResult executionId="75f821b4-97e1-4b69-8d78-fd67185abdb4" testId="575d44ad-87e0-2d80-c63a-51d08d2fd7e8" testName="TendexAI.Infrastructure.Tests.Application.Rfp.Validators.UpdateEvaluationSettingsCommandValidatorTests.Validate_ValidWeights_ShouldHaveNoErrors" computerName="72be4d1f2e00" duration="00:00:00.0004011" startTime="2026-03-27T23:09:26.1472429-04:00" endTime="2026-03-27T23:09:26.1474911-04:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="75f821b4-97e1-4b69-8d78-fd67185abdb4" />
+    <UnitTestResult executionId="3c298494-d753-4aec-a0f1-ed4d9d8972a3" testId="e75e6775-b9fe-bf0e-ca5c-fa49143b44f6" testName="TendexAI.Infrastructure.Tests.Domain.Rfp.CompetitionTests.RecordAutoSave_WithoutWizardStep_ShouldKeepCurrentStep" computerName="72be4d1f2e00" duration="00:00:00.0010498" startTime="2026-03-27T23:09:16.1191582-04:00" endTime="2026-03-27T23:09:16.1192940-04:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="3c298494-d753-4aec-a0f1-ed4d9d8972a3" />
+    <UnitTestResult executionId="50da4200-8ca7-4376-ac5c-d96714ea7093" testId="0424fd3e-5e28-d2b8-3627-7843059415b9" testName="TendexAI.Infrastructure.Tests.Application.Rfp.Validators.UpdateEvaluationSettingsCommandValidatorTests.Validate_NullWeights_ShouldNotHaveErrors" computerName="72be4d1f2e00" duration="00:00:00.0003296" startTime="2026-03-27T23:09:26.1479904-04:00" endTime="2026-03-27T23:09:26.1481775-04:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="50da4200-8ca7-4376-ac5c-d96714ea7093" />
+    <UnitTestResult executionId="e2daa90b-38c0-4bda-b44b-31aee014def8" testId="0c9c2e6f-ce8c-bfcc-ae2a-ec20702ea925" testName="TendexAI.Infrastructure.Tests.Application.Rfp.Validators.AutoSaveCompetitionCommandValidatorTests.Validate_NullOptionalFields_ShouldNotHaveErrors" computerName="72be4d1f2e00" duration="00:00:14.4497298" startTime="2026-03-27T23:09:11.6800281-04:00" endTime="2026-03-27T23:09:26.1301705-04:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="e2daa90b-38c0-4bda-b44b-31aee014def8" />
+    <UnitTestResult executionId="36b53612-90e0-47bc-959f-a34d0dc5d069" testId="853c5cb2-1eb7-1162-d719-f537fe4f885d" testName="TendexAI.Infrastructure.Tests.Domain.Rfp.CompetitionTests.Create_WithValidParameters_ShouldCreateCompetition" computerName="72be4d1f2e00" duration="00:00:00.0083925" startTime="2026-03-27T23:09:16.1187868-04:00" endTime="2026-03-27T23:09:16.1188877-04:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="36b53612-90e0-47bc-959f-a34d0dc5d069" />
+    <UnitTestResult executionId="dc2349a5-0fc7-4e74-afdf-268b5f8b2473" testId="f3ba6ff1-0573-b982-4255-20049679f3ca" testName="TendexAI.Infrastructure.Tests.Application.Rfp.Validators.AutoSaveCompetitionCommandValidatorTests.Validate_ProjectNameArTooLong_ShouldHaveError" computerName="72be4d1f2e00" duration="00:00:00.0005435" startTime="2026-03-27T23:09:26.1424640-04:00" endTime="2026-03-27T23:09:26.1428190-04:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="dc2349a5-0fc7-4e74-afdf-268b5f8b2473" />
+    <UnitTestResult executionId="e9ad5487-42e0-4ab0-ac2d-55ac0aedde48" testId="9b6fa249-925b-836f-a4bf-55cb95cf6e29" testName="TendexAI.Infrastructure.Tests.Application.Rfp.Validators.CreateCompetitionCommandValidatorTests.Validate_PastSubmissionDeadline_ShouldHaveError" computerName="72be4d1f2e00" duration="00:00:00.0033301" startTime="2026-03-27T23:09:26.1509062-04:00" endTime="2026-03-27T23:09:26.1539521-04:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="e9ad5487-42e0-4ab0-ac2d-55ac0aedde48" />
+    <UnitTestResult executionId="850b705d-bc40-4f59-a33f-3e124f301d4b" testId="ea8533ac-bc3e-8920-2d3a-2233309e7e9c" testName="TendexAI.Infrastructure.Tests.Application.Rfp.Validators.AutoSaveCompetitionCommandValidatorTests.Validate_ValidAutoSaveCommand_ShouldHaveNoErrors" computerName="72be4d1f2e00" duration="00:00:00.0003432" startTime="2026-03-27T23:09:26.1435226-04:00" endTime="2026-03-27T23:09:26.1437264-04:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="850b705d-bc40-4f59-a33f-3e124f301d4b" />
+    <UnitTestResult executionId="2b97f3ce-0127-44d6-a8e4-0b6854b09230" testId="1e0561a8-3f33-5c68-c1df-eeab1b76d4b2" testName="TendexAI.Infrastructure.Tests.Domain.Rfp.CompetitionTests.AddSection_ToDraftCompetition_ShouldSucceed" computerName="72be4d1f2e00" duration="00:00:00.0007507" startTime="2026-03-27T23:09:26.0971983-04:00" endTime="2026-03-27T23:09:26.0973064-04:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="2b97f3ce-0127-44d6-a8e4-0b6854b09230" />
+    <UnitTestResult executionId="8a911948-cbb7-4b95-8e38-d1dcea10eb0d" testId="593422f0-0412-1e80-47d0-66dead489802" testName="TendexAI.Infrastructure.Tests.Domain.Rfp.CompetitionTests.Approve_FromPendingApproval_ShouldSucceed" computerName="72be4d1f2e00" duration="00:00:00.0023241" startTime="2026-03-27T23:09:16.1196731-04:00" endTime="2026-03-27T23:09:16.1198617-04:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Failed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="8a911948-cbb7-4b95-8e38-d1dcea10eb0d">
+      <Output>
+        <ErrorInfo>
+          <Message>Expected result.IsSuccess to be True, but found False.</Message>
+          <StackTrace>   at FluentAssertions.Execution.LateBoundTestFramework.Throw(String message)
+   at FluentAssertions.Execution.DefaultAssertionStrategy.HandleFailure(String message)
+   at FluentAssertions.Execution.AssertionScope.AddPreFormattedFailure(String formattedFailureMessage)
+   at FluentAssertions.Execution.AssertionChain.FailWith(Func`1 getFailureReason)
+   at FluentAssertions.Execution.AssertionChain.FailWith(Func`1 getFailureReason)
+   at FluentAssertions.Execution.AssertionChain.FailWith(String message, Object[] args)
+   at FluentAssertions.Primitives.BooleanAssertions`1.BeTrue(String because, Object[] becauseArgs)
+   at TendexAI.Infrastructure.Tests.Domain.Rfp.CompetitionTests.Approve_FromPendingApproval_ShouldSucceed() in /home/ubuntu/Tendex-AI/backend/tests/TendexAI.Infrastructure.Tests/Domain/Rfp/CompetitionTests.cs:line 158
+   at System.Reflection.MethodBaseInvoker.InterpretedInvoke_Method(Object obj, IntPtr* args)
+   at System.Reflection.RuntimeMethodInfo.Invoke(Object obj, BindingFlags invokeAttr, Binder binder, Object[] parameters, CultureInfo culture)</StackTrace>
+        </ErrorInfo>
+      </Output>
+    </UnitTestResult>
+    <UnitTestResult executionId="5e0244f3-1029-498c-a0e0-a7264b2bec28" testId="19cb3729-11de-7b31-aee7-ba110c393f4d" testName="TendexAI.Infrastructure.Tests.Domain.Rfp.CompetitionTests.UpdateBasicInfo_OnDraftCompetition_ShouldSucceed" computerName="72be4d1f2e00" duration="00:00:00.0031794" startTime="2026-03-27T23:09:26.0869206-04:00" endTime="2026-03-27T23:09:26.0884915-04:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="5e0244f3-1029-498c-a0e0-a7264b2bec28" />
+    <UnitTestResult executionId="553f511c-4529-4397-b04a-65ef23e7324f" testId="1ca8e3dc-661b-345f-6d74-4bfdaa4d5ccc" testName="TendexAI.Infrastructure.Tests.Domain.Rfp.CompetitionTests.Reject_FromPendingApproval_ShouldSucceed" computerName="72be4d1f2e00" duration="00:00:00.0010357" startTime="2026-03-27T23:09:26.0920674-04:00" endTime="2026-03-27T23:09:26.0924050-04:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Failed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="553f511c-4529-4397-b04a-65ef23e7324f">
+      <Output>
+        <ErrorInfo>
+          <Message>Expected result.IsSuccess to be True, but found False.</Message>
+          <StackTrace>   at FluentAssertions.Execution.LateBoundTestFramework.Throw(String message)
+   at FluentAssertions.Execution.DefaultAssertionStrategy.HandleFailure(String message)
+   at FluentAssertions.Execution.AssertionScope.AddPreFormattedFailure(String formattedFailureMessage)
+   at FluentAssertions.Execution.AssertionChain.FailWith(Func`1 getFailureReason)
+   at FluentAssertions.Execution.AssertionChain.FailWith(Func`1 getFailureReason)
+   at FluentAssertions.Execution.AssertionChain.FailWith(String message, Object[] args)
+   at FluentAssertions.Primitives.BooleanAssertions`1.BeTrue(String because, Object[] becauseArgs)
+   at TendexAI.Infrastructure.Tests.Domain.Rfp.CompetitionTests.Reject_FromPendingApproval_ShouldSucceed() in /home/ubuntu/Tendex-AI/backend/tests/TendexAI.Infrastructure.Tests/Domain/Rfp/CompetitionTests.cs:line 188
+   at System.Reflection.MethodBaseInvoker.InterpretedInvoke_Method(Object obj, IntPtr* args)
+   at System.Reflection.RuntimeMethodInfo.Invoke(Object obj, BindingFlags invokeAttr, Binder binder, Object[] parameters, CultureInfo culture)</StackTrace>
+        </ErrorInfo>
+      </Output>
+    </UnitTestResult>
+    <UnitTestResult executionId="a2a43d2e-f6c9-44d9-be17-4cc6b9655b0f" testId="3e976a10-edad-1b44-c1a2-ff206ebee840" testName="TendexAI.Infrastructure.Tests.Application.Rfp.Validators.CreateCompetitionCommandValidatorTests.Validate_ProjectNameArTooLong_ShouldHaveError" computerName="72be4d1f2e00" duration="00:00:00.0006451" startTime="2026-03-27T23:09:26.1556335-04:00" endTime="2026-03-27T23:09:26.1557333-04:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="a2a43d2e-f6c9-44d9-be17-4cc6b9655b0f" />
+    <UnitTestResult executionId="1e449e0a-e0ae-4d6a-8b70-c6c4dcfdaa2b" testId="6ab21822-a164-45bd-027d-9dc06feb5e3d" testName="TendexAI.Infrastructure.Tests.Domain.Rfp.CompetitionTests.SubmitForApproval_FromApproved_ShouldFail" computerName="72be4d1f2e00" duration="00:00:00.0003326" startTime="2026-03-27T23:09:16.1179645-04:00" endTime="2026-03-27T23:09:16.1181586-04:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="1e449e0a-e0ae-4d6a-8b70-c6c4dcfdaa2b" />
+    <UnitTestResult executionId="5d4c9509-ab38-4589-bc6c-413a2b62e27d" testId="0136bc93-1af1-1d17-4a25-ea0a87a56ed3" testName="TendexAI.Infrastructure.Tests.Domain.Rfp.CompetitionTests.Approve_FromDraft_ShouldFail" computerName="72be4d1f2e00" duration="00:00:00.0001732" startTime="2026-03-27T23:09:26.1005492-04:00" endTime="2026-03-27T23:09:26.1006379-04:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="5d4c9509-ab38-4589-bc6c-413a2b62e27d" />
+    <UnitTestResult executionId="2beb877a-857f-45e9-afaa-ea13570f4efb" testId="87609106-495f-fb95-4fdc-bd6f8c5cb9e6" testName="TendexAI.Infrastructure.Tests.Application.Rfp.Validators.UpdateEvaluationSettingsCommandValidatorTests.Validate_WeightsNotSumTo100_ShouldHaveError" computerName="72be4d1f2e00" duration="00:00:00.0064104" startTime="2026-03-27T23:09:26.1410191-04:00" endTime="2026-03-27T23:09:26.1470165-04:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="2beb877a-857f-45e9-afaa-ea13570f4efb" />
+    <UnitTestResult executionId="2f700342-e1f3-464e-be0e-68ffca5d30d7" testId="545791de-a123-0f04-289e-636fe2299a7f" testName="TendexAI.Infrastructure.Tests.Application.Rfp.Validators.CreateCompetitionCommandValidatorTests.Validate_EmptyProjectNameEn_ShouldHaveError" computerName="72be4d1f2e00" duration="00:00:00.0005742" startTime="2026-03-27T23:09:26.1571059-04:00" endTime="2026-03-27T23:09:26.1575316-04:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="2f700342-e1f3-464e-be0e-68ffca5d30d7" />
+    <UnitTestResult executionId="f0994c40-6b8c-4475-ae3c-572d0ebabb97" testId="6ee2c8e6-4459-24d0-fd3c-0a0870b9c839" testName="TendexAI.Infrastructure.Tests.Messaging.IntegrationEventsSerializationTests.RfpStatusChangedIntegrationEvent_RoundTrip_PreservesAllProperties" computerName="72be4d1f2e00" duration="00:00:00.0622273" startTime="2026-03-27T23:09:11.6798977-04:00" endTime="2026-03-27T23:09:11.7500759-04:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="f0994c40-6b8c-4475-ae3c-572d0ebabb97" />
+    <UnitTestResult executionId="ddbc4bef-fd31-4290-8906-b12fbbae5b28" testId="47ab253f-ddb2-8925-ca6c-14e5cb93e35c" testName="TendexAI.Infrastructure.Tests.Domain.Rfp.CompetitionTests.UpdateEvaluationSettings_WeightsNotSumTo100_ShouldFail" computerName="72be4d1f2e00" duration="00:00:00.0007232" startTime="2026-03-27T23:09:26.1008790-04:00" endTime="2026-03-27T23:09:26.1012814-04:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="ddbc4bef-fd31-4290-8906-b12fbbae5b28" />
+    <UnitTestResult executionId="15417728-c986-45f5-b534-32154bfe37d2" testId="61029d0f-dc56-e9ab-940b-f7d04ff86f8b" testName="TendexAI.Infrastructure.Tests.Domain.Rfp.CompetitionTests.AddEvaluationCriterion_ToDraftCompetition_ShouldSucceed" computerName="72be4d1f2e00" duration="00:00:00.0026591" startTime="2026-03-27T23:09:26.0932035-04:00" endTime="2026-03-27T23:09:26.0951436-04:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="15417728-c986-45f5-b534-32154bfe37d2" />
+  </Results>
+  <TestDefinitions>
+    <UnitTest name="TendexAI.Infrastructure.Tests.Domain.Rfp.CompetitionTests.Create_WithValidParameters_ShouldCreateCompetition" storage="/home/ubuntu/tendex-ai/backend/tests/tendexai.infrastructure.tests/bin/debug/net10.0/tendexai.infrastructure.tests.dll" id="853c5cb2-1eb7-1162-d719-f537fe4f885d">
+      <Execution id="36b53612-90e0-47bc-959f-a34d0dc5d069" />
+      <TestMethod codeBase="/home/ubuntu/Tendex-AI/backend/tests/TendexAI.Infrastructure.Tests/bin/Debug/net10.0/TendexAI.Infrastructure.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="TendexAI.Infrastructure.Tests.Domain.Rfp.CompetitionTests" name="Create_WithValidParameters_ShouldCreateCompetition" />
+    </UnitTest>
+    <UnitTest name="TendexAI.Infrastructure.Tests.Domain.Rfp.CompetitionTests.RecordAutoSave_WithoutWizardStep_ShouldKeepCurrentStep" storage="/home/ubuntu/tendex-ai/backend/tests/tendexai.infrastructure.tests/bin/debug/net10.0/tendexai.infrastructure.tests.dll" id="e75e6775-b9fe-bf0e-ca5c-fa49143b44f6">
+      <Execution id="3c298494-d753-4aec-a0f1-ed4d9d8972a3" />
+      <TestMethod codeBase="/home/ubuntu/Tendex-AI/backend/tests/TendexAI.Infrastructure.Tests/bin/Debug/net10.0/TendexAI.Infrastructure.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="TendexAI.Infrastructure.Tests.Domain.Rfp.CompetitionTests" name="RecordAutoSave_WithoutWizardStep_ShouldKeepCurrentStep" />
+    </UnitTest>
+    <UnitTest name="TendexAI.Infrastructure.Tests.Application.Rfp.Validators.CreateCompetitionCommandValidatorTests.Validate_EmptyTenantId_ShouldHaveError" storage="/home/ubuntu/tendex-ai/backend/tests/tendexai.infrastructure.tests/bin/debug/net10.0/tendexai.infrastructure.tests.dll" id="d462f616-1362-2cbc-2848-f07abdbfeba9">
+      <Execution id="4062aed5-ffa1-4f5b-8e9b-63f62c13b4f1" />
+      <TestMethod codeBase="/home/ubuntu/Tendex-AI/backend/tests/TendexAI.Infrastructure.Tests/bin/Debug/net10.0/TendexAI.Infrastructure.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="TendexAI.Infrastructure.Tests.Application.Rfp.Validators.CreateCompetitionCommandValidatorTests" name="Validate_EmptyTenantId_ShouldHaveError" />
+    </UnitTest>
+    <UnitTest name="TendexAI.Infrastructure.Tests.Application.Rfp.Validators.UpdateEvaluationSettingsCommandValidatorTests.Validate_NullWeights_ShouldNotHaveErrors" storage="/home/ubuntu/tendex-ai/backend/tests/tendexai.infrastructure.tests/bin/debug/net10.0/tendexai.infrastructure.tests.dll" id="0424fd3e-5e28-d2b8-3627-7843059415b9">
+      <Execution id="50da4200-8ca7-4376-ac5c-d96714ea7093" />
+      <TestMethod codeBase="/home/ubuntu/Tendex-AI/backend/tests/TendexAI.Infrastructure.Tests/bin/Debug/net10.0/TendexAI.Infrastructure.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="TendexAI.Infrastructure.Tests.Application.Rfp.Validators.UpdateEvaluationSettingsCommandValidatorTests" name="Validate_NullWeights_ShouldNotHaveErrors" />
+    </UnitTest>
+    <UnitTest name="TendexAI.Infrastructure.Tests.Domain.Rfp.CompetitionTests.UpdateBasicInfo_OnApprovedCompetition_ShouldFail" storage="/home/ubuntu/tendex-ai/backend/tests/tendexai.infrastructure.tests/bin/debug/net10.0/tendexai.infrastructure.tests.dll" id="7ac5edd5-f7e5-ceb7-c7d9-41b6b2b88f17">
+      <Execution id="abea07c3-fb92-47a2-bccc-7922f69324ad" />
+      <TestMethod codeBase="/home/ubuntu/Tendex-AI/backend/tests/TendexAI.Infrastructure.Tests/bin/Debug/net10.0/TendexAI.Infrastructure.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="TendexAI.Infrastructure.Tests.Domain.Rfp.CompetitionTests" name="UpdateBasicInfo_OnApprovedCompetition_ShouldFail" />
+    </UnitTest>
+    <UnitTest name="TendexAI.Infrastructure.Tests.Domain.Rfp.CompetitionTests.Approve_FromPendingApproval_ShouldSucceed" storage="/home/ubuntu/tendex-ai/backend/tests/tendexai.infrastructure.tests/bin/debug/net10.0/tendexai.infrastructure.tests.dll" id="593422f0-0412-1e80-47d0-66dead489802">
+      <Execution id="8a911948-cbb7-4b95-8e38-d1dcea10eb0d" />
+      <TestMethod codeBase="/home/ubuntu/Tendex-AI/backend/tests/TendexAI.Infrastructure.Tests/bin/Debug/net10.0/TendexAI.Infrastructure.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="TendexAI.Infrastructure.Tests.Domain.Rfp.CompetitionTests" name="Approve_FromPendingApproval_ShouldSucceed" />
+    </UnitTest>
+    <UnitTest name="TendexAI.Infrastructure.Tests.Domain.Rfp.CompetitionTests.UpdateEvaluationSettings_ValidWeights_ShouldSucceed" storage="/home/ubuntu/tendex-ai/backend/tests/tendexai.infrastructure.tests/bin/debug/net10.0/tendexai.infrastructure.tests.dll" id="368bb0cc-55e5-067c-1725-8d15c2a9168d">
+      <Execution id="0ddcef66-e592-4e39-b9ce-ab7173c0dcce" />
+      <TestMethod codeBase="/home/ubuntu/Tendex-AI/backend/tests/TendexAI.Infrastructure.Tests/bin/Debug/net10.0/TendexAI.Infrastructure.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="TendexAI.Infrastructure.Tests.Domain.Rfp.CompetitionTests" name="UpdateEvaluationSettings_ValidWeights_ShouldSucceed" />
+    </UnitTest>
+    <UnitTest name="TendexAI.Infrastructure.Tests.Application.Rfp.Validators.AutoSaveCompetitionCommandValidatorTests.Validate_NullOptionalFields_ShouldNotHaveErrors" storage="/home/ubuntu/tendex-ai/backend/tests/tendexai.infrastructure.tests/bin/debug/net10.0/tendexai.infrastructure.tests.dll" id="0c9c2e6f-ce8c-bfcc-ae2a-ec20702ea925">
+      <Execution id="e2daa90b-38c0-4bda-b44b-31aee014def8" />
+      <TestMethod codeBase="/home/ubuntu/Tendex-AI/backend/tests/TendexAI.Infrastructure.Tests/bin/Debug/net10.0/TendexAI.Infrastructure.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="TendexAI.Infrastructure.Tests.Application.Rfp.Validators.AutoSaveCompetitionCommandValidatorTests" name="Validate_NullOptionalFields_ShouldNotHaveErrors" />
+    </UnitTest>
+    <UnitTest name="TendexAI.Infrastructure.Tests.Application.Rfp.Validators.AutoSaveCompetitionCommandValidatorTests.Validate_WizardStepZero_ShouldHaveError" storage="/home/ubuntu/tendex-ai/backend/tests/tendexai.infrastructure.tests/bin/debug/net10.0/tendexai.infrastructure.tests.dll" id="5502bb76-f33f-9ace-30f7-5117fef08ff5">
+      <Execution id="fd42dc1a-21c6-4fdf-b7c4-16ecac744bdc" />
+      <TestMethod codeBase="/home/ubuntu/Tendex-AI/backend/tests/TendexAI.Infrastructure.Tests/bin/Debug/net10.0/TendexAI.Infrastructure.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="TendexAI.Infrastructure.Tests.Application.Rfp.Validators.AutoSaveCompetitionCommandValidatorTests" name="Validate_WizardStepZero_ShouldHaveError" />
+    </UnitTest>
+    <UnitTest name="TendexAI.Infrastructure.Tests.Messaging.IntegrationEventsSerializationTests.RfpStatusChangedIntegrationEvent_RoundTrip_PreservesAllProperties" storage="/home/ubuntu/tendex-ai/backend/tests/tendexai.infrastructure.tests/bin/debug/net10.0/tendexai.infrastructure.tests.dll" id="6ee2c8e6-4459-24d0-fd3c-0a0870b9c839">
+      <Execution id="f0994c40-6b8c-4475-ae3c-572d0ebabb97" />
+      <TestMethod codeBase="/home/ubuntu/Tendex-AI/backend/tests/TendexAI.Infrastructure.Tests/bin/Debug/net10.0/TendexAI.Infrastructure.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="TendexAI.Infrastructure.Tests.Messaging.IntegrationEventsSerializationTests" name="RfpStatusChangedIntegrationEvent_RoundTrip_PreservesAllProperties" />
+    </UnitTest>
+    <UnitTest name="TendexAI.Infrastructure.Tests.Application.Rfp.Validators.UpdateEvaluationSettingsCommandValidatorTests.Validate_ValidWeights_ShouldHaveNoErrors" storage="/home/ubuntu/tendex-ai/backend/tests/tendexai.infrastructure.tests/bin/debug/net10.0/tendexai.infrastructure.tests.dll" id="575d44ad-87e0-2d80-c63a-51d08d2fd7e8">
+      <Execution id="75f821b4-97e1-4b69-8d78-fd67185abdb4" />
+      <TestMethod codeBase="/home/ubuntu/Tendex-AI/backend/tests/TendexAI.Infrastructure.Tests/bin/Debug/net10.0/TendexAI.Infrastructure.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="TendexAI.Infrastructure.Tests.Application.Rfp.Validators.UpdateEvaluationSettingsCommandValidatorTests" name="Validate_ValidWeights_ShouldHaveNoErrors" />
+    </UnitTest>
+    <UnitTest name="TendexAI.Infrastructure.Tests.Application.Rfp.Validators.UpdateEvaluationSettingsCommandValidatorTests.Validate_TechnicalPassingScoreOutOfRange_ShouldHaveError" storage="/home/ubuntu/tendex-ai/backend/tests/tendexai.infrastructure.tests/bin/debug/net10.0/tendexai.infrastructure.tests.dll" id="731d3e46-0613-6ab6-5734-fa9c78d958c1">
+      <Execution id="851ae5b2-15cd-46f9-ac1c-3a06dbc306dd" />
+      <TestMethod codeBase="/home/ubuntu/Tendex-AI/backend/tests/TendexAI.Infrastructure.Tests/bin/Debug/net10.0/TendexAI.Infrastructure.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="TendexAI.Infrastructure.Tests.Application.Rfp.Validators.UpdateEvaluationSettingsCommandValidatorTests" name="Validate_TechnicalPassingScoreOutOfRange_ShouldHaveError" />
+    </UnitTest>
+    <UnitTest name="TendexAI.Infrastructure.Tests.Application.Rfp.Validators.CreateCompetitionCommandValidatorTests.Validate_ExcessiveProjectDuration_ShouldHaveError" storage="/home/ubuntu/tendex-ai/backend/tests/tendexai.infrastructure.tests/bin/debug/net10.0/tendexai.infrastructure.tests.dll" id="240ec5f0-dc52-474f-e6c1-a371ee213e8d">
+      <Execution id="03e61ad6-d92c-4570-b07e-08b729d12787" />
+      <TestMethod codeBase="/home/ubuntu/Tendex-AI/backend/tests/TendexAI.Infrastructure.Tests/bin/Debug/net10.0/TendexAI.Infrastructure.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="TendexAI.Infrastructure.Tests.Application.Rfp.Validators.CreateCompetitionCommandValidatorTests" name="Validate_ExcessiveProjectDuration_ShouldHaveError" />
+    </UnitTest>
+    <UnitTest name="TendexAI.Infrastructure.Tests.Domain.Rfp.CompetitionTests.SoftDelete_ApprovedCompetition_ShouldFail" storage="/home/ubuntu/tendex-ai/backend/tests/tendexai.infrastructure.tests/bin/debug/net10.0/tendexai.infrastructure.tests.dll" id="0d6b3dda-5d81-6299-ce16-65ac04ec10df">
+      <Execution id="11dcc7e5-5484-4b84-ac83-90a55dca16d5" />
+      <TestMethod codeBase="/home/ubuntu/Tendex-AI/backend/tests/TendexAI.Infrastructure.Tests/bin/Debug/net10.0/TendexAI.Infrastructure.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="TendexAI.Infrastructure.Tests.Domain.Rfp.CompetitionTests" name="SoftDelete_ApprovedCompetition_ShouldFail" />
+    </UnitTest>
+    <UnitTest name="TendexAI.Infrastructure.Tests.Application.Rfp.Validators.CreateCompetitionCommandValidatorTests.Validate_NullOptionalFields_ShouldNotHaveErrors" storage="/home/ubuntu/tendex-ai/backend/tests/tendexai.infrastructure.tests/bin/debug/net10.0/tendexai.infrastructure.tests.dll" id="75cc3787-8b28-5fe3-309a-4a306b8b0e7c">
+      <Execution id="d852552a-8c4e-4ba5-bfd4-cfb7c4c31355" />
+      <TestMethod codeBase="/home/ubuntu/Tendex-AI/backend/tests/TendexAI.Infrastructure.Tests/bin/Debug/net10.0/TendexAI.Infrastructure.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="TendexAI.Infrastructure.Tests.Application.Rfp.Validators.CreateCompetitionCommandValidatorTests" name="Validate_NullOptionalFields_ShouldNotHaveErrors" />
+    </UnitTest>
+    <UnitTest name="TendexAI.Infrastructure.Tests.Application.Rfp.Validators.CreateCompetitionCommandValidatorTests.Validate_EmptyProjectNameEn_ShouldHaveError" storage="/home/ubuntu/tendex-ai/backend/tests/tendexai.infrastructure.tests/bin/debug/net10.0/tendexai.infrastructure.tests.dll" id="545791de-a123-0f04-289e-636fe2299a7f">
+      <Execution id="2f700342-e1f3-464e-be0e-68ffca5d30d7" />
+      <TestMethod codeBase="/home/ubuntu/Tendex-AI/backend/tests/TendexAI.Infrastructure.Tests/bin/Debug/net10.0/TendexAI.Infrastructure.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="TendexAI.Infrastructure.Tests.Application.Rfp.Validators.CreateCompetitionCommandValidatorTests" name="Validate_EmptyProjectNameEn_ShouldHaveError" />
+    </UnitTest>
+    <UnitTest name="TendexAI.Infrastructure.Tests.Domain.Rfp.CompetitionTests.Reject_FromPendingApproval_ShouldSucceed" storage="/home/ubuntu/tendex-ai/backend/tests/tendexai.infrastructure.tests/bin/debug/net10.0/tendexai.infrastructure.tests.dll" id="1ca8e3dc-661b-345f-6d74-4bfdaa4d5ccc">
+      <Execution id="553f511c-4529-4397-b04a-65ef23e7324f" />
+      <TestMethod codeBase="/home/ubuntu/Tendex-AI/backend/tests/TendexAI.Infrastructure.Tests/bin/Debug/net10.0/TendexAI.Infrastructure.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="TendexAI.Infrastructure.Tests.Domain.Rfp.CompetitionTests" name="Reject_FromPendingApproval_ShouldSucceed" />
+    </UnitTest>
+    <UnitTest name="TendexAI.Infrastructure.Tests.Domain.Rfp.CompetitionTests.Approve_FromDraft_ShouldFail" storage="/home/ubuntu/tendex-ai/backend/tests/tendexai.infrastructure.tests/bin/debug/net10.0/tendexai.infrastructure.tests.dll" id="0136bc93-1af1-1d17-4a25-ea0a87a56ed3">
+      <Execution id="5d4c9509-ab38-4589-bc6c-413a2b62e27d" />
+      <TestMethod codeBase="/home/ubuntu/Tendex-AI/backend/tests/TendexAI.Infrastructure.Tests/bin/Debug/net10.0/TendexAI.Infrastructure.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="TendexAI.Infrastructure.Tests.Domain.Rfp.CompetitionTests" name="Approve_FromDraft_ShouldFail" />
+    </UnitTest>
+    <UnitTest name="TendexAI.Infrastructure.Tests.Domain.Rfp.CompetitionTests.SubmitForApproval_FromApproved_ShouldFail" storage="/home/ubuntu/tendex-ai/backend/tests/tendexai.infrastructure.tests/bin/debug/net10.0/tendexai.infrastructure.tests.dll" id="6ab21822-a164-45bd-027d-9dc06feb5e3d">
+      <Execution id="1e449e0a-e0ae-4d6a-8b70-c6c4dcfdaa2b" />
+      <TestMethod codeBase="/home/ubuntu/Tendex-AI/backend/tests/TendexAI.Infrastructure.Tests/bin/Debug/net10.0/TendexAI.Infrastructure.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="TendexAI.Infrastructure.Tests.Domain.Rfp.CompetitionTests" name="SubmitForApproval_FromApproved_ShouldFail" />
+    </UnitTest>
+    <UnitTest name="TendexAI.Infrastructure.Tests.Application.Rfp.Validators.AutoSaveCompetitionCommandValidatorTests.Validate_EmptyModifiedByUserId_ShouldHaveError" storage="/home/ubuntu/tendex-ai/backend/tests/tendexai.infrastructure.tests/bin/debug/net10.0/tendexai.infrastructure.tests.dll" id="41e7e7a5-1a49-ab6b-b9cc-753cb1cdf1cc">
+      <Execution id="ad1495e3-0888-4ab6-afca-4c6824486ded" />
+      <TestMethod codeBase="/home/ubuntu/Tendex-AI/backend/tests/TendexAI.Infrastructure.Tests/bin/Debug/net10.0/TendexAI.Infrastructure.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="TendexAI.Infrastructure.Tests.Application.Rfp.Validators.AutoSaveCompetitionCommandValidatorTests" name="Validate_EmptyModifiedByUserId_ShouldHaveError" />
+    </UnitTest>
+    <UnitTest name="TendexAI.Infrastructure.Tests.Application.Rfp.Validators.AutoSaveCompetitionCommandValidatorTests.Validate_WizardStepOutOfRange_ShouldHaveError" storage="/home/ubuntu/tendex-ai/backend/tests/tendexai.infrastructure.tests/bin/debug/net10.0/tendexai.infrastructure.tests.dll" id="ea736ac0-e14a-c607-01cc-d5bcee6fe891">
+      <Execution id="10a60ff3-7ecc-44b3-9d6e-583e90c54f34" />
+      <TestMethod codeBase="/home/ubuntu/Tendex-AI/backend/tests/TendexAI.Infrastructure.Tests/bin/Debug/net10.0/TendexAI.Infrastructure.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="TendexAI.Infrastructure.Tests.Application.Rfp.Validators.AutoSaveCompetitionCommandValidatorTests" name="Validate_WizardStepOutOfRange_ShouldHaveError" />
+    </UnitTest>
+    <UnitTest name="TendexAI.Infrastructure.Tests.Application.Rfp.Validators.UpdateEvaluationSettingsCommandValidatorTests.Validate_WeightsNotSumTo100_ShouldHaveError" storage="/home/ubuntu/tendex-ai/backend/tests/tendexai.infrastructure.tests/bin/debug/net10.0/tendexai.infrastructure.tests.dll" id="87609106-495f-fb95-4fdc-bd6f8c5cb9e6">
+      <Execution id="2beb877a-857f-45e9-afaa-ea13570f4efb" />
+      <TestMethod codeBase="/home/ubuntu/Tendex-AI/backend/tests/TendexAI.Infrastructure.Tests/bin/Debug/net10.0/TendexAI.Infrastructure.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="TendexAI.Infrastructure.Tests.Application.Rfp.Validators.UpdateEvaluationSettingsCommandValidatorTests" name="Validate_WeightsNotSumTo100_ShouldHaveError" />
+    </UnitTest>
+    <UnitTest name="TendexAI.Infrastructure.Tests.Application.Rfp.Validators.CreateCompetitionCommandValidatorTests.Validate_ValidCommand_ShouldHaveNoErrors" storage="/home/ubuntu/tendex-ai/backend/tests/tendexai.infrastructure.tests/bin/debug/net10.0/tendexai.infrastructure.tests.dll" id="ef106bcd-2c54-d54d-ac04-e7f568b22ff3">
+      <Execution id="d46bfc80-3187-43a0-9c82-fee9ae2da197" />
+      <TestMethod codeBase="/home/ubuntu/Tendex-AI/backend/tests/TendexAI.Infrastructure.Tests/bin/Debug/net10.0/TendexAI.Infrastructure.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="TendexAI.Infrastructure.Tests.Application.Rfp.Validators.CreateCompetitionCommandValidatorTests" name="Validate_ValidCommand_ShouldHaveNoErrors" />
+    </UnitTest>
+    <UnitTest name="TendexAI.Infrastructure.Tests.Application.Rfp.Validators.UpdateEvaluationSettingsCommandValidatorTests.Validate_EmptyCompetitionId_ShouldHaveError" storage="/home/ubuntu/tendex-ai/backend/tests/tendexai.infrastructure.tests/bin/debug/net10.0/tendexai.infrastructure.tests.dll" id="c5054cb8-a0f6-10fb-ac44-fccd1bb79449">
+      <Execution id="ab3524a4-e787-4529-bea8-3d33bea17e7b" />
+      <TestMethod codeBase="/home/ubuntu/Tendex-AI/backend/tests/TendexAI.Infrastructure.Tests/bin/Debug/net10.0/TendexAI.Infrastructure.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="TendexAI.Infrastructure.Tests.Application.Rfp.Validators.UpdateEvaluationSettingsCommandValidatorTests" name="Validate_EmptyCompetitionId_ShouldHaveError" />
+    </UnitTest>
+    <UnitTest name="TendexAI.Infrastructure.Tests.Domain.Rfp.CompetitionTests.Create_WithTemplateSource_ShouldSetSourceTemplateId" storage="/home/ubuntu/tendex-ai/backend/tests/tendexai.infrastructure.tests/bin/debug/net10.0/tendexai.infrastructure.tests.dll" id="21dfe903-586d-2b0a-2cd7-7e62e633de2e">
+      <Execution id="2e1b7db6-e48a-4e18-b9f5-ad5b24724de7" />
+      <TestMethod codeBase="/home/ubuntu/Tendex-AI/backend/tests/TendexAI.Infrastructure.Tests/bin/Debug/net10.0/TendexAI.Infrastructure.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="TendexAI.Infrastructure.Tests.Domain.Rfp.CompetitionTests" name="Create_WithTemplateSource_ShouldSetSourceTemplateId" />
+    </UnitTest>
+    <UnitTest name="TendexAI.Infrastructure.Tests.Application.Rfp.Validators.CreateCompetitionCommandValidatorTests.Validate_NegativeEstimatedBudget_ShouldHaveError" storage="/home/ubuntu/tendex-ai/backend/tests/tendexai.infrastructure.tests/bin/debug/net10.0/tendexai.infrastructure.tests.dll" id="77bd6545-a895-7a37-3def-53401e76bc8b">
+      <Execution id="66a8a839-24ed-4604-91b6-d7d07bbc0dd6" />
+      <TestMethod codeBase="/home/ubuntu/Tendex-AI/backend/tests/TendexAI.Infrastructure.Tests/bin/Debug/net10.0/TendexAI.Infrastructure.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="TendexAI.Infrastructure.Tests.Application.Rfp.Validators.CreateCompetitionCommandValidatorTests" name="Validate_NegativeEstimatedBudget_ShouldHaveError" />
+    </UnitTest>
+    <UnitTest name="TendexAI.Infrastructure.Tests.Domain.Rfp.CompetitionTests.UpdateEvaluationSettings_WeightsNotSumTo100_ShouldFail" storage="/home/ubuntu/tendex-ai/backend/tests/tendexai.infrastructure.tests/bin/debug/net10.0/tendexai.infrastructure.tests.dll" id="47ab253f-ddb2-8925-ca6c-14e5cb93e35c">
+      <Execution id="ddbc4bef-fd31-4290-8906-b12fbbae5b28" />
+      <TestMethod codeBase="/home/ubuntu/Tendex-AI/backend/tests/TendexAI.Infrastructure.Tests/bin/Debug/net10.0/TendexAI.Infrastructure.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="TendexAI.Infrastructure.Tests.Domain.Rfp.CompetitionTests" name="UpdateEvaluationSettings_WeightsNotSumTo100_ShouldFail" />
+    </UnitTest>
+    <UnitTest name="TendexAI.Infrastructure.Tests.Domain.Rfp.CompetitionTests.AddEvaluationCriterion_ToDraftCompetition_ShouldSucceed" storage="/home/ubuntu/tendex-ai/backend/tests/tendexai.infrastructure.tests/bin/debug/net10.0/tendexai.infrastructure.tests.dll" id="61029d0f-dc56-e9ab-940b-f7d04ff86f8b">
+      <Execution id="15417728-c986-45f5-b534-32154bfe37d2" />
+      <TestMethod codeBase="/home/ubuntu/Tendex-AI/backend/tests/TendexAI.Infrastructure.Tests/bin/Debug/net10.0/TendexAI.Infrastructure.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="TendexAI.Infrastructure.Tests.Domain.Rfp.CompetitionTests" name="AddEvaluationCriterion_ToDraftCompetition_ShouldSucceed" />
+    </UnitTest>
+    <UnitTest name="TendexAI.Infrastructure.Tests.Domain.Rfp.CompetitionTests.AddSection_ToDraftCompetition_ShouldSucceed" storage="/home/ubuntu/tendex-ai/backend/tests/tendexai.infrastructure.tests/bin/debug/net10.0/tendexai.infrastructure.tests.dll" id="1e0561a8-3f33-5c68-c1df-eeab1b76d4b2">
+      <Execution id="2b97f3ce-0127-44d6-a8e4-0b6854b09230" />
+      <TestMethod codeBase="/home/ubuntu/Tendex-AI/backend/tests/TendexAI.Infrastructure.Tests/bin/Debug/net10.0/TendexAI.Infrastructure.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="TendexAI.Infrastructure.Tests.Domain.Rfp.CompetitionTests" name="AddSection_ToDraftCompetition_ShouldSucceed" />
+    </UnitTest>
+    <UnitTest name="TendexAI.Infrastructure.Tests.Domain.Rfp.CompetitionTests.SoftDelete_DraftCompetition_ShouldSucceed" storage="/home/ubuntu/tendex-ai/backend/tests/tendexai.infrastructure.tests/bin/debug/net10.0/tendexai.infrastructure.tests.dll" id="225b7515-c1de-5aa3-6037-e2d47c7f7611">
+      <Execution id="4c2a0d3a-d50b-403c-92b7-2c864f12435f" />
+      <TestMethod codeBase="/home/ubuntu/Tendex-AI/backend/tests/TendexAI.Infrastructure.Tests/bin/Debug/net10.0/TendexAI.Infrastructure.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="TendexAI.Infrastructure.Tests.Domain.Rfp.CompetitionTests" name="SoftDelete_DraftCompetition_ShouldSucceed" />
+    </UnitTest>
+    <UnitTest name="TendexAI.Infrastructure.Tests.Domain.Rfp.CompetitionTests.Cancel_FromDraft_ShouldSucceed" storage="/home/ubuntu/tendex-ai/backend/tests/tendexai.infrastructure.tests/bin/debug/net10.0/tendexai.infrastructure.tests.dll" id="2001096f-5574-b4a6-e446-6dd53d8c1272">
+      <Execution id="73b6c626-3737-4b19-8d73-1524ed081542" />
+      <TestMethod codeBase="/home/ubuntu/Tendex-AI/backend/tests/TendexAI.Infrastructure.Tests/bin/Debug/net10.0/TendexAI.Infrastructure.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="TendexAI.Infrastructure.Tests.Domain.Rfp.CompetitionTests" name="Cancel_FromDraft_ShouldSucceed" />
+    </UnitTest>
+    <UnitTest name="TendexAI.Infrastructure.Tests.Application.Rfp.Validators.CreateCompetitionCommandValidatorTests.Validate_ZeroProjectDuration_ShouldHaveError" storage="/home/ubuntu/tendex-ai/backend/tests/tendexai.infrastructure.tests/bin/debug/net10.0/tendexai.infrastructure.tests.dll" id="7ee006db-4bc5-79a0-d80f-ab2563391004">
+      <Execution id="ce30c78c-37a4-4602-b43b-3c02e017177c" />
+      <TestMethod codeBase="/home/ubuntu/Tendex-AI/backend/tests/TendexAI.Infrastructure.Tests/bin/Debug/net10.0/TendexAI.Infrastructure.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="TendexAI.Infrastructure.Tests.Application.Rfp.Validators.CreateCompetitionCommandValidatorTests" name="Validate_ZeroProjectDuration_ShouldHaveError" />
+    </UnitTest>
+    <UnitTest name="TendexAI.Infrastructure.Tests.Application.Rfp.Validators.CreateCompetitionCommandValidatorTests.Validate_ProjectNameArTooLong_ShouldHaveError" storage="/home/ubuntu/tendex-ai/backend/tests/tendexai.infrastructure.tests/bin/debug/net10.0/tendexai.infrastructure.tests.dll" id="3e976a10-edad-1b44-c1a2-ff206ebee840">
+      <Execution id="a2a43d2e-f6c9-44d9-be17-4cc6b9655b0f" />
+      <TestMethod codeBase="/home/ubuntu/Tendex-AI/backend/tests/TendexAI.Infrastructure.Tests/bin/Debug/net10.0/TendexAI.Infrastructure.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="TendexAI.Infrastructure.Tests.Application.Rfp.Validators.CreateCompetitionCommandValidatorTests" name="Validate_ProjectNameArTooLong_ShouldHaveError" />
+    </UnitTest>
+    <UnitTest name="TendexAI.Infrastructure.Tests.Application.Rfp.Validators.CreateCompetitionCommandValidatorTests.Validate_EmptyProjectNameAr_ShouldHaveError" storage="/home/ubuntu/tendex-ai/backend/tests/tendexai.infrastructure.tests/bin/debug/net10.0/tendexai.infrastructure.tests.dll" id="8ac384f8-0a35-f1eb-1471-f0234380c22d">
+      <Execution id="1bc588e3-19fa-49a5-a412-c88d472e5c85" />
+      <TestMethod codeBase="/home/ubuntu/Tendex-AI/backend/tests/TendexAI.Infrastructure.Tests/bin/Debug/net10.0/TendexAI.Infrastructure.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="TendexAI.Infrastructure.Tests.Application.Rfp.Validators.CreateCompetitionCommandValidatorTests" name="Validate_EmptyProjectNameAr_ShouldHaveError" />
+    </UnitTest>
+    <UnitTest name="TendexAI.Infrastructure.Tests.Domain.Rfp.CompetitionTests.AddSection_ToApprovedCompetition_ShouldFail" storage="/home/ubuntu/tendex-ai/backend/tests/tendexai.infrastructure.tests/bin/debug/net10.0/tendexai.infrastructure.tests.dll" id="bde67e14-5e2d-574f-1d82-c50b77098f43">
+      <Execution id="389eaaa5-4ff2-49a3-be32-5a41a0545adf" />
+      <TestMethod codeBase="/home/ubuntu/Tendex-AI/backend/tests/TendexAI.Infrastructure.Tests/bin/Debug/net10.0/TendexAI.Infrastructure.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="TendexAI.Infrastructure.Tests.Domain.Rfp.CompetitionTests" name="AddSection_ToApprovedCompetition_ShouldFail" />
+    </UnitTest>
+    <UnitTest name="TendexAI.Infrastructure.Tests.Application.Rfp.Validators.CreateCompetitionCommandValidatorTests.Validate_EmptyCreatedByUserId_ShouldHaveError" storage="/home/ubuntu/tendex-ai/backend/tests/tendexai.infrastructure.tests/bin/debug/net10.0/tendexai.infrastructure.tests.dll" id="f7956780-929d-5971-ba59-258d48244204">
+      <Execution id="89a65a46-4225-45b2-9901-cf6c55942816" />
+      <TestMethod codeBase="/home/ubuntu/Tendex-AI/backend/tests/TendexAI.Infrastructure.Tests/bin/Debug/net10.0/TendexAI.Infrastructure.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="TendexAI.Infrastructure.Tests.Application.Rfp.Validators.CreateCompetitionCommandValidatorTests" name="Validate_EmptyCreatedByUserId_ShouldHaveError" />
+    </UnitTest>
+    <UnitTest name="TendexAI.Infrastructure.Tests.Application.Rfp.Validators.AutoSaveCompetitionCommandValidatorTests.Validate_ProjectNameArTooLong_ShouldHaveError" storage="/home/ubuntu/tendex-ai/backend/tests/tendexai.infrastructure.tests/bin/debug/net10.0/tendexai.infrastructure.tests.dll" id="f3ba6ff1-0573-b982-4255-20049679f3ca">
+      <Execution id="dc2349a5-0fc7-4e74-afdf-268b5f8b2473" />
+      <TestMethod codeBase="/home/ubuntu/Tendex-AI/backend/tests/TendexAI.Infrastructure.Tests/bin/Debug/net10.0/TendexAI.Infrastructure.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="TendexAI.Infrastructure.Tests.Application.Rfp.Validators.AutoSaveCompetitionCommandValidatorTests" name="Validate_ProjectNameArTooLong_ShouldHaveError" />
+    </UnitTest>
+    <UnitTest name="TendexAI.Infrastructure.Tests.Domain.Rfp.CompetitionTests.UpdateBasicInfo_OnDraftCompetition_ShouldSucceed" storage="/home/ubuntu/tendex-ai/backend/tests/tendexai.infrastructure.tests/bin/debug/net10.0/tendexai.infrastructure.tests.dll" id="19cb3729-11de-7b31-aee7-ba110c393f4d">
+      <Execution id="5e0244f3-1029-498c-a0e0-a7264b2bec28" />
+      <TestMethod codeBase="/home/ubuntu/Tendex-AI/backend/tests/TendexAI.Infrastructure.Tests/bin/Debug/net10.0/TendexAI.Infrastructure.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="TendexAI.Infrastructure.Tests.Domain.Rfp.CompetitionTests" name="UpdateBasicInfo_OnDraftCompetition_ShouldSucceed" />
+    </UnitTest>
+    <UnitTest name="TendexAI.Infrastructure.Tests.Domain.Rfp.CompetitionTests.RecordAutoSave_ShouldUpdateTimestampAndVersion" storage="/home/ubuntu/tendex-ai/backend/tests/tendexai.infrastructure.tests/bin/debug/net10.0/tendexai.infrastructure.tests.dll" id="dff77b23-4523-04fb-ff4a-4acda4921c05">
+      <Execution id="8756d8c6-da5d-4374-b423-285c5c4413ef" />
+      <TestMethod codeBase="/home/ubuntu/Tendex-AI/backend/tests/TendexAI.Infrastructure.Tests/bin/Debug/net10.0/TendexAI.Infrastructure.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="TendexAI.Infrastructure.Tests.Domain.Rfp.CompetitionTests" name="RecordAutoSave_ShouldUpdateTimestampAndVersion" />
+    </UnitTest>
+    <UnitTest name="TendexAI.Infrastructure.Tests.Domain.Rfp.CompetitionTests.AddBoqItem_ToDraftCompetition_ShouldSucceed" storage="/home/ubuntu/tendex-ai/backend/tests/tendexai.infrastructure.tests/bin/debug/net10.0/tendexai.infrastructure.tests.dll" id="dcbd496c-d64c-07c5-89f6-bcc571bd24aa">
+      <Execution id="aef3c033-050b-4062-b71d-99dc4c34b95b" />
+      <TestMethod codeBase="/home/ubuntu/Tendex-AI/backend/tests/TendexAI.Infrastructure.Tests/bin/Debug/net10.0/TendexAI.Infrastructure.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="TendexAI.Infrastructure.Tests.Domain.Rfp.CompetitionTests" name="AddBoqItem_ToDraftCompetition_ShouldSucceed" />
+    </UnitTest>
+    <UnitTest name="TendexAI.Infrastructure.Tests.Application.Rfp.Validators.AutoSaveCompetitionCommandValidatorTests.Validate_EmptyCompetitionId_ShouldHaveError" storage="/home/ubuntu/tendex-ai/backend/tests/tendexai.infrastructure.tests/bin/debug/net10.0/tendexai.infrastructure.tests.dll" id="21463409-9c72-6368-c047-fb7aa0925780">
+      <Execution id="54a951ac-cefa-49b9-9458-2fb5fe912da6" />
+      <TestMethod codeBase="/home/ubuntu/Tendex-AI/backend/tests/TendexAI.Infrastructure.Tests/bin/Debug/net10.0/TendexAI.Infrastructure.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="TendexAI.Infrastructure.Tests.Application.Rfp.Validators.AutoSaveCompetitionCommandValidatorTests" name="Validate_EmptyCompetitionId_ShouldHaveError" />
+    </UnitTest>
+    <UnitTest name="TendexAI.Infrastructure.Tests.Application.Rfp.Validators.CreateCompetitionCommandValidatorTests.Validate_PastSubmissionDeadline_ShouldHaveError" storage="/home/ubuntu/tendex-ai/backend/tests/tendexai.infrastructure.tests/bin/debug/net10.0/tendexai.infrastructure.tests.dll" id="9b6fa249-925b-836f-a4bf-55cb95cf6e29">
+      <Execution id="e9ad5487-42e0-4ab0-ac2d-55ac0aedde48" />
+      <TestMethod codeBase="/home/ubuntu/Tendex-AI/backend/tests/TendexAI.Infrastructure.Tests/bin/Debug/net10.0/TendexAI.Infrastructure.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="TendexAI.Infrastructure.Tests.Application.Rfp.Validators.CreateCompetitionCommandValidatorTests" name="Validate_PastSubmissionDeadline_ShouldHaveError" />
+    </UnitTest>
+    <UnitTest name="TendexAI.Infrastructure.Tests.Domain.Rfp.CompetitionTests.SubmitForApproval_FromDraft_ShouldSucceed" storage="/home/ubuntu/tendex-ai/backend/tests/tendexai.infrastructure.tests/bin/debug/net10.0/tendexai.infrastructure.tests.dll" id="642bcf10-4825-d326-af10-a87fc7694a19">
+      <Execution id="382b9967-7081-4055-ae32-21e954ee0f2e" />
+      <TestMethod codeBase="/home/ubuntu/Tendex-AI/backend/tests/TendexAI.Infrastructure.Tests/bin/Debug/net10.0/TendexAI.Infrastructure.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="TendexAI.Infrastructure.Tests.Domain.Rfp.CompetitionTests" name="SubmitForApproval_FromDraft_ShouldSucceed" />
+    </UnitTest>
+    <UnitTest name="TendexAI.Infrastructure.Tests.Application.Rfp.Validators.AutoSaveCompetitionCommandValidatorTests.Validate_ValidAutoSaveCommand_ShouldHaveNoErrors" storage="/home/ubuntu/tendex-ai/backend/tests/tendexai.infrastructure.tests/bin/debug/net10.0/tendexai.infrastructure.tests.dll" id="ea8533ac-bc3e-8920-2d3a-2233309e7e9c">
+      <Execution id="850b705d-bc40-4f59-a33f-3e124f301d4b" />
+      <TestMethod codeBase="/home/ubuntu/Tendex-AI/backend/tests/TendexAI.Infrastructure.Tests/bin/Debug/net10.0/TendexAI.Infrastructure.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner3/netcore/" className="TendexAI.Infrastructure.Tests.Application.Rfp.Validators.AutoSaveCompetitionCommandValidatorTests" name="Validate_ValidAutoSaveCommand_ShouldHaveNoErrors" />
+    </UnitTest>
+  </TestDefinitions>
+  <TestEntries>
+    <TestEntry testId="368bb0cc-55e5-067c-1725-8d15c2a9168d" executionId="0ddcef66-e592-4e39-b9ce-ab7173c0dcce" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="c5054cb8-a0f6-10fb-ac44-fccd1bb79449" executionId="ab3524a4-e787-4529-bea8-3d33bea17e7b" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="f7956780-929d-5971-ba59-258d48244204" executionId="89a65a46-4225-45b2-9901-cf6c55942816" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="642bcf10-4825-d326-af10-a87fc7694a19" executionId="382b9967-7081-4055-ae32-21e954ee0f2e" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="21463409-9c72-6368-c047-fb7aa0925780" executionId="54a951ac-cefa-49b9-9458-2fb5fe912da6" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="dff77b23-4523-04fb-ff4a-4acda4921c05" executionId="8756d8c6-da5d-4374-b423-285c5c4413ef" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="7ac5edd5-f7e5-ceb7-c7d9-41b6b2b88f17" executionId="abea07c3-fb92-47a2-bccc-7922f69324ad" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="ef106bcd-2c54-d54d-ac04-e7f568b22ff3" executionId="d46bfc80-3187-43a0-9c82-fee9ae2da197" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="41e7e7a5-1a49-ab6b-b9cc-753cb1cdf1cc" executionId="ad1495e3-0888-4ab6-afca-4c6824486ded" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="8ac384f8-0a35-f1eb-1471-f0234380c22d" executionId="1bc588e3-19fa-49a5-a412-c88d472e5c85" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="7ee006db-4bc5-79a0-d80f-ab2563391004" executionId="ce30c78c-37a4-4602-b43b-3c02e017177c" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="77bd6545-a895-7a37-3def-53401e76bc8b" executionId="66a8a839-24ed-4604-91b6-d7d07bbc0dd6" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="225b7515-c1de-5aa3-6037-e2d47c7f7611" executionId="4c2a0d3a-d50b-403c-92b7-2c864f12435f" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="bde67e14-5e2d-574f-1d82-c50b77098f43" executionId="389eaaa5-4ff2-49a3-be32-5a41a0545adf" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="2001096f-5574-b4a6-e446-6dd53d8c1272" executionId="73b6c626-3737-4b19-8d73-1524ed081542" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="0d6b3dda-5d81-6299-ce16-65ac04ec10df" executionId="11dcc7e5-5484-4b84-ac83-90a55dca16d5" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="dcbd496c-d64c-07c5-89f6-bcc571bd24aa" executionId="aef3c033-050b-4062-b71d-99dc4c34b95b" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="75cc3787-8b28-5fe3-309a-4a306b8b0e7c" executionId="d852552a-8c4e-4ba5-bfd4-cfb7c4c31355" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="d462f616-1362-2cbc-2848-f07abdbfeba9" executionId="4062aed5-ffa1-4f5b-8e9b-63f62c13b4f1" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="731d3e46-0613-6ab6-5734-fa9c78d958c1" executionId="851ae5b2-15cd-46f9-ac1c-3a06dbc306dd" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="ea736ac0-e14a-c607-01cc-d5bcee6fe891" executionId="10a60ff3-7ecc-44b3-9d6e-583e90c54f34" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="240ec5f0-dc52-474f-e6c1-a371ee213e8d" executionId="03e61ad6-d92c-4570-b07e-08b729d12787" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="5502bb76-f33f-9ace-30f7-5117fef08ff5" executionId="fd42dc1a-21c6-4fdf-b7c4-16ecac744bdc" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="21dfe903-586d-2b0a-2cd7-7e62e633de2e" executionId="2e1b7db6-e48a-4e18-b9f5-ad5b24724de7" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="575d44ad-87e0-2d80-c63a-51d08d2fd7e8" executionId="75f821b4-97e1-4b69-8d78-fd67185abdb4" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="e75e6775-b9fe-bf0e-ca5c-fa49143b44f6" executionId="3c298494-d753-4aec-a0f1-ed4d9d8972a3" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="0424fd3e-5e28-d2b8-3627-7843059415b9" executionId="50da4200-8ca7-4376-ac5c-d96714ea7093" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="0c9c2e6f-ce8c-bfcc-ae2a-ec20702ea925" executionId="e2daa90b-38c0-4bda-b44b-31aee014def8" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="853c5cb2-1eb7-1162-d719-f537fe4f885d" executionId="36b53612-90e0-47bc-959f-a34d0dc5d069" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="f3ba6ff1-0573-b982-4255-20049679f3ca" executionId="dc2349a5-0fc7-4e74-afdf-268b5f8b2473" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="9b6fa249-925b-836f-a4bf-55cb95cf6e29" executionId="e9ad5487-42e0-4ab0-ac2d-55ac0aedde48" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="ea8533ac-bc3e-8920-2d3a-2233309e7e9c" executionId="850b705d-bc40-4f59-a33f-3e124f301d4b" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="1e0561a8-3f33-5c68-c1df-eeab1b76d4b2" executionId="2b97f3ce-0127-44d6-a8e4-0b6854b09230" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="593422f0-0412-1e80-47d0-66dead489802" executionId="8a911948-cbb7-4b95-8e38-d1dcea10eb0d" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="19cb3729-11de-7b31-aee7-ba110c393f4d" executionId="5e0244f3-1029-498c-a0e0-a7264b2bec28" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="1ca8e3dc-661b-345f-6d74-4bfdaa4d5ccc" executionId="553f511c-4529-4397-b04a-65ef23e7324f" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="3e976a10-edad-1b44-c1a2-ff206ebee840" executionId="a2a43d2e-f6c9-44d9-be17-4cc6b9655b0f" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="6ab21822-a164-45bd-027d-9dc06feb5e3d" executionId="1e449e0a-e0ae-4d6a-8b70-c6c4dcfdaa2b" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="0136bc93-1af1-1d17-4a25-ea0a87a56ed3" executionId="5d4c9509-ab38-4589-bc6c-413a2b62e27d" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="87609106-495f-fb95-4fdc-bd6f8c5cb9e6" executionId="2beb877a-857f-45e9-afaa-ea13570f4efb" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="545791de-a123-0f04-289e-636fe2299a7f" executionId="2f700342-e1f3-464e-be0e-68ffca5d30d7" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="6ee2c8e6-4459-24d0-fd3c-0a0870b9c839" executionId="f0994c40-6b8c-4475-ae3c-572d0ebabb97" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="47ab253f-ddb2-8925-ca6c-14e5cb93e35c" executionId="ddbc4bef-fd31-4290-8906-b12fbbae5b28" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="61029d0f-dc56-e9ab-940b-f7d04ff86f8b" executionId="15417728-c986-45f5-b534-32154bfe37d2" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+  </TestEntries>
+  <TestLists>
+    <TestList name="Results Not in a List" id="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestList name="All Loaded Results" id="19431567-8539-422a-85d7-44ee4e166bda" />
+  </TestLists>
+  <ResultSummary outcome="Failed">
+    <Counters total="44" executed="44" passed="38" failed="6" error="0" timeout="0" aborted="0" inconclusive="0" passedButRunAborted="0" notRunnable="0" notExecuted="0" disconnected="0" warning="0" completed="0" inProgress="0" pending="0" />
+    <Output>
+      <StdOut>[xUnit.net 00:00:00.00] xUnit.net VSTest Adapter v3.1.4+50e68bbb8b (64-bit .NET 10.0.5)
+[xUnit.net 00:00:00.11]   Discovering: TendexAI.Infrastructure.Tests
+[xUnit.net 00:00:00.65]   Discovered:  TendexAI.Infrastructure.Tests
+[xUnit.net 00:00:00.69]   Starting:    TendexAI.Infrastructure.Tests
+     Warning:
+     The component "Fluent Assertions" is governed by the rules defined in the Xceed License Agreement and
+     the Xceed Fluent Assertions Community License. You may use Fluent Assertions free of charge for
+     non-commercial use only. An active subscription is required to use Fluent Assertions for commercial use.
+     Please contact Xceed Sales mailto:sales@xceed.com to acquire a subscription at a very low cost.
+     A paid commercial license supports the development and continued increasing support of
+     Fluent Assertions users under both commercial and community licenses. Help us
+     keep Fluent Assertions at the forefront of unit testing.
+     For more information, visit https://xceed.com/products/unit-testing/fluent-assertions/
+[xUnit.net 00:00:05.16]       Expected result.IsFailure to be True, but found False.
+[xUnit.net 00:00:05.16]       Stack Trace:
+[xUnit.net 00:00:05.16]            at FluentAssertions.Execution.LateBoundTestFramework.Throw(String message)
+[xUnit.net 00:00:05.16]            at FluentAssertions.Execution.DefaultAssertionStrategy.HandleFailure(String message)
+[xUnit.net 00:00:05.16]            at FluentAssertions.Execution.AssertionScope.AddPreFormattedFailure(String formattedFailureMessage)
+[xUnit.net 00:00:05.16]            at FluentAssertions.Execution.AssertionChain.FailWith(Func`1 getFailureReason)
+[xUnit.net 00:00:05.16]            at FluentAssertions.Execution.AssertionChain.FailWith(Func`1 getFailureReason)
+[xUnit.net 00:00:05.16]            at FluentAssertions.Execution.AssertionChain.FailWith(String message, Object[] args)
+[xUnit.net 00:00:05.16]            at FluentAssertions.Primitives.BooleanAssertions`1.BeTrue(String because, Object[] becauseArgs)
+[xUnit.net 00:00:05.16]         /home/ubuntu/Tendex-AI/backend/tests/TendexAI.Infrastructure.Tests/Domain/Rfp/CompetitionTests.cs(316,0): at TendexAI.Infrastructure.Tests.Domain.Rfp.CompetitionTests.AddSection_ToApprovedCompetition_ShouldFail()
+[xUnit.net 00:00:05.16]            at System.Reflection.MethodBaseInvoker.InterpretedInvoke_Method(Object obj, IntPtr* args)
+[xUnit.net 00:00:05.16]            at System.Reflection.RuntimeMethodInfo.Invoke(Object obj, BindingFlags invokeAttr, Binder binder, Object[] parameters, CultureInfo culture)
+[xUnit.net 00:00:05.17]       Expected result.IsSuccess to be True, but found False.
+[xUnit.net 00:00:15.13]       Stack Trace:
+[xUnit.net 00:00:15.13]            at FluentAssertions.Execution.LateBoundTestFramework.Throw(String message)
+[xUnit.net 00:00:15.13]            at FluentAssertions.Execution.DefaultAssertionStrategy.HandleFailure(String message)
+[xUnit.net 00:00:15.13]            at FluentAssertions.Execution.AssertionScope.AddPreFormattedFailure(String formattedFailureMessage)
+[xUnit.net 00:00:15.13]            at FluentAssertions.Execution.AssertionChain.FailWith(Func`1 getFailureReason)
+[xUnit.net 00:00:15.13]            at FluentAssertions.Execution.AssertionChain.FailWith(Func`1 getFailureReason)
+[xUnit.net 00:00:15.13]            at FluentAssertions.Execution.AssertionChain.FailWith(String message, Object[] args)
+[xUnit.net 00:00:15.13]            at FluentAssertions.Primitives.BooleanAssertions`1.BeTrue(String because, Object[] becauseArgs)
+[xUnit.net 00:00:15.13]         /home/ubuntu/Tendex-AI/backend/tests/TendexAI.Infrastructure.Tests/Domain/Rfp/CompetitionTests.cs(158,0): at TendexAI.Infrastructure.Tests.Domain.Rfp.CompetitionTests.Approve_FromPendingApproval_ShouldSucceed()
+[xUnit.net 00:00:15.13]            at System.Reflection.MethodBaseInvoker.InterpretedInvoke_Method(Object obj, IntPtr* args)
+[xUnit.net 00:00:15.13]            at System.Reflection.RuntimeMethodInfo.Invoke(Object obj, BindingFlags invokeAttr, Binder binder, Object[] parameters, CultureInfo culture)
+[xUnit.net 00:00:15.13]       Expected result.IsFailure to be True, but found False.
+[xUnit.net 00:00:15.13]       Stack Trace:
+[xUnit.net 00:00:15.13]            at FluentAssertions.Execution.LateBoundTestFramework.Throw(String message)
+[xUnit.net 00:00:15.13]            at FluentAssertions.Execution.DefaultAssertionStrategy.HandleFailure(String message)
+[xUnit.net 00:00:15.13]            at FluentAssertions.Execution.AssertionScope.AddPreFormattedFailure(String formattedFailureMessage)
+[xUnit.net 00:00:15.13]            at FluentAssertions.Execution.AssertionChain.FailWith(Func`1 getFailureReason)
+[xUnit.net 00:00:15.13]            at FluentAssertions.Execution.AssertionChain.FailWith(Func`1 getFailureReason)
+[xUnit.net 00:00:15.13]            at FluentAssertions.Execution.AssertionChain.FailWith(String message, Object[] args)
+[xUnit.net 00:00:15.13]            at FluentAssertions.Primitives.BooleanAssertions`1.BeTrue(String because, Object[] becauseArgs)
+[xUnit.net 00:00:15.13]         /home/ubuntu/Tendex-AI/backend/tests/TendexAI.Infrastructure.Tests/Domain/Rfp/CompetitionTests.cs(114,0): at TendexAI.Infrastructure.Tests.Domain.Rfp.CompetitionTests.UpdateBasicInfo_OnApprovedCompetition_ShouldFail()
+[xUnit.net 00:00:15.13]            at System.Reflection.MethodBaseInvoker.InterpretedInvoke_Method(Object obj, IntPtr* args)
+[xUnit.net 00:00:15.13]            at System.Reflection.RuntimeMethodInfo.Invoke(Object obj, BindingFlags invokeAttr, Binder binder, Object[] parameters, CultureInfo culture)
+[xUnit.net 00:00:15.14]       Expected result.IsFailure to be True, but found False.
+[xUnit.net 00:00:15.14]       Stack Trace:
+[xUnit.net 00:00:15.14]            at FluentAssertions.Execution.LateBoundTestFramework.Throw(String message)
+[xUnit.net 00:00:15.14]            at FluentAssertions.Execution.DefaultAssertionStrategy.HandleFailure(String message)
+[xUnit.net 00:00:15.14]            at FluentAssertions.Execution.AssertionScope.AddPreFormattedFailure(String formattedFailureMessage)
+[xUnit.net 00:00:15.14]            at FluentAssertions.Execution.AssertionChain.FailWith(Func`1 getFailureReason)
+[xUnit.net 00:00:15.14]            at FluentAssertions.Execution.AssertionChain.FailWith(Func`1 getFailureReason)
+[xUnit.net 00:00:15.14]            at FluentAssertions.Execution.AssertionChain.FailWith(String message, Object[] args)
+[xUnit.net 00:00:15.14]            at FluentAssertions.Primitives.BooleanAssertions`1.BeTrue(String because, Object[] becauseArgs)
+[xUnit.net 00:00:15.14]         /home/ubuntu/Tendex-AI/backend/tests/TendexAI.Infrastructure.Tests/Domain/Rfp/CompetitionTests.cs(234,0): at TendexAI.Infrastructure.Tests.Domain.Rfp.CompetitionTests.SoftDelete_ApprovedCompetition_ShouldFail()
+[xUnit.net 00:00:15.14]            at System.Reflection.MethodBaseInvoker.InterpretedInvoke_Method(Object obj, IntPtr* args)
+[xUnit.net 00:00:15.14]            at System.Reflection.RuntimeMethodInfo.Invoke(Object obj, BindingFlags invokeAttr, Binder binder, Object[] parameters, CultureInfo culture)
+[xUnit.net 00:00:15.14]       Expected result.IsSuccess to be True, but found False.
+[xUnit.net 00:00:15.14]       Stack Trace:
+[xUnit.net 00:00:15.14]            at FluentAssertions.Execution.LateBoundTestFramework.Throw(String message)
+[xUnit.net 00:00:15.14]            at FluentAssertions.Execution.DefaultAssertionStrategy.HandleFailure(String message)
+[xUnit.net 00:00:15.14]            at FluentAssertions.Execution.AssertionScope.AddPreFormattedFailure(String formattedFailureMessage)
+[xUnit.net 00:00:15.14]            at FluentAssertions.Execution.AssertionChain.FailWith(Func`1 getFailureReason)
+[xUnit.net 00:00:15.14]            at FluentAssertions.Execution.AssertionChain.FailWith(Func`1 getFailureReason)
+[xUnit.net 00:00:15.14]            at FluentAssertions.Execution.AssertionChain.FailWith(String message, Object[] args)
+[xUnit.net 00:00:15.14]            at FluentAssertions.Primitives.BooleanAssertions`1.BeTrue(String because, Object[] becauseArgs)
+[xUnit.net 00:00:15.14]         /home/ubuntu/Tendex-AI/backend/tests/TendexAI.Infrastructure.Tests/Domain/Rfp/CompetitionTests.cs(188,0): at TendexAI.Infrastructure.Tests.Domain.Rfp.CompetitionTests.Reject_FromPendingApproval_ShouldSucceed()
+[xUnit.net 00:00:15.14]            at System.Reflection.MethodBaseInvoker.InterpretedInvoke_Method(Object obj, IntPtr* args)
+[xUnit.net 00:00:15.14]            at System.Reflection.RuntimeMethodInfo.Invoke(Object obj, BindingFlags invokeAttr, Binder binder, Object[] parameters, CultureInfo culture)
+[xUnit.net 00:00:15.14]       Expected result.IsSuccess to be True, but found False.
+[xUnit.net 00:00:15.14]       Stack Trace:
+[xUnit.net 00:00:15.14]            at FluentAssertions.Execution.LateBoundTestFramework.Throw(String message)
+[xUnit.net 00:00:15.14]            at FluentAssertions.Execution.DefaultAssertionStrategy.HandleFailure(String message)
+[xUnit.net 00:00:15.14]            at FluentAssertions.Execution.AssertionScope.AddPreFormattedFailure(String formattedFailureMessage)
+[xUnit.net 00:00:15.14]            at FluentAssertions.Execution.AssertionChain.FailWith(Func`1 getFailureReason)
+[xUnit.net 00:00:15.14]            at FluentAssertions.Execution.AssertionChain.FailWith(Func`1 getFailureReason)
+[xUnit.net 00:00:15.15]            at FluentAssertions.Execution.AssertionChain.FailWith(String message, Object[] args)
+[xUnit.net 00:00:15.15]            at FluentAssertions.Primitives.BooleanAssertions`1.BeTrue(String because, Object[] becauseArgs)
+[xUnit.net 00:00:15.15]         /home/ubuntu/Tendex-AI/backend/tests/TendexAI.Infrastructure.Tests/Domain/Rfp/CompetitionTests.cs(130,0): at TendexAI.Infrastructure.Tests.Domain.Rfp.CompetitionTests.SubmitForApproval_FromDraft_ShouldSucceed()
+[xUnit.net 00:00:15.15]            at System.Reflection.MethodBaseInvoker.InterpretedInvoke_Method(Object obj, IntPtr* args)
+[xUnit.net 00:00:15.15]            at System.Reflection.RuntimeMethodInfo.Invoke(Object obj, BindingFlags invokeAttr, Binder binder, Object[] parameters, CultureInfo culture)
+[xUnit.net 00:00:15.21]   Finished:    TendexAI.Infrastructure.Tests
+</StdOut>
+    </Output>
+    <RunInfos>
+      <RunInfo computerName="72be4d1f2e00" outcome="Error" timestamp="2026-03-27T23:09:16.1120993-04:00">
+        <Text>[xUnit.net 00:00:05.16]     TendexAI.Infrastructure.Tests.Domain.Rfp.CompetitionTests.AddSection_ToApprovedCompetition_ShouldFail [FAIL]</Text>
+      </RunInfo>
+      <RunInfo computerName="72be4d1f2e00" outcome="Error" timestamp="2026-03-27T23:09:16.1206754-04:00">
+        <Text>[xUnit.net 00:00:05.17]     TendexAI.Infrastructure.Tests.Domain.Rfp.CompetitionTests.Approve_FromPendingApproval_ShouldSucceed [FAIL]</Text>
+      </RunInfo>
+      <RunInfo computerName="72be4d1f2e00" outcome="Error" timestamp="2026-03-27T23:09:26.0872028-04:00">
+        <Text>[xUnit.net 00:00:15.13]     TendexAI.Infrastructure.Tests.Domain.Rfp.CompetitionTests.UpdateBasicInfo_OnApprovedCompetition_ShouldFail [FAIL]</Text>
+      </RunInfo>
+      <RunInfo computerName="72be4d1f2e00" outcome="Error" timestamp="2026-03-27T23:09:26.0912558-04:00">
+        <Text>[xUnit.net 00:00:15.14]     TendexAI.Infrastructure.Tests.Domain.Rfp.CompetitionTests.SoftDelete_ApprovedCompetition_ShouldFail [FAIL]</Text>
+      </RunInfo>
+      <RunInfo computerName="72be4d1f2e00" outcome="Error" timestamp="2026-03-27T23:09:26.0926091-04:00">
+        <Text>[xUnit.net 00:00:15.14]     TendexAI.Infrastructure.Tests.Domain.Rfp.CompetitionTests.Reject_FromPendingApproval_ShouldSucceed [FAIL]</Text>
+      </RunInfo>
+      <RunInfo computerName="72be4d1f2e00" outcome="Error" timestamp="2026-03-27T23:09:26.1002849-04:00">
+        <Text>[xUnit.net 00:00:15.14]     TendexAI.Infrastructure.Tests.Domain.Rfp.CompetitionTests.SubmitForApproval_FromDraft_ShouldSucceed [FAIL]</Text>
+      </RunInfo>
+    </RunInfos>
+  </ResultSummary>
+</TestRun>

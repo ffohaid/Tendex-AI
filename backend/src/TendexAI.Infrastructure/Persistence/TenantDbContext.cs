@@ -1,15 +1,13 @@
 using Microsoft.EntityFrameworkCore;
 using TendexAI.Domain.Common;
 using TendexAI.Domain.Entities.Identity;
+using TendexAI.Domain.Entities.Rfp;
 
 namespace TendexAI.Infrastructure.Persistence;
 
 /// <summary>
 /// Database context for tenant-specific (isolated) databases.
 /// Each government entity gets its own SQL Server database (Database-per-Tenant model).
-/// 
-/// This context will be extended in future sprints to include tenant-specific entities
-/// such as RFPs, Committees, Evaluations, etc.
 /// 
 /// The connection string is resolved at runtime based on the current tenant context.
 /// </summary>
@@ -30,6 +28,13 @@ public sealed class TenantDbContext : DbContext, IUnitOfWork
     public DbSet<MfaRecoveryCode> MfaRecoveryCodes => Set<MfaRecoveryCode>();
     public DbSet<AuditLog> AuditLogs => Set<AuditLog>();
     public DbSet<UserInvitation> UserInvitations => Set<UserInvitation>();
+
+    // ----- RFP (Competition) DbSets -----
+    public DbSet<Competition> Competitions => Set<Competition>();
+    public DbSet<RfpSection> RfpSections => Set<RfpSection>();
+    public DbSet<BoqItem> BoqItems => Set<BoqItem>();
+    public DbSet<EvaluationCriterion> EvaluationCriteria => Set<EvaluationCriterion>();
+    public DbSet<RfpAttachment> RfpAttachments => Set<RfpAttachment>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

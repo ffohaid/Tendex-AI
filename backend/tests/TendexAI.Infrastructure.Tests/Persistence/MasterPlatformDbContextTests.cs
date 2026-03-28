@@ -168,8 +168,9 @@ public sealed class MasterPlatformDbContextTests : IDisposable
             nameAr: "وزارة المالية",
             nameEn: "Ministry of Finance",
             identifier: "MOF",
-            connectionString: "Server=localhost;Database=tenant_mof;",
-            databaseName: "tenant_mof");
+            subdomain: "mof",
+            databaseName: "tenant_mof",
+            encryptedConnectionString: "Server=localhost;Database=tenant_mof;");
 
         // Act
         _context.Tenants.Add(tenant);
@@ -182,7 +183,7 @@ public sealed class MasterPlatformDbContextTests : IDisposable
         Assert.NotNull(retrieved);
         Assert.Equal("وزارة المالية", retrieved.NameAr);
         Assert.Equal("Ministry of Finance", retrieved.NameEn);
-        Assert.Equal(TenantStatus.Pending, retrieved.Status);
+        Assert.Equal(TenantStatus.PendingProvisioning, retrieved.Status);
     }
 
     [Fact]
@@ -193,8 +194,9 @@ public sealed class MasterPlatformDbContextTests : IDisposable
             nameAr: "وزارة الصحة",
             nameEn: "Ministry of Health",
             identifier: "MOH",
-            connectionString: "Server=localhost;Database=tenant_moh;",
-            databaseName: "tenant_moh");
+            subdomain: "moh",
+            databaseName: "tenant_moh",
+            encryptedConnectionString: "Server=localhost;Database=tenant_moh;");
 
         _context.Tenants.Add(tenant);
         await _context.SaveChangesAsync();
@@ -228,8 +230,9 @@ public sealed class MasterPlatformDbContextTests : IDisposable
             nameAr: "وزارة التعليم",
             nameEn: "Ministry of Education",
             identifier: "MOE",
-            connectionString: "Server=localhost;Database=tenant_moe;",
-            databaseName: "tenant_moe");
+            subdomain: "moe",
+            databaseName: "tenant_moe",
+            encryptedConnectionString: "Server=localhost;Database=tenant_moe;");
 
         _context.Tenants.Add(tenant);
         await _context.SaveChangesAsync();

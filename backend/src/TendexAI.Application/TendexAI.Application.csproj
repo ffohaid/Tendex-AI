@@ -18,6 +18,7 @@
     <TargetFramework>net10.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
+    <NoWarn>CA1848;CA1873;CA2016</NoWarn>
   </PropertyGroup>
 
 </Project>

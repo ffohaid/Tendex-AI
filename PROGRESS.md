@@ -9,7 +9,7 @@
 | Sprint 0: التخطيط وإدارة المنتج | ✅ مكتمل | 100% | تم إعداد خطة التنفيذ (Sprint Backlog) وقوالب العمل. |
 | Sprint 1: البنية التحتية | ✅ مكتمل | 100% | تم إنجاز TASK-101, TASK-102, TASK-103, TASK-104, TASK-105, TASK-106 |
 | Sprint 2: الخدمات الأساسية | 🔄 قيد التنفيذ | 86% | تم إنجاز TASK-201, TASK-202, TASK-203, TASK-204, TASK-205, TASK-206 |
-| Sprint 3: سير العمل والتقييم | ⏳ لم يبدأ | 0% | - |
+| Sprint 3: سير العمل والتقييم | 🔄 قيد التنفيذ | 14% | تم إنجاز TASK-301 |
 | Sprint 4: تكامل الذكاء الاصطناعي | ⏳ لم يبدأ | 0% | - |
 | Sprint 5: الواجهة الأمامية | ⏳ لم يبدأ | 0% | - |
 | Sprint 6: لوحة تحكم المشغل | ⏳ لم يبدأ | 0% | - |
@@ -20,6 +20,70 @@
 ## سجل المهام المنجزة (Completed Tasks Log)
 
 *يرجى إضافة أحدث مهمة منجزة في أعلى هذه القائمة.*
+
+### 2026-03-28 - TASK-301: تطوير APIs لإنشاء وإدارة كراسات الشروط والمواصفات (RFP)
+- **ما تم إنجازه:**
+  - **طبقة Domain:**
+    - إنشاء كيان `Competition` (AggregateRoot) مع دعم كامل لدورة حياة المنافسة: Draft, UnderPreparation, PendingApproval, Approved, Rejected, Published, ReceivingOffers, EvaluationInProgress, Awarded, ContractSigned, Cancelled.
+    - إنشاء كيانات فرعية: `RfpSection`, `BoqItem`, `EvaluationCriterion`, `RfpAttachment`.
+    - إنشاء Enums: `CompetitionStatus`, `CompetitionType`, `RfpCreationMethod`, `RfpSectionType`, `BoqItemUnit`, `TextColorType`.
+    - إنشاء Domain Events: `CompetitionCreatedEvent`, `CompetitionStatusChangedEvent`.
+    - إنشاء `ICompetitionRepository` interface.
+    - دعم Auto-save مع تتبع `LastAutoSavedAt`, `CurrentWizardStep`, `Version`.
+    - دعم Soft Delete مع `IsDeleted`, `DeletedAt`, `DeletedBy`.
+  - **طبقة Application (CQRS + FluentValidation):**
+    - **Commands (10):**
+      - `CreateCompetitionCommand` - إنشاء منافسة جديدة مع توليد رقم مرجعي تلقائي.
+      - `UpdateCompetitionCommand` - تحديث البيانات الأساسية.
+      - `AutoSaveCompetitionCommand` - حفظ تلقائي للمسودات مع تحقق خفيف.
+      - `ChangeCompetitionStatusCommand` - تغيير حالة المنافسة (Submit, Approve, Reject, Cancel).
+      - `DeleteCompetitionCommand` - حذف ناعم (Soft Delete).
+      - `UpdateEvaluationSettingsCommand` - تحديث أوزان التقييم الفني/المالي.
+      - `AddRfpSectionCommand` / `UpdateRfpSectionCommand` - إدارة أقسام كراسة الشروط.
+      - `AddBoqItemCommand` - إضافة بنود جدول الكميات.
+      - `AddEvaluationCriterionCommand` - إضافة معايير التقييم.
+    - **Queries (2):**
+      - `GetCompetitionByIdQuery` - جلب تفاصيل منافسة مع جميع العلاقات (Sections, BOQ, Criteria, Attachments).
+      - `GetCompetitionsListQuery` - قائمة مرقمة مع بحث وفلترة حسب الحالة.
+    - **Validators (8):** تحقق شامل باستخدام FluentValidation لجميع الأوامر.
+    - **DTOs:** `CompetitionDto`, `CompetitionListItemDto`, `RfpSectionDto`, `BoqItemDto`, `EvaluationCriterionDto`, `RfpAttachmentDto`.
+    - **Mapper:** `CompetitionMapper` لتحويل Entities إلى DTOs.
+    - **LoggerMessage:** `RfpLogMessages` باستخدام High-performance LoggerMessage delegates.
+  - **طبقة Infrastructure:**
+    - EF Core Configurations لجميع الكيانات (Competition, RfpSection, BoqItem, EvaluationCriterion, RfpAttachment) مع `DeleteBehavior.NoAction`.
+    - `CompetitionRepository` مع Eager Loading لجميع العلاقات ودعم البحث والفلترة والترقيم.
+    - إضافة DbSets جديدة إلى `TenantDbContext`: Competitions, RfpSections, BoqItems, EvaluationCriteria, RfpAttachments.
+    - تسجيل `CompetitionRepository` في DI container.
+  - **طبقة API (Minimal APIs):**
+    - `CompetitionEndpoints` - 12 endpoint تحت `/api/v1/competitions`:
+      - `GET /api/v1/competitions` - قائمة المنافسات مع ترقيم وبحث وفلترة.
+      - `GET /api/v1/competitions/{id}` - تفاصيل منافسة.
+      - `POST /api/v1/competitions` - إنشاء منافسة جديدة.
+      - `PUT /api/v1/competitions/{id}` - تحديث بيانات المنافسة.
+      - `POST /api/v1/competitions/{id}/auto-save` - حفظ تلقائي للمسودة.
+      - `POST /api/v1/competitions/{id}/status` - تغيير الحالة.
+      - `DELETE /api/v1/competitions/{id}` - حذف ناعم.
+      - `PUT /api/v1/competitions/{id}/evaluation-settings` - تحديث إعدادات التقييم.
+      - `POST /api/v1/competitions/{id}/sections` - إضافة قسم.
+      - `PUT /api/v1/competitions/{id}/sections/{sectionId}` - تحديث قسم.
+      - `POST /api/v1/competitions/{id}/boq-items` - إضافة بند كميات.
+      - `POST /api/v1/competitions/{id}/evaluation-criteria` - إضافة معيار تقييم.
+  - **الاختبارات (Unit Tests):**
+    - `CompetitionTests` - 20 اختبار لكيان Competition (دورة الحياة، انتقالات الحالة، Auto-save، إدارة الأقسام/BOQ/المعايير).
+    - `CreateCompetitionCommandValidatorTests` - 12 اختبار للتحقق من المدخلات.
+    - `AutoSaveCompetitionCommandValidatorTests` - 6 اختبارات للحفظ التلقائي.
+    - `UpdateEvaluationSettingsCommandValidatorTests` - 6 اختبارات لإعدادات التقييم.
+    - **المجموع: 44 اختبار جديد (جميعها ناجحة).**
+- **الاعتماديات التي تم حلها:** TASK-105 (DB), TASK-201 (Auth), TASK-202 (User Management).
+- **ملاحظات للوكيل التالي:**
+  - جميع بيانات RFP تُحفظ في `TenantDbContext` (قاعدة بيانات الجهة) وليس في MasterPlatformDbContext.
+  - يجب إنشاء Migration: `dotnet ef migrations add AddRfpEntities --context TenantDbContext`.
+  - ميزة Auto-save تستخدم تحقق خفيف (Lightweight Validation) للسماح بحفظ بيانات غير مكتملة.
+  - الحذف يستخدم Soft Delete فقط، لا يتم حذف البيانات نهائياً.
+  - جميع EF Core Configurations تستخدم `DeleteBehavior.NoAction` كما هو مطلوب.
+  - الـ `CompetitionEndpoints` مسجلة في `Program.cs` تحت مجموعة `/api/v1`.
+  - يجب ربط الـ endpoints بنظام المصادقة (Authorization) في مرحلة لاحقة.
+  - الـ `TenantId` يتم تمريره عبر الـ API حالياً، ويجب استخراجه من JWT Claims لاحقاً.
 
 ### 2026-03-28 - TASK-202: تطوير APIs لإدارة المستخدمين وتعيين الأدوار ودعوات التسجيل
 - **ما تم إنجازه:**

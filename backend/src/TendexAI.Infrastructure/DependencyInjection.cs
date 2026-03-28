@@ -8,6 +8,7 @@ using TendexAI.Application.Common.Interfaces.Identity;
 using TendexAI.Domain.Common;
 using TendexAI.Domain.Entities;
 using TendexAI.Domain.Entities.Identity;
+using TendexAI.Domain.Entities.Rfp;
 using TendexAI.Infrastructure.Messaging.RabbitMQ;
 using TendexAI.Infrastructure.MultiTenancy;
 using TendexAI.Infrastructure.Persistence;
@@ -195,6 +196,7 @@ public static class DependencyInjection
         services.AddScoped<ITenantRepository, TenantRepository>();
         services.AddScoped<ITenantFeatureFlagRepository, TenantFeatureFlagRepository>();
         services.AddScoped<IFeatureDefinitionRepository, FeatureDefinitionRepository>();
+        services.AddScoped<ICompetitionRepository, CompetitionRepository>();
 
         // ----- Security Services -----
         services.AddSingleton<IConnectionStringEncryptor, ConnectionStringEncryptor>();

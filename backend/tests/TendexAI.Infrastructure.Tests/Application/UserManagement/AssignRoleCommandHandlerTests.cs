@@ -37,7 +37,7 @@ public sealed class AssignRoleCommandHandlerTests
         var userId = Guid.NewGuid();
         var roleId = Guid.NewGuid();
         var user = new ApplicationUser("test@example.com", "Test", "User", null, _tenantId);
-        var role = new Role("مشرف", "Admin", _tenantId, true);
+        var role = new Role("مشرف", "Admin", "ADMIN", _tenantId, true);
 
         // Use reflection to set IDs since they are protected
         typeof(ApplicationUser).GetProperty("Id")!.SetValue(user, userId);
@@ -85,7 +85,7 @@ public sealed class AssignRoleCommandHandlerTests
         var userId = Guid.NewGuid();
         var roleId = Guid.NewGuid();
         var user = new ApplicationUser("test@example.com", "Test", "User", null, _tenantId);
-        var role = new Role("مشرف", "Admin", _tenantId, true);
+        var role = new Role("مشرف", "Admin", "ADMIN", _tenantId, true);
 
         typeof(ApplicationUser).GetProperty("Id")!.SetValue(user, userId);
         typeof(Role).GetProperty("Id")!.SetValue(role, roleId);

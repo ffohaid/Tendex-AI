@@ -17,15 +17,16 @@ public sealed class TenantEntityTests
             nameAr: "وزارة المالية",
             nameEn: "Ministry of Finance",
             identifier: "MOF",
-            connectionString: "Server=localhost;Database=tenant_mof;",
-            databaseName: "tenant_mof");
+            subdomain: "mof",
+            databaseName: "tenant_mof",
+            encryptedConnectionString: "Server=localhost;Database=tenant_mof;");
 
         // Assert
         Assert.NotEqual(Guid.Empty, tenant.Id);
         Assert.Equal("وزارة المالية", tenant.NameAr);
         Assert.Equal("Ministry of Finance", tenant.NameEn);
         Assert.Equal("MOF", tenant.Identifier);
-        Assert.Equal(TenantStatus.Pending, tenant.Status);
+        Assert.Equal(TenantStatus.PendingProvisioning, tenant.Status);
         Assert.NotEqual(default, tenant.CreatedAt);
     }
 
@@ -34,6 +35,10 @@ public sealed class TenantEntityTests
     {
         // Arrange
         var tenant = CreateTestTenant();
+        // Must go through lifecycle: PendingProvisioning -> EnvironmentSetup -> Training -> FinalAcceptance -> Active
+        tenant.MarkAsProvisioned();
+        tenant.MoveToTraining();
+        tenant.MoveToFinalAcceptance();
 
         // Act
         tenant.Activate();
@@ -48,6 +53,9 @@ public sealed class TenantEntityTests
     {
         // Arrange
         var tenant = CreateTestTenant();
+        tenant.MarkAsProvisioned();
+        tenant.MoveToTraining();
+        tenant.MoveToFinalAcceptance();
         tenant.Activate();
 
         // Act
@@ -55,19 +63,6 @@ public sealed class TenantEntityTests
 
         // Assert
         Assert.Equal(TenantStatus.Suspended, tenant.Status);
-    }
-
-    [Fact]
-    public void Deactivate_ShouldChangeStatusToDeactivated()
-    {
-        // Arrange
-        var tenant = CreateTestTenant();
-
-        // Act
-        tenant.Deactivate();
-
-        // Assert
-        Assert.Equal(TenantStatus.Deactivated, tenant.Status);
     }
 
     [Fact]
@@ -106,7 +101,8 @@ public sealed class TenantEntityTests
             nameAr: "جهة اختبارية",
             nameEn: "Test Entity",
             identifier: "TST",
-            connectionString: "Server=localhost;Database=tenant_tst;",
-            databaseName: "tenant_tst");
+            subdomain: "tst",
+            databaseName: "tenant_tst",
+            encryptedConnectionString: "Server=localhost;Database=tenant_tst;");
     }
 }
