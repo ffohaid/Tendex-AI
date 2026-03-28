@@ -96,7 +96,7 @@ public sealed class EndImpersonationCommandHandler
             "IMPERSONATION ENDED: Admin {AdminUserId} ended impersonation of user {TargetUserId} ({TargetEmail}). Duration: {Duration} minutes",
             adminUserId, session.TargetUserId, session.TargetEmail,
             session.EndedAtUtc.HasValue
-                ? (session.EndedAtUtc.Value - session.StartedAtUtc).TotalMinutes.ToString("F1")
+                ? (session.EndedAtUtc.Value - session.StartedAtUtc).TotalMinutes.ToString("F1", System.Globalization.CultureInfo.InvariantCulture)
                 : "N/A");
 
         return Result.Success();

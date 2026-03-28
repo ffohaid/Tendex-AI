@@ -114,7 +114,7 @@ public static class ImpersonationEndpoints
                 title: "Consent Request Failed");
         }
 
-        return Results.Created($"{BasePath}/consents/{result.Value.Id}", result.Value);
+        return Results.Created($"{BasePath}/consents/{result.Value!.Id}", result.Value);
     }
 
     private static async Task<IResult> GetConsentsAsync(

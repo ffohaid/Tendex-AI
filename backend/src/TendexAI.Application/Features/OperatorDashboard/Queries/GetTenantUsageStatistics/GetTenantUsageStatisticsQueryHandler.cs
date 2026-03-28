@@ -34,11 +34,11 @@ public sealed class GetTenantUsageStatisticsQueryHandler
         // Apply search filter
         if (!string.IsNullOrWhiteSpace(request.SearchTerm))
         {
-            var term = request.SearchTerm.Trim().ToLower();
+            var term = request.SearchTerm.Trim();
             tenantsQuery = tenantsQuery.Where(t =>
-                t.NameAr.ToLower().Contains(term) ||
-                t.NameEn.ToLower().Contains(term) ||
-                t.Identifier.ToLower().Contains(term));
+                EF.Functions.Like(t.NameAr, $"%{term}%") ||
+                EF.Functions.Like(t.NameEn, $"%{term}%") ||
+                EF.Functions.Like(t.Identifier, $"%{term}%"));
         }
 
         var totalCount = await tenantsQuery.CountAsync(cancellationToken);

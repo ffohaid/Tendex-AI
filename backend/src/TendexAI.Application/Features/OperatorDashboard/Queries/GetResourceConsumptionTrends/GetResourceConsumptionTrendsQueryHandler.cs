@@ -3,6 +3,7 @@ using TendexAI.Application.Common.Interfaces;
 using TendexAI.Application.Common.Messaging;
 using TendexAI.Application.Features.OperatorDashboard.Dtos;
 using TendexAI.Domain.Common;
+using System.Globalization;
 using TendexAI.Domain.Entities;
 
 namespace TendexAI.Application.Features.OperatorDashboard.Queries.GetResourceConsumptionTrends;
@@ -37,7 +38,7 @@ public sealed class GetResourceConsumptionTrendsQueryHandler
 
         var dailyAuditLogDtos = dailyAuditLogs
             .Select(x => new DailyCountDto(
-                Date: x.Date.ToString("yyyy-MM-dd"),
+                Date: x.Date.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture),
                 Count: x.Count))
             .ToList();
 
@@ -51,7 +52,7 @@ public sealed class GetResourceConsumptionTrendsQueryHandler
 
         var dailyNewTenantDtos = dailyNewTenants
             .Select(x => new DailyCountDto(
-                Date: x.Date.ToString("yyyy-MM-dd"),
+                Date: x.Date.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture),
                 Count: x.Count))
             .ToList();
 
