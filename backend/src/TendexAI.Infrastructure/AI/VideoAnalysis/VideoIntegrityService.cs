@@ -164,7 +164,7 @@ public sealed class VideoIntegrityService : IVideoIntegrityService
     /// Parses the AI response JSON into the structured model.
     /// Handles potential JSON extraction from markdown code blocks.
     /// </summary>
-    private AiVideoAnalysisResponse ParseAiResponse(string content)
+    private static AiVideoAnalysisResponse ParseAiResponse(string content)
     {
         // Strip markdown code block wrappers if present
         var jsonContent = content.Trim();
@@ -173,12 +173,12 @@ public sealed class VideoIntegrityService : IVideoIntegrityService
         {
             jsonContent = jsonContent["```json".Length..];
         }
-        else if (jsonContent.StartsWith("```"))
+        else if (jsonContent.StartsWith("```", StringComparison.Ordinal))
         {
             jsonContent = jsonContent["```".Length..];
         }
 
-        if (jsonContent.EndsWith("```"))
+        if (jsonContent.EndsWith("```", StringComparison.Ordinal))
         {
             jsonContent = jsonContent[..^"```".Length];
         }
