@@ -7,16 +7,17 @@
  */
 
 /* ------------------------------------------------------------------ */
-/*  Tenant Status Enum                                                 */
+/*  Tenant Status                                                      */
 /* ------------------------------------------------------------------ */
 
-export enum TenantStatus {
-  PendingProvisioning = 0,
-  Active = 1,
-  Suspended = 2,
-  Cancelled = 3,
-  Archived = 4,
-}
+export const TenantStatus = {
+  PendingProvisioning: 0,
+  Active: 1,
+  Suspended: 2,
+  Cancelled: 3,
+  Archived: 4,
+} as const
+export type TenantStatus = (typeof TenantStatus)[keyof typeof TenantStatus]
 
 /* ------------------------------------------------------------------ */
 /*  Tenant DTOs (matching backend)                                     */
@@ -122,23 +123,25 @@ export interface UpdateTenantBrandingRequest {
 /* ------------------------------------------------------------------ */
 
 /** PO lifecycle stages per PRD section 3.2.1. */
-export enum PoStatus {
-  Received = 0,
-  EnvironmentSetup = 1,
-  Training = 2,
-  FinalAcceptance = 3,
-  ActiveOperation = 4,
-  RenewalWindow = 5,
-  Renewed = 6,
-  Cancelled = 7,
-}
+export const PoStatus = {
+  Received: 0,
+  EnvironmentSetup: 1,
+  Training: 2,
+  FinalAcceptance: 3,
+  ActiveOperation: 4,
+  RenewalWindow: 5,
+  Renewed: 6,
+  Cancelled: 7,
+} as const
+export type PoStatus = (typeof PoStatus)[keyof typeof PoStatus]
 
 /** Subscription plan tiers. */
-export enum SubscriptionPlan {
-  Basic = 'basic',
-  Professional = 'professional',
-  Enterprise = 'enterprise',
-}
+export const SubscriptionPlan = {
+  Basic: 'basic',
+  Professional: 'professional',
+  Enterprise: 'enterprise',
+} as const
+export type SubscriptionPlan = (typeof SubscriptionPlan)[keyof typeof SubscriptionPlan]
 
 /** Full PO detail DTO. */
 export interface PurchaseOrderDto {
@@ -209,12 +212,13 @@ export interface ChangePurchaseOrderStatusRequest {
 /* ------------------------------------------------------------------ */
 
 /** Renewal alert severity levels per PRD section 3.2.3. */
-export enum RenewalAlertSeverity {
-  Info = 'info',
-  Warning = 'warning',
-  Critical = 'critical',
-  Expired = 'expired',
-}
+export const RenewalAlertSeverity = {
+  Info: 'info',
+  Warning: 'warning',
+  Critical: 'critical',
+  Expired: 'expired',
+} as const
+export type RenewalAlertSeverity = (typeof RenewalAlertSeverity)[keyof typeof RenewalAlertSeverity]
 
 /** Renewal alert item for the early warning system. */
 export interface RenewalAlertDto {

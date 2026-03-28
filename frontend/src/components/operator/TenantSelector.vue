@@ -8,7 +8,7 @@
  *
  * Usage: Place in the top header/navbar for Super Admin users.
  */
-import { ref, computed, onMounted, watch } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { storeToRefs } from 'pinia'
 import { useTenantStore } from '@/stores/tenant'

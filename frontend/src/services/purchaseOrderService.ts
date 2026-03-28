@@ -7,7 +7,7 @@
  * These endpoints will be available once the PO backend module is built.
  * The service is ready to consume them immediately.
  */
-import { httpGet, httpPost, httpPut } from '@/services/http'
+import { httpGet, httpPost } from '@/services/http'
 import type {
   PurchaseOrderDto,
   PurchaseOrderListItemDto,

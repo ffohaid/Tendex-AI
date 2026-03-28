@@ -118,7 +118,7 @@ async function handleStartImpersonation(consent: ImpersonationConsentDto): Promi
   }
 }
 
-async function handleEndImpersonation(session: ImpersonationSessionDto): Promise<void> {
+async function handleEndImpersonation(_session: ImpersonationSessionDto): Promise<void> {
   if (!confirm(t('impersonation.confirmEnd'))) return
   const success = await store.endImpersonation()
   if (success) {
@@ -126,6 +126,11 @@ async function handleEndImpersonation(session: ImpersonationSessionDto): Promise
     // Reload the page to restore admin context
     window.location.reload()
   }
+}
+
+async function handleEndAndReload(): Promise<void> {
+  await store.endImpersonation()
+  window.location.reload()
 }
 
 async function loadSessions(): Promise<void> {
@@ -239,7 +244,7 @@ watch(sessionStatusFilter, () => {
           </div>
           <button
             class="rounded-lg bg-orange-600 px-4 py-2 text-sm font-medium text-white hover:bg-orange-700 transition-colors"
-            @click="store.endImpersonation().then(() => window.location.reload())"
+            @click="handleEndAndReload()"
           >
             {{ t('impersonation.endSession') }}
           </button>

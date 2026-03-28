@@ -571,7 +571,7 @@ watch(activeTab, () => {
                 class="flex items-center gap-2 rounded-lg border border-surface-dim px-4 py-2 text-sm font-medium transition-colors hover:bg-surface-muted"
                 @click="statusChangeForm.newStatus = transition.value; showStatusDialog = true"
               >
-                <i :class="getStatusBadge(transition.value).icon" class="text-xs" :class="getStatusBadge(transition.value).textClass"></i>
+                <i :class="[getStatusBadge(transition.value).icon, 'text-xs', getStatusBadge(transition.value).textClass]"></i>
                 {{ t(transition.labelKey) }}
               </button>
             </div>

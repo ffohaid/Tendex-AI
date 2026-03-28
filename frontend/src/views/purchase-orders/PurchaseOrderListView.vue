@@ -5,7 +5,7 @@
  * Displays a paginated, filterable list of all purchase orders.
  * Data is fetched dynamically from the API — NO mock data.
  */
-import { onMounted, watch, computed } from 'vue'
+import { onMounted, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
 import { storeToRefs } from 'pinia'

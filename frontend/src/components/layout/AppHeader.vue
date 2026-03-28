@@ -93,7 +93,7 @@ onMounted(async () => {
           class="flex h-9 w-9 items-center justify-center overflow-hidden rounded-lg border border-surface-dim bg-white"
         >
           <img
-            :src="activeBranding.logoUrl"
+            :src="activeBranding.logoUrl ?? undefined"
             :alt="tenantDisplayName || t('app.name')"
             class="h-full w-full object-contain"
           />

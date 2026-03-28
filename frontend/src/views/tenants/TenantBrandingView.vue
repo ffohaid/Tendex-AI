@@ -16,7 +16,6 @@ import { useI18n } from 'vue-i18n'
 import { useRouter, useRoute } from 'vue-router'
 import { storeToRefs } from 'pinia'
 import { useTenantStore } from '@/stores/tenant'
-import { useBrandingStore } from '@/stores/branding'
 import * as brandingService from '@/services/brandingService'
 import type { UpdateTenantBrandingRequest } from '@/types/tenant'
 import { DEFAULT_BRANDING } from '@/types/branding'
@@ -25,9 +24,8 @@ const { t, locale } = useI18n()
 const router = useRouter()
 const route = useRoute()
 const tenantStore = useTenantStore()
-const brandingStore = useBrandingStore()
 
-const { currentTenant, isLoading: tenantLoading, isSubmitting } = storeToRefs(tenantStore)
+const { currentTenant, isLoading: tenantLoading } = storeToRefs(tenantStore)
 
 /** Tenant ID from route */
 const tenantId = computed(() => route.params.id as string)

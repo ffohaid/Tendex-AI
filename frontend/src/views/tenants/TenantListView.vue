@@ -21,7 +21,6 @@ const {
   totalCount,
   totalPages,
   currentPage,
-  pageSize,
   searchQuery,
   statusFilter,
   isLoading,
