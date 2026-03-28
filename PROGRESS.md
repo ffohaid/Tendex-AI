@@ -10,7 +10,7 @@
 | Sprint 1: البنية التحتية | ✅ مكتمل | 100% | تم إنجاز TASK-101, TASK-102, TASK-103, TASK-104, TASK-105, TASK-106 |
 | Sprint 2: الخدمات الأساسية | 🔄 قيد التنفيذ | 86% | تم إنجاز TASK-201, TASK-202, TASK-203, TASK-204, TASK-205, TASK-206 |
 | Sprint 3: سير العمل والتقييم | 🔄 قيد التنفيذ | 71% | تم إنجاز TASK-301, TASK-302, TASK-303, TASK-304, TASK-305 |
-| Sprint 4: تكامل الذكاء الاصطناعي | 🔄 قيد التنفيذ | 43% | تم إنجاز TASK-401, TASK-402, TASK-405 |
+| Sprint 4: تكامل الذكاء الاصطناعي | 🔄 قيد التنفيذ | 57% | تم إنجاز TASK-401, TASK-402, TASK-404, TASK-405 |
 | Sprint 5: الواجهة الأمامية | ⏳ لم يبدأ | 0% | - |
 | Sprint 6: لوحة تحكم المشغل | ⏳ لم يبدأ | 0% | - |
 | Sprint 7: الاختبار والنشر | ⏳ لم يبدأ | 0% | - |
@@ -132,6 +132,69 @@
   - السياق المسترجع يُنسق بصيغة XML جاهزة للحقن في prompts الذكاء الاصطناعي.
   - يجب ضبط إعدادات Qdrant في `appsettings.json` تحت قسم `Qdrant` (Host, Port, ApiKey).
   - يمكن البدء في TASK-403 (AI-Powered Document Analysis) الذي يعتمد على هذا المحرك.
+
+### 2026-03-28 - TASK-404: تحليل العروض الفنية بالذكاء الاصطناعي ومطابقتها مع كراسة الشروط
+- **ما تم إنجازه:**
+  - **طبقة Domain — كيانات جديدة:**
+    - إنشاء `AiOfferAnalysis` entity: كيان شامل لتخزين تحليل الذكاء الاصطناعي للعرض الفني يتضمن الملخص التنفيذي، نقاط القوة والضعف، المخاطر، تقييم الامتثال، التوصية العامة، ودرجة الامتثال الكلية.
+    - إنشاء `AiCriterionAnalysis` entity: كيان لتخزين تحليل كل معيار تقييم على حدة مع الدرجة المقترحة، التبرير المفصل، الاقتباسات من العرض، ومرجع متطلبات كراسة الشروط.
+    - إنشاء `AiCriterionComplianceLevel` enum: مستويات الامتثال (متوافق بالكامل، متوافق جزئياً، غير متوافق، يحتاج مراجعة بشرية، لا ينطبق).
+    - إنشاء `AiAnalysisStatus` enum: حالات التحليل (Processing, Completed, Reviewed, Failed).
+    - إنشاء `AiOfferAnalysisCompletedEvent` domain event.
+    - إنشاء `IAiOfferAnalysisRepository` interface.
+  - **طبقة Application — واجهات وخدمات:**
+    - إنشاء `IAiOfferAnalysisService` interface مع نماذج الطلب/الاستجابة (`AiOfferAnalysisRequest`, `AiOfferAnalysisResult`, `CriterionForAnalysis`, `CriterionAnalysisResult`).
+    - إنشاء DTOs شاملة: `AiOfferAnalysisDto`, `AiCriterionAnalysisDto`, `AiAnalysisSummaryDto`, `AiOfferAnalysisSummaryItemDto`, `AiComparisonMatrixDto`, `AiComparisonCellDto`.
+  - **طبقة Application — CQRS Commands:**
+    - `TriggerAiOfferAnalysisCommand` + Handler + Validator: بدء تحليل AI لجميع العروض في تقييم فني.
+    - `ReviewAiAnalysisCommand` + Handler + Validator: تسجيل مراجعة بشرية لتحليل AI (AI as Copilot).
+  - **طبقة Application — CQRS Queries:**
+    - `GetAiOfferAnalysisQuery` + Handler: جلب تحليل AI تفصيلي لعرض محدد.
+    - `GetAiAnalysisSummaryQuery` + Handler: جلب ملخص تحليلات AI لجميع العروض في تقييم.
+    - `GetAiComparisonMatrixQuery` + Handler: جلب مصفوفة مقارنة AI عبر جميع العروض والمعايير.
+  - **طبقة Infrastructure — خدمة التحليل بالذكاء الاصطناعي:**
+    - `AiOfferAnalysisService`: خدمة تحليل العروض الفنية باستخدام AI Gateway مع بناء Prompt متقدم يتضمن:
+      - System Prompt باللغة العربية يحدد دور AI كمساعد (Copilot) وليس صانع قرار.
+      - تضمين محتوى كراسة الشروط والمواصفات كسياق مرجعي.
+      - تضمين محتوى العرض الفني للتحليل.
+      - تعليمات تفصيلية لكل معيار تقييم مع الأوزان والدرجات القصوى.
+      - طلب مخرجات JSON منظمة تشمل: الملخص التنفيذي، نقاط القوة/الضعف، المخاطر، تقييم الامتثال، التوصية، والتحليل لكل معيار.
+      - تطبيق مبدأ Grounding & Citation: استخراج اقتباسات حرفية من العرض مع مراجع الصفحات.
+    - تحليل استجابة JSON من AI وتحويلها إلى `AiOfferAnalysisResult` منظم.
+    - قياس زمن التحليل (Latency) لكل عرض.
+  - **طبقة Infrastructure — EF Core Configurations:**
+    - `AiOfferAnalysisConfiguration`: إعداد جدول AiOfferAnalyses مع الفهارس والقيود.
+    - `AiCriterionAnalysisConfiguration`: إعداد جدول AiCriterionAnalyses مع العلاقات.
+  - **طبقة Infrastructure — Repository:**
+    - `AiOfferAnalysisRepository`: تنفيذ كامل مع دعم Include للعلاقات و AsSplitQuery.
+  - **طبقة Infrastructure — تسجيل الخدمات:**
+    - تسجيل `IAiOfferAnalysisService` و `IAiOfferAnalysisRepository` في DI Container.
+  - **طبقة API — Minimal API Endpoints:**
+    - `AiOfferAnalysisEndpoints`: 5 endpoints تحت مسار `/api/v1/competitions/{competitionId}/technical-evaluation/ai-analysis`:
+      - `POST /trigger`: بدء تحليل AI لجميع العروض.
+      - `GET /summary`: جلب ملخص التحليلات.
+      - `GET /{analysisId}`: جلب تحليل تفصيلي لعرض محدد.
+      - `GET /comparison-matrix`: جلب مصفوفة المقارنة.
+      - `POST /{analysisId}/review`: تسجيل مراجعة بشرية.
+    - تسجيل الـ Endpoints في `Program.cs`.
+  - **اختبارات الوحدة (Unit Tests):**
+    - `AiOfferAnalysisTests`: 10 اختبارات لكيان AiOfferAnalysis وAiCriterionAnalysis (الإنشاء، إضافة المعايير، منع التكرار، المراجعة البشرية، حساب النسبة المئوية).
+    - `TriggerAiOfferAnalysisCommandHandlerTests`: 2 اختبارات للتحقق من سلوك Handler.
+    - `ReviewAiAnalysisCommandHandlerTests`: 4 اختبارات لسير عمل المراجعة البشرية.
+    - `AiAnalysisValidatorTests`: 7 اختبارات للتحقق من صحة المدخلات.
+- **المبادئ المطبقة:**
+  - **AI as Copilot**: جميع مخرجات AI مصنفة كـ "مسودة مقترحة من الذكاء الاصطناعي" وتتطلب مراجعة بشرية.
+  - **Blind Evaluation**: هوية المورد مخفية أثناء التحليل.
+  - **Grounding & Citation**: استخراج اقتباسات حرفية من العرض مع مراجع الصفحات/الأقسام.
+  - **Arabic-First Output**: جميع مخرجات AI باللغة العربية.
+  - **DeleteBehavior.NoAction**: جميع العلاقات بدون حذف متسلسل.
+- **الاعتماديات التي تم حلها:** TASK-401 (AI Gateway), TASK-301/302 (Technical Evaluation entities).
+- **ملاحظات للوكيل التالي:**
+  - نظام تحليل العروض الفنية بالذكاء الاصطناعي مكتمل ومتكامل مع AI Gateway.
+  - يجب إنشاء EF Core Migration للجداول الجديدة (AiOfferAnalyses, AiCriterionAnalyses) عند النشر.
+  - يمكن البدء في TASK-405 (التقييم المالي بالذكاء الاصطناعي) أو TASK-402 (محرك RAG) الذي سيعزز جودة التحليل.
+  - DbSet properties لـ AiOfferAnalysis و AiCriterionAnalysis غير مضافة صراحة في TenantDbContext لكنها تُكتشف تلقائياً عبر ApplyConfigurationsFromAssembly.
+  - Prompt التحليل مبني بشكل متقدم ويدعم JSON output مع تعليمات تفصيلية لكل معيار.
 
 ### 2026-03-28 - TASK-401: تطوير واجهة موحدة للذكاء الاصطناعي (AI Gateway) مع تشفير AES-256
 - **ما تم إنجازه:**

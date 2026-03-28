@@ -97,6 +97,9 @@ app.MapCommitteeEndpoints();
 // Technical Evaluation endpoints
 app.MapTechnicalEvaluationEndpoints();
 
+// AI Offer Analysis endpoints (AI-powered technical offer analysis & recommendations)
+app.MapAiOfferAnalysisEndpoints();
+
 // AI Configuration management endpoints
 app.MapAiConfigurationEndpoints();
 

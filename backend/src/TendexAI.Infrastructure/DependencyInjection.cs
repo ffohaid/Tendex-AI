@@ -206,6 +206,7 @@ public static class DependencyInjection
         services.AddScoped<ITechnicalEvaluationRepository, TechnicalEvaluationRepository>();
         services.AddScoped<ISupplierOfferRepository, SupplierOfferRepository>();
         services.AddScoped<IVideoIntegrityAnalysisRepository, VideoIntegrityAnalysisRepository>();
+        services.AddScoped<IAiOfferAnalysisRepository, AiOfferAnalysisRepository>();
 
         // ----- Security Services -----
         services.AddSingleton<IConnectionStringEncryptor, ConnectionStringEncryptor>();
@@ -218,6 +219,9 @@ public static class DependencyInjection
 
         // ----- RAG Engine Services (Qdrant, Indexing, Retrieval) -----
         services.AddRagServices(configuration);
+
+        // ----- AI Offer Analysis Service -----
+        services.AddScoped<Application.Common.Interfaces.AI.IAiOfferAnalysisService, AI.AiOfferAnalysisService>();
 
         // ----- Tenant Database Provisioning -----
         services.AddScoped<ITenantDatabaseProvisioner, TenantDatabaseProvisioner>();
