@@ -1,7 +1,10 @@
 using FluentAssertions;
 using TendexAI.Domain.Entities.Evaluation;
 using TendexAI.Domain.Entities.Rfp;
+using TendexAI.Domain.Enums;
 using TendexAI.Domain.Services;
+
+// HeatmapColor is defined in TendexAI.Domain.Services namespace
 
 namespace TendexAI.Infrastructure.Tests.Domain.Evaluation;
 
@@ -200,16 +203,16 @@ public sealed class TechnicalScoringServiceTests
     // ═══════════════════════════════════════════════════════════
 
     [Theory]
-    [InlineData(90, "green")]
-    [InlineData(80, "green")]
-    [InlineData(79, "yellow")]
-    [InlineData(60, "yellow")]
-    [InlineData(59, "red")]
-    [InlineData(30, "red")]
-    [InlineData(0, "red")]
-    public void GetHeatmapColor_Should_Return_Correct_Color(decimal percentage, string expectedColor)
+    [InlineData(90, HeatmapColor.Green)]
+    [InlineData(80, HeatmapColor.Green)]
+    [InlineData(79, HeatmapColor.Yellow)]
+    [InlineData(60, HeatmapColor.Yellow)]
+    [InlineData(59, HeatmapColor.Red)]
+    [InlineData(30, HeatmapColor.Red)]
+    [InlineData(0, HeatmapColor.Red)]
+    public void ClassifyScore_Should_Return_Correct_Color(decimal percentage, HeatmapColor expectedColor)
     {
-        var result = TechnicalScoringService.GetHeatmapColor(percentage);
+        var result = TechnicalScoringService.ClassifyScore(percentage);
 
         result.Should().Be(expectedColor);
     }
@@ -224,12 +227,15 @@ public sealed class TechnicalScoringServiceTests
     [InlineData(59.99, 60, false)]
     [InlineData(0, 60, false)]
     [InlineData(100, 60, true)]
-    public void DeterminePassFail_Should_Compare_Against_Minimum(
+    public void DetermineResult_Should_Compare_Against_Minimum(
         decimal score, decimal minimum, bool expectedPass)
     {
-        var result = TechnicalScoringService.DeterminePassFail(score, minimum);
+        var result = TechnicalScoringService.DetermineResult(score, minimum);
 
-        result.Should().Be(expectedPass);
+        if (expectedPass)
+            result.Should().Be(OfferTechnicalResult.Passed);
+        else
+            result.Should().Be(OfferTechnicalResult.Failed);
     }
 
     // ═══════════════════════════════════════════════════════════
@@ -250,6 +256,6 @@ public sealed class TechnicalScoringServiceTests
     {
         return EvaluationCriterion.Create(
             _competitionId, "معيار", "Criterion",
-            null, null, weight, 0m, maxScore, 1, null, "system", id);
+            null, null, weight, null, 1, "system", null);
     }
 }

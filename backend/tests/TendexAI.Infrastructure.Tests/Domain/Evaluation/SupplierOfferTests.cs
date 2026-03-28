@@ -21,7 +21,7 @@ public sealed class SupplierOfferTests
             "Supplier A",
             "CR-123456",
             "REF-001",
-            blindCode,
+            DateTime.UtcNow,
             "system");
     }
 

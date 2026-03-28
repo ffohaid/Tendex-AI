@@ -27,9 +27,9 @@ public sealed class FinancialEnvelopeGateTests
             _competitionId, _tenantId, _committeeId, 60m, "admin");
 
         var offer1 = SupplierOffer.Create(
-            _competitionId, _tenantId, "Supplier A", "CR-001", "REF-001", "OFFER-A", "admin");
+            _competitionId, _tenantId, "Supplier A", "CR-001", "REF-001", DateTime.UtcNow, "admin");
         var offer2 = SupplierOffer.Create(
-            _competitionId, _tenantId, "Supplier B", "CR-002", "REF-002", "OFFER-B", "admin");
+            _competitionId, _tenantId, "Supplier B", "CR-002", "REF-002", DateTime.UtcNow, "admin");
 
         // 2. Verify financial envelopes are locked at start
         offer1.OpenFinancialEnvelope("chair").IsFailure.Should().BeTrue();
@@ -84,7 +84,7 @@ public sealed class FinancialEnvelopeGateTests
             _competitionId, _tenantId, _committeeId, 60m, "admin");
 
         var offer = SupplierOffer.Create(
-            _competitionId, _tenantId, "Supplier A", "CR-001", "REF-001", "OFFER-A", "admin");
+            _competitionId, _tenantId, "Supplier A", "CR-001", "REF-001", DateTime.UtcNow, "admin");
 
         evaluation.Start("admin");
         evaluation.AddScore(TechnicalScore.Create(
@@ -135,11 +135,11 @@ public sealed class FinancialEnvelopeGateTests
     public void Multiple_Offers_Should_Have_Independent_Financial_Envelope_Status()
     {
         var offer1 = SupplierOffer.Create(
-            _competitionId, _tenantId, "Supplier A", "CR-001", "REF-001", "OFFER-A", "admin");
+            _competitionId, _tenantId, "Supplier A", "CR-001", "REF-001", DateTime.UtcNow, "admin");
         var offer2 = SupplierOffer.Create(
-            _competitionId, _tenantId, "Supplier B", "CR-002", "REF-002", "OFFER-B", "admin");
+            _competitionId, _tenantId, "Supplier B", "CR-002", "REF-002", DateTime.UtcNow, "admin");
         var offer3 = SupplierOffer.Create(
-            _competitionId, _tenantId, "Supplier C", "CR-003", "REF-003", "OFFER-C", "admin");
+            _competitionId, _tenantId, "Supplier C", "CR-003", "REF-003", DateTime.UtcNow, "admin");
 
         offer1.SetTechnicalResult(OfferTechnicalResult.Passed, 90m, "system");
         offer2.SetTechnicalResult(OfferTechnicalResult.Passed, 75m, "system");
