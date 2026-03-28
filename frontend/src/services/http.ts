@@ -1,12 +1,16 @@
 /**
- * Centralized Axios HTTP client instance.
+ * Centralized Axios HTTP client instance for Tendex AI Platform.
  *
+ * Features:
  * - Reads base URL from VITE_API_BASE_URL environment variable.
  * - Automatically attaches Authorization header when a token exists.
  * - Handles 401 responses by attempting a silent token refresh.
+ * - Tenant-aware headers (X-Tenant-Id).
+ * - Generic typed HTTP helpers (httpGet, httpPost, httpPut, httpPatch, httpDelete).
  */
 import axios, {
   type AxiosInstance,
+  type AxiosRequestConfig,
   type InternalAxiosRequestConfig,
   type AxiosResponse,
   type AxiosError,
@@ -24,15 +28,20 @@ const httpClient: AxiosInstance = axios.create({
 })
 
 /* ------------------------------------------------------------------ */
-/*  Request Interceptor — Attach Bearer Token                          */
+/*  Request Interceptor — Attach Bearer Token & Tenant ID              */
 /* ------------------------------------------------------------------ */
-
 httpClient.interceptors.request.use(
   (config: InternalAxiosRequestConfig) => {
     const token = localStorage.getItem('access_token')
     if (token && config.headers) {
       config.headers.Authorization = `Bearer ${token}`
     }
+
+    const tenantId = localStorage.getItem('tenant_id')
+    if (tenantId && config.headers) {
+      config.headers['X-Tenant-Id'] = tenantId
+    }
+
     return config
   },
   (error: AxiosError) => Promise.reject(error),
@@ -41,7 +50,6 @@ httpClient.interceptors.request.use(
 /* ------------------------------------------------------------------ */
 /*  Response Interceptor — Handle 401 & Token Refresh                  */
 /* ------------------------------------------------------------------ */
-
 let isRefreshing = false
 let failedQueue: Array<{
   resolve: (value: AxiosResponse) => void
@@ -114,7 +122,6 @@ httpClient.interceptors.response.use(
         localStorage.removeItem('refresh_token')
         localStorage.removeItem('tenant_id')
         localStorage.removeItem('user')
-
         window.location.href = '/auth/login'
         return Promise.reject(refreshError)
       } finally {
@@ -127,3 +134,65 @@ httpClient.interceptors.response.use(
 )
 
 export default httpClient
+
+/* ------------------------------------------------------------------ */
+/*  Generic Typed HTTP Helpers                                         */
+/* ------------------------------------------------------------------ */
+
+/**
+ * Generic typed GET helper.
+ */
+export async function httpGet<T>(
+  url: string,
+  config?: AxiosRequestConfig,
+): Promise<T> {
+  const response = await httpClient.get<T>(url, config)
+  return response.data
+}
+
+/**
+ * Generic typed POST helper.
+ */
+export async function httpPost<T>(
+  url: string,
+  data?: unknown,
+  config?: AxiosRequestConfig,
+): Promise<T> {
+  const response = await httpClient.post<T>(url, data, config)
+  return response.data
+}
+
+/**
+ * Generic typed PUT helper.
+ */
+export async function httpPut<T>(
+  url: string,
+  data?: unknown,
+  config?: AxiosRequestConfig,
+): Promise<T> {
+  const response = await httpClient.put<T>(url, data, config)
+  return response.data
+}
+
+/**
+ * Generic typed PATCH helper.
+ */
+export async function httpPatch<T>(
+  url: string,
+  data?: unknown,
+  config?: AxiosRequestConfig,
+): Promise<T> {
+  const response = await httpClient.patch<T>(url, data, config)
+  return response.data
+}
+
+/**
+ * Generic typed DELETE helper.
+ */
+export async function httpDelete<T>(
+  url: string,
+  config?: AxiosRequestConfig,
+): Promise<T> {
+  const response = await httpClient.delete<T>(url, config)
+  return response.data
+}

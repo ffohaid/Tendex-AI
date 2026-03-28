@@ -11,7 +11,7 @@
 | Sprint 2: الخدمات الأساسية | 🔄 قيد التنفيذ | 86% | تم إنجاز TASK-201, TASK-202, TASK-203, TASK-204, TASK-205, TASK-206 |
 | Sprint 3: سير العمل والتقييم | 🔄 قيد التنفيذ | 71% | تم إنجاز TASK-301, TASK-302, TASK-303, TASK-304, TASK-305 |
 | Sprint 4: تكامل الذكاء الاصطناعي | 🔄 قيد التنفيذ | 71% | تم إنجاز TASK-401, TASK-402, TASK-403, TASK-404, TASK-405 |
-| Sprint 5: الواجهة الأمامية | 🔄 قيد التنفيذ | 40% | تم إنجاز TASK-501, TASK-502 |
+| Sprint 5: الواجهة الأمامية | 🔄 قيد التنفيذ | 60% | تم إنجاز TASK-501, TASK-502, TASK-503 |
 | Sprint 6: لوحة تحكم المشغل | ⏳ لم يبدأ | 0% | - |
 | Sprint 7: الاختبار والنشر | ⏳ لم يبدأ | 0% | - |
 
@@ -87,6 +87,65 @@
   - نقاط نهاية forgot-password و reset-password غير موجودة بعد في الباكند؛ الواجهات جاهزة وستعمل فور إضافة الـ APIs.
   - يتم تخزين tenantId افتراضياً كـ GUID فارغ حتى يتم تطبيق آلية اختيار الجهة.
   - Auth Store يدعم hasRole/hasPermission للاستخدام في حماية المسارات والمكونات لاحقاً.
+
+### 2026-03-28 - TASK-503: بناء لوحة المعلومات الرئيسية (Dashboard)
+- **ما تم إنجازه:**
+  - **Types & Interfaces:** إنشاء `src/types/dashboard.ts` مع تعريفات TypeScript كاملة لجميع كيانات لوحة المعلومات (DashboardStats, ActiveCompetition, PendingTask, Notification, ActiveCommittee, RecentActivity, PerformanceMetrics, DashboardData, UserRole, DashboardConfig).
+  - **HTTP Service:** إنشاء `src/services/http.ts` — عميل Axios مركزي مع interceptors للمصادقة (Bearer Token)، دعم Multi-Tenant (X-Tenant-Id header)، ومعالجة أخطاء HTTP (401 redirect, 403 warning, 500 logging).
+  - **Dashboard API Service:** إنشاء `src/services/dashboard.ts` — خدمة API كاملة مع 8 دوال لجلب البيانات من الخلفية (fetchDashboardStats, fetchActiveCompetitions, fetchPendingTasks, fetchNotifications, fetchActiveCommittees, fetchRecentActivities, fetchPerformanceMetrics, fetchAllDashboardData). تستخدم `Promise.allSettled` لجلب البيانات بالتوازي مع معالجة الأخطاء الجزئية.
+  - **Pinia Store:** إنشاء `src/stores/dashboard.ts` — متجر Pinia كامل مع state, computed properties (unreadNotificationsCount, criticalTasks, exceededSlaTasks, delayedCompetitions), وactions (loadDashboard, refreshDashboard, loadMoreTasks, markNotificationRead, setUserRole). يدعم التحميل التدريجي (pagination) والتحديث التلقائي.
+  - **Composable:** إنشاء `src/composables/useFormatters.ts` — دوال تنسيق موحدة (formatNumber, formatCurrency, formatPercentage, formatDate, formatDateTime, formatRelativeTime, formatRemainingTime) مع ضمان استخدام الأرقام الإنجليزية حصرياً ورمز الريال السعودي (﷼).
+  - **مكونات لوحة المعلومات (8 مكونات):**
+    - `StatsCards.vue`: بطاقات KPI إحصائية (6 بطاقات) مع أيقونات ملونة وتأثيرات hover.
+    - `ActiveCompetitionsList.vue`: قائمة المنافسات النشطة مع شريط تقدم ملون، حالة المنافسة، الميزانية، عدد العروض.
+    - `PendingTasksList.vue`: قائمة المهام المعلقة مع عداد SLA ملون (أخضر/أصفر/أحمر)، أولوية المهمة، نوع المهمة.
+    - `NotificationsList.vue`: قائمة الإشعارات مع حالة مقروء/غير مقروء، أيقونات حسب النوع، وقت نسبي.
+    - `ActiveCommittees.vue`: قائمة اللجان النشطة مع نوع اللجنة (دائمة/مؤقتة)، عدد الأعضاء، تاريخ الانتهاء.
+    - `RecentActivityList.vue`: خط زمني للنشاط الأخير مع أيقونات حسب نوع الكيان.
+    - `PerformanceCharts.vue`: رسوم بيانية تفاعلية (Chart.js via vue-chartjs) — رسم بياني شريطي للمنافسات الشهرية، رسم دائري لتوزيع الحالات، 4 بطاقات KPI (متوسط زمن الدورة، نسبة الامتثال، متوسط زمن التقييم، الالتزام بالمهل).
+    - `QuickActions.vue`: أزرار إجراءات سريعة (إنشاء منافسة، عرض التقارير، المساعد الذكي، إدارة اللجان).
+  - **DashboardView.vue:** صفحة لوحة المعلومات الرئيسية مع:
+    - عرض حسب الدور (Role-based rendering) عبر DashboardConfig.
+    - تحديث تلقائي كل 30 ثانية.
+    - تحميل كسول (Lazy loading) للمكونات الثقيلة (PerformanceCharts, ActiveCommittees, RecentActivityList, NotificationsList).
+    - هياكل تحميل (Skeleton loaders) لجميع المكونات.
+    - حالات فارغة (Empty states) مع أيقونات ورسائل مناسبة.
+    - شريط خطأ مع زر إعادة المحاولة.
+    - تخطيط متجاوب (responsive grid): عمودين رئيسيين (2/3 + 1/3) على الشاشات الكبيرة.
+  - **ملفات الترجمة:** تحديث ar.json و en.json بـ 60+ مفتاح ترجمة جديد لجميع عناصر لوحة المعلومات.
+  - **تحسين الأداء:**
+    - تقسيم الحزم (Code splitting) عبر manualChunks في Vite config: vendor-vue, vendor-i18n, vendor-charts, vendor-primevue.
+    - حجم التحميل الأولي المضغوط (gzip): ~87.62 KB.
+    - زمن البناء: ~753ms.
+    - تحميل كسول لـ 5 مكونات ثقيلة.
+- **الملفات المنشأة/المعدلة:**
+  - `src/types/dashboard.ts` (جديد)
+  - `src/services/http.ts` (جديد)
+  - `src/services/dashboard.ts` (جديد)
+  - `src/stores/dashboard.ts` (جديد)
+  - `src/composables/useFormatters.ts` (جديد)
+  - `src/components/dashboard/StatsCards.vue` (جديد)
+  - `src/components/dashboard/ActiveCompetitionsList.vue` (جديد)
+  - `src/components/dashboard/PendingTasksList.vue` (جديد)
+  - `src/components/dashboard/NotificationsList.vue` (جديد)
+  - `src/components/dashboard/ActiveCommittees.vue` (جديد)
+  - `src/components/dashboard/RecentActivityList.vue` (جديد)
+  - `src/components/dashboard/PerformanceCharts.vue` (جديد)
+  - `src/components/dashboard/QuickActions.vue` (جديد)
+  - `src/components/dashboard/index.ts` (جديد)
+  - `src/views/DashboardView.vue` (معدل - إعادة بناء كاملة)
+  - `src/locales/ar.json` (معدل - إضافة 60+ مفتاح ترجمة)
+  - `src/locales/en.json` (معدل - إضافة 60+ مفتاح ترجمة)
+  - `vite.config.ts` (معدل - إضافة build optimizations)
+  - `package.json` (معدل - إضافة chart.js, vue-chartjs, axios)
+- **التحقق:** نجاح vue-tsc --noEmit (بدون أخطاء TypeScript)، نجاح vite build (بناء الإنتاج في 753ms).
+- **الاعتماديات التي تم حلها:** TASK-501 (Layout & Navigation).
+- **ملاحظات للوكيل التالي:**
+  - لوحة المعلومات جاهزة بالكامل وتنتظر ربط الـ APIs الخلفية. يجب إنشاء Dashboard endpoints في الخلفية (/api/v1/dashboard/stats, /api/v1/dashboard/activities, /api/v1/dashboard/metrics).
+  - المكونات تستخدم Promise.allSettled لذا ستعمل حتى لو بعض الـ APIs غير متاحة.
+  - Chart.js مقسم في حزمة منفصلة (vendor-charts) ويتم تحميله بشكل كسول.
+  - الأرقام الإنجليزية مضمونة عبر useFormatters composable.
+  - دعم RTL/LTR كامل عبر الخصائص المنطقية لـ Tailwind (ms-, me-, ps-, pe-, start, end).
 
 ### 2026-03-28 - TASK-501: بناء تخطيط المنصة والتنقل (Layout & Navigation)
 - **ما تم إنجازه:**

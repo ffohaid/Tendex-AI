@@ -143,5 +143,82 @@
     "privacyPolicy": "سياسة الخصوصية",
     "termsOfService": "الشروط والأحكام",
     "support": "الدعم الفني"
+  },
+  "dashboard": {
+    "subtitle": "نظرة عامة على المنافسات والمهام والأداء",
+    "lastUpdated": "آخر تحديث",
+    "refresh": "تحديث",
+    "errorTitle": "تعذر تحميل البيانات",
+    "errorMessage": "حدث خطأ أثناء تحميل بيانات لوحة التحكم. يرجى المحاولة مرة أخرى.",
+    "retry": "إعادة المحاولة",
+    "viewAll": "عرض الكل",
+    "offers": "عرض",
+    "members": "عضو",
+    "noActiveCompetitions": "لا توجد منافسات نشطة حالياً",
+    "noTasks": "لا توجد مهام معلقة",
+    "allTasksComplete": "تم إنجاز جميع المهام المطلوبة",
+    "noNotifications": "لا توجد إشعارات جديدة",
+    "noCommittees": "لا توجد لجان نشطة",
+    "noActivity": "لا يوجد نشاط حديث",
+    "noChartData": "لا توجد بيانات كافية لعرض الرسم البياني",
+    "activeCompetitions": "المنافسات النشطة",
+    "pendingTasks": "المهام المعلقة",
+    "notifications": "الإشعارات",
+    "activeCommittees": "اللجان النشطة",
+    "recentActivity": "النشاط الأخير",
+    "stats": {
+      "activeCompetitions": "المنافسات النشطة",
+      "completedCompetitions": "المنافسات المكتملة",
+      "pendingEvaluations": "العروض قيد التقييم",
+      "pendingTasks": "المهام المعلقة",
+      "totalOffers": "إجمالي العروض",
+      "complianceRate": "نسبة الامتثال"
+    },
+    "competitionStatus": {
+      "draft": "مسودة",
+      "published": "منشورة",
+      "receiving_offers": "استقبال العروض",
+      "technical_evaluation": "تقييم فني",
+      "financial_evaluation": "تقييم مالي",
+      "awarding": "ترسية",
+      "completed": "مكتملة",
+      "cancelled": "ملغاة"
+    },
+    "priority": {
+      "low": "منخفض",
+      "medium": "متوسط",
+      "high": "مرتفع",
+      "critical": "حرج"
+    },
+    "slaStatus": {
+      "on_track": "ضمن المهلة",
+      "approaching": "اقتراب الموعد",
+      "exceeded": "تجاوز المهلة"
+    },
+    "committeeStatus": {
+      "active": "نشطة",
+      "expired": "منتهية",
+      "suspended": "معلقة"
+    },
+    "committeeType": {
+      "permanent": "دائمة",
+      "temporary": "مؤقتة"
+    },
+    "quickActions": {
+      "title": "الإجراءات السريعة",
+      "createCompetition": "إنشاء منافسة جديدة",
+      "viewReports": "عرض التقارير",
+      "aiAssistant": "المساعد الذكي",
+      "manageCommittees": "إدارة اللجان"
+    },
+    "charts": {
+      "monthlyCompetitions": "المنافسات الشهرية",
+      "statusDistribution": "توزيع حالات المنافسات",
+      "avgCycleTime": "متوسط زمن الدورة",
+      "complianceRate": "نسبة الامتثال",
+      "avgEvalTime": "متوسط زمن التقييم",
+      "slaCompliance": "الالتزام بالمهل الزمنية",
+      "days": "يوم"
+    }
   }
 }

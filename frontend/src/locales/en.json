@@ -143,5 +143,82 @@
     "privacyPolicy": "Privacy Policy",
     "termsOfService": "Terms of Service",
     "support": "Support"
+  },
+  "dashboard": {
+    "subtitle": "Overview of competitions, tasks, and performance",
+    "lastUpdated": "Last updated",
+    "refresh": "Refresh",
+    "errorTitle": "Failed to load data",
+    "errorMessage": "An error occurred while loading dashboard data. Please try again.",
+    "retry": "Retry",
+    "viewAll": "View All",
+    "offers": "offers",
+    "members": "members",
+    "noActiveCompetitions": "No active competitions at the moment",
+    "noTasks": "No pending tasks",
+    "allTasksComplete": "All required tasks have been completed",
+    "noNotifications": "No new notifications",
+    "noCommittees": "No active committees",
+    "noActivity": "No recent activity",
+    "noChartData": "Not enough data to display the chart",
+    "activeCompetitions": "Active Competitions",
+    "pendingTasks": "Pending Tasks",
+    "notifications": "Notifications",
+    "activeCommittees": "Active Committees",
+    "recentActivity": "Recent Activity",
+    "stats": {
+      "activeCompetitions": "Active Competitions",
+      "completedCompetitions": "Completed Competitions",
+      "pendingEvaluations": "Pending Evaluations",
+      "pendingTasks": "Pending Tasks",
+      "totalOffers": "Total Offers",
+      "complianceRate": "Compliance Rate"
+    },
+    "competitionStatus": {
+      "draft": "Draft",
+      "published": "Published",
+      "receiving_offers": "Receiving Offers",
+      "technical_evaluation": "Technical Evaluation",
+      "financial_evaluation": "Financial Evaluation",
+      "awarding": "Awarding",
+      "completed": "Completed",
+      "cancelled": "Cancelled"
+    },
+    "priority": {
+      "low": "Low",
+      "medium": "Medium",
+      "high": "High",
+      "critical": "Critical"
+    },
+    "slaStatus": {
+      "on_track": "On Track",
+      "approaching": "Approaching Deadline",
+      "exceeded": "Exceeded"
+    },
+    "committeeStatus": {
+      "active": "Active",
+      "expired": "Expired",
+      "suspended": "Suspended"
+    },
+    "committeeType": {
+      "permanent": "Permanent",
+      "temporary": "Temporary"
+    },
+    "quickActions": {
+      "title": "Quick Actions",
+      "createCompetition": "Create New Competition",
+      "viewReports": "View Reports",
+      "aiAssistant": "AI Assistant",
+      "manageCommittees": "Manage Committees"
+    },
+    "charts": {
+      "monthlyCompetitions": "Monthly Competitions",
+      "statusDistribution": "Competition Status Distribution",
+      "avgCycleTime": "Avg. Cycle Time",
+      "complianceRate": "Compliance Rate",
+      "avgEvalTime": "Avg. Evaluation Time",
+      "slaCompliance": "SLA Compliance",
+      "days": "days"
+    }
   }
 }
