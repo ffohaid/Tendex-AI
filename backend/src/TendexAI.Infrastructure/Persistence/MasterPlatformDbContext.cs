@@ -29,6 +29,10 @@ public sealed class MasterPlatformDbContext : DbContext, IMasterPlatformDbContex
 
     public DbSet<AiConfiguration> AiConfigurations => Set<AiConfiguration>();
 
+    public DbSet<TenantFeatureFlag> TenantFeatureFlags => Set<TenantFeatureFlag>();
+
+    public DbSet<FeatureDefinition> FeatureDefinitions => Set<FeatureDefinition>();
+
     public DbSet<AuditLogEntry> AuditLogEntries => Set<AuditLogEntry>();
 
     public DbSet<FileAttachment> FileAttachments => Set<FileAttachment>();

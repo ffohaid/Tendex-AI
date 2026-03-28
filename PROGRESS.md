@@ -8,7 +8,7 @@
 | :--- | :--- | :--- | :--- |
 | Sprint 0: التخطيط وإدارة المنتج | ✅ مكتمل | 100% | تم إعداد خطة التنفيذ (Sprint Backlog) وقوالب العمل. |
 | Sprint 1: البنية التحتية | ✅ مكتمل | 100% | تم إنجاز TASK-101, TASK-102, TASK-103, TASK-104, TASK-105, TASK-106 |
-| Sprint 2: الخدمات الأساسية | 🔄 قيد التنفيذ | 71% | تم إنجاز TASK-201, TASK-202, TASK-204, TASK-205, TASK-206 |
+| Sprint 2: الخدمات الأساسية | 🔄 قيد التنفيذ | 86% | تم إنجاز TASK-201, TASK-202, TASK-203, TASK-204, TASK-205, TASK-206 |
 | Sprint 3: سير العمل والتقييم | ⏳ لم يبدأ | 0% | - |
 | Sprint 4: تكامل الذكاء الاصطناعي | ⏳ لم يبدأ | 0% | - |
 | Sprint 5: الواجهة الأمامية | ⏳ لم يبدأ | 0% | - |
@@ -64,6 +64,125 @@
   - ValidationBehavior مسجل كـ pipeline behavior في MediatR لتطبيق FluentValidation تلقائياً.
   - الأدوار الافتراضية (SystemRole enum) يجب أن تُزرع (seed) عند إنشاء tenant جديد.
   - Accept invitation endpoint هو الوحيد المتاح بدون مصادقة (AllowAnonymous).
+### 2026-03-28 - TASK-203: تطوير APIs لإدارة دورة حياة الجهات الحكومية (Tenant Lifecycle Management)
+- **ما تم إنجازه:**
+  - **طبقة Domain:**
+    - تحديث كيان `Tenant` بإضافة حقول جديدة: Subdomain, DatabaseName, ConnectionString (encrypted), IsProvisioned, ProvisionedAt, ContactPerson (Name/Email/Phone), LogoUrl, PrimaryColor, SecondaryColor, SubscriptionExpiresAt, Notes.
+    - تحديث `TenantStatus` Enum ليشمل جميع مراحل دورة الحياة: PendingProvisioning, EnvironmentSetup, Training, FinalAcceptance, Active, Suspended, RenewalWindow, Cancelled, Archived.
+    - إضافة Domain Methods للتحكم في انتقالات الحالة: MarkAsProvisioned, MoveToTraining, MoveToFinalAcceptance, Activate, Suspend, EnterRenewalWindow, Cancel, Archive, UpdateBranding, UpdateContactPerson, UpdateInfo, UpdateSubscriptionExpiry.
+    - إنشاء كيان `TenantFeatureFlag` لإدارة الميزات لكل جهة مع Enable/Disable/UpdateConfiguration/UpdateNames.
+    - إنشاء كيان `FeatureDefinition` لتعريف الميزات العالمية مع Update/Deactivate/Reactivate.
+    - إنشاء Repository Interfaces: `ITenantRepository`, `ITenantFeatureFlagRepository`, `IFeatureDefinitionRepository`.
+    - إنشاء Domain Events: TenantCreatedEvent, TenantStatusChangedEvent, TenantProvisionedEvent.
+  - **طبقة Infrastructure:**
+    - إنشاء EF Core Configurations: `TenantConfiguration` (محدّث), `TenantFeatureFlagConfiguration`, `FeatureDefinitionConfiguration` مع فهارس محسّنة و`DeleteBehavior.NoAction`.
+    - إضافة DbSets جديدة إلى `MasterPlatformDbContext`: TenantFeatureFlags, FeatureDefinitions.
+    - تنفيذ Repositories: `TenantRepository`, `TenantFeatureFlagRepository`, `FeatureDefinitionRepository`.
+    - إنشاء `ConnectionStringEncryptor` باستخدام AES-256-CBC لتشفير/فك تشفير سلاسل الاتصال (المفتاح من Configuration فقط، لا يُخزّن في الكود).
+    - إنشاء `TenantDatabaseProvisioner` للتأسيس الآلي لقواعد البيانات المستقلة (Database-per-Tenant):
+      - إنشاء قاعدة بيانات SQL Server جديدة لكل جهة.
+      - تطبيق EF Core Migrations تلقائياً.
+      - زرع بيانات أولية (6 أدوار افتراضية: tenant_owner, tenant_admin, procurement_manager, committee_chair, committee_member, viewer).
+      - تعقيم أسماء قواعد البيانات لمنع SQL Injection.
+    - تسجيل جميع الخدمات في `DependencyInjection.cs`.
+  - **طبقة Application (CQRS):**
+    - DTOs: `TenantDto`, `TenantListItemDto`, `PagedResultDto<T>`, `TenantFeatureFlagDto`, `FeatureDefinitionDto`.
+    - Request DTOs: `CreateTenantRequest`, `UpdateTenantRequest`, `ChangeTenantStatusRequest`, `UpdateTenantBrandingRequest`, `ToggleFeatureFlagRequest`, `CreateFeatureDefinitionRequest`.
+    - Interfaces: `IConnectionStringEncryptor`, `ITenantDatabaseProvisioner`.
+    - Commands & Handlers:
+      - `CreateTenantCommand` - إنشاء جهة جديدة مع توليد اسم قاعدة بيانات وتشفير سلسلة الاتصال وتهيئة Feature Flags.
+      - `UpdateTenantCommand` - تحديث بيانات الجهة.
+      - `ChangeTenantStatusCommand` - تغيير حالة الجهة مع التحقق من صحة الانتقال.
+      - `UpdateTenantBrandingCommand` - تحديث العلامة التجارية (شعار، ألوان).
+      - `ProvisionTenantDatabaseCommand` - تشغيل التأسيس الآلي لقاعدة البيانات.
+      - `ToggleFeatureFlagCommand` - تفعيل/تعطيل ميزة لجهة محددة.
+      - `CreateFeatureDefinitionCommand` - إنشاء تعريف ميزة عالمية.
+    - Queries & Handlers:
+      - `GetTenantByIdQuery` - جلب تفاصيل جهة.
+      - `GetTenantsListQuery` - قائمة مرقّمة مع بحث وفلترة.
+      - `GetTenantFeatureFlagsQuery` - ميزات جهة محددة.
+      - `GetFeatureDefinitionsQuery` - كاتالوج الميزات العالمية.
+    - Validator: `CreateTenantCommandValidator` باستخدام FluentValidation.
+    - Mapper: `TenantMapper` لتحويل Entities إلى DTOs.
+  - **طبقة API (Minimal APIs):**
+    - `TenantEndpoints` - 7 endpoints:
+      - `GET /api/v1/tenants` - قائمة الجهات مع ترقيم وبحث وفلترة.
+      - `GET /api/v1/tenants/{id}` - تفاصيل جهة.
+      - `POST /api/v1/tenants` - إنشاء جهة جديدة.
+      - `PUT /api/v1/tenants/{id}` - تحديث بيانات الجهة.
+      - `PUT /api/v1/tenants/{id}/branding` - تحديث العلامة التجارية.
+      - `POST /api/v1/tenants/{id}/status` - تغيير الحالة.
+      - `POST /api/v1/tenants/{id}/provision` - تشغيل التأسيس الآلي.
+      - `GET /api/v1/tenants/statuses` - قائمة الحالات.
+    - `FeatureFlagEndpoints` - 4 endpoints:
+      - `GET /api/v1/feature-definitions` - كاتالوج الميزات.
+      - `POST /api/v1/feature-definitions` - إنشاء تعريف ميزة.
+      - `GET /api/v1/tenants/{tenantId}/feature-flags` - ميزات جهة.
+      - `PUT /api/v1/tenants/{tenantId}/feature-flags/{featureKey}` - تفعيل/تعطيل ميزة.
+  - **الاختبارات (Unit Tests):**
+    - `TenantEntityTests` - 17 اختبار لدورة حياة الجهة وانتقالات الحالة.
+    - `TenantFeatureFlagTests` - 5 اختبارات لكيان Feature Flag.
+    - `FeatureDefinitionTests` - 4 اختبارات لكيان Feature Definition.
+    - `CreateTenantCommandHandlerTests` - 4 اختبارات لمعالج إنشاء الجهات.
+    - `ChangeTenantStatusCommandHandlerTests` - 3 اختبارات لمعالج تغيير الحالة.
+    - `ToggleFeatureFlagCommandHandlerTests` - 4 اختبارات لمعالج Feature Flags.
+    - `CreateTenantCommandValidatorTests` - 10 اختبارات للتحقق من المدخلات.
+    - **المجموع: 47 اختبار جديد.**
+- **الملفات المُنشأة/المعدّلة:**
+  - `Domain/Entities/Tenant.cs` (معدّل - إضافة حقول وDomain Methods)
+  - `Domain/Enums/TenantStatus.cs` (معدّل - إضافة حالات جديدة)
+  - `Domain/Entities/TenantFeatureFlag.cs` (جديد)
+  - `Domain/Entities/FeatureDefinition.cs` (جديد)
+  - `Domain/Entities/ITenantRepository.cs` (جديد)
+  - `Domain/Entities/ITenantFeatureFlagRepository.cs` (جديد)
+  - `Domain/Entities/IFeatureDefinitionRepository.cs` (جديد)
+  - `Domain/Events/TenantDomainEvents.cs` (جديد)
+  - `Infrastructure/Persistence/Configurations/TenantConfiguration.cs` (معدّل)
+  - `Infrastructure/Persistence/Configurations/TenantFeatureFlagConfiguration.cs` (جديد)
+  - `Infrastructure/Persistence/Configurations/FeatureDefinitionConfiguration.cs` (جديد)
+  - `Infrastructure/Persistence/MasterPlatformDbContext.cs` (معدّل)
+  - `Infrastructure/Persistence/Repositories/TenantRepository.cs` (جديد)
+  - `Infrastructure/Persistence/Repositories/TenantFeatureFlagRepository.cs` (جديد)
+  - `Infrastructure/Persistence/Repositories/FeatureDefinitionRepository.cs` (جديد)
+  - `Infrastructure/Security/ConnectionStringEncryptor.cs` (جديد)
+  - `Infrastructure/MultiTenancy/TenantDatabaseProvisioner.cs` (جديد)
+  - `Infrastructure/DependencyInjection.cs` (معدّل)
+  - `Application/Features/Tenants/Dtos/TenantDtos.cs` (جديد)
+  - `Application/Features/FeatureFlags/Dtos/FeatureFlagDtos.cs` (جديد)
+  - `Application/Common/Interfaces/IConnectionStringEncryptor.cs` (جديد)
+  - `Application/Common/Interfaces/ITenantDatabaseProvisioner.cs` (جديد)
+  - `Application/Features/Tenants/Commands/CreateTenant/*` (جديد)
+  - `Application/Features/Tenants/Commands/UpdateTenant/*` (جديد)
+  - `Application/Features/Tenants/Commands/ChangeTenantStatus/*` (جديد)
+  - `Application/Features/Tenants/Commands/UpdateTenantBranding/*` (جديد)
+  - `Application/Features/Tenants/Commands/ProvisionTenantDatabase/*` (جديد)
+  - `Application/Features/Tenants/Queries/GetTenantById/*` (جديد)
+  - `Application/Features/Tenants/Queries/GetTenantsList/*` (جديد)
+  - `Application/Features/Tenants/Validators/CreateTenantCommandValidator.cs` (جديد)
+  - `Application/Features/Tenants/TenantMapper.cs` (جديد)
+  - `Application/Features/FeatureFlags/Commands/ToggleFeatureFlag/*` (جديد)
+  - `Application/Features/FeatureFlags/Commands/CreateFeatureDefinition/*` (جديد)
+  - `Application/Features/FeatureFlags/Queries/GetTenantFeatureFlags/*` (جديد)
+  - `Application/Features/FeatureFlags/Queries/GetFeatureDefinitions/*` (جديد)
+  - `API/Endpoints/TenantEndpoints.cs` (جديد)
+  - `API/Endpoints/FeatureFlagEndpoints.cs` (جديد)
+  - `API/Program.cs` (معدّل - تسجيل Endpoints)
+  - `Tests/Domain/Tenants/TenantEntityTests.cs` (جديد)
+  - `Tests/Domain/Tenants/TenantFeatureFlagTests.cs` (جديد)
+  - `Tests/Domain/Tenants/FeatureDefinitionTests.cs` (جديد)
+  - `Tests/Application/Tenants/CreateTenantCommandHandlerTests.cs` (جديد)
+  - `Tests/Application/Tenants/ChangeTenantStatusCommandHandlerTests.cs` (جديد)
+  - `Tests/Application/Tenants/CreateTenantCommandValidatorTests.cs` (جديد)
+  - `Tests/Application/FeatureFlags/ToggleFeatureFlagCommandHandlerTests.cs` (جديد)
+- **الاعتماديات التي تم حلها:** TASK-103 (Clean Architecture), TASK-105 (قاعدة البيانات المركزية), TASK-201 (نظام المصادقة).
+- **ملاحظات للوكيل التالي:**
+  - APIs إدارة الجهات جاهزة بالكامل. يمكن البدء في TASK-202 (إدارة المستخدمين والأدوار).
+  - آلية Database-per-Tenant جاهزة: عند إنشاء جهة جديدة، يتم توليد اسم قاعدة بيانات وتشفير سلسلة الاتصال. لتشغيل التأسيس: `POST /api/v1/tenants/{id}/provision`.
+  - Feature Flags: يتم تهيئة الميزات تلقائياً عند إنشاء الجهة بناءً على كاتالوج FeatureDefinitions.
+  - التشفير: يجب إعداد متغير البيئة `Security__EncryptionKey` (مفتاح AES-256 بترميز Base64) قبل التشغيل.
+  - يجب إنشاء EF Core Migration: `dotnet ef migrations add AddTenantFeatureFlagsAndDefinitions --project src/TendexAI.Infrastructure --startup-project src/TendexAI.API --context MasterPlatformDbContext`.
+  - جميع العلاقات تستخدم `DeleteBehavior.NoAction` حصرياً.
+  - دورة حياة الجهة: PendingProvisioning → EnvironmentSetup → Training → FinalAcceptance → Active → RenewalWindow/Suspended → Cancelled → Archived.
 
 ### 2026-03-28 - TASK-205: دمج MinIO لتخزين المرفقات والملفات (MinIO File Storage Integration)
 - **ما تم إنجازه:**

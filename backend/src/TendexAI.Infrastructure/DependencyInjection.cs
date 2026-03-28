@@ -6,12 +6,14 @@ using Minio;
 using TendexAI.Application.Common.Interfaces;
 using TendexAI.Application.Common.Interfaces.Identity;
 using TendexAI.Domain.Common;
+using TendexAI.Domain.Entities;
 using TendexAI.Domain.Entities.Identity;
 using TendexAI.Infrastructure.Messaging.RabbitMQ;
 using TendexAI.Infrastructure.MultiTenancy;
 using TendexAI.Infrastructure.Persistence;
 using TendexAI.Infrastructure.Persistence.Interceptors;
 using TendexAI.Infrastructure.Persistence.Repositories;
+using TendexAI.Infrastructure.Security;
 using TendexAI.Infrastructure.Services;
 using TendexAI.Infrastructure.Services.Identity;
 using TendexAI.Infrastructure.Services.Email;
@@ -190,6 +192,15 @@ public static class DependencyInjection
         services.AddScoped<IAuditLogRepository, AuditLogRepository>();
         services.AddScoped<IRoleRepository, RoleRepository>();
         services.AddScoped<IUserInvitationRepository, UserInvitationRepository>();
+        services.AddScoped<ITenantRepository, TenantRepository>();
+        services.AddScoped<ITenantFeatureFlagRepository, TenantFeatureFlagRepository>();
+        services.AddScoped<IFeatureDefinitionRepository, FeatureDefinitionRepository>();
+
+        // ----- Security Services -----
+        services.AddSingleton<IConnectionStringEncryptor, ConnectionStringEncryptor>();
+
+        // ----- Tenant Database Provisioning -----
+        services.AddScoped<ITenantDatabaseProvisioner, TenantDatabaseProvisioner>();
 
         return services;
     }

@@ -78,4 +78,10 @@ app.MapFileEndpoints();
 // User management endpoints
 app.MapUserManagementEndpoints();
 
+// Tenant (Government Entity) lifecycle management endpoints
+app.MapTenantEndpoints();
+
+// Feature flag management endpoints
+app.MapFeatureFlagEndpoints();
+
 app.Run();

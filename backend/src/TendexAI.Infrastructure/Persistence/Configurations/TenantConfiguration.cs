@@ -20,17 +20,16 @@ public sealed class TenantConfiguration : IEntityTypeConfiguration<Tenant>
         builder.Property(t => t.Id)
             .ValueGeneratedNever();
 
-        // NameAr - NVARCHAR for Arabic text support
+        // ----- Identity Properties -----
+
         builder.Property(t => t.NameAr)
             .IsRequired()
             .HasMaxLength(256);
 
-        // NameEn
         builder.Property(t => t.NameEn)
             .IsRequired()
             .HasMaxLength(256);
 
-        // Identifier - unique short code
         builder.Property(t => t.Identifier)
             .IsRequired()
             .HasMaxLength(50);
@@ -39,12 +38,20 @@ public sealed class TenantConfiguration : IEntityTypeConfiguration<Tenant>
             .IsUnique()
             .HasDatabaseName("IX_Tenants_Identifier");
 
-        // ConnectionString - encrypted, stored as NVARCHAR(MAX)
+        builder.Property(t => t.Subdomain)
+            .IsRequired()
+            .HasMaxLength(100);
+
+        builder.HasIndex(t => t.Subdomain)
+            .IsUnique()
+            .HasDatabaseName("IX_Tenants_Subdomain");
+
+        // ----- Database Isolation Properties -----
+
         builder.Property(t => t.ConnectionString)
             .IsRequired()
-            .HasMaxLength(2048);
+            .HasMaxLength(1024);
 
-        // DatabaseName
         builder.Property(t => t.DatabaseName)
             .IsRequired()
             .HasMaxLength(128);
@@ -53,15 +60,32 @@ public sealed class TenantConfiguration : IEntityTypeConfiguration<Tenant>
             .IsUnique()
             .HasDatabaseName("IX_Tenants_DatabaseName");
 
-        // Status
+        builder.Property(t => t.IsProvisioned)
+            .IsRequired()
+            .HasDefaultValue(false);
+
+        builder.Property(t => t.ProvisionedAt);
+
+        // ----- Lifecycle Properties -----
+
         builder.Property(t => t.Status)
             .IsRequired()
-            .HasDefaultValue(TenantStatus.Pending)
-            .HasConversion<int>();
+            .HasConversion<int>()
+            .HasDefaultValue(TenantStatus.PendingProvisioning);
 
-        // Branding
+        builder.HasIndex(t => t.Status)
+            .HasDatabaseName("IX_Tenants_Status");
+
+        builder.Property(t => t.SubscriptionExpiresAt);
+
+        builder.HasIndex(t => t.SubscriptionExpiresAt)
+            .HasDatabaseName("IX_Tenants_SubscriptionExpiresAt")
+            .HasFilter("[SubscriptionExpiresAt] IS NOT NULL");
+
+        // ----- Branding Properties -----
+
         builder.Property(t => t.LogoUrl)
-            .HasMaxLength(1024);
+            .HasMaxLength(512);
 
         builder.Property(t => t.PrimaryColor)
             .HasMaxLength(9); // #RRGGBBAA
@@ -69,10 +93,24 @@ public sealed class TenantConfiguration : IEntityTypeConfiguration<Tenant>
         builder.Property(t => t.SecondaryColor)
             .HasMaxLength(9);
 
-        // SubscriptionExpiresAt
-        builder.Property(t => t.SubscriptionExpiresAt);
+        // ----- Contact Properties -----
 
-        // Audit fields
+        builder.Property(t => t.ContactPersonName)
+            .HasMaxLength(256);
+
+        builder.Property(t => t.ContactPersonEmail)
+            .HasMaxLength(256);
+
+        builder.Property(t => t.ContactPersonPhone)
+            .HasMaxLength(20);
+
+        // ----- Notes -----
+
+        builder.Property(t => t.Notes)
+            .HasMaxLength(2000);
+
+        // ----- Audit Fields -----
+
         builder.Property(t => t.CreatedAt)
             .IsRequired();
 
@@ -82,13 +120,22 @@ public sealed class TenantConfiguration : IEntityTypeConfiguration<Tenant>
         builder.Property(t => t.LastModifiedBy)
             .HasMaxLength(256);
 
-        // Relationships - NoAction is enforced globally, but explicit here for clarity
+        // ----- Navigation: Subscriptions -----
+        builder.HasMany(t => t.Subscriptions)
+            .WithOne(s => s.Tenant)
+            .HasForeignKey(s => s.TenantId)
+            .OnDelete(DeleteBehavior.NoAction);
+
+        // ----- Navigation: Feature Flags -----
+        builder.HasMany(t => t.FeatureFlags)
+            .WithOne(f => f.Tenant)
+            .HasForeignKey(f => f.TenantId)
+            .OnDelete(DeleteBehavior.NoAction);
+
+        // ----- Navigation: AI Configurations -----
         builder.HasMany(t => t.AiConfigurations)
             .WithOne(a => a.Tenant)
             .HasForeignKey(a => a.TenantId)
             .OnDelete(DeleteBehavior.NoAction);
-
-        // Ignore domain events collection (not persisted)
-        builder.Ignore(t => t.DomainEvents);
     }
 }
