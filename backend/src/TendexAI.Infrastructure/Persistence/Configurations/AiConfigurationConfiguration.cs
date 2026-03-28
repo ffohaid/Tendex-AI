@@ -47,6 +47,21 @@ public sealed class AiConfigurationConfiguration : IEntityTypeConfiguration<AiCo
         builder.Property(a => a.QdrantCollectionName)
             .HasMaxLength(256);
 
+        // MaxTokens
+        builder.Property(a => a.MaxTokens)
+            .IsRequired()
+            .HasDefaultValue(4096);
+
+        // Temperature
+        builder.Property(a => a.Temperature)
+            .IsRequired()
+            .HasDefaultValue(0.3);
+
+        // Priority
+        builder.Property(a => a.Priority)
+            .IsRequired()
+            .HasDefaultValue(0);
+
         // IsActive
         builder.Property(a => a.IsActive)
             .IsRequired()
@@ -65,6 +80,10 @@ public sealed class AiConfigurationConfiguration : IEntityTypeConfiguration<AiCo
         // Composite index for quick lookup
         builder.HasIndex(a => new { a.TenantId, a.Provider, a.IsActive })
             .HasDatabaseName("IX_AiConfigurations_Tenant_Provider_Active");
+
+        // Index for priority-based model selection
+        builder.HasIndex(a => new { a.TenantId, a.IsActive, a.Priority })
+            .HasDatabaseName("IX_AiConfigurations_Tenant_Active_Priority");
 
         // Relationship to Tenant (NoAction enforced globally)
         builder.HasOne(a => a.Tenant)

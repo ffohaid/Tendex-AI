@@ -10,7 +10,7 @@
 | Sprint 1: البنية التحتية | ✅ مكتمل | 100% | تم إنجاز TASK-101, TASK-102, TASK-103, TASK-104, TASK-105, TASK-106 |
 | Sprint 2: الخدمات الأساسية | 🔄 قيد التنفيذ | 86% | تم إنجاز TASK-201, TASK-202, TASK-203, TASK-204, TASK-205, TASK-206 |
 | Sprint 3: سير العمل والتقييم | 🔄 قيد التنفيذ | 71% | تم إنجاز TASK-301, TASK-302, TASK-303, TASK-304, TASK-305 |
-| Sprint 4: تكامل الذكاء الاصطناعي | ⏳ لم يبدأ | 0% | - |
+| Sprint 4: تكامل الذكاء الاصطناعي | 🔄 قيد التنفيذ | 14% | تم إنجاز TASK-401 |
 | Sprint 5: الواجهة الأمامية | ⏳ لم يبدأ | 0% | - |
 | Sprint 6: لوحة تحكم المشغل | ⏳ لم يبدأ | 0% | - |
 | Sprint 7: الاختبار والنشر | ⏳ لم يبدأ | 0% | - |
@@ -20,6 +20,63 @@
 ## سجل المهام المنجزة (Completed Tasks Log)
 
 *يرجى إضافة أحدث مهمة منجزة في أعلى هذه القائمة.*
+
+### 2026-03-28 - TASK-401: تطوير واجهة موحدة للذكاء الاصطناعي (AI Gateway) مع تشفير AES-256
+- **ما تم إنجازه:**
+  - **طبقة Application — واجهات AI:**
+    - إنشاء `IAiKeyEncryptionService` لتشفير/فك تشفير مفاتيح API باستخدام AES-256-CBC.
+    - إنشاء `IAiConfigurationRepository` لجلب إعدادات AI من جدول AiConfiguration.
+    - إنشاء `IAiGateway` كواجهة موحدة للاتصال بنماذج AI المختلفة.
+    - إنشاء `IAiProviderClient` كواجهة لكل مزود AI فردي.
+    - إنشاء نماذج الطلب/الاستجابة: `AiCompletionRequest`, `AiCompletionResponse`, `AiEmbeddingRequest`, `AiEmbeddingResponse`, `AiChatMessage`.
+  - **طبقة Application — CQRS Commands & Queries:**
+    - `CreateAiConfigurationCommand` + Handler + Validator: إنشاء إعداد AI جديد مع تشفير المفتاح.
+    - `UpdateAiConfigurationCommand` + Handler: تحديث إعدادات النموذج.
+    - `RotateAiApiKeyCommand` + Handler: تدوير مفاتيح API مع إعادة التشفير.
+    - `GetAiConfigurationsQuery` + Handler + DTO: جلب إعدادات AI للجهة (بدون كشف المفاتيح).
+  - **طبقة Domain — تحسين كيان AiConfiguration:**
+    - إضافة حقول: `MaxTokens`, `Temperature`, `Priority` لدعم التبديل الديناميكي.
+    - إضافة طرق Domain: `Activate()`, `UpdateModelSettings()`, `UpdateQdrantCollection()` مع التحقق من المدخلات.
+    - تحديث EF Core Configuration لتشمل الحقول الجديدة وفهرس الأولوية.
+  - **طبقة Infrastructure — خدمة التشفير AES-256:**
+    - `AiKeyEncryptionService`: تشفير/فك تشفير AES-256-CBC مع IV عشوائي لكل عملية.
+    - المفتاح الرئيسي يُجلب من Configuration (ليس hardcoded).
+    - فك التشفير يتم في الذاكرة فقط (in-memory) أثناء التنفيذ.
+  - **طبقة Infrastructure — AI Provider Clients:**
+    - `OpenAiProviderClient`: دعم OpenAI Chat Completions و Embeddings API.
+    - `AnthropicProviderClient`: دعم Anthropic Claude Messages API.
+    - `AzureOpenAiProviderClient`: دعم Azure OpenAI مع تنسيق URL الخاص.
+    - `LocalModelProviderClient`: دعم النماذج المحلية (Ollama, vLLM, LM Studio) عبر OpenAI-compatible API.
+  - **طبقة Infrastructure — AI Gateway الموحد:**
+    - `AiGateway`: توجيه الطلبات للمزود المناسب بناءً على إعدادات الجهة.
+    - دعم التبديل الديناميكي بين النماذج بناءً على الأولوية (Priority).
+    - آلية Fallback: إذا فشل المزود الأول، ينتقل تلقائياً للمزود التالي.
+    - دعم PreferredProvider لتجاوز الأولوية الافتراضية.
+    - دعم ModelNameOverride لاختيار نموذج مختلف عن الافتراضي.
+    - دمج سياق RAG في الطلبات تلقائياً.
+  - **طبقة Infrastructure — تسجيل الخدمات:**
+    - `AiServiceRegistration`: تسجيل جميع خدمات AI في DI Container.
+    - تسجيل HttpClient factories لكل مزود (OpenAI, Anthropic, AzureOpenAI, LocalModel).
+    - تحديث `DependencyInjection.cs` لاستدعاء `AddAiGatewayServices()`.
+  - **طبقة Infrastructure — Repository:**
+    - `AiConfigurationRepository`: تنفيذ `IAiConfigurationRepository` مع استعلامات محسّنة.
+  - **طبقة API — Minimal API Endpoints:**
+    - `AiConfigurationEndpoints`: 4 endpoints لإدارة إعدادات AI (GET, POST, PUT, POST rotate-key).
+    - `AiGatewayEndpoints`: 3 endpoints للبوابة الموحدة (completions, embeddings, status).
+    - تسجيل الـ Endpoints في `Program.cs`.
+  - **اختبارات الوحدة (Unit Tests):**
+    - `AiKeyEncryptionServiceTests`: 9 اختبارات للتشفير/فك التشفير AES-256.
+    - `AiGatewayTests`: 8 اختبارات للتوجيه والتبديل الديناميكي والـ Fallback.
+    - `AiConfigurationEntityTests`: 10 اختبارات لكيان AiConfiguration.
+    - `CreateAiConfigurationCommandHandlerTests`: 3 اختبارات لـ CQRS Handler.
+- **الاعتماديات التي تم حلها:** كيان AiConfiguration من TASK-102, جدول AiConfigurations من TASK-103.
+- **ملاحظات للوكيل التالي:**
+  - AI Gateway مكتمل ويدعم 4 مزودين: OpenAI, Anthropic (Claude), Azure OpenAI, والنماذج المحلية.
+  - التشفير AES-256-CBC مطبق بالكامل مع IV عشوائي لكل عملية تشفير.
+  - فك التشفير يتم في الذاكرة فقط (in-memory) ويُمسح بعد الاستخدام.
+  - يجب ضبط متغير البيئة `Security:AiEncryptionKey` (مفتاح Base64 بطول 32 بايت) عند النشر.
+  - يمكن البدء في TASK-402 (محرك RAG) الذي يعتمد على هذا الـ Gateway.
+  - يجب إنشاء EF Core Migration للحقول الجديدة (MaxTokens, Temperature, Priority) عند النشر.
 
 ### 2026-03-28 - TASK-305: تطوير APIs لفتح وتقييم العروض المالية وإصدار توصيات الترسية وإنشاء المحاضر
 - **ما تم إنجازه:**

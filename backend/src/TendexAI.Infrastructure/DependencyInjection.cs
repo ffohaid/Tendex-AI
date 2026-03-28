@@ -20,6 +20,7 @@ using TendexAI.Infrastructure.Security;
 using TendexAI.Infrastructure.Services;
 using TendexAI.Infrastructure.Services.Identity;
 using TendexAI.Infrastructure.Services.Email;
+using TendexAI.Infrastructure.AI;
 using TendexAI.Infrastructure.Storage.MinIO;
 
 namespace TendexAI.Infrastructure;
@@ -205,6 +206,9 @@ public static class DependencyInjection
 
         // ----- Security Services -----
         services.AddSingleton<IConnectionStringEncryptor, ConnectionStringEncryptor>();
+
+        // ----- AI Gateway Services -----
+        services.AddAiGatewayServices(configuration);
 
         // ----- Tenant Database Provisioning -----
         services.AddScoped<ITenantDatabaseProvisioner, TenantDatabaseProvisioner>();

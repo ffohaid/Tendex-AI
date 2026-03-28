@@ -6,6 +6,7 @@ using TendexAI.API.Endpoints.UserManagement;
 using TendexAI.API.Endpoints.Rfp;
 using TendexAI.API.Endpoints.Committees;
 using TendexAI.API.Endpoints.Evaluation;
+using TendexAI.API.Endpoints.AI;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -95,5 +96,11 @@ app.MapCommitteeEndpoints();
 
 // Technical Evaluation endpoints
 app.MapTechnicalEvaluationEndpoints();
+
+// AI Configuration management endpoints
+app.MapAiConfigurationEndpoints();
+
+// AI Gateway endpoints (completions, embeddings, status)
+app.MapAiGatewayEndpoints();
 
 app.Run();
