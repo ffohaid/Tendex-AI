@@ -333,7 +333,7 @@ public static class TenantEndpoints
         if (tenant is null)
         {
             var activeTenants = await tenantRepository.GetByStatusAsync(TenantStatus.Active);
-            tenant = activeTenants.FirstOrDefault();
+            tenant = activeTenants.Count > 0 ? activeTenants[0] : null;
         }
 
         if (tenant is null)
