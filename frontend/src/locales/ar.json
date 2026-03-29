@@ -1433,5 +1433,131 @@
         "loadFailed": "فشل في تحميل قائمة الأدوار"
       }
     }
+  },
+  "reports": {
+    "title": "التقارير والتحليلات",
+    "subtitle": "عرض شامل لأداء المنافسات والمشتريات",
+    "refresh": "تحديث",
+    "errorLoading": "حدث خطأ أثناء تحميل بيانات التقارير",
+    "retry": "إعادة المحاولة",
+    "noData": "لا توجد بيانات متاحة",
+    "noDepartmentData": "لا توجد بيانات أداء الإدارات",
+    "days": "يوم",
+    "kpi": {
+      "totalCompetitions": "إجمالي المنافسات",
+      "totalOffers": "إجمالي العروض",
+      "avgCycleTime": "متوسط دورة الإنجاز",
+      "complianceRate": "نسبة الامتثال",
+      "totalBudget": "إجمالي الميزانية",
+      "completed": "المنافسات المكتملة",
+      "cancelled": "المنافسات الملغاة",
+      "avgOffers": "متوسط العروض لكل منافسة"
+    },
+    "filters": {
+      "dateFrom": "من تاريخ",
+      "dateTo": "إلى تاريخ",
+      "status": "الحالة",
+      "allStatuses": "جميع الحالات",
+      "apply": "تطبيق",
+      "reset": "إعادة تعيين"
+    },
+    "charts": {
+      "monthlyTrends": "الاتجاهات الشهرية",
+      "statusDistribution": "توزيع الحالات",
+      "competitions": "المنافسات",
+      "offers": "العروض"
+    },
+    "status": {
+      "draft": "مسودة",
+      "published": "منشورة",
+      "receiving_offers": "استقبال العروض",
+      "technical_evaluation": "التقييم الفني",
+      "financial_evaluation": "التقييم المالي",
+      "awarding": "الترسية",
+      "completed": "مكتملة",
+      "cancelled": "ملغاة"
+    },
+    "departmentPerformance": "أداء الإدارات",
+    "table": {
+      "department": "الإدارة",
+      "competitions": "المنافسات",
+      "avgCycleTime": "متوسط دورة الإنجاز",
+      "complianceRate": "نسبة الامتثال"
+    }
+  },
+  "inquiries": {
+    "title": "الاستفسارات",
+    "subtitle": "إدارة الاستفسارات على كراسات الشروط والمواصفات",
+    "refresh": "تحديث",
+    "errorLoading": "حدث خطأ أثناء تحميل الاستفسارات",
+    "retry": "إعادة المحاولة",
+    "overdue": "متأخر",
+    "stats": {
+      "total": "إجمالي الاستفسارات",
+      "pending": "قيد الانتظار",
+      "answered": "تمت الإجابة",
+      "overdue": "متأخرة"
+    },
+    "filters": {
+      "search": "بحث",
+      "searchPlaceholder": "البحث في الاستفسارات...",
+      "status": "الحالة",
+      "allStatuses": "جميع الحالات",
+      "priority": "الأولوية",
+      "allPriorities": "جميع الأولويات",
+      "apply": "تطبيق",
+      "reset": "إعادة تعيين"
+    },
+    "status": {
+      "pending": "قيد الانتظار",
+      "answered": "تمت الإجابة",
+      "closed": "مغلق",
+      "escalated": "مُصعّد"
+    },
+    "priority": {
+      "critical": "حرج",
+      "high": "عالي",
+      "medium": "متوسط",
+      "low": "منخفض"
+    },
+    "empty": {
+      "title": "لا توجد استفسارات",
+      "subtitle": "لم يتم العثور على أي استفسارات تطابق معايير البحث"
+    },
+    "pagination": {
+      "showing": "عرض {from} إلى {to} من {total}"
+    },
+    "detail": {
+      "competition": "المنافسة",
+      "submittedBy": "مقدم من",
+      "submittedAt": "تاريخ التقديم",
+      "status": "الحالة",
+      "question": "نص الاستفسار",
+      "answer": "الإجابة",
+      "answeredBy": "أجاب بواسطة",
+      "writeAnswer": "كتابة الإجابة",
+      "answerPlaceholder": "اكتب إجابتك هنا...",
+      "close": "إغلاق",
+      "submitAnswer": "إرسال الإجابة"
+    }
+  },
+  "aiAssistant": {
+    "title": "المساعد الذكي",
+    "subtitle": "مساعد ذكي متخصص في المنافسات والمشتريات الحكومية",
+    "checkingStatus": "جارٍ التحقق...",
+    "available": "متاح",
+    "unavailable": "غير متاح",
+    "clearChat": "مسح المحادثة",
+    "thinking": "جارٍ التفكير...",
+    "references": "المراجع",
+    "dismiss": "إخفاء",
+    "inputPlaceholder": "اكتب رسالتك هنا...",
+    "disclaimer": "المساعد الذكي قد يقدم معلومات غير دقيقة. يرجى التحقق من المعلومات المهمة.",
+    "errorResponse": "عذراً، حدث خطأ أثناء معالجة طلبك. يرجى المحاولة مرة أخرى.",
+    "unknownError": "خطأ غير معروف",
+    "welcome": {
+      "title": "مرحباً بك في المساعد الذكي",
+      "subtitle": "يمكنني مساعدتك في صياغة كراسات الشروط، تحليل العروض، والتحقق من الامتثال للأنظمة. اختر أحد الإجراءات السريعة أو اكتب سؤالك مباشرة."
+    }
   }
 }

@@ -15,13 +15,61 @@
 | Sprint 6: لوحة تحكم المشغل | ✅ مكتمل | 100% | تم إنجاز TASK-601, TASK-602, TASK-603, TASK-604 |
 | Sprint 7: الاختبار والنشر | ✅ مكتمل | 100% | تم إنجاز TASK-701, TASK-702, TASK-703, TASK-704 |
 | Sprint 8: النشر والتشغيل | ✅ مكتمل | 100% | تم إنجاز TASK-801, TASK-802, TASK-803 |
-| Sprint 9: إصلاحات التشغيل الفعلي | 🔄 جارٍ | 75% | تم إنجاز TASK-901, TASK-902, TASK-903 |
+| Sprint 9: إصلاحات التشغيل الفعلي | 🔄 جارٍ | 90% | تم إنجاز TASK-901, TASK-902, TASK-903, TASK-904 |
 
 ---
 
 ## سجل المهام المنجزة (Completed Tasks Log)
 
 *يرجى إضافة أحدث مهمة منجزة في أعلى هذه القائمة.*
+
+### 2026-03-29 - TASK-904: بناء صفحات التقارير، الاستفسارات، ومساعد الذكاء الاصطناعي
+- **ما تم إنجازه:**
+  - **Types:** إنشاء 3 ملفات types جديدة:
+    - `frontend/src/types/reports.ts` (ReportSummary, MonthlyTrendItem, StatusDistributionItem, DepartmentPerformance, ReportFilters, ReportData)
+    - `frontend/src/types/inquiry.ts` (Inquiry, InquiryFilters, InquiryStats, InquiryPagedResult, InquiryStatus, InquiryPriority)
+    - `frontend/src/types/aiAssistant.ts` (ChatMessage, Conversation, AiChatRequest, AiChatResponse, QuickAction)
+  - **Services:** إنشاء 3 خدمات API جديدة:
+    - `frontend/src/services/reportService.ts` — GET /api/v1/reports (with filters)
+    - `frontend/src/services/inquiryService.ts` — GET/POST/PUT /api/v1/inquiries (CRUD + stats + answer)
+    - `frontend/src/services/aiAssistantService.ts` — POST /api/v1/ai/completions + GET /api/v1/ai/status
+  - **Views:** إنشاء 3 صفحات جديدة:
+    - `frontend/src/views/reports/ReportsView.vue` — صفحة تقارير شاملة تتضمن:
+      - 8 بطاقات KPI (إجمالي المنافسات، العروض، متوسط دورة الإنجاز، نسبة الامتثال، الميزانية، المكتملة، الملغاة، متوسط العروض)
+      - رسم بياني شريطي (Bar Chart) للاتجاهات الشهرية (المنافسات والعروض)
+      - رسم بياني دائري (Doughnut Chart) لتوزيع حالات المنافسات
+      - جدول أداء الإدارات مع أشرطة تقدم الامتثال
+      - فلاتر (تاريخ من/إلى، الحالة) مع أزرار تطبيق/إعادة تعيين
+    - `frontend/src/views/inquiries/InquiriesView.vue` — صفحة إدارة الاستفسارات تتضمن:
+      - 4 بطاقات إحصائية (إجمالي، قيد الانتظار، تمت الإجابة، متأخرة)
+      - قائمة استفسارات مع صفحات وفلاتر (بحث، حالة، أولوية)
+      - شارات الحالة والأولوية مع مؤشرات التأخر
+      - نافذة تفاصيل الاستفسار مع إمكانية كتابة الإجابة
+    - `frontend/src/views/ai/AiAssistantView.vue` — واجهة دردشة مع المساعد الذكي تتضمن:
+      - واجهة محادثة كاملة مع فقاعات رسائل
+      - 6 إجراءات سريعة (صياغة كراسة شروط، تحليل عرض فني، فحص الامتثال، إعداد جدول كميات، سؤال عام، تحليل تقرير)
+      - مؤشر حالة الذكاء الاصطناعي (متاح/غير متاح)
+      - مؤشر تحميل (bouncing dots) أثناء انتظار الرد
+      - حقل إدخال قابل للتوسع مع دعم Enter للإرسال
+      - يتصل بـ AiGatewayEndpoints.cs (POST /api/v1/ai/completions)
+  - **Router:** تحديث `frontend/src/router/index.ts` لربط المسارات:
+    - `/reports` → `ReportsView.vue` (بدلاً من DashboardView.vue)
+    - `/inquiries` → `InquiriesView.vue` (بدلاً من DashboardView.vue)
+    - `/ai-assistant` → `AiAssistantView.vue` (بدلاً من DashboardView.vue)
+  - **Backend Endpoints:** إنشاء Endpoints مبسطة ترجع بيانات فارغة مؤقتاً:
+    - `backend/src/TendexAI.API/Endpoints/Reports/ReportEndpoints.cs` — GET /api/v1/reports
+    - `backend/src/TendexAI.API/Endpoints/Inquiries/InquiryEndpoints.cs` — GET/POST/PUT /api/v1/inquiries (5 endpoints)
+  - **Program.cs:** تسجيل الـ Endpoints الجديدة (MapReportEndpoints, MapInquiryEndpoints)
+  - **i18n:** إضافة مفاتيح الترجمة الكاملة لكلا اللغتين (ar.json, en.json) لأقسام reports, inquiries, aiAssistant
+- **الاعتماديات التي تم حلها:** TASK-903 (صفحات الإعدادات وإدارة المستخدمين)
+- **ملاحظات للوكيل التالي:**
+  - البناء ناجح بدون أخطاء TypeScript.
+  - جميع الصفحات تدعم RTL/LTR باستخدام Tailwind logical properties (ms, me, ps, pe, start, end).
+  - جميع البيانات تُجلب ديناميكياً من API (لا توجد بيانات وهمية).
+  - الأرقام الإنجليزية مستخدمة حصرياً عبر useFormatters composable.
+  - Endpoints الباك إند للتقارير والاستفسارات ترجع بيانات فارغة مؤقتاً — تحتاج لربطها بقاعدة البيانات في مهمة لاحقة.
+  - مساعد الذكاء الاصطناعي يتصل بـ AiGatewayEndpoints.cs الموجود مسبقاً.
+  - الرسوم البيانية تستخدم vue-chartjs (Chart.js) المثبت مسبقاً في المشروع.
 
 ### 2026-03-29 - TASK-903: بناء صفحات الإعدادات وإدارة المستخدمين في الواجهة الأمامية
 - **ما تم إنجازه:**

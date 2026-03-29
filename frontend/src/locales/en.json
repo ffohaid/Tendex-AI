@@ -1433,5 +1433,131 @@
         "loadFailed": "Failed to load roles"
       }
     }
+  },
+  "reports": {
+    "title": "Reports & Analytics",
+    "subtitle": "Comprehensive overview of competition and procurement performance",
+    "refresh": "Refresh",
+    "errorLoading": "Failed to load report data",
+    "retry": "Retry",
+    "noData": "No data available",
+    "noDepartmentData": "No department performance data available",
+    "days": "days",
+    "kpi": {
+      "totalCompetitions": "Total Competitions",
+      "totalOffers": "Total Offers",
+      "avgCycleTime": "Avg. Cycle Time",
+      "complianceRate": "Compliance Rate",
+      "totalBudget": "Total Budget",
+      "completed": "Completed",
+      "cancelled": "Cancelled",
+      "avgOffers": "Avg. Offers per Competition"
+    },
+    "filters": {
+      "dateFrom": "From Date",
+      "dateTo": "To Date",
+      "status": "Status",
+      "allStatuses": "All Statuses",
+      "apply": "Apply",
+      "reset": "Reset"
+    },
+    "charts": {
+      "monthlyTrends": "Monthly Trends",
+      "statusDistribution": "Status Distribution",
+      "competitions": "Competitions",
+      "offers": "Offers"
+    },
+    "status": {
+      "draft": "Draft",
+      "published": "Published",
+      "receiving_offers": "Receiving Offers",
+      "technical_evaluation": "Technical Evaluation",
+      "financial_evaluation": "Financial Evaluation",
+      "awarding": "Awarding",
+      "completed": "Completed",
+      "cancelled": "Cancelled"
+    },
+    "departmentPerformance": "Department Performance",
+    "table": {
+      "department": "Department",
+      "competitions": "Competitions",
+      "avgCycleTime": "Avg. Cycle Time",
+      "complianceRate": "Compliance Rate"
+    }
+  },
+  "inquiries": {
+    "title": "Inquiries",
+    "subtitle": "Manage inquiries on specification booklets",
+    "refresh": "Refresh",
+    "errorLoading": "Failed to load inquiries",
+    "retry": "Retry",
+    "overdue": "Overdue",
+    "stats": {
+      "total": "Total Inquiries",
+      "pending": "Pending",
+      "answered": "Answered",
+      "overdue": "Overdue"
+    },
+    "filters": {
+      "search": "Search",
+      "searchPlaceholder": "Search inquiries...",
+      "status": "Status",
+      "allStatuses": "All Statuses",
+      "priority": "Priority",
+      "allPriorities": "All Priorities",
+      "apply": "Apply",
+      "reset": "Reset"
+    },
+    "status": {
+      "pending": "Pending",
+      "answered": "Answered",
+      "closed": "Closed",
+      "escalated": "Escalated"
+    },
+    "priority": {
+      "critical": "Critical",
+      "high": "High",
+      "medium": "Medium",
+      "low": "Low"
+    },
+    "empty": {
+      "title": "No Inquiries",
+      "subtitle": "No inquiries match the current search criteria"
+    },
+    "pagination": {
+      "showing": "Showing {from} to {to} of {total}"
+    },
+    "detail": {
+      "competition": "Competition",
+      "submittedBy": "Submitted By",
+      "submittedAt": "Submitted At",
+      "status": "Status",
+      "question": "Inquiry Text",
+      "answer": "Answer",
+      "answeredBy": "Answered By",
+      "writeAnswer": "Write Answer",
+      "answerPlaceholder": "Type your answer here...",
+      "close": "Close",
+      "submitAnswer": "Submit Answer"
+    }
+  },
+  "aiAssistant": {
+    "title": "AI Assistant",
+    "subtitle": "AI assistant specialized in government procurement and competitions",
+    "checkingStatus": "Checking...",
+    "available": "Available",
+    "unavailable": "Unavailable",
+    "clearChat": "Clear Chat",
+    "thinking": "Thinking...",
+    "references": "References",
+    "dismiss": "Dismiss",
+    "inputPlaceholder": "Type your message here...",
+    "disclaimer": "The AI assistant may provide inaccurate information. Please verify important details.",
+    "errorResponse": "Sorry, an error occurred while processing your request. Please try again.",
+    "unknownError": "Unknown error",
+    "welcome": {
+      "title": "Welcome to the AI Assistant",
+      "subtitle": "I can help you draft specification booklets, analyze offers, and check compliance with regulations. Choose a quick action or type your question directly."
+    }
   }
 }

@@ -98,22 +98,25 @@ const routes: RouteRecordRaw[] = [
         component: () => import('@/views/approvals/ApprovalsView.vue'),
         meta: { title: 'Tendex AI - Approvals', requiresAuth: true },
       },
+      /* Inquiries routes (TASK-904) */
       {
         path: 'inquiries',
         name: 'Inquiries',
-        component: () => import('@/views/DashboardView.vue'),
+        component: () => import('@/views/inquiries/InquiriesView.vue'),
         meta: { title: 'Tendex AI - Inquiries', requiresAuth: true },
       },
+      /* Reports routes (TASK-904) */
       {
         path: 'reports',
         name: 'Reports',
-        component: () => import('@/views/DashboardView.vue'),
+        component: () => import('@/views/reports/ReportsView.vue'),
         meta: { title: 'Tendex AI - Reports', requiresAuth: true },
       },
+      /* AI Assistant routes (TASK-904) */
       {
         path: 'ai-assistant',
         name: 'AiAssistant',
-        component: () => import('@/views/DashboardView.vue'),
+        component: () => import('@/views/ai/AiAssistantView.vue'),
         meta: { title: 'Tendex AI - AI Assistant', requiresAuth: true },
       },
       /* Operator / Super Admin routes (TASK-601) */

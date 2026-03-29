@@ -12,6 +12,8 @@ using TendexAI.API.Endpoints.OperatorDashboard;
 using TendexAI.API.Endpoints.Dashboard;
 using TendexAI.API.Endpoints.Tasks;
 using TendexAI.API.Endpoints.Notifications;
+using TendexAI.API.Endpoints.Reports;
+using TendexAI.API.Endpoints.Inquiries;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -134,5 +136,11 @@ app.MapTaskEndpoints();
 
 // Notification endpoints (User notifications - TASK-901)
 app.MapNotificationEndpoints();
+
+// Report endpoints (Analytics & reporting - TASK-904)
+app.MapReportEndpoints();
+
+// Inquiry endpoints (Specification booklet inquiries - TASK-904)
+app.MapInquiryEndpoints();
 
 app.Run();
