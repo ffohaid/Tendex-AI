@@ -144,6 +144,23 @@ onUnmounted(() => {
         </div>
       </div>
 
+      <!-- Error Banner -->
+      <div
+        v-if="store.error"
+        class="mb-6 flex items-center gap-3 rounded-lg border border-danger/20 bg-danger/5 p-4"
+      >
+        <i class="pi pi-exclamation-triangle text-lg text-danger"></i>
+        <div class="flex-1">
+          <p class="text-sm font-medium text-danger">{{ store.error }}</p>
+        </div>
+        <button
+          class="rounded-lg border border-danger/20 px-3 py-1.5 text-xs font-medium text-danger hover:bg-danger/10 transition-colors"
+          @click="handleRefresh"
+        >
+          {{ t('common.retry') }}
+        </button>
+      </div>
+
       <!-- KPI Summary Cards -->
       <div class="mb-8">
         <KpiSummaryCards :summary="summary" :is-loading="isLoadingSummary" />

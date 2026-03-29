@@ -21,8 +21,12 @@ const viewMode = ref<'scores' | 'notes'>('scores')
 const heatmapData = ref<HeatmapCell[][]>([])
 
 onMounted(async () => {
-  await store.loadTechnicalData(competitionId.value)
-  heatmapData.value = store.buildHeatmapCells()
+  try {
+    await store.loadTechnicalData(competitionId.value)
+    heatmapData.value = store.buildHeatmapCells()
+  } catch (err) {
+    console.error('[TechnicalComparison] Failed to load data:', err)
+  }
 })
 
 function getCellClasses(cell: HeatmapCell): string {
@@ -161,6 +165,18 @@ function exportMatrix() {
     <!-- Loading -->
     <div v-if="store.loading" class="flex items-center justify-center py-12">
       <i class="pi pi-spinner pi-spin text-2xl text-primary" />
+    </div>
+
+    <!-- Error -->
+    <div v-else-if="store.error" class="card border-danger/20 bg-danger/5 text-center">
+      <i class="pi pi-exclamation-triangle mb-3 text-3xl text-danger" />
+      <p class="mt-2 text-sm text-danger">{{ store.error }}</p>
+      <button
+        class="mt-4 rounded-lg bg-primary px-4 py-2 text-sm text-white hover:bg-primary-dark"
+        @click="router.back()"
+      >
+        {{ t('common.back') }}
+      </button>
     </div>
 
     <!-- Heatmap Matrix -->

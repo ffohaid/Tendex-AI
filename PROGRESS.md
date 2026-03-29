@@ -15,13 +15,42 @@
 | Sprint 6: لوحة تحكم المشغل | ✅ مكتمل | 100% | تم إنجاز TASK-601, TASK-602, TASK-603, TASK-604 |
 | Sprint 7: الاختبار والنشر | ✅ مكتمل | 100% | تم إنجاز TASK-701, TASK-702, TASK-703, TASK-704 |
 | Sprint 8: النشر والتشغيل | ✅ مكتمل | 100% | تم إنجاز TASK-801, TASK-802, TASK-803 |
-| Sprint 9: إصلاحات التشغيل الفعلي | 🔄 قيد التنفيذ | 85% | تم إنجاز TASK-901 إلى TASK-906. TASK-907 معلقة. |
+| Sprint 9: إصلاحات التشغيل الفعلي | 🔄 قيد التنفيذ | 90% | تم إنجاز TASK-901 إلى TASK-907. |
 
 ---
 
 ## سجل المهام المنجزة (Completed Tasks Log)
 
 *يرجى إضافة أحدث مهمة منجزة في أعلى هذه القائمة.*
+
+### 2026-03-29 - TASK-907: إصلاح مشاكل التنقل والصفحات في المنصة الحية
+- **الحالة:** ✅ مكتمل
+- **ما تم إنجازه:**
+  - **إصلاح عدم تطابق أسماء المسارات (Route Name Mismatch):**
+    - في `frontend/src/config/navigation.ts`، كانت أسماء المسارات `RfpList` و `RfpCreate` لا تتطابق مع الأسماء المعرفة في `router/index.ts` (`rfp-list` و `rfp-create`).
+    - تم تصحيح الأسماء لتتطابق تماماً مع تعريفات الـ Router.
+  - **إصلاح مفتاح `operator` المكرر:**
+    - كان هناك عنصران في `navigation.ts` بنفس المفتاح `operator` (أحدهما للوحة تحكم المشغل والآخر لانتحال الشخصية).
+    - تم تغيير مفتاح العنصر الثاني إلى `operator-advanced` لمنع تعارض Vue rendering.
+  - **تحسين معالجة الأخطاء في صفحات المقارنة:**
+    - إضافة `try-catch` في `onMounted` لكل من `TechnicalComparison.vue` و `FinancialComparison.vue`.
+    - إضافة عرض رسالة خطأ (Error Banner) مع زر رجوع في كلتا الصفحتين.
+  - **إضافة Error Banner لـ OperatorDashboardView:**
+    - إضافة عرض خطأ ديناميكي مع زر إعادة المحاولة.
+  - **مراجعة المكونات:**
+    - `SidebarMenuItem.vue`: المنطق سليم - يستخدم `router.push({ name: ... })` بشكل صحيح.
+    - `useSidebarNavigation.ts`: سلوك الـ Accordion يعمل بشكل صحيح (عنصر واحد مفتوح فقط).
+    - `http.ts`: معالجة 401 وتجديد التوكن تعمل بشكل صحيح.
+  - **البناء المحلي:** تم تشغيل `pnpm build` بنجاح بدون أي أخطاء TypeScript.
+- **الملفات المعدلة:**
+  - `frontend/src/config/navigation.ts` - إصلاح أسماء المسارات والمفاتيح المكررة
+  - `frontend/src/views/evaluation/comparison/TechnicalComparison.vue` - إضافة معالجة أخطاء
+  - `frontend/src/views/evaluation/comparison/FinancialComparison.vue` - إضافة معالجة أخطاء
+  - `frontend/src/views/operator/OperatorDashboardView.vue` - إضافة Error Banner
+- **ملاحظات للوكيل التالي:**
+  - التنقل في القائمة الجانبية يجب أن يعمل الآن بشكل صحيح بعد مطابقة أسماء المسارات.
+  - يجب إعادة النشر على السيرفر (`deploy.sh update`) لتطبيق التغييرات على المنصة الحية.
+  - جميع الصفحات الأخرى تحتوي بالفعل على معالجة أخطاء مناسبة في الـ stores والـ views.
 
 ### 2026-03-29 - TASK-906: إعادة النشر على السيرفر بعد Sprint 9 (Deployment Update)
 - **الحالة:** ✅ مكتمل

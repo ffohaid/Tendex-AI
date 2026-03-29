@@ -8,6 +8,9 @@ import type { NavigationItem } from '@/types/navigation'
  *
  * The structure supports nested children for sub-menus.
  * Permission keys are included for future RBAC integration.
+ *
+ * IMPORTANT: Route names MUST exactly match the `name` property
+ * defined in `@/router/index.ts`. Any mismatch will break navigation.
  */
 export const sidebarNavigation: NavigationItem[] = [
   {
@@ -25,13 +28,13 @@ export const sidebarNavigation: NavigationItem[] = [
         key: 'rfp-list',
         labelKey: 'nav.rfp.list',
         icon: 'pi pi-list',
-        route: 'RfpList',
+        route: 'rfp-list',
       },
       {
         key: 'rfp-create',
         labelKey: 'nav.rfp.create',
         icon: 'pi pi-plus-circle',
-        route: 'RfpCreate',
+        route: 'rfp-create',
       },
     ],
   },
@@ -148,7 +151,7 @@ export const sidebarNavigation: NavigationItem[] = [
     ],
   },
   {
-    key: 'operator',
+    key: 'operator-advanced',
     labelKey: 'nav.operator.title',
     icon: 'pi pi-shield',
     requiredRoles: ['SuperAdmin', 'SupportAdmin'],
