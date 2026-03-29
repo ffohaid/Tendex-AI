@@ -94,11 +94,14 @@ public static class TenantEndpoints
             .Produces<IEnumerable<TenantStatusDto>>(StatusCodes.Status200OK);
 
         // GET /api/v1/tenants/resolve?hostname={hostname} - Resolve tenant by hostname (public, no auth)
+        // TASK-905: Tenant resolve endpoint is registered outside the group
+        // to ensure it works with CORS and does not require authentication.
         app.MapGet("/api/v1/tenants/resolve", ResolveTenantByHostname)
             .WithTags("Tenants")
             .WithName("ResolveTenantByHostname")
             .WithSummary("Resolves a tenant by hostname or subdomain. Used by the frontend to auto-detect tenant on login.")
             .AllowAnonymous()
+            .RequireCors("TendexCorsPolicy")
             .Produces<TenantResolveDto>(StatusCodes.Status200OK)
             .Produces(StatusCodes.Status404NotFound);
 
@@ -344,9 +347,9 @@ public static class TenantEndpoints
             NameAr: tenant.NameAr,
             NameEn: tenant.NameEn,
             Subdomain: tenant.Subdomain,
-            LogoUrl: null,
-            PrimaryColor: null,
-            SecondaryColor: null));
+            LogoUrl: tenant.LogoUrl,
+            PrimaryColor: tenant.PrimaryColor,
+            SecondaryColor: tenant.SecondaryColor));
     }
 }
 

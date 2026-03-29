@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using Microsoft.IdentityModel.Tokens;
 using Minio;
 using TendexAI.Application.Common.Interfaces;
@@ -140,6 +141,9 @@ public static class DependencyInjection
             services.AddDistributedMemoryCache();
         }
 
+        // ----- OpenIddict Key Manager (Persistent RSA Keys) -----
+        services.AddSingleton<Security.OpenIddictKeyManager>();
+
         // ----- OpenIddict Configuration -----
         services.AddOpenIddict()
             .AddCore(options =>
@@ -162,32 +166,24 @@ public static class DependencyInjection
                 options.SetAccessTokenLifetime(TimeSpan.FromMinutes(60))  // 60-minute access token
                     .SetRefreshTokenLifetime(TimeSpan.FromHours(8));      // 8-hour refresh token
 
-                // Register signing and encryption credentials
-                var signingKey = configuration["Authentication:SigningKey"];
-                if (!string.IsNullOrWhiteSpace(signingKey))
-                {
-                    var keyBytes = System.Text.Encoding.UTF8.GetBytes(signingKey);
+                // ---------------------------------------------------------------
+                // TASK-905: Persistent RSA keys for signing and encryption.
+                // Keys are stored as PEM files on disk, surviving server restarts.
+                // This replaces the previous AddEphemeralSigningKey() approach
+                // that invalidated all tokens on every restart.
+                // ---------------------------------------------------------------
+                var keyManager = services.BuildServiceProvider()
+                    .GetRequiredService<Security.OpenIddictKeyManager>();
 
-                    // OpenIddict requires an asymmetric signing key (RSA)
-                    // Use ephemeral RSA key for OpenIddict token signing
-                    options.AddEphemeralSigningKey();
+                var signingKey = keyManager.GetOrCreateSigningKey();
+                var encryptionKey = keyManager.GetOrCreateEncryptionKey();
 
-                    // OpenIddict encryption requires exactly 256-bit symmetric key
-                    var encryptionKeyBytes = keyBytes.Length > 32
-                        ? keyBytes[..32]
-                        : keyBytes;
-                    var encryptionSecurityKey = new SymmetricSecurityKey(encryptionKeyBytes);
-                    options.AddEncryptionKey(encryptionSecurityKey);
+                options.AddSigningKey(signingKey);
+                options.AddEncryptionKey(encryptionKey);
 
-                    // Disable access token encryption so JWT tokens are readable
-                    options.DisableAccessTokenEncryption();
-                }
-                else
-                {
-                    // Development-only: use ephemeral keys
-                    options.AddEphemeralEncryptionKey()
-                        .AddEphemeralSigningKey();
-                }
+                // Disable access token encryption so JWT tokens are readable
+                // by the frontend and API validation middleware
+                options.DisableAccessTokenEncryption();
 
                 // Register ASP.NET Core host
                 options.UseAspNetCore()

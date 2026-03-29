@@ -45,3 +45,7 @@ docker-compose.override.yml
 infrastructure/.env.prod
 infrastructure/nginx/ssl/*.pem
 infrastructure/nginx/ssl/*.key
+
+# OpenIddict persistent RSA keys (NEVER commit)
+**/keys/*.pem
+**/keys/openiddict-*

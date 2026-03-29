@@ -59,6 +59,10 @@ RUN apt-get update && \
 # Copy published output
 COPY --from=publish /app/publish .
 
+# Create keys directory for OpenIddict persistent RSA keys
+# This directory should be mounted as a Docker volume for persistence
+RUN mkdir -p /app/keys && chown tendex:tendex /app/keys && chmod 700 /app/keys
+
 # Set environment variables
 ENV ASPNETCORE_URLS=http://+:8080
 ENV ASPNETCORE_ENVIRONMENT=Production

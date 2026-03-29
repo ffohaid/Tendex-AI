@@ -15,13 +15,50 @@
 | Sprint 6: لوحة تحكم المشغل | ✅ مكتمل | 100% | تم إنجاز TASK-601, TASK-602, TASK-603, TASK-604 |
 | Sprint 7: الاختبار والنشر | ✅ مكتمل | 100% | تم إنجاز TASK-701, TASK-702, TASK-703, TASK-704 |
 | Sprint 8: النشر والتشغيل | ✅ مكتمل | 100% | تم إنجاز TASK-801, TASK-802, TASK-803 |
-| Sprint 9: إصلاحات التشغيل الفعلي | 🔄 جارٍ | 90% | تم إنجاز TASK-901, TASK-902, TASK-903, TASK-904 |
+| Sprint 9: إصلاحات التشغيل الفعلي | 🔄 جارٍ | 95% | تم إنجاز TASK-901, TASK-902, TASK-903, TASK-904, TASK-905 |
 
 ---
 
 ## سجل المهام المنجزة (Completed Tasks Log)
 
 *يرجى إضافة أحدث مهمة منجزة في أعلى هذه القائمة.*
+
+### 2026-03-29 - TASK-905: تحسينات البنية التحتية والأمان
+- **ما تم إنجازه:**
+  - **OpenIddict Persistent RSA Keys:**
+    - إنشاء `OpenIddictKeyManager.cs` في `Infrastructure/Security/` لإدارة مفاتيح RSA الدائمة.
+    - المفاتيح تُخزن كملفات PEM على القرص بدلاً من المفاتيح المؤقتة (Ephemeral) التي كانت تُبطل جميع الـ Tokens عند إعادة تشغيل الخادم.
+    - المفاتيح تُولد تلقائياً عند أول تشغيل (RSA-2048) وتُحفظ في مجلد `keys/` قابل للتكوين.
+    - صلاحيات الملفات مقيدة (owner-only read/write) على Linux.
+    - تعديل `DependencyInjection.cs` لاستخدام `AddSigningKey()` و `AddEncryptionKey()` بدلاً من `AddEphemeralSigningKey()` و `AddEphemeralEncryptionKey()`.
+    - إضافة إعداد `OpenIddict:KeyDirectory` في `appsettings.json`.
+    - تحديث `Dockerfile` لإنشاء مجلد `/app/keys` مع صلاحيات مناسبة.
+    - إضافة Docker volume `openiddict-keys` في `docker-compose.prod.yml` لضمان استمرارية المفاتيح.
+    - إضافة `**/keys/*.pem` إلى `.gitignore` لمنع رفع المفاتيح إلى المستودع.
+  - **CORS Configuration:**
+    - إضافة إعدادات CORS كاملة في `Program.cs` مع سياسة `TendexCorsPolicy`.
+    - دعم origins متعددة قابلة للتكوين من `appsettings.json` (localhost + netaq.pro).
+    - إضافة `UseCors()` في middleware pipeline قبل `UseAuthentication()`.
+    - إضافة قسم `Cors:AllowedOrigins` في `appsettings.json`.
+  - **Tenant Resolution Fix:**
+    - إضافة `.RequireCors("TendexCorsPolicy")` لـ endpoint `/api/v1/tenants/resolve` لضمان عمل CORS.
+    - إصلاح `ResolveTenantByHostname` لإرجاع بيانات branding فعلية (LogoUrl, PrimaryColor, SecondaryColor) من الـ tenant entity بدلاً من null.
+    - التأكد من أن الفرونت إند يخزن `tenant_id` في `localStorage` ويستعيده عند تحديث الصفحة عبر `auth.ts` store.
+- **الملفات المعدلة:**
+  - `backend/src/TendexAI.Infrastructure/Security/OpenIddictKeyManager.cs` (جديد)
+  - `backend/src/TendexAI.Infrastructure/DependencyInjection.cs` (معدل)
+  - `backend/src/TendexAI.API/Program.cs` (معدل - CORS)
+  - `backend/src/TendexAI.API/appsettings.json` (معدل - OpenIddict + CORS)
+  - `backend/src/TendexAI.API/Endpoints/TenantEndpoints.cs` (معدل - CORS + branding)
+  - `backend/Dockerfile` (معدل - keys directory)
+  - `infrastructure/docker-compose.prod.yml` (معدل - openiddict-keys volume)
+  - `.gitignore` (معدل - keys exclusion)
+- **البناء:** ناجح بدون أخطاء (0 Warnings, 0 Errors)
+- **ملاحظات للوكيل التالي:**
+  - المفاتيح تُولد تلقائياً عند أول تشغيل — لا حاجة لتوليدها يدوياً.
+  - في بيئة الإنتاج، يجب التأكد من أن Docker volume `openiddict-keys` مُعد بشكل صحيح.
+  - إعدادات CORS قابلة للتكوين من `appsettings.json` — يمكن إضافة origins جديدة حسب الحاجة.
+  - الـ tenant_id يُحفظ في localStorage ويُستعاد تلقائياً عند تحديث الصفحة.
 
 ### 2026-03-29 - TASK-904: بناء صفحات التقارير، الاستفسارات، ومساعد الذكاء الاصطناعي
 - **ما تم إنجازه:**

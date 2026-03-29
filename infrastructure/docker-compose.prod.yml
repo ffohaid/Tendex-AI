@@ -87,6 +87,9 @@ services:
       Qdrant__Endpoint: ${QDRANT_ENDPOINT}
       Qdrant__CollectionPrefix: ${QDRANT_COLLECTION_PREFIX}
       Elasticsearch__Url: ${ELASTICSEARCH_URL}
+      OpenIddict__KeyDirectory: /app/keys
+    volumes:
+      - openiddict-keys:/app/keys
     networks:
       - tendex-network
     restart: unless-stopped
@@ -458,6 +461,9 @@ volumes:
   certbot-certs:
     driver: local
     name: tendex-prod-certbot-certs
+  openiddict-keys:
+    driver: local
+    name: tendex-prod-openiddict-keys
 
 # =============================================================================
 # Networks

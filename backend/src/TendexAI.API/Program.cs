@@ -30,6 +30,28 @@ builder.Services.AddInfrastructureServices(builder.Configuration);
 // OpenAPI / Swagger documentation
 builder.Services.AddOpenApi();
 
+// ---------------------------------------------------------------------------
+// CORS Configuration (TASK-905)
+// ---------------------------------------------------------------------------
+// Allows the frontend SPA to communicate with the backend API.
+// In production, Nginx handles CORS via reverse proxy, but this ensures
+// direct API access also works (e.g., development, mobile apps).
+// ---------------------------------------------------------------------------
+var allowedOrigins = builder.Configuration.GetSection("Cors:AllowedOrigins")
+    .Get<string[]>() ?? ["http://localhost:5173", "http://localhost:3000"];
+
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("TendexCorsPolicy", policy =>
+    {
+        policy.WithOrigins(allowedOrigins)
+            .AllowAnyHeader()
+            .AllowAnyMethod()
+            .AllowCredentials()
+            .SetPreflightMaxAge(TimeSpan.FromMinutes(10));
+    });
+});
+
 // Configure maximum request body size for file uploads (50 MB default)
 builder.WebHost.ConfigureKestrel(options =>
 {
@@ -48,6 +70,9 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+
+// CORS middleware (TASK-905) — must be before Authentication
+app.UseCors("TendexCorsPolicy");
 
 // Authentication & Authorization middleware
 app.UseAuthentication();
