@@ -75,9 +75,14 @@
   - حساب Super Admin جاهز ويمكن تسجيل الدخول به.
   - مهام النسخ الاحتياطي والمراقبة مجدولة وتعمل.
   - شهادة SSL صالحة مع تجديد تلقائي.
+- **إصلاح Auto-Resolve Tenant (متابعة TASK-803):**
+  - تم إضافة endpoint عام (AllowAnonymous) في Backend: `GET /api/v1/tenants/resolve?hostname=netaq.pro` يُرجع Tenant ID تلقائياً بناءً على اسم الدومين.
+  - تم تعديل `LoginView.vue` في Frontend لجلب Tenant ID تلقائياً عند فتح صفحة تسجيل الدخول باستخدام الـ endpoint الجديد.
+  - تم تعيين Subdomain = 'netaq' للـ Tenant في قاعدة البيانات.
+  - النتيجة: المستخدم يمكنه الآن تسجيل الدخول مباشرة بدون أي خطوات يدوية.
+  - Commits: `feat: add automatic tenant resolution by hostname on login page`, `fix: resolve CA1826 code analysis error in TenantEndpoints`.
 - **ملاحظات مهمة:**
-  - يجب تعيين `tenant_id` في localStorage عند أول دخول للواجهة الأمامية (القيمة: `A86F3588-0298-41D8-A387-2647A9999F05`). يُنصح بتطوير آلية تلقائية لتحديد Tenant من الـ subdomain أو عبر صفحة اختيار.
-  - fail2ban تم إيقافه مؤقتاً - يجب إعادة تفعيله بعد إضافة IPs الموثوقة للقائمة البيضاء.
+  - fail2ban تم إعادة تفعيله على الخادم.
   - يُنصح بتوليد RSA key ثابت لـ OpenIddict بدلاً من `AddEphemeralSigningKey()` لضمان استمرارية التوكنات بعد إعادة تشغيل الخدمة.
 
 ### 2026-03-29 - TASK-802: إعداد SSL والنشر الأول
