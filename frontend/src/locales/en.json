@@ -1133,5 +1133,156 @@
       "reset": "Reset to Defaults",
       "preview": "Preview"
     }
+  },
+  "committees": {
+    "permanentTitle": "Permanent Committees",
+    "permanentSubtitle": "Manage permanent committees, their members, and statuses",
+    "temporaryTitle": "Temporary Committees",
+    "temporarySubtitle": "Manage temporary committees linked to competitions",
+    "searchPlaceholder": "Search committees...",
+    "emptyState": "No permanent committees found",
+    "emptyStateTemporary": "No temporary committees found",
+    "statuses": {
+      "all": "All Statuses",
+      "active": "Active",
+      "suspended": "Suspended",
+      "dissolved": "Dissolved",
+      "expired": "Expired"
+    },
+    "types": {
+      "technicalEvaluation": "Technical Bid Evaluation",
+      "financialEvaluation": "Financial Bid Evaluation",
+      "bookletPreparation": "Booklet Preparation",
+      "inquiryReview": "Inquiry Review",
+      "otherPermanent": "Other Permanent"
+    },
+    "roles": {
+      "chair": "Chair",
+      "member": "Member",
+      "secretary": "Secretary"
+    },
+    "phases": {
+      "bookletPreparation": "Booklet Preparation",
+      "bookletApproval": "Booklet Approval",
+      "bookletPublishing": "Booklet Publishing",
+      "offerReception": "Offer Reception",
+      "technicalAnalysis": "Technical Analysis",
+      "financialAnalysis": "Financial Analysis",
+      "awardNotification": "Award Notification",
+      "contractApproval": "Contract Approval",
+      "contractSigning": "Contract Signing"
+    },
+    "table": {
+      "name": "Committee Name",
+      "type": "Type",
+      "members": "Members",
+      "status": "Status",
+      "startDate": "Start Date",
+      "competition": "Competition",
+      "actions": "Actions"
+    },
+    "memberTable": {
+      "name": "Name",
+      "role": "Role",
+      "status": "Status",
+      "actions": "Actions"
+    },
+    "memberStatus": {
+      "active": "Active",
+      "removed": "Removed"
+    },
+    "actions": {
+      "create": "Create Committee",
+      "changeStatus": "Change Status",
+      "suspend": "Suspend",
+      "reactivate": "Reactivate",
+      "dissolve": "Dissolve",
+      "addMember": "Add Member",
+      "removeMember": "Remove Member"
+    },
+    "dialog": {
+      "createTitle": "Create New Permanent Committee",
+      "createTemporaryTitle": "Create New Temporary Committee",
+      "editTitle": "Edit Committee",
+      "changeStatusTitle": "Change Committee Status",
+      "addMemberTitle": "Add New Member"
+    },
+    "form": {
+      "nameAr": "Committee Name (Arabic)",
+      "nameEn": "Committee Name (English)",
+      "type": "Committee Type",
+      "description": "Description",
+      "startDate": "Start Date",
+      "endDate": "End Date",
+      "competitionId": "Competition ID",
+      "competitionIdPlaceholder": "Enter linked competition ID",
+      "activeFromPhase": "From Phase",
+      "activeToPhase": "To Phase",
+      "newStatus": "New Status",
+      "reason": "Reason",
+      "memberName": "Member Name",
+      "memberId": "User ID",
+      "memberRole": "Role"
+    },
+    "detail": {
+      "endDate": "End Date",
+      "members": "Members",
+      "noMembers": "No members in this committee",
+      "noDescription": "No description",
+      "phaseRange": "Phase Range"
+    },
+    "prompts": {
+      "removalReason": "Please enter the reason for removing this member"
+    },
+    "errors": {
+      "loadFailed": "Failed to load committees",
+      "loadDetailFailed": "Failed to load committee details",
+      "createFailed": "Failed to create committee",
+      "updateFailed": "Failed to update committee",
+      "statusChangeFailed": "Failed to change committee status",
+      "addMemberFailed": "Failed to add member",
+      "removeMemberFailed": "Failed to remove member"
+    },
+    "pagination": {
+      "showing": "Showing {from} - {to} of {total}"
+    }
+  },
+  "approvals": {
+    "title": "Task Center & Approvals",
+    "subtitle": "View and manage pending tasks and approval workflows",
+    "pendingCount": "{count} Pending Tasks",
+    "emptyTitle": "No Pending Tasks",
+    "emptySubtitle": "All tasks are currently completed",
+    "assignedAt": "Assigned At",
+    "deadline": "Deadline",
+    "types": {
+      "all": "All Types",
+      "rfpApproval": "RFP Approval",
+      "evaluationReview": "Evaluation Review",
+      "committeeAssignment": "Committee Assignment",
+      "contractApproval": "Contract Approval"
+    },
+    "priorities": {
+      "all": "All Priorities",
+      "critical": "Critical",
+      "high": "High",
+      "medium": "Medium",
+      "low": "Low"
+    },
+    "sla": {
+      "onTrack": "On Track",
+      "atRisk": "At Risk",
+      "overdue": "Overdue",
+      "expired": "Time Expired",
+      "remaining": "{days} days and {hours} hours",
+      "remainingHours": "{hours} hours and {minutes} minutes",
+      "remainingMinutes": "{minutes} minutes"
+    },
+    "actions": {
+      "review": "Review"
+    },
+    "errors": {
+      "loadFailed": "Failed to load pending tasks"
+    }
   }
 }

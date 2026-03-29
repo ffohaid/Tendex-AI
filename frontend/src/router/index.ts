@@ -41,16 +41,17 @@ const routes: RouteRecordRaw[] = [
         meta: { title: 'Tendex AI - Edit RFP', requiresAuth: true },
         props: true,
       },
+      /* Committee Management routes (TASK-902) */
       {
         path: 'committees/permanent',
         name: 'CommitteesPermanent',
-        component: () => import('@/views/DashboardView.vue'),
+        component: () => import('@/views/committees/CommitteesPermanentView.vue'),
         meta: { title: 'Tendex AI - Permanent Committees', requiresAuth: true },
       },
       {
         path: 'committees/temporary',
         name: 'CommitteesTemporary',
-        component: () => import('@/views/DashboardView.vue'),
+        component: () => import('@/views/committees/CommitteesTemporaryView.vue'),
         meta: { title: 'Tendex AI - Temporary Committees', requiresAuth: true },
       },
       /* Evaluation routes (TASK-505) */
@@ -90,10 +91,11 @@ const routes: RouteRecordRaw[] = [
         component: () => import('@/views/evaluation/comparison/FinancialComparison.vue'),
         meta: { title: 'Tendex AI - Financial Comparison', requiresAuth: true },
       },
+      /* Approvals / Task Center routes (TASK-902) */
       {
         path: 'approvals',
         name: 'Approvals',
-        component: () => import('@/views/DashboardView.vue'),
+        component: () => import('@/views/approvals/ApprovalsView.vue'),
         meta: { title: 'Tendex AI - Approvals', requiresAuth: true },
       },
       {

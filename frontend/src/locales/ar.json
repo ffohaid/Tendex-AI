@@ -1133,5 +1133,156 @@
       "reset": "إعادة تعيين",
       "preview": "معاينة"
     }
+  },
+  "committees": {
+    "permanentTitle": "اللجان الدائمة",
+    "permanentSubtitle": "إدارة اللجان الدائمة للجهة ومتابعة أعضائها وحالاتها",
+    "temporaryTitle": "اللجان المؤقتة",
+    "temporarySubtitle": "إدارة اللجان المؤقتة المرتبطة بالمنافسات",
+    "searchPlaceholder": "البحث في اللجان...",
+    "emptyState": "لا توجد لجان دائمة حالياً",
+    "emptyStateTemporary": "لا توجد لجان مؤقتة حالياً",
+    "statuses": {
+      "all": "جميع الحالات",
+      "active": "نشطة",
+      "suspended": "معلقة",
+      "dissolved": "منحلة",
+      "expired": "منتهية"
+    },
+    "types": {
+      "technicalEvaluation": "لجنة فحص العروض الفنية",
+      "financialEvaluation": "لجنة فحص العروض المالية",
+      "bookletPreparation": "لجنة إعداد الكراسة",
+      "inquiryReview": "لجنة مراجعة الاستفسارات",
+      "otherPermanent": "لجنة دائمة أخرى"
+    },
+    "roles": {
+      "chair": "رئيس اللجنة",
+      "member": "عضو",
+      "secretary": "سكرتير"
+    },
+    "phases": {
+      "bookletPreparation": "إعداد الكراسة",
+      "bookletApproval": "اعتماد الكراسة",
+      "bookletPublishing": "طرح الكراسة",
+      "offerReception": "استقبال العروض",
+      "technicalAnalysis": "التحليل الفني",
+      "financialAnalysis": "التحليل المالي",
+      "awardNotification": "إشعار الترسية",
+      "contractApproval": "إجازة العقد",
+      "contractSigning": "توقيع العقد"
+    },
+    "table": {
+      "name": "اسم اللجنة",
+      "type": "النوع",
+      "members": "الأعضاء",
+      "status": "الحالة",
+      "startDate": "تاريخ البداية",
+      "competition": "المنافسة",
+      "actions": "الإجراءات"
+    },
+    "memberTable": {
+      "name": "الاسم",
+      "role": "الدور",
+      "status": "الحالة",
+      "actions": "الإجراءات"
+    },
+    "memberStatus": {
+      "active": "نشط",
+      "removed": "تم الإزالة"
+    },
+    "actions": {
+      "create": "إنشاء لجنة",
+      "changeStatus": "تغيير الحالة",
+      "suspend": "تعليق",
+      "reactivate": "إعادة تفعيل",
+      "dissolve": "حل اللجنة",
+      "addMember": "إضافة عضو",
+      "removeMember": "إزالة عضو"
+    },
+    "dialog": {
+      "createTitle": "إنشاء لجنة دائمة جديدة",
+      "createTemporaryTitle": "إنشاء لجنة مؤقتة جديدة",
+      "editTitle": "تعديل بيانات اللجنة",
+      "changeStatusTitle": "تغيير حالة اللجنة",
+      "addMemberTitle": "إضافة عضو جديد"
+    },
+    "form": {
+      "nameAr": "اسم اللجنة (عربي)",
+      "nameEn": "اسم اللجنة (إنجليزي)",
+      "type": "نوع اللجنة",
+      "description": "الوصف",
+      "startDate": "تاريخ البداية",
+      "endDate": "تاريخ النهاية",
+      "competitionId": "معرف المنافسة",
+      "competitionIdPlaceholder": "أدخل معرف المنافسة المرتبطة",
+      "activeFromPhase": "من مرحلة",
+      "activeToPhase": "إلى مرحلة",
+      "newStatus": "الحالة الجديدة",
+      "reason": "السبب",
+      "memberName": "اسم العضو",
+      "memberId": "معرف المستخدم",
+      "memberRole": "الدور"
+    },
+    "detail": {
+      "endDate": "تاريخ النهاية",
+      "members": "الأعضاء",
+      "noMembers": "لا يوجد أعضاء في هذه اللجنة",
+      "noDescription": "لا يوجد وصف",
+      "phaseRange": "نطاق المراحل"
+    },
+    "prompts": {
+      "removalReason": "يرجى إدخال سبب إزالة العضو"
+    },
+    "errors": {
+      "loadFailed": "فشل في تحميل قائمة اللجان",
+      "loadDetailFailed": "فشل في تحميل تفاصيل اللجنة",
+      "createFailed": "فشل في إنشاء اللجنة",
+      "updateFailed": "فشل في تحديث بيانات اللجنة",
+      "statusChangeFailed": "فشل في تغيير حالة اللجنة",
+      "addMemberFailed": "فشل في إضافة العضو",
+      "removeMemberFailed": "فشل في إزالة العضو"
+    },
+    "pagination": {
+      "showing": "عرض {from} - {to} من {total}"
+    }
+  },
+  "approvals": {
+    "title": "مركز المهام والاعتمادات",
+    "subtitle": "عرض وإدارة المهام المعلقة ومسارات الاعتماد",
+    "pendingCount": "{count} مهمة معلقة",
+    "emptyTitle": "لا توجد مهام معلقة",
+    "emptySubtitle": "جميع المهام مكتملة حالياً",
+    "assignedAt": "تاريخ الإسناد",
+    "deadline": "الموعد النهائي",
+    "types": {
+      "all": "جميع الأنواع",
+      "rfpApproval": "اعتماد كراسة شروط",
+      "evaluationReview": "مراجعة تقييم",
+      "committeeAssignment": "تعيين لجنة",
+      "contractApproval": "إجازة عقد"
+    },
+    "priorities": {
+      "all": "جميع الأولويات",
+      "critical": "حرج",
+      "high": "عالي",
+      "medium": "متوسط",
+      "low": "منخفض"
+    },
+    "sla": {
+      "onTrack": "في الموعد",
+      "atRisk": "قريب من الموعد",
+      "overdue": "متأخر",
+      "expired": "انتهى الوقت",
+      "remaining": "{days} يوم و {hours} ساعة",
+      "remainingHours": "{hours} ساعة و {minutes} دقيقة",
+      "remainingMinutes": "{minutes} دقيقة"
+    },
+    "actions": {
+      "review": "مراجعة"
+    },
+    "errors": {
+      "loadFailed": "فشل في تحميل المهام المعلقة"
+    }
   }
 }

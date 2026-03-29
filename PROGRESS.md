@@ -15,13 +15,67 @@
 | Sprint 6: لوحة تحكم المشغل | ✅ مكتمل | 100% | تم إنجاز TASK-601, TASK-602, TASK-603, TASK-604 |
 | Sprint 7: الاختبار والنشر | ✅ مكتمل | 100% | تم إنجاز TASK-701, TASK-702, TASK-703, TASK-704 |
 | Sprint 8: النشر والتشغيل | ✅ مكتمل | 100% | تم إنجاز TASK-801, TASK-802, TASK-803 |
-| Sprint 9: إصلاحات التشغيل الفعلي | 🔄 جارٍ | 25% | تم إنجاز TASK-901 (Dashboard Endpoints) |
+| Sprint 9: إصلاحات التشغيل الفعلي | 🔄 جارٍ | 50% | تم إنجاز TASK-901, TASK-902 |
 
 ---
 
 ## سجل المهام المنجزة (Completed Tasks Log)
 
 *يرجى إضافة أحدث مهمة منجزة في أعلى هذه القائمة.*
+
+### 2026-03-29 - TASK-902: بناء صفحات اللجان والاعتمادات في الواجهة الأمامية
+- **ما تم إنجازه:**
+  - **إنشاء Types:** تم إنشاء `frontend/src/types/committee.ts` يحتوي على:
+    - `CommitteeType`, `CommitteeStatus`, `CommitteeMemberRole`, `CompetitionPhase` (const objects متوافقة مع `erasableSyntaxOnly`)
+    - `CommitteeListItem`, `CommitteeDetail`, `CommitteeMember` interfaces
+    - `CreateCommitteeRequest`, `UpdateCommitteeRequest`, `ChangeCommitteeStatusRequest`, `AddCommitteeMemberRequest` request DTOs
+    - `PendingTask`, `PendingTasksPagedResult` interfaces for approvals
+  - **إنشاء Services:**
+    - `frontend/src/services/committeeService.ts` — يتواصل مع `CommitteeEndpoints.cs` في الباك إند:
+      - `fetchCommittees()` — GET /api/v1/committees (paginated, filterable)
+      - `fetchCommitteeById()` — GET /api/v1/committees/{id}
+      - `createCommittee()` — POST /api/v1/committees
+      - `updateCommittee()` — PUT /api/v1/committees/{id}
+      - `changeCommitteeStatus()` — PUT /api/v1/committees/{id}/status
+      - `addCommitteeMember()` — POST /api/v1/committees/{id}/members
+      - `removeCommitteeMember()` — DELETE /api/v1/committees/{id}/members/{userId}
+      - `checkConflictOfInterest()` — GET /api/v1/committees/{id}/conflict-check/{userId}
+    - `frontend/src/services/approvalService.ts` — يتواصل مع `TaskEndpoints.cs`:
+      - `fetchPendingTasks()` — GET /api/v1/tasks/pending (paginated, filterable by type/priority)
+  - **إنشاء صفحات Vue:**
+    - `CommitteesPermanentView.vue` — صفحة إدارة اللجان الدائمة:
+      - جدول مع بحث وفلترة بالحالة
+      - حوار إنشاء/تعديل لجنة
+      - حوار عرض تفاصيل اللجنة مع قائمة الأعضاء
+      - حوار تغيير الحالة (تعليق/إعادة تفعيل/حل)
+      - حوار إضافة عضو جديد
+      - Pagination كاملة
+    - `CommitteesTemporaryView.vue` — صفحة إدارة اللجان المؤقتة:
+      - نفس مميزات اللجان الدائمة
+      - إضافة حقول: معرف المنافسة، نطاق المراحل (من/إلى)
+    - `ApprovalsView.vue` — مركز المهام والاعتمادات الموحد:
+      - قائمة المهام المعلقة مع فلترة بالنوع والأولوية
+      - عرض SLA مع countdown ومؤشرات بصرية (On Track / At Risk / Overdue)
+      - تحديث تلقائي كل 30 ثانية
+      - أزرار مراجعة تنقل للصفحة المطلوبة
+  - **تحديث الراوتر:** تم تحديث `router/index.ts` لربط:
+    - `/committees/permanent` → `CommitteesPermanentView.vue`
+    - `/committees/temporary` → `CommitteesTemporaryView.vue`
+    - `/approvals` → `ApprovalsView.vue`
+  - **تحديث الترجمات:** تم إضافة مفاتيح ترجمة كاملة في `ar.json` و `en.json` لقسمي `committees` و `approvals`.
+  - **التحقق:** بناء المشروع بنجاح (`pnpm run build` — 0 Errors)
+- **الالتزام بقواعد المشروع:**
+  - لا بيانات وهمية (No Mock Data) — جميع البيانات تُجلب من APIs
+  - Tailwind logical properties حصرياً (ms-, me-, ps-, pe-, start, end)
+  - دعم RTL/LTR ديناميكي
+  - أرقام إنجليزية حصرياً
+  - أسماء المتغيرات والكود بالإنجليزية
+- **الاعتماديات:** تعتمد على TASK-901 (Dashboard/Task Endpoints) — مكتملة
+- **ملاحظات للوكيل التالي:**
+  - الصفحات جاهزة وتعمل مع الـ APIs الموجودة في الباك إند
+  - يمكن تحسين حوار إضافة العضو بإضافة بحث ديناميكي عن المستخدمين من API
+  - صفحة الاعتمادات تدعم التحديث التلقائي (auto-refresh) كل 30 ثانية
+  - يمكن إضافة SignalR لاحقاً للتحديث الفوري بدلاً من polling
 
 ### 2026-03-29 - TASK-901: استكمال مسارات لوحة التحكم (Dashboard Endpoints)
 - **ما تم إنجازه:**
