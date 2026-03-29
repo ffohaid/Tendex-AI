@@ -15,7 +15,7 @@
 | Sprint 6: لوحة تحكم المشغل | ✅ مكتمل | 100% | تم إنجاز TASK-601, TASK-602, TASK-603, TASK-604 |
 | Sprint 7: الاختبار والنشر | ✅ مكتمل | 100% | تم إنجاز TASK-701, TASK-702, TASK-703, TASK-704 |
 | Sprint 8: النشر والتشغيل | ✅ مكتمل | 100% | تم إنجاز TASK-801, TASK-802, TASK-803 |
-| Sprint 9: إصلاحات التشغيل الفعلي | ⏳ قيد التنفيذ | 83% | تم إنجاز TASK-901 إلى TASK-905. TASK-906 (إعادة النشر) معلقة للتنفيذ. |
+| Sprint 9: إصلاحات التشغيل الفعلي | ✅ مكتمل | 100% | تم إنجاز TASK-901 إلى TASK-906. Sprint 9 مكتمل بالكامل. |
 
 ---
 
@@ -23,11 +23,25 @@
 
 *يرجى إضافة أحدث مهمة منجزة في أعلى هذه القائمة.*
 
-### ⏳ TASK-906: إعادة النشر على السيرفر بعد Sprint 9 (Deployment Update)
-- **الحالة:** معلقة للتنفيذ
-- **الهدف:** تحديث المنصة الحية على netaq.pro بجميع تغييرات Sprint 9 (9 صفحات جديدة + 8 Endpoints + OpenIddict Keys + CORS + Tenant Resolution)
-- **الخطوات:** git pull → deploy.sh update → Migrations → Health Check → تقرير نهائي
-- **البرومبت:** متاح في `Manus_Tasks_Guide_Sprint_9.md`
+### 2026-03-29 - TASK-906: إعادة النشر على السيرفر بعد Sprint 9 (Deployment Update)
+- **الحالة:** ✅ مكتمل
+- **ما تم إنجازه:**
+  - سحب جميع تحديثات Sprint 9 من GitHub (10,255 سطر إضافة في 60 ملف).
+  - تنفيذ سكربت النشر `deploy.sh update` لإعادة بناء ونشر الباك إند والفرونت إند بدون توقف.
+  - إنشاء وتطبيق Database Migrations:
+    - **MasterPlatformDbContext**: إضافة Index `IX_Competitions_TenantId_IsDeleted_CreatedAt` على جدول Competitions.
+    - **TenantDbContext**: إنشاء جدول `Notifications` الجديد بجميع الأعمدة المطلوبة (Id, TenantId, UserId, TitleAr, TitleEn, BodyAr, BodyEn, Type, Channel, IsRead, ReadAt, ActionUrl, CreatedAt, CreatedBy, LastModifiedAt, LastModifiedBy).
+  - إعادة تحميل Nginx لالتقاط تغييرات التكوين.
+  - التحقق من صحة عمل المنصة:
+    - `https://netaq.pro/api/v1/health` → `{"status":"Healthy","service":"TendexAI.API","version":"1.0.0"}`
+    - `https://netaq.pro/` → صفحة تسجيل الدخول تعمل بشكل سليم مع RTL.
+  - جميع الحاويات الـ 11 تعمل بحالة healthy.
+- **الاعتماديات التي تم حلها:** TASK-901 إلى TASK-905 (جميع مهام Sprint 9).
+- **ملاحظات للوكيل التالي:**
+  - المنصة تعمل بالكامل على netaq.pro مع جميع تحديثات Sprint 9.
+  - تم إنشاء ملفات Migration جديدة على الخادم تحتاج للـ commit والـ push إلى GitHub.
+  - جدول Notifications جاهز للاستخدام في قاعدة بيانات Tenant.
+  - سكربت النشر يفحص `/health` بدلاً من `/api/v1/health` - يُفضل تحديثه في المستقبل.
 
 ### 2026-03-29 - TASK-905: تحسينات البنية التحتية والأمان
 - **ما تم إنجازه:**

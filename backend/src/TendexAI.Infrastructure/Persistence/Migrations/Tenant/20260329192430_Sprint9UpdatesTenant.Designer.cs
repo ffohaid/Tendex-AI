@@ -3,17 +3,20 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using TendexAI.Infrastructure.Persistence;
 
 #nullable disable
 
-namespace TendexAI.Infrastructure.Persistence.Migrations
+namespace TendexAI.Infrastructure.Persistence.Migrations.Tenant
 {
-    [DbContext(typeof(MasterPlatformDbContext))]
-    partial class MasterPlatformDbContextModelSnapshot : ModelSnapshot
+    [DbContext(typeof(TenantDbContext))]
+    [Migration("20260329192430_Sprint9UpdatesTenant")]
+    partial class Sprint9UpdatesTenant
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -609,6 +612,388 @@ namespace TendexAI.Infrastructure.Persistence.Migrations
                         .HasDatabaseName("IX_AiTechnicalScores_Unique_Offer_Criterion");
 
                     b.ToTable("AiTechnicalScores", "evaluation");
+                });
+
+            modelBuilder.Entity("TendexAI.Domain.Entities.Evaluation.AwardRanking", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("AwardRecommendationId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<decimal>("CombinedScore")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("CreatedBy")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<decimal>("FinancialScore")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<DateTime?>("LastModifiedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("LastModifiedBy")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("Rank")
+                        .HasColumnType("int");
+
+                    b.Property<string>("SupplierName")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<Guid>("SupplierOfferId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<decimal>("TechnicalScore")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<decimal>("TotalOfferAmount")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AwardRecommendationId");
+
+                    b.HasIndex("SupplierOfferId");
+
+                    b.ToTable("AwardRankings");
+                });
+
+            modelBuilder.Entity("TendexAI.Domain.Entities.Evaluation.AwardRecommendation", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime?>("ApprovedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("ApprovedBy")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<decimal>("CombinedScore")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<Guid>("CompetitionId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("CreatedBy")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<Guid>("FinancialEvaluationId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<decimal>("FinancialScore")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<string>("Justification")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime?>("LastModifiedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("LastModifiedBy")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<Guid>("RecommendedOfferId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("RecommendedSupplierName")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("RejectionReason")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("int");
+
+                    b.Property<decimal>("TechnicalScore")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<decimal>("TotalOfferAmount")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("AwardRecommendations");
+                });
+
+            modelBuilder.Entity("TendexAI.Domain.Entities.Evaluation.EvaluationMinutes", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime?>("ApprovedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("ApprovedBy")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<Guid?>("CommitteeId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("CompetitionId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("ContentJson")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("CreatedBy")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime?>("LastModifiedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("LastModifiedBy")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("MinutesType")
+                        .HasColumnType("int");
+
+                    b.Property<string>("PdfFileUrl")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("RejectionReason")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("int");
+
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("TitleAr")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("EvaluationMinutes");
+                });
+
+            modelBuilder.Entity("TendexAI.Domain.Entities.Evaluation.FinancialEvaluation", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime?>("ApprovedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("ApprovedBy")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<Guid>("CommitteeId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("CompetitionId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime?>("CompletedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("CreatedBy")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime?>("LastModifiedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("LastModifiedBy")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("RejectionReason")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime?>("StartedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("int");
+
+                    b.Property<Guid>("TechnicalEvaluationId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("FinancialEvaluations");
+                });
+
+            modelBuilder.Entity("TendexAI.Domain.Entities.Evaluation.FinancialOfferItem", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("BoqItemId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("CreatedBy")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int?>("DeviationLevel")
+                        .HasColumnType("int");
+
+                    b.Property<decimal?>("DeviationPercentage")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<Guid>("FinancialEvaluationId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<bool>("HasArithmeticError")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsArithmeticallyVerified")
+                        .HasColumnType("bit");
+
+                    b.Property<DateTime?>("LastModifiedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("LastModifiedBy")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<decimal>("Quantity")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<Guid>("SupplierOfferId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<decimal?>("SupplierSubmittedTotal")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<decimal>("TotalPrice")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<decimal>("UnitPrice")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("FinancialEvaluationId");
+
+                    b.HasIndex("SupplierOfferId");
+
+                    b.ToTable("FinancialOfferItems");
+                });
+
+            modelBuilder.Entity("TendexAI.Domain.Entities.Evaluation.FinancialScore", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("CreatedBy")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("EvaluatorUserId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<Guid>("FinancialEvaluationId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime?>("LastModifiedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("LastModifiedBy")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<decimal>("MaxScore")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<string>("Notes")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<decimal>("Score")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<Guid>("SupplierOfferId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("FinancialEvaluationId");
+
+                    b.HasIndex("SupplierOfferId");
+
+                    b.ToTable("FinancialScores");
+                });
+
+            modelBuilder.Entity("TendexAI.Domain.Entities.Evaluation.MinutesSignatory", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("CreatedBy")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<Guid>("EvaluationMinutesId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("FullName")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<bool>("HasSigned")
+                        .HasColumnType("bit");
+
+                    b.Property<DateTime?>("LastModifiedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("LastModifiedBy")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Role")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime?>("SignedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("UserId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("EvaluationMinutesId");
+
+                    b.ToTable("MinutesSignatories");
                 });
 
             modelBuilder.Entity("TendexAI.Domain.Entities.Evaluation.SupplierOffer", b =>
@@ -1946,6 +2331,67 @@ namespace TendexAI.Infrastructure.Persistence.Migrations
                     b.ToTable("ImpersonationSessions", (string)null);
                 });
 
+            modelBuilder.Entity("TendexAI.Domain.Entities.Notifications.Notification", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("ActionUrl")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("BodyAr")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("BodyEn")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("Channel")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("CreatedBy")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<bool>("IsRead")
+                        .HasColumnType("bit");
+
+                    b.Property<DateTime?>("LastModifiedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("LastModifiedBy")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime?>("ReadAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("TitleAr")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("TitleEn")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Type")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("Notifications");
+                });
+
             modelBuilder.Entity("TendexAI.Domain.Entities.Rfp.BoqItem", b =>
                 {
                     b.Property<Guid>("Id")
@@ -2690,6 +3136,74 @@ namespace TendexAI.Infrastructure.Persistence.Migrations
                     b.Navigation("TechnicalEvaluation");
                 });
 
+            modelBuilder.Entity("TendexAI.Domain.Entities.Evaluation.AwardRanking", b =>
+                {
+                    b.HasOne("TendexAI.Domain.Entities.Evaluation.AwardRecommendation", "AwardRecommendation")
+                        .WithMany("Rankings")
+                        .HasForeignKey("AwardRecommendationId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.HasOne("TendexAI.Domain.Entities.Evaluation.SupplierOffer", "SupplierOffer")
+                        .WithMany()
+                        .HasForeignKey("SupplierOfferId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.Navigation("AwardRecommendation");
+
+                    b.Navigation("SupplierOffer");
+                });
+
+            modelBuilder.Entity("TendexAI.Domain.Entities.Evaluation.FinancialOfferItem", b =>
+                {
+                    b.HasOne("TendexAI.Domain.Entities.Evaluation.FinancialEvaluation", "FinancialEvaluation")
+                        .WithMany("OfferItems")
+                        .HasForeignKey("FinancialEvaluationId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.HasOne("TendexAI.Domain.Entities.Evaluation.SupplierOffer", "SupplierOffer")
+                        .WithMany()
+                        .HasForeignKey("SupplierOfferId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.Navigation("FinancialEvaluation");
+
+                    b.Navigation("SupplierOffer");
+                });
+
+            modelBuilder.Entity("TendexAI.Domain.Entities.Evaluation.FinancialScore", b =>
+                {
+                    b.HasOne("TendexAI.Domain.Entities.Evaluation.FinancialEvaluation", "FinancialEvaluation")
+                        .WithMany("Scores")
+                        .HasForeignKey("FinancialEvaluationId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.HasOne("TendexAI.Domain.Entities.Evaluation.SupplierOffer", "SupplierOffer")
+                        .WithMany()
+                        .HasForeignKey("SupplierOfferId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.Navigation("FinancialEvaluation");
+
+                    b.Navigation("SupplierOffer");
+                });
+
+            modelBuilder.Entity("TendexAI.Domain.Entities.Evaluation.MinutesSignatory", b =>
+                {
+                    b.HasOne("TendexAI.Domain.Entities.Evaluation.EvaluationMinutes", "EvaluationMinutes")
+                        .WithMany("Signatories")
+                        .HasForeignKey("EvaluationMinutesId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.Navigation("EvaluationMinutes");
+                });
+
             modelBuilder.Entity("TendexAI.Domain.Entities.Evaluation.TechnicalScore", b =>
                 {
                     b.HasOne("TendexAI.Domain.Entities.Evaluation.SupplierOffer", "SupplierOffer")
@@ -2882,6 +3396,23 @@ namespace TendexAI.Infrastructure.Persistence.Migrations
             modelBuilder.Entity("TendexAI.Domain.Entities.Evaluation.AiOfferAnalysis", b =>
                 {
                     b.Navigation("CriterionAnalyses");
+                });
+
+            modelBuilder.Entity("TendexAI.Domain.Entities.Evaluation.AwardRecommendation", b =>
+                {
+                    b.Navigation("Rankings");
+                });
+
+            modelBuilder.Entity("TendexAI.Domain.Entities.Evaluation.EvaluationMinutes", b =>
+                {
+                    b.Navigation("Signatories");
+                });
+
+            modelBuilder.Entity("TendexAI.Domain.Entities.Evaluation.FinancialEvaluation", b =>
+                {
+                    b.Navigation("OfferItems");
+
+                    b.Navigation("Scores");
                 });
 
             modelBuilder.Entity("TendexAI.Domain.Entities.Evaluation.TechnicalEvaluation", b =>

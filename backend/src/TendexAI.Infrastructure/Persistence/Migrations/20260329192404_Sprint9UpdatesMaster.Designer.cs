@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using TendexAI.Infrastructure.Persistence;
 
@@ -11,9 +12,11 @@ using TendexAI.Infrastructure.Persistence;
 namespace TendexAI.Infrastructure.Persistence.Migrations
 {
     [DbContext(typeof(MasterPlatformDbContext))]
-    partial class MasterPlatformDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260329192404_Sprint9UpdatesMaster")]
+    partial class Sprint9UpdatesMaster
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
