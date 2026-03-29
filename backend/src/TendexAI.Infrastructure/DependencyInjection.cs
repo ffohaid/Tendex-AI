@@ -158,10 +158,16 @@ public static class DependencyInjection
                 var signingKey = configuration["Authentication:SigningKey"];
                 if (!string.IsNullOrWhiteSpace(signingKey))
                 {
-                    var key = new SymmetricSecurityKey(
-                        System.Text.Encoding.UTF8.GetBytes(signingKey));
-                    options.AddSigningKey(key);
-                    options.AddEncryptionKey(key);
+                    var keyBytes = System.Text.Encoding.UTF8.GetBytes(signingKey);
+                    var signingSecurityKey = new SymmetricSecurityKey(keyBytes);
+                    options.AddSigningKey(signingSecurityKey);
+
+                    // OpenIddict encryption requires exactly 256-bit key
+                    var encryptionKeyBytes = keyBytes.Length > 32
+                        ? keyBytes[..32]
+                        : keyBytes;
+                    var encryptionSecurityKey = new SymmetricSecurityKey(encryptionKeyBytes);
+                    options.AddEncryptionKey(encryptionSecurityKey);
                 }
                 else
                 {
