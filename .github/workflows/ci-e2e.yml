@@ -2,7 +2,10 @@
 # Tendex AI - E2E Tests Pipeline (Playwright)
 # ============================================================================
 # Runs Playwright E2E tests for the frontend application.
-# Triggers on PRs and pushes that modify frontend or E2E test code.
+#
+# NOTE: E2E tests require a running backend and database, so they are
+# triggered manually (workflow_dispatch) or on a schedule, NOT on every push.
+# This prevents false failures and unnecessary email notifications.
 #
 # Features:
 # - Dual-language testing (Arabic RTL / English LTR)
@@ -14,20 +17,17 @@
 name: CI - E2E Tests (Playwright)
 
 on:
-  pull_request:
-    branches:
-      - main
-      - develop
-    paths:
-      - "frontend/**"
-      - ".github/workflows/ci-e2e.yml"
-  push:
-    branches:
-      - main
-      - develop
-    paths:
-      - "frontend/**"
-      - ".github/workflows/ci-e2e.yml"
+  workflow_dispatch:
+    inputs:
+      project:
+        description: "Playwright project to run"
+        required: true
+        default: "all"
+        type: choice
+        options:
+          - all
+          - chromium-ar
+          - chromium-en
 
 concurrency:
   group: ci-e2e-${{ github.ref }}
@@ -50,7 +50,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        project: [chromium-ar, chromium-en]
+        project: ${{ github.event.inputs.project == 'all' && fromJSON('["chromium-ar", "chromium-en"]') || fromJSON(format('["{0}"]', github.event.inputs.project)) }}
 
     steps:
       # ------------------------------------------------------------------

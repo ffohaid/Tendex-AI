@@ -8,7 +8,7 @@
  * - Placeholder/blur-up pattern support
  */
 
-import { ref, onMounted, onUnmounted, type Ref } from 'vue'
+import { ref, onMounted, onUnmounted } from 'vue'
 
 /**
  * Checks if the browser supports WebP format.

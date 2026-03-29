@@ -9,7 +9,7 @@
  * - Performance metrics collection
  */
 
-import { ref, onUnmounted, type Ref } from 'vue'
+import { ref, onUnmounted } from 'vue'
 
 /**
  * Creates a debounced version of a function.

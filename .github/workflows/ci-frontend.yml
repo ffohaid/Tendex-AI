@@ -1,9 +1,11 @@
 # ============================================================================
 # Tendex AI - Frontend CI Pipeline
 # ============================================================================
-# Triggers on every Pull Request that modifies frontend code.
-# Steps: install dependencies, lint, type-check, build.
-# NOTE: This pipeline is CI only. CD (deployment) is deferred to Sprint 7.
+# Triggers on every Pull Request and push that modifies frontend code.
+# Steps: install dependencies, type-check, lint, build.
+#
+# NOTE: E2E tests are in a separate workflow (ci-e2e.yml) and run manually
+# because they require a running backend and database.
 # ============================================================================
 
 name: CI - Frontend (Vue.js)
@@ -119,51 +121,4 @@ jobs:
         with:
           name: frontend-dist
           path: frontend/dist/
-          retention-days: 7
-
-  # ====================================================================
-  # E2E Tests (Playwright) - Smoke tests on main build
-  # Full E2E suite runs in ci-e2e.yml; this runs a quick smoke check.
-  # ====================================================================
-  e2e-smoke:
-    name: E2E Smoke Test (Playwright)
-    runs-on: ubuntu-latest
-    needs: build-and-lint
-    timeout-minutes: 20
-
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Setup Node.js ${{ env.NODE_VERSION }}
-        uses: actions/setup-node@v4
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v4
-        with:
-          version: latest
-
-      - name: Install dependencies
-        working-directory: frontend
-        run: pnpm install --frozen-lockfile --prefer-offline || pnpm install
-
-      - name: Install Playwright browsers
-        working-directory: frontend
-        run: npx playwright install --with-deps chromium
-
-      - name: Run E2E smoke tests (Arabic)
-        working-directory: frontend
-        run: npx playwright test --project=chromium-ar --grep="@smoke"
-        env:
-          CI: true
-        continue-on-error: true
-
-      - name: Upload smoke test report
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: e2e-smoke-report
-          path: frontend/playwright-report/
           retention-days: 7

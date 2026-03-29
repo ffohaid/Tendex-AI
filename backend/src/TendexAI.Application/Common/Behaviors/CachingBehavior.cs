@@ -105,7 +105,7 @@ public sealed class CachingBehavior<TRequest, TResponse> : IPipelineBehavior<TRe
                 cancellationToken);
         }
 
-        return response;
+        return response!;
     }
 }
 
