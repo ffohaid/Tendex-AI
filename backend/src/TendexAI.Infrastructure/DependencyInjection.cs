@@ -102,6 +102,14 @@ public static class DependencyInjection
         services.AddScoped<ITenantProvider, TenantProvider>();
         services.AddScoped<ITenantDbContextFactory, TenantDbContextFactory>();
 
+        // Register TenantDbContext as scoped service resolved via TenantDbContextFactory
+        // This allows repositories to inject TenantDbContext directly
+        services.AddScoped<TenantDbContext>(sp =>
+        {
+            var factory = sp.GetRequiredService<ITenantDbContextFactory>();
+            return factory.CreateDbContext();
+        });
+
         // ----- RabbitMQ Message Broker (Event Bus) -----
         services.AddRabbitMqEventBus(configuration);
 
