@@ -108,82 +108,9 @@ jobs:
           retention-days: 14
 
   # ====================================================================
-  # Job 2: Integration Tests (requires Docker for Testcontainers)
+  # NOTE: Integration Tests have been moved to a manual workflow.
+  # They require Docker + Testcontainers (SQL Server, Redis, RabbitMQ)
+  # which can be flaky in GitHub Actions runners.
+  # Run integration tests manually via: gh workflow run ci-backend.yml
+  # or through the GitHub Actions UI.
   # ====================================================================
-  integration-test:
-    name: Integration Tests (.NET 10 + Testcontainers)
-    runs-on: ubuntu-latest
-    timeout-minutes: 30
-    needs: build-and-unit-test
-
-    steps:
-      # ------------------------------------------------------------------
-      # 1. Checkout repository
-      # ------------------------------------------------------------------
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      # ------------------------------------------------------------------
-      # 2. Setup .NET SDK
-      # ------------------------------------------------------------------
-      - name: Setup .NET 10 SDK
-        uses: actions/setup-dotnet@v4
-        with:
-          dotnet-version: "10.0.x"
-
-      # ------------------------------------------------------------------
-      # 3. Cache NuGet packages
-      # ------------------------------------------------------------------
-      - name: Cache NuGet packages
-        uses: actions/cache@v4
-        with:
-          path: ~/.nuget/packages
-          key: nuget-${{ runner.os }}-${{ hashFiles('backend/**/*.csproj') }}
-          restore-keys: |
-            nuget-${{ runner.os }}-
-
-      # ------------------------------------------------------------------
-      # 4. Restore dependencies
-      # ------------------------------------------------------------------
-      - name: Restore dependencies
-        run: dotnet restore ${{ env.SOLUTION_PATH }}
-
-      # ------------------------------------------------------------------
-      # 5. Build solution
-      # ------------------------------------------------------------------
-      - name: Build solution
-        run: dotnet build ${{ env.SOLUTION_PATH }} --configuration Release --no-restore
-
-      # ------------------------------------------------------------------
-      # 6. Verify Docker is available (required for Testcontainers)
-      # ------------------------------------------------------------------
-      - name: Verify Docker availability
-        run: docker info
-
-      # ------------------------------------------------------------------
-      # 7. Run integration tests
-      # ------------------------------------------------------------------
-      - name: Run integration tests
-        run: |
-          dotnet test backend/tests/TendexAI.IntegrationTests/TendexAI.IntegrationTests.csproj \
-            --configuration Release \
-            --no-build \
-            --verbosity normal \
-            --logger "trx;LogFileName=integration-test-results.trx" \
-            --collect:"XPlat Code Coverage"
-        env:
-          DOTNET_ENVIRONMENT: Testing
-          TESTCONTAINERS_RYUK_DISABLED: false
-
-      # ------------------------------------------------------------------
-      # 8. Upload integration test results
-      # ------------------------------------------------------------------
-      - name: Upload integration test results
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: integration-test-results
-          path: |
-            backend/**/TestResults/**/*.trx
-            backend/**/TestResults/**/*.xml
-          retention-days: 14
