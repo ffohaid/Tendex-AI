@@ -1284,5 +1284,154 @@
     "errors": {
       "loadFailed": "فشل في تحميل المهام المعلقة"
     }
+  },
+  "settings": {
+    "organization": {
+      "title": "بيانات الجهة",
+      "subtitle": "عرض وتعديل بيانات الجهة الحكومية والعلامة التجارية",
+      "infoTitle": "المعلومات الأساسية",
+      "brandingTitle": "العلامة التجارية",
+      "saveSuccess": "تم حفظ بيانات الجهة بنجاح",
+      "brandingSaveSuccess": "تم حفظ العلامة التجارية بنجاح",
+      "uploadLogo": "رفع شعار",
+      "logoHint": "PNG, JPG أو SVG - الحد الأقصى 2 ميجابايت",
+      "fields": {
+        "nameAr": "اسم الجهة (عربي)",
+        "nameEn": "اسم الجهة (إنجليزي)",
+        "contactName": "اسم المسؤول",
+        "contactEmail": "البريد الإلكتروني",
+        "contactPhone": "رقم الهاتف",
+        "createdAt": "تاريخ الإنشاء",
+        "notes": "ملاحظات",
+        "logo": "الشعار",
+        "primaryColor": "اللون الرئيسي",
+        "secondaryColor": "اللون الثانوي"
+      },
+      "placeholders": {
+        "nameAr": "أدخل اسم الجهة بالعربية",
+        "nameEn": "أدخل اسم الجهة بالإنجليزية",
+        "contactName": "أدخل اسم المسؤول",
+        "contactEmail": "أدخل البريد الإلكتروني",
+        "contactPhone": "أدخل رقم الهاتف",
+        "notes": "أدخل ملاحظات إضافية"
+      },
+      "errors": {
+        "loadFailed": "فشل في تحميل بيانات الجهة",
+        "saveFailed": "فشل في حفظ بيانات الجهة",
+        "brandingSaveFailed": "فشل في حفظ العلامة التجارية"
+      }
+    },
+    "users": {
+      "title": "إدارة المستخدمين",
+      "subtitle": "إدارة المستخدمين والدعوات والأدوار في الجهة",
+      "inviteUser": "دعوة مستخدم",
+      "emptyState": "لا يوجد مستخدمون حالياً",
+      "emptyInvitations": "لا توجد دعوات حالياً",
+      "inviteDialogTitle": "دعوة مستخدم جديد",
+      "editDialogTitle": "تعديل بيانات المستخدم",
+      "rolesDialogTitle": "إدارة أدوار المستخدم",
+      "sendInvitation": "إرسال الدعوة",
+      "selectRole": "اختر دوراً",
+      "manageRoles": "إدارة الأدوار",
+      "currentRoles": "الأدوار الحالية",
+      "noRolesAssigned": "لا توجد أدوار مسندة",
+      "assignNewRole": "إسناد دور جديد",
+      "assign": "إسناد",
+      "removeRole": "إزالة الدور",
+      "assignedAt": "تاريخ الإسناد",
+      "activate": "تفعيل",
+      "deactivate": "تعطيل",
+      "resendInvitation": "إعادة إرسال الدعوة",
+      "revokeInvitation": "إلغاء الدعوة",
+      "inviteSentSuccess": "تم إرسال الدعوة بنجاح",
+      "updateSuccess": "تم تحديث بيانات المستخدم بنجاح",
+      "activateSuccess": "تم تفعيل المستخدم بنجاح",
+      "deactivateSuccess": "تم تعطيل المستخدم بنجاح",
+      "roleAssignSuccess": "تم إسناد الدور بنجاح",
+      "roleRemoveSuccess": "تم إزالة الدور بنجاح",
+      "inviteResendSuccess": "تم إعادة إرسال الدعوة بنجاح",
+      "inviteRevokeSuccess": "تم إلغاء الدعوة بنجاح",
+      "tabs": {
+        "users": "المستخدمون",
+        "invitations": "الدعوات"
+      },
+      "table": {
+        "name": "الاسم",
+        "email": "البريد الإلكتروني",
+        "roles": "الأدوار",
+        "status": "الحالة",
+        "lastLogin": "آخر دخول",
+        "actions": "الإجراءات"
+      },
+      "invTable": {
+        "name": "الاسم",
+        "email": "البريد الإلكتروني",
+        "role": "الدور",
+        "status": "الحالة",
+        "expiresAt": "تاريخ الانتهاء",
+        "actions": "الإجراءات"
+      },
+      "fields": {
+        "email": "البريد الإلكتروني",
+        "firstNameAr": "الاسم الأول (عربي)",
+        "lastNameAr": "الاسم الأخير (عربي)",
+        "firstNameEn": "الاسم الأول (إنجليزي)",
+        "lastNameEn": "الاسم الأخير (إنجليزي)",
+        "firstName": "الاسم الأول",
+        "lastName": "الاسم الأخير",
+        "phone": "رقم الهاتف",
+        "role": "الدور"
+      },
+      "statuses": {
+        "active": "نشط",
+        "inactive": "معطل"
+      },
+      "invStatuses": {
+        "pending": "قيد الانتظار",
+        "accepted": "مقبولة",
+        "expired": "منتهية",
+        "revoked": "ملغاة"
+      },
+      "pagination": {
+        "showing": "عرض {from} إلى {to} من {total}"
+      },
+      "errors": {
+        "loadFailed": "فشل في تحميل قائمة المستخدمين",
+        "loadInvitationsFailed": "فشل في تحميل قائمة الدعوات",
+        "inviteFailed": "فشل في إرسال الدعوة",
+        "updateFailed": "فشل في تحديث بيانات المستخدم",
+        "toggleStatusFailed": "فشل في تغيير حالة المستخدم",
+        "roleAssignFailed": "فشل في إسناد الدور",
+        "roleRemoveFailed": "فشل في إزالة الدور",
+        "resendFailed": "فشل في إعادة إرسال الدعوة",
+        "revokeFailed": "فشل في إلغاء الدعوة"
+      }
+    },
+    "roles": {
+      "title": "الأدوار والصلاحيات",
+      "subtitle": "عرض الأدوار المتاحة في النظام وعدد المستخدمين لكل دور",
+      "emptyState": "لا توجد أدوار متاحة",
+      "detailTitle": "تفاصيل الدور",
+      "systemRole": "دور نظامي",
+      "customRole": "دور مخصص",
+      "active": "نشط",
+      "inactive": "غير نشط",
+      "usersCount": "مستخدم",
+      "stats": {
+        "totalRoles": "إجمالي الأدوار",
+        "systemRoles": "أدوار نظامية",
+        "totalUsers": "إجمالي المستخدمين"
+      },
+      "fields": {
+        "nameAr": "الاسم (عربي)",
+        "nameEn": "الاسم (إنجليزي)",
+        "description": "الوصف",
+        "userCount": "عدد المستخدمين",
+        "createdAt": "تاريخ الإنشاء"
+      },
+      "errors": {
+        "loadFailed": "فشل في تحميل قائمة الأدوار"
+      }
+    }
   }
 }

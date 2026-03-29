@@ -1284,5 +1284,154 @@
     "errors": {
       "loadFailed": "Failed to load pending tasks"
     }
+  },
+  "settings": {
+    "organization": {
+      "title": "Organization Settings",
+      "subtitle": "View and edit your organization information and branding",
+      "infoTitle": "Basic Information",
+      "brandingTitle": "Branding",
+      "saveSuccess": "Organization information saved successfully",
+      "brandingSaveSuccess": "Branding saved successfully",
+      "uploadLogo": "Upload Logo",
+      "logoHint": "PNG, JPG or SVG - Max 2MB",
+      "fields": {
+        "nameAr": "Organization Name (Arabic)",
+        "nameEn": "Organization Name (English)",
+        "contactName": "Contact Person",
+        "contactEmail": "Email Address",
+        "contactPhone": "Phone Number",
+        "createdAt": "Created At",
+        "notes": "Notes",
+        "logo": "Logo",
+        "primaryColor": "Primary Color",
+        "secondaryColor": "Secondary Color"
+      },
+      "placeholders": {
+        "nameAr": "Enter organization name in Arabic",
+        "nameEn": "Enter organization name in English",
+        "contactName": "Enter contact person name",
+        "contactEmail": "Enter email address",
+        "contactPhone": "Enter phone number",
+        "notes": "Enter additional notes"
+      },
+      "errors": {
+        "loadFailed": "Failed to load organization data",
+        "saveFailed": "Failed to save organization data",
+        "brandingSaveFailed": "Failed to save branding"
+      }
+    },
+    "users": {
+      "title": "User Management",
+      "subtitle": "Manage users, invitations, and roles for your organization",
+      "inviteUser": "Invite User",
+      "emptyState": "No users found",
+      "emptyInvitations": "No invitations found",
+      "inviteDialogTitle": "Invite New User",
+      "editDialogTitle": "Edit User",
+      "rolesDialogTitle": "Manage User Roles",
+      "sendInvitation": "Send Invitation",
+      "selectRole": "Select a role",
+      "manageRoles": "Manage Roles",
+      "currentRoles": "Current Roles",
+      "noRolesAssigned": "No roles assigned",
+      "assignNewRole": "Assign New Role",
+      "assign": "Assign",
+      "removeRole": "Remove Role",
+      "assignedAt": "Assigned At",
+      "activate": "Activate",
+      "deactivate": "Deactivate",
+      "resendInvitation": "Resend Invitation",
+      "revokeInvitation": "Revoke Invitation",
+      "inviteSentSuccess": "Invitation sent successfully",
+      "updateSuccess": "User updated successfully",
+      "activateSuccess": "User activated successfully",
+      "deactivateSuccess": "User deactivated successfully",
+      "roleAssignSuccess": "Role assigned successfully",
+      "roleRemoveSuccess": "Role removed successfully",
+      "inviteResendSuccess": "Invitation resent successfully",
+      "inviteRevokeSuccess": "Invitation revoked successfully",
+      "tabs": {
+        "users": "Users",
+        "invitations": "Invitations"
+      },
+      "table": {
+        "name": "Name",
+        "email": "Email",
+        "roles": "Roles",
+        "status": "Status",
+        "lastLogin": "Last Login",
+        "actions": "Actions"
+      },
+      "invTable": {
+        "name": "Name",
+        "email": "Email",
+        "role": "Role",
+        "status": "Status",
+        "expiresAt": "Expires At",
+        "actions": "Actions"
+      },
+      "fields": {
+        "email": "Email Address",
+        "firstNameAr": "First Name (Arabic)",
+        "lastNameAr": "Last Name (Arabic)",
+        "firstNameEn": "First Name (English)",
+        "lastNameEn": "Last Name (English)",
+        "firstName": "First Name",
+        "lastName": "Last Name",
+        "phone": "Phone Number",
+        "role": "Role"
+      },
+      "statuses": {
+        "active": "Active",
+        "inactive": "Inactive"
+      },
+      "invStatuses": {
+        "pending": "Pending",
+        "accepted": "Accepted",
+        "expired": "Expired",
+        "revoked": "Revoked"
+      },
+      "pagination": {
+        "showing": "Showing {from} to {to} of {total}"
+      },
+      "errors": {
+        "loadFailed": "Failed to load users",
+        "loadInvitationsFailed": "Failed to load invitations",
+        "inviteFailed": "Failed to send invitation",
+        "updateFailed": "Failed to update user",
+        "toggleStatusFailed": "Failed to change user status",
+        "roleAssignFailed": "Failed to assign role",
+        "roleRemoveFailed": "Failed to remove role",
+        "resendFailed": "Failed to resend invitation",
+        "revokeFailed": "Failed to revoke invitation"
+      }
+    },
+    "roles": {
+      "title": "Roles & Permissions",
+      "subtitle": "View available roles and their user counts",
+      "emptyState": "No roles available",
+      "detailTitle": "Role Details",
+      "systemRole": "System Role",
+      "customRole": "Custom Role",
+      "active": "Active",
+      "inactive": "Inactive",
+      "usersCount": "users",
+      "stats": {
+        "totalRoles": "Total Roles",
+        "systemRoles": "System Roles",
+        "totalUsers": "Total Users"
+      },
+      "fields": {
+        "nameAr": "Name (Arabic)",
+        "nameEn": "Name (English)",
+        "description": "Description",
+        "userCount": "User Count",
+        "createdAt": "Created At"
+      },
+      "errors": {
+        "loadFailed": "Failed to load roles"
+      }
+    }
   }
 }

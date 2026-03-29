@@ -161,22 +161,23 @@ const routes: RouteRecordRaw[] = [
         meta: { title: 'Tendex AI - Purchase Order Detail', requiresAuth: true },
         props: true,
       },
+      /* Settings routes (TASK-903) */
       {
         path: 'settings/organization',
         name: 'SettingsOrganization',
-        component: () => import('@/views/DashboardView.vue'),
+        component: () => import('@/views/settings/OrganizationSettingsView.vue'),
         meta: { title: 'Tendex AI - Organization Settings', requiresAuth: true },
       },
       {
         path: 'settings/users',
         name: 'SettingsUsers',
-        component: () => import('@/views/DashboardView.vue'),
+        component: () => import('@/views/settings/UsersManagementView.vue'),
         meta: { title: 'Tendex AI - User Management', requiresAuth: true },
       },
       {
         path: 'settings/roles',
         name: 'SettingsRoles',
-        component: () => import('@/views/DashboardView.vue'),
+        component: () => import('@/views/settings/RolesManagementView.vue'),
         meta: { title: 'Tendex AI - Roles & Permissions', requiresAuth: true },
       },
       /* Operator Panel - Tenant Feature Flags & Branding (TASK-604) */

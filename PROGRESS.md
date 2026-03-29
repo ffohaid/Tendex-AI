@@ -15,13 +15,25 @@
 | Sprint 6: لوحة تحكم المشغل | ✅ مكتمل | 100% | تم إنجاز TASK-601, TASK-602, TASK-603, TASK-604 |
 | Sprint 7: الاختبار والنشر | ✅ مكتمل | 100% | تم إنجاز TASK-701, TASK-702, TASK-703, TASK-704 |
 | Sprint 8: النشر والتشغيل | ✅ مكتمل | 100% | تم إنجاز TASK-801, TASK-802, TASK-803 |
-| Sprint 9: إصلاحات التشغيل الفعلي | 🔄 جارٍ | 50% | تم إنجاز TASK-901, TASK-902 |
+| Sprint 9: إصلاحات التشغيل الفعلي | 🔄 جارٍ | 75% | تم إنجاز TASK-901, TASK-902, TASK-903 |
 
 ---
 
 ## سجل المهام المنجزة (Completed Tasks Log)
 
 *يرجى إضافة أحدث مهمة منجزة في أعلى هذه القائمة.*
+
+### 2026-03-29 - TASK-903: بناء صفحات الإعدادات وإدارة المستخدمين في الواجهة الأمامية
+- **ما تم إنجازه:**
+  - **Types:** إنشاء `frontend/src/types/userManagement.ts` (UserDto, RoleDto, InvitationDto, PaginatedResult, request types)
+  - **Service:** إنشاء `frontend/src/services/userManagementService.ts` (fetchUsers, fetchUserById, updateUser, toggleUserStatus, assignRole, removeRole, fetchRoles, fetchInvitations, sendInvitation, resendInvitation, revokeInvitation)
+  - **OrganizationSettingsView.vue:** عرض/تعديل بيانات الجهة (الاسم عربي/إنجليزي، المسؤول، البريد، الهاتف) + العلامة التجارية (شعار، ألوان)
+  - **UsersManagementView.vue:** جدول مستخدمين مع صفحات + دعوة مستخدم جديد + تعديل بيانات + تفعيل/تعطيل + إدارة أدوار + تبويب الدعوات
+  - **RolesManagementView.vue:** بطاقات إحصائية + شبكة أدوار + تفاصيل الدور (نظامي/مخصص)
+  - **Router:** تحديث `router/index.ts` لربط المسارات بالمكونات الجديدة
+  - **i18n:** إضافة مفاتيح الترجمة لكلا اللغتين (ar.json, en.json)
+- **الاعتماديات التي تم حلها:** TASK-902 (صفحات اللجان)
+- **ملاحظات للوكيل التالي:** الصفحات جاهزة والبناء ناجح. الصفحات تستخدم Tailwind CSS مع خصائص منطقية (ms, me, ps, pe, start, end) لدعم RTL/LTR. جميع البيانات تُجلب ديناميكياً من API (لا توجد بيانات وهمية). الخدمات تتوافق مع UserManagementEndpoints.cs و TenantEndpoints.cs في الباك إند.
 
 ### 2026-03-29 - TASK-902: بناء صفحات اللجان والاعتمادات في الواجهة الأمامية
 - **ما تم إنجازه:**
