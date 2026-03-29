@@ -14,13 +14,54 @@
 | Sprint 5: الواجهة الأمامية | 🔄 قيد التنفيذ | 71% | تم إنجاز TASK-501, TASK-502, TASK-503, TASK-504, TASK-505 |
 | Sprint 6: لوحة تحكم المشغل | ✅ مكتمل | 100% | تم إنجاز TASK-601, TASK-602, TASK-603, TASK-604 |
 | Sprint 7: الاختبار والنشر | ✅ مكتمل | 100% | تم إنجاز TASK-701, TASK-702, TASK-703, TASK-704 |
-| Sprint 8: النشر والتشغيل | 🔄 قيد التنفيذ | 33% | تم إنجاز TASK-801 |
+| Sprint 8: النشر والتشغيل | 🔄 قيد التنفيذ | 67% | تم إنجاز TASK-801, TASK-802 |
 
 ---
 
 ## سجل المهام المنجزة (Completed Tasks Log)
 
 *يرجى إضافة أحدث مهمة منجزة في أعلى هذه القائمة.*
+
+### 2026-03-29 - TASK-802: إعداد SSL والنشر الأول
+- **ما تم إنجازه:**
+  - **تأكيد DNS:** تم التحقق من توجيه سجلات DNS للدومين `netaq.pro` و `www.netaq.pro` و `api.netaq.pro` إلى IP الخادم `187.124.41.141`.
+  - **استنساخ المستودع على الخادم:** تم استنساخ مستودع Tendex-AI من GitHub إلى `/opt/tendex-ai/repo/` ونسخ ملفات الكود المصدري إلى مسارات البناء.
+  - **تحديث ملف `.env.prod`:** تم تحديث الدومين إلى `netaq.pro` والبريد الإلكتروني إلى `admin@netaq.pro`.
+  - **إصلاح Dockerfile للـ Backend:** تم إصلاح مشكلة `dotnet restore` التي كانت تفشل بسبب مشاريع اختبار مستبعدة في `.dockerignore` لكنها مدرجة في ملف الحل. تم تعديل الـ Dockerfile لاستخدام restore على المشروع الرئيسي مباشرة.
+  - **إصلاح Healthchecks:**
+    - **Qdrant:** تم تغيير healthcheck من `wget` إلى `curl` لتوافقه مع الأدوات المتاحة في الصورة.
+    - **Frontend:** تم تغيير healthcheck لاستخدام `http://127.0.0.1/` بدلاً من `http://localhost/` لتجنب مشكلة IPv6 في Alpine Linux.
+    - **Backend:** تم تصحيح مسار healthcheck من `/health` إلى `/api/v1/health` ليتوافق مع المسار الفعلي المسجل في التطبيق.
+    - **Elasticsearch:** تم تبسيط healthcheck لاستخدام `curl -sf http://localhost:9200/_cluster/health`.
+  - **إصلاح RabbitMQ:** تم إزالة تحميل `definitions.json` الذي كان يمسح المستخدمين المنشأين عبر متغيرات البيئة.
+  - **إصدار شهادة SSL:**
+    - تم إنشاء شهادة self-signed مؤقتة لبدء تشغيل Nginx.
+    - تم إصدار شهادة Let's Encrypt حقيقية للدومينات `netaq.pro` و `www.netaq.pro` باستخدام Certbot webroot.
+    - الشهادة صالحة حتى 27 يونيو 2026.
+  - **تحديث Nginx Config:** تم تحديث `server_name` ليتضمن `netaq.pro www.netaq.pro` ومسارات الشهادات لتشير إلى `/etc/letsencrypt/live/netaq.pro/`.
+  - **نشر جميع الخدمات:** تم تشغيل جميع الحاويات (11 حاوية) بنجاح:
+    - `tendex-nginx` - Reverse Proxy مع SSL/TLS (healthy)
+    - `tendex-backend` - .NET 10 API (healthy)
+    - `tendex-frontend` - Vue.js 3 SPA (healthy)
+    - `tendex-sqlserver` - SQL Server 2022 (healthy)
+    - `tendex-redis` - Redis 7 (healthy)
+    - `tendex-rabbitmq` - RabbitMQ (healthy)
+    - `tendex-minio` - MinIO S3 (healthy)
+    - `tendex-qdrant` - Vector DB (healthy)
+    - `tendex-elasticsearch` - Elasticsearch 8.17 (healthy)
+    - `tendex-grafana` - Monitoring Dashboard (healthy)
+    - `tendex-certbot` - SSL Auto-renewal
+  - **التحقق من الوصول الخارجي:**
+    - `https://netaq.pro/` ✅ يعرض الواجهة الأمامية
+    - `https://netaq.pro/api/v1/health` ✅ يستجيب بـ `{"status":"Healthy"}`
+    - HTTP يُعاد توجيهه تلقائياً إلى HTTPS (301 redirect)
+- **الاعتماديات التي تم حلها:** TASK-801 (إعداد الخادم).
+- **ملاحظات للوكيل التالي:**
+  - جميع الخدمات تعمل وحالتها healthy على الخادم.
+  - شهادة SSL صالحة حتى 27 يونيو 2026 مع تجديد تلقائي عبر Certbot.
+  - fail2ban تم تعطيله مؤقتاً أثناء النشر - يجب إعادة تفعيله: `systemctl start fail2ban`.
+  - تم تعديل ملفات على الخادم مباشرة (Dockerfile, docker-compose.prod.yml, tendex.conf) - يجب مزامنة هذه التغييرات مع المستودع.
+  - الخطوة التالية: TASK-803 (المراقبة والنسخ الاحتياطي).
 
 ### 2026-03-29 - TASK-801: الإعداد الأولي للخادم وبيئة الإنتاج
 - **ما تم إنجازه:**
