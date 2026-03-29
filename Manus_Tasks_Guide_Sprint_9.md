@@ -154,3 +154,35 @@
 3. قم ببناء الباك إند.
 4. حدث `PROGRESS.md` وارفع التغييرات إلى GitHub.
 ```
+
+---
+
+## TASK-906: إعادة النشر على السيرفر (Deployment Update)
+
+**الهدف:** تحديث المنصة الحية على السيرفر (netaq.pro) بجميع التغييرات والصفحات الجديدة التي تم بناؤها خلال Sprint 9، وتشغيل الـ Migrations الجديدة.
+
+**البرومبت (انسخ ما يلي في محادثة جديدة):**
+
+```text
+أنت وكيل مسؤول عن عمليات النشر (DevOps/Deployment). مهمتك هي تنفيذ TASK-906 لإعادة نشر منصة Tendex AI على خادم الإنتاج لتشمل جميع تحديثات Sprint 9.
+
+**معلومات الخادم:**
+- IP: 187.124.41.141
+- User: root
+- الدومين: netaq.pro
+- (كلمة المرور موجودة في تعليمات المشروع Project Instructions)
+
+**الخطوات المطلوبة:**
+1. الاتصال بالخادم عبر SSH.
+2. الانتقال إلى مجلد المشروع `/opt/tendex-ai` وسحب آخر التحديثات من GitHub (`git pull origin main`).
+3. استخدام سكربت النشر الموجود لإجراء تحديث بدون توقف: `./infrastructure/scripts/deploy.sh update`
+4. **خطوة حرجة (Migrations):** بعد اكتمال التحديث، يجب الدخول إلى حاوية الباك إند وتشغيل الـ Migrations لتطبيق جدول `Notifications` الجديد على قاعدة البيانات:
+   `docker exec -it tendex-backend dotnet ef database update --project src/TendexAI.Infrastructure --startup-project src/TendexAI.API`
+5. التحقق من صحة عمل المنصة:
+   - فحص `https://netaq.pro/api/v1/health`
+   - فحص واجهة المستخدم `https://netaq.pro/`
+6. تحديث ملف `PROGRESS.md` في المستودع ليعكس اكتمال TASK-906.
+7. تقديم تقرير نهائي يوضح حالة الحاويات ونجاح عملية النشر.
+
+**ملاحظة:** لا تقم بتغيير أي إعدادات في `.env.prod` أو `docker-compose.prod.yml` ما لم يكن ذلك ضرورياً جداً. استخدم السكربتات المتاحة.
+```
