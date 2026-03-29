@@ -16,14 +16,15 @@ WORKDIR /src
 # Copy only project files first for better layer caching
 COPY Directory.Build.props ./
 COPY global.json ./
-COPY TendexAI.slnx ./
 
 COPY src/TendexAI.Domain/TendexAI.Domain.csproj src/TendexAI.Domain/
 COPY src/TendexAI.Application/TendexAI.Application.csproj src/TendexAI.Application/
 COPY src/TendexAI.Infrastructure/TendexAI.Infrastructure.csproj src/TendexAI.Infrastructure/
 COPY src/TendexAI.API/TendexAI.API.csproj src/TendexAI.API/
 
-RUN dotnet restore TendexAI.slnx
+# Restore only the API project (which pulls all dependencies transitively)
+# NOTE: We do NOT use TendexAI.slnx because .dockerignore excludes tests/
+RUN dotnet restore src/TendexAI.API/TendexAI.API.csproj
 
 # ---------------------------------------------------------------------------
 # Stage 2: Build & Publish
