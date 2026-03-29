@@ -9,6 +9,7 @@ using TendexAI.Application.Features.Tenants.Dtos;
 using TendexAI.Application.Features.Tenants.Queries.GetTenantBranding;
 using TendexAI.Application.Features.Tenants.Queries.GetTenantById;
 using TendexAI.Application.Features.Tenants.Queries.GetTenantsList;
+using TendexAI.Domain.Entities;
 using TendexAI.Domain.Enums;
 
 namespace TendexAI.API.Endpoints;
@@ -91,6 +92,15 @@ public static class TenantEndpoints
             .WithName("GetTenantStatuses")
             .WithSummary("Returns all available tenant lifecycle statuses.")
             .Produces<IEnumerable<TenantStatusDto>>(StatusCodes.Status200OK);
+
+        // GET /api/v1/tenants/resolve?hostname={hostname} - Resolve tenant by hostname (public, no auth)
+        app.MapGet("/api/v1/tenants/resolve", ResolveTenantByHostname)
+            .WithTags("Tenants")
+            .WithName("ResolveTenantByHostname")
+            .WithSummary("Resolves a tenant by hostname or subdomain. Used by the frontend to auto-detect tenant on login.")
+            .AllowAnonymous()
+            .Produces<TenantResolveDto>(StatusCodes.Status200OK)
+            .Produces(StatusCodes.Status404NotFound);
 
         return app;
     }
@@ -282,6 +292,62 @@ public static class TenantEndpoints
 
         return Results.Ok(statuses);
     }
+
+    /// <summary>
+    /// Resolves a tenant by hostname. Supports:
+    /// 1. Subdomain matching (e.g., "mof.netaq.pro" → subdomain "mof")
+    /// 2. Main domain matching (e.g., "netaq.pro" → returns default/first active tenant)
+    /// This endpoint is public (AllowAnonymous) so the frontend can auto-detect
+    /// the tenant before the user logs in.
+    /// </summary>
+    private static async Task<IResult> ResolveTenantByHostname(
+        ITenantRepository tenantRepository,
+        [FromQuery] string? hostname = null)
+    {
+        if (string.IsNullOrWhiteSpace(hostname))
+            return Results.BadRequest(new { Error = "hostname query parameter is required." });
+
+        // Normalize hostname
+        hostname = hostname.Trim().ToLowerInvariant();
+
+        // Remove port if present (e.g., "localhost:5173")
+        var colonIndex = hostname.IndexOf(':');
+        if (colonIndex > 0)
+            hostname = hostname[..colonIndex];
+
+        // Try to extract subdomain (e.g., "mof.netaq.pro" → "mof")
+        var parts = hostname.Split('.');
+        Tenant? tenant = null;
+
+        if (parts.Length >= 3)
+        {
+            // Has subdomain: e.g., mof.netaq.pro
+            var subdomain = parts[0];
+            if (subdomain != "www" && subdomain != "api")
+            {
+                tenant = await tenantRepository.GetBySubdomainAsync(subdomain);
+            }
+        }
+
+        // If no subdomain match, return the first active tenant (default tenant)
+        if (tenant is null)
+        {
+            var activeTenants = await tenantRepository.GetByStatusAsync(TenantStatus.Active);
+            tenant = activeTenants.FirstOrDefault();
+        }
+
+        if (tenant is null)
+            return Results.NotFound(new { Error = "No active tenant found for the given hostname." });
+
+        return Results.Ok(new TenantResolveDto(
+            Id: tenant.Id,
+            NameAr: tenant.NameAr,
+            NameEn: tenant.NameEn,
+            Subdomain: tenant.Subdomain,
+            LogoUrl: null,
+            PrimaryColor: null,
+            SecondaryColor: null));
+    }
 }
 
 // ----- Response DTOs -----
@@ -290,3 +356,16 @@ public static class TenantEndpoints
 /// DTO for tenant status enumeration values.
 /// </summary>
 public sealed record TenantStatusDto(int Value, string Name);
+
+/// <summary>
+/// Lightweight DTO returned by the tenant resolution endpoint.
+/// Contains only the information needed by the frontend to bootstrap the login page.
+/// </summary>
+public sealed record TenantResolveDto(
+    Guid Id,
+    string NameAr,
+    string NameEn,
+    string Subdomain,
+    string? LogoUrl,
+    string? PrimaryColor,
+    string? SecondaryColor);

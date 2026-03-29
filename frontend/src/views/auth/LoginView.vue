@@ -4,19 +4,20 @@
  *
  * Features:
  * - Email + Password login with real-time validation (VeeValidate + Zod)
- * - Tenant ID selection
+ * - Automatic tenant resolution by hostname (no manual tenant ID entry)
  * - MFA redirect when required
  * - Clear error messages
  * - RTL/LTR support via logical Tailwind properties
  * - PrimeVue 4 components
  */
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { useForm, useField } from 'vee-validate'
 import { toTypedSchema } from '@vee-validate/zod'
 import { z } from 'zod'
 import { useAuthStore } from '@/stores/auth'
+import { resolveTenantByHostname } from '@/services/tenantService'
 import InputText from 'primevue/inputtext'
 import Button from 'primevue/button'
 import Message from 'primevue/message'
@@ -24,6 +25,42 @@ import Message from 'primevue/message'
 const router = useRouter()
 const { t } = useI18n()
 const authStore = useAuthStore()
+
+/* ------------------------------------------------------------------ */
+/*  Tenant Auto-Resolution                                             */
+/* ------------------------------------------------------------------ */
+
+const tenantResolved = ref(false)
+const tenantError = ref(false)
+
+/**
+ * Automatically resolves the tenant from the current hostname.
+ * Called on mount so the user never needs to manually set tenant_id.
+ */
+async function autoResolveTenant(): Promise<void> {
+  // If tenant_id already exists in localStorage (from a previous login), use it
+  const existingTenantId = localStorage.getItem('tenant_id')
+  if (existingTenantId && existingTenantId !== '00000000-0000-0000-0000-000000000000') {
+    authStore.setTenantId(existingTenantId)
+    tenantResolved.value = true
+    return
+  }
+
+  try {
+    const hostname = window.location.hostname
+    const resolved = await resolveTenantByHostname(hostname)
+    authStore.setTenantId(resolved.id)
+    tenantResolved.value = true
+  } catch {
+    // Fallback: if resolve fails, still allow login attempt
+    tenantError.value = true
+    tenantResolved.value = true
+  }
+}
+
+onMounted(() => {
+  autoResolveTenant()
+})
 
 /* ------------------------------------------------------------------ */
 /*  Validation Schema                                                  */
@@ -116,6 +153,16 @@ const onSubmit = handleSubmit(async (values) => {
           {{ t(serverError) }}
         </Message>
 
+        <!-- Tenant Resolution Error -->
+        <Message
+          v-if="tenantError"
+          severity="warn"
+          :closable="false"
+          class="mb-4"
+        >
+          {{ t('auth.tenantResolutionError', 'تعذر تحديد الجهة تلقائياً. يرجى المحاولة مرة أخرى.') }}
+        </Message>
+
         <form @submit.prevent="onSubmit" novalidate>
           <!-- Email Field -->
           <div class="mb-5">
@@ -198,7 +245,7 @@ const onSubmit = handleSubmit(async (values) => {
             type="submit"
             :label="t('auth.loginButton')"
             :loading="isSubmitting"
-            :disabled="isSubmitting"
+            :disabled="isSubmitting || !tenantResolved"
             class="mt-2 w-full justify-center rounded-xl bg-primary py-3 text-base font-semibold text-white hover:bg-primary-dark transition-colors"
             icon="pi pi-sign-in"
             iconPos="left"

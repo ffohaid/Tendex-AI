@@ -10,6 +10,7 @@ import { httpGet, httpPost, httpPut } from '@/services/http'
 import type {
   TenantDto,
   TenantListItemDto,
+  TenantResolveDto,
   PagedResult,
   TenantStatusOption,
   CreateTenantRequest,
@@ -21,6 +22,21 @@ import type {
 } from '@/types/tenant'
 
 const BASE_URL = '/v1/tenants'
+
+/* ------------------------------------------------------------------ */
+/*  Tenant Resolution (Public / Anonymous)                             */
+/* ------------------------------------------------------------------ */
+
+/**
+ * Resolves the current tenant by hostname.
+ * This endpoint is public (no auth required) and is used on the login page
+ * to automatically detect which tenant the user belongs to.
+ */
+export async function resolveTenantByHostname(
+  hostname: string,
+): Promise<TenantResolveDto> {
+  return httpGet<TenantResolveDto>(`${BASE_URL}/resolve?hostname=${encodeURIComponent(hostname)}`)
+}
 
 /* ------------------------------------------------------------------ */
 /*  Tenant CRUD                                                        */

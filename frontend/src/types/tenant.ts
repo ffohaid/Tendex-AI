@@ -238,6 +238,17 @@ export interface RenewalAlertDto {
 /*  Tenant Selector for Super Admin                                    */
 /* ------------------------------------------------------------------ */
 
+/** Lightweight DTO returned by the tenant resolution endpoint (public/anonymous). */
+export interface TenantResolveDto {
+  id: string
+  nameAr: string
+  nameEn: string
+  subdomain: string
+  logoUrl: string | null
+  primaryColor: string | null
+  secondaryColor: string | null
+}
+
 /** Lightweight tenant option for the Super Admin tenant selector. */
 export interface TenantSelectorOption {
   id: string
