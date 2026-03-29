@@ -11,6 +11,7 @@ using TendexAI.Domain.Entities.Identity;
 using TendexAI.Domain.Entities.Committees;
 using TendexAI.Domain.Entities.Evaluation;
 using TendexAI.Domain.Entities.Rfp;
+using TendexAI.Domain.Entities.Notifications;
 using TendexAI.Infrastructure.Messaging.RabbitMQ;
 using TendexAI.Infrastructure.MultiTenancy;
 using TendexAI.Infrastructure.Persistence;
@@ -100,13 +101,20 @@ public static class DependencyInjection
         // ----- Multi-Tenancy Services -----
         services.AddHttpContextAccessor();
         services.AddScoped<ITenantProvider, TenantProvider>();
-        services.AddScoped<ITenantDbContextFactory, TenantDbContextFactory>();
+        services.AddScoped<MultiTenancy.ITenantDbContextFactory, TenantDbContextFactory>();
+
+        // Register Application layer ITenantDbContextFactory for CQRS handlers
+        services.AddScoped<Application.Common.Interfaces.ITenantDbContextFactory>(sp =>
+            sp.GetRequiredService<TenantDbContextFactory>());
+
+        // Ensure TenantDbContextFactory is registered as concrete type for both interfaces
+        services.AddScoped<TenantDbContextFactory>();
 
         // Register TenantDbContext as scoped service resolved via TenantDbContextFactory
         // This allows repositories to inject TenantDbContext directly
         services.AddScoped<TenantDbContext>(sp =>
         {
-            var factory = sp.GetRequiredService<ITenantDbContextFactory>();
+            var factory = sp.GetRequiredService<MultiTenancy.ITenantDbContextFactory>();
             return factory.CreateDbContext();
         });
 
@@ -237,6 +245,7 @@ public static class DependencyInjection
         services.AddScoped<IFinancialEvaluationRepository, FinancialEvaluationRepository>();
         services.AddScoped<IEvaluationMinutesRepository, EvaluationMinutesRepository>();
         services.AddScoped<IAwardRecommendationRepository, AwardRecommendationRepository>();
+        services.AddScoped<INotificationRepository, NotificationRepository>();
 
         // ----- Security Services -----
         services.AddSingleton<IConnectionStringEncryptor, ConnectionStringEncryptor>();

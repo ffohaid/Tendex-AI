@@ -8,8 +8,11 @@ namespace TendexAI.Infrastructure.MultiTenancy;
 /// Factory that creates <see cref="TenantDbContext"/> instances with the correct
 /// connection string for the current tenant. This enables the Database-per-Tenant
 /// isolation model where each government entity has its own SQL Server database.
+/// Implements both the Infrastructure-level and Application-level factory interfaces.
 /// </summary>
-public sealed class TenantDbContextFactory : ITenantDbContextFactory
+public sealed class TenantDbContextFactory
+    : ITenantDbContextFactory,
+      Application.Common.Interfaces.ITenantDbContextFactory
 {
     private readonly ITenantProvider _tenantProvider;
     private readonly IDbContextFactory<TenantDbContext> _pooledFactory;
@@ -51,5 +54,11 @@ public sealed class TenantDbContextFactory : ITenantDbContextFactory
         });
 
         return new TenantDbContext(optionsBuilder.Options);
+    }
+
+    /// <inheritdoc />
+    ITenantDbContext Application.Common.Interfaces.ITenantDbContextFactory.CreateDbContext()
+    {
+        return CreateDbContext();
     }
 }

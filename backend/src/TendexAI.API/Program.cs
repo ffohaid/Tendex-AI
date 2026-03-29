@@ -9,6 +9,9 @@ using TendexAI.API.Endpoints.Evaluation;
 using TendexAI.API.Endpoints.AI;
 using TendexAI.API.Endpoints.Impersonation;
 using TendexAI.API.Endpoints.OperatorDashboard;
+using TendexAI.API.Endpoints.Dashboard;
+using TendexAI.API.Endpoints.Tasks;
+using TendexAI.API.Endpoints.Notifications;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -122,5 +125,14 @@ app.MapImpersonationEndpoints();
 
 // Operator Dashboard endpoints (Super Admin only - TASK-602)
 app.MapOperatorDashboardEndpoints();
+
+// Dashboard endpoints (Tenant user dashboard - TASK-901)
+app.MapDashboardEndpoints();
+
+// Task center endpoints (Pending tasks - TASK-901)
+app.MapTaskEndpoints();
+
+// Notification endpoints (User notifications - TASK-901)
+app.MapNotificationEndpoints();
 
 app.Run();

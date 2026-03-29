@@ -3,7 +3,9 @@ using TendexAI.Domain.Common;
 using TendexAI.Domain.Entities.Identity;
 using TendexAI.Domain.Entities.Committees;
 using TendexAI.Domain.Entities.Evaluation;
+using TendexAI.Domain.Entities.Notifications;
 using TendexAI.Domain.Entities.Rfp;
+using TendexAI.Application.Common.Interfaces;
 
 namespace TendexAI.Infrastructure.Persistence;
 
@@ -13,7 +15,7 @@ namespace TendexAI.Infrastructure.Persistence;
 /// 
 /// The connection string is resolved at runtime based on the current tenant context.
 /// </summary>
-public sealed class TenantDbContext : DbContext, IUnitOfWork
+public sealed class TenantDbContext : DbContext, IUnitOfWork, ITenantDbContext
 {
     public TenantDbContext(DbContextOptions<TenantDbContext> options)
         : base(options)
@@ -65,9 +67,18 @@ public sealed class TenantDbContext : DbContext, IUnitOfWork
     public DbSet<AiOfferAnalysis> AiOfferAnalyses => Set<AiOfferAnalysis>();
     public DbSet<AiCriterionAnalysis> AiCriterionAnalyses => Set<AiCriterionAnalysis>();
 
+    // ----- Notification DbSets -----
+    public DbSet<Notification> Notifications => Set<Notification>();
+
     // ----- Video Integrity Analysis DbSets -----
     public DbSet<VideoIntegrityAnalysis> VideoIntegrityAnalyses => Set<VideoIntegrityAnalysis>();
     public DbSet<VideoAnalysisFlag> VideoAnalysisFlags => Set<VideoAnalysisFlag>();
+
+    /// <summary>
+    /// Gets a DbSet for the specified entity type.
+    /// Implements <see cref="ITenantDbContext.GetDbSet{TEntity}"/>.
+    /// </summary>
+    public DbSet<TEntity> GetDbSet<TEntity>() where TEntity : class => Set<TEntity>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

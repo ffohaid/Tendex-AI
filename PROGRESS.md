@@ -15,13 +15,52 @@
 | Sprint 6: لوحة تحكم المشغل | ✅ مكتمل | 100% | تم إنجاز TASK-601, TASK-602, TASK-603, TASK-604 |
 | Sprint 7: الاختبار والنشر | ✅ مكتمل | 100% | تم إنجاز TASK-701, TASK-702, TASK-703, TASK-704 |
 | Sprint 8: النشر والتشغيل | ✅ مكتمل | 100% | تم إنجاز TASK-801, TASK-802, TASK-803 |
-| Sprint 9: إصلاحات التشغيل الفعلي | ⏳ لم يبدأ | 0% | مهام استكمال الواجهات وإصلاح تسجيل الدخول |
+| Sprint 9: إصلاحات التشغيل الفعلي | 🔄 جارٍ | 25% | تم إنجاز TASK-901 (Dashboard Endpoints) |
 
 ---
 
 ## سجل المهام المنجزة (Completed Tasks Log)
 
 *يرجى إضافة أحدث مهمة منجزة في أعلى هذه القائمة.*
+
+### 2026-03-29 - TASK-901: استكمال مسارات لوحة التحكم (Dashboard Endpoints)
+- **ما تم إنجازه:**
+  - **إنشاء Domain Entities:** تم إنشاء `Notification` entity مع `INotificationRepository` interface في Domain layer.
+  - **إنشاء Application Layer Interfaces:** تم إنشاء `ITenantDbContext` و `ITenantDbContextFactory` في Application layer لاحترام Clean Architecture (Application لا تعتمد على Infrastructure).
+  - **إنشاء Dashboard DTOs:** تم إنشاء DTOs متوافقة مع الفرونت إند:
+    - `DashboardStatsDto` (إحصائيات: ActiveCompetitions, CompletedCompetitions, PendingEvaluations, PendingTasks, TotalOffers, ComplianceRate)
+    - `RecentActivityDto` و `RecentActivitiesPagedResultDto` (نشاطات حديثة من AuditLog)
+    - `PerformanceMetricsDto` مع `MonthlyCompetitionDataDto` و `CompetitionStatusDistributionDto` (بيانات الرسوم البيانية)
+    - `PendingTaskDto` و `PendingTasksPagedResultDto` (مهام معلقة)
+    - `NotificationDto` و `NotificationsPagedResultDto` (إشعارات)
+  - **إنشاء CQRS Queries/Handlers:**
+    - `GetDashboardStatsQuery/Handler` - يجلب إحصائيات من Competitions و SupplierOffers
+    - `GetRecentActivitiesQuery/Handler` - يجلب نشاطات من AuditLog
+    - `GetPerformanceMetricsQuery/Handler` - يحسب cycle times, compliance rates, monthly trends, status distribution
+    - `GetPendingTasksQuery/Handler` - يجلب مهام معلقة بناءً على عضوية المستخدم في اللجان
+    - `GetNotificationsQuery/Handler` - يجلب إشعارات المستخدم
+    - `MarkNotificationReadCommand/Handler` - يحدد إشعار كمقروء
+  - **إنشاء API Endpoints (Minimal APIs):**
+    - `GET /api/v1/dashboard/stats` - إحصائيات لوحة التحكم
+    - `GET /api/v1/dashboard/activities` - نشاطات حديثة
+    - `GET /api/v1/dashboard/metrics` - بيانات الرسوم البيانية
+    - `GET /api/v1/tasks/pending` - المهام المعلقة
+    - `GET /api/v1/notifications` - الإشعارات
+    - `POST /api/v1/notifications/{id}/read` - تحديد إشعار كمقروء
+  - **تحديث Infrastructure:**
+    - تنفيذ `ITenantDbContext` في `TenantDbContext` مع `GetDbSet<TEntity>()` method
+    - تحديث `TenantDbContextFactory` لتنفيذ كلا الـ interfaces
+    - تسجيل `Application.Common.Interfaces.ITenantDbContextFactory` في DI container
+    - إضافة `NotificationRepository` و `Notifications DbSet`
+  - **التحقق:** بناء المشروع بنجاح (0 Errors, 0 Warnings)
+- **الاعتماديات التي تم حلها:** لا يوجد (مهمة مستقلة)
+- **ملاحظات للوكيل التالي:**
+  - جميع الـ Endpoints تعتمد على `TenantId` و `UserId` من الـ Token الحالي عبر `ICurrentUserService`.
+  - البيانات تُجلب من الجداول الحقيقية (Competitions, Committees, CommitteeMembers, AuditLogs, SupplierOffers, Notifications).
+  - إذا كانت الجداول فارغة، يتم إرجاع قوائم فارغة وإحصائيات صفرية (لا بيانات وهمية).
+  - تم إنشاء `ITenantDbContext` و `ITenantDbContextFactory` في Application layer لأن Application layer لا تعتمد على Infrastructure layer.
+  - يجب إنشاء EF Core Migration لجدول Notifications الجديد قبل النشر.
+  - الفرونت إند يتوقع الـ response بصيغة `{ data: ... }` - تأكد من أن الـ middleware يلف الاستجابة بشكل صحيح.
 
 ### 2026-03-29 - إعداد Sprint 9 (إصلاحات التشغيل الفعلي)
 - **ما تم إنجازه:**
