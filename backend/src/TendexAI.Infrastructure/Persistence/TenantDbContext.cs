@@ -48,6 +48,23 @@ public sealed class TenantDbContext : DbContext, IUnitOfWork
     public DbSet<TechnicalScore> TechnicalScores => Set<TechnicalScore>();
     public DbSet<AiTechnicalScore> AiTechnicalScores => Set<AiTechnicalScore>();
 
+    // ----- Financial Evaluation DbSets -----
+    public DbSet<FinancialEvaluation> FinancialEvaluations => Set<FinancialEvaluation>();
+    public DbSet<FinancialScore> FinancialScores => Set<FinancialScore>();
+    public DbSet<FinancialOfferItem> FinancialOfferItems => Set<FinancialOfferItem>();
+
+    // ----- Evaluation Minutes DbSets -----
+    public DbSet<EvaluationMinutes> EvaluationMinutes => Set<EvaluationMinutes>();
+    public DbSet<MinutesSignatory> MinutesSignatories => Set<MinutesSignatory>();
+
+    // ----- Award Recommendation DbSets -----
+    public DbSet<AwardRecommendation> AwardRecommendations => Set<AwardRecommendation>();
+    public DbSet<AwardRanking> AwardRankings => Set<AwardRanking>();
+
+    // ----- AI Offer Analysis DbSets -----
+    public DbSet<AiOfferAnalysis> AiOfferAnalyses => Set<AiOfferAnalysis>();
+    public DbSet<AiCriterionAnalysis> AiCriterionAnalyses => Set<AiCriterionAnalysis>();
+
     // ----- Video Integrity Analysis DbSets -----
     public DbSet<VideoIntegrityAnalysis> VideoIntegrityAnalyses => Set<VideoIntegrityAnalysis>();
     public DbSet<VideoAnalysisFlag> VideoAnalysisFlags => Set<VideoAnalysisFlag>();

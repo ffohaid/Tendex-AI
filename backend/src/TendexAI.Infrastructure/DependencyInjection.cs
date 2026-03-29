@@ -215,6 +215,9 @@ public static class DependencyInjection
         services.AddScoped<ISupplierOfferRepository, SupplierOfferRepository>();
         services.AddScoped<IVideoIntegrityAnalysisRepository, VideoIntegrityAnalysisRepository>();
         services.AddScoped<IAiOfferAnalysisRepository, AiOfferAnalysisRepository>();
+        services.AddScoped<IFinancialEvaluationRepository, FinancialEvaluationRepository>();
+        services.AddScoped<IEvaluationMinutesRepository, EvaluationMinutesRepository>();
+        services.AddScoped<IAwardRecommendationRepository, AwardRecommendationRepository>();
 
         // ----- Security Services -----
         services.AddSingleton<IConnectionStringEncryptor, ConnectionStringEncryptor>();
