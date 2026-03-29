@@ -13,13 +13,55 @@
 | Sprint 4: تكامل الذكاء الاصطناعي | 🔄 قيد التنفيذ | 71% | تم إنجاز TASK-401, TASK-402, TASK-403, TASK-404, TASK-405 |
 | Sprint 5: الواجهة الأمامية | 🔄 قيد التنفيذ | 71% | تم إنجاز TASK-501, TASK-502, TASK-503, TASK-504, TASK-505 |
 | Sprint 6: لوحة تحكم المشغل | ✅ مكتمل | 100% | تم إنجاز TASK-601, TASK-602, TASK-603, TASK-604 |
-| Sprint 7: الاختبار والنشر | 🔄 قيد التنفيذ | 67% | تم إنجاز TASK-701, TASK-702, TASK-703 |
+| Sprint 7: الاختبار والنشر | 🔄 قيد التنفيذ | 83% | تم إنجاز TASK-701, TASK-702, TASK-703, TASK-704 |
 
 ---
 
 ## سجل المهام المنجزة (Completed Tasks Log)
 
 *يرجى إضافة أحدث مهمة منجزة في أعلى هذه القائمة.*
+
+### 2026-03-29 - TASK-704: Production Deployment Setup
+- **ما تم إنجازه:**
+  - **Dockerfiles (Multi-stage Build):**
+    - إنشاء `backend/Dockerfile` مع بناء متعدد المراحل (restore -> publish -> runtime) باستخدام .NET 10 SDK و ASP.NET runtime مع مستخدم غير root للأمان.
+    - إنشاء `frontend/Dockerfile` مع بناء متعدد المراحل (Node.js build -> Nginx Alpine runtime) لخدمة Vue.js 3 SPA.
+    - إنشاء `frontend/nginx.conf` لتوجيه SPA مع gzip compression و security headers و aggressive caching للملفات الثابتة.
+    - إنشاء `.dockerignore` لكل من backend و frontend لتحسين حجم الصور.
+  - **docker-compose.prod.yml:**
+    - إعداد ملف Docker Compose كامل لبيئة الإنتاج يشمل 10 خدمات: Nginx, Certbot, Backend, Frontend, SQL Server, Redis, RabbitMQ, MinIO, Qdrant, Elasticsearch, Grafana.
+    - جميع الخدمات الداخلية (SQL Server, Redis, RabbitMQ, MinIO, Qdrant, Elasticsearch) لا تكشف منافذ للمضيف (أمان).
+    - إعداد resource limits و reservations لكل خدمة.
+    - إعداد healthchecks لجميع الخدمات.
+    - إعداد log rotation لجميع الحاويات.
+  - **Nginx Reverse Proxy مع SSL/TLS:**
+    - إنشاء `nginx/nginx.conf` الرئيسي مع rate limiting zones (API, Auth, General) و upstream definitions.
+    - إنشاء `nginx/conf.d/tendex.conf` مع HTTP->HTTPS redirect, SSL/TLS (TLSv1.2/1.3), HSTS, CSP, OCSP Stapling.
+    - دعم WebSocket لـ SignalR عبر `/hubs/`.
+    - حماية مسارات حساسة وحظر الوصول غير المصرح.
+    - إنشاء `scripts/init-ssl.sh` لإعداد شهادات Let's Encrypt تلقائياً مع Certbot.
+  - **ملفات البيئة الآمنة:**
+    - إنشاء `.env.prod.example` كقالب لمتغيرات الإنتاج مع تعليمات أمنية.
+    - جميع كلمات المرور ومفاتيح API تُحمّل من `.env.prod` (غير مرفوعة لـ GitHub).
+  - **GitHub Actions CD Pipeline:**
+    - إنشاء `.github/workflows/cd-deploy.yml` مع 3 مراحل: Test Gate -> Build Docker Images -> Deploy to Production.
+    - دعم النشر التلقائي عند Push إلى فرع `main` والنشر اليدوي عبر `workflow_dispatch`.
+    - بناء صور Docker مع BuildKit caching ونقلها إلى الخادم عبر SSH/SCP.
+    - تنفيذ النشر على الخادم مع health checks بعد النشر.
+  - **سكربتات النشر (Deployment Scripts):**
+    - `scripts/server-setup.sh`: إعداد أولي للخادم (Docker, UFW, Swap, fail2ban, system limits).
+    - `scripts/deploy.sh`: سكربت نشر شامل مع أوامر (up, update, restart, stop, status, logs, rollback, backup-db, health).
+    - `scripts/backup.sh`: نسخ احتياطي تلقائي لقواعد البيانات والملفات مع retention policy.
+    - `scripts/monitor.sh`: مراقبة صحة الحاويات وإعادة التشغيل التلقائي مع فحص الموارد.
+  - **التوثيق:**
+    - إنشاء `docs/Deployment_Guide.md` يوثق خطوات النشر اليدوي والآلي بالكامل.
+- **الاعتماديات التي تم حلها:** TASK-701, TASK-702, TASK-703.
+- **ملاحظات للوكيل التالي:**
+  - يجب إعداد GitHub Secrets (VPS_HOST, VPS_USER, VPS_SSH_KEY, VPS_PORT) قبل تشغيل CD pipeline.
+  - يجب إنشاء ملف `.env.prod` على الخادم من القالب `.env.prod.example` مع كلمات مرور حقيقية.
+  - يجب تشغيل `server-setup.sh` مرة واحدة على الخادم الجديد قبل أول نشر.
+  - يجب تشغيل `init-ssl.sh` بعد توجيه DNS إلى عنوان IP الخادم.
+  - سكربت `deploy.sh rollback` جاهز للتراجع في حال حدوث مشاكل بعد التحديث.
 
 ### 2026-03-28 - TASK-703: Performance Testing & Optimization
 - **ما تم إنجازه:**

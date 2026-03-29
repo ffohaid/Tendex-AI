@@ -40,3 +40,8 @@ Thumbs.db
 # Docker
 .docker/
 docker-compose.override.yml
+
+# Production secrets (NEVER commit)
+infrastructure/.env.prod
+infrastructure/nginx/ssl/*.pem
+infrastructure/nginx/ssl/*.key

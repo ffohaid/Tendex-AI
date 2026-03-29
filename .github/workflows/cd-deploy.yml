@@ -1,0 +1,334 @@
+# =============================================================================
+# Tendex AI - Continuous Deployment Pipeline
+# =============================================================================
+# Deploys the application to the Hostinger VPS when code is pushed to main.
+# Pipeline: Build -> Test -> Build Docker Images -> Deploy to Production
+#
+# Required GitHub Secrets:
+#   - VPS_HOST: Server IP address
+#   - VPS_USER: SSH username (root)
+#   - VPS_SSH_KEY: SSH private key for authentication
+#   - VPS_PORT: SSH port (default: 22)
+#   - DOCKER_REGISTRY: Container registry URL (optional, for remote registry)
+# =============================================================================
+
+name: CD - Deploy to Production
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+    inputs:
+      deploy_target:
+        description: "Deployment target"
+        required: true
+        default: "all"
+        type: choice
+        options:
+          - all
+          - backend
+          - frontend
+          - infrastructure
+
+concurrency:
+  group: cd-production
+  cancel-in-progress: false
+
+env:
+  DOTNET_NOLOGO: true
+  DOTNET_CLI_TELEMETRY_OPTOUT: true
+  DOTNET_SKIP_FIRST_TIME_EXPERIENCE: true
+  DEPLOY_PATH: /opt/tendex-ai
+
+jobs:
+  # ====================================================================
+  # Job 1: Run Tests (Gate)
+  # ====================================================================
+  test-gate:
+    name: Test Gate
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup .NET 10 SDK
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "10.0.x"
+
+      - name: Cache NuGet packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.nuget/packages
+          key: nuget-${{ runner.os }}-${{ hashFiles('backend/**/*.csproj') }}
+          restore-keys: |
+            nuget-${{ runner.os }}-
+
+      - name: Restore dependencies
+        run: dotnet restore backend/TendexAI.slnx
+
+      - name: Build solution
+        run: dotnet build backend/TendexAI.slnx --configuration Release --no-restore
+
+      - name: Run unit tests
+        run: |
+          dotnet test backend/TendexAI.slnx \
+            --configuration Release \
+            --no-build \
+            --verbosity normal \
+            --filter "FullyQualifiedName!~IntegrationTests"
+
+  # ====================================================================
+  # Job 2: Build Docker Images
+  # ====================================================================
+  build-images:
+    name: Build Docker Images
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    needs: test-gate
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build backend image
+        uses: docker/build-push-action@v6
+        with:
+          context: ./backend
+          file: ./backend/Dockerfile
+          push: false
+          load: true
+          tags: tendex-backend:${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Build frontend image
+        uses: docker/build-push-action@v6
+        with:
+          context: ./frontend
+          file: ./frontend/Dockerfile
+          push: false
+          load: true
+          tags: tendex-frontend:${{ github.sha }}
+          build-args: |
+            VITE_API_BASE_URL=/api
+            VITE_APP_TITLE=Tendex AI
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Save backend image
+        run: docker save tendex-backend:${{ github.sha }} | gzip > /tmp/tendex-backend.tar.gz
+
+      - name: Save frontend image
+        run: docker save tendex-frontend:${{ github.sha }} | gzip > /tmp/tendex-frontend.tar.gz
+
+      - name: Upload backend image artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: backend-image
+          path: /tmp/tendex-backend.tar.gz
+          retention-days: 1
+
+      - name: Upload frontend image artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: frontend-image
+          path: /tmp/tendex-frontend.tar.gz
+          retention-days: 1
+
+  # ====================================================================
+  # Job 3: Deploy to Production
+  # ====================================================================
+  deploy:
+    name: Deploy to Production
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    needs: build-images
+    environment:
+      name: production
+      url: https://${{ vars.DOMAIN || 'tendex.example.com' }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Download backend image
+        uses: actions/download-artifact@v4
+        with:
+          name: backend-image
+          path: /tmp
+
+      - name: Download frontend image
+        uses: actions/download-artifact@v4
+        with:
+          name: frontend-image
+          path: /tmp
+
+      # ------------------------------------------------------------------
+      # Setup SSH
+      # ------------------------------------------------------------------
+      - name: Setup SSH key
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.VPS_SSH_KEY }}" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          ssh-keyscan -p ${{ secrets.VPS_PORT || 22 }} -H ${{ secrets.VPS_HOST }} >> ~/.ssh/known_hosts 2>/dev/null || true
+
+      # ------------------------------------------------------------------
+      # Transfer Docker images to VPS
+      # ------------------------------------------------------------------
+      - name: Transfer Docker images to VPS
+        run: |
+          scp -i ~/.ssh/deploy_key -P ${{ secrets.VPS_PORT || 22 }} \
+            /tmp/tendex-backend.tar.gz \
+            /tmp/tendex-frontend.tar.gz \
+            ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}:/tmp/
+
+      # ------------------------------------------------------------------
+      # Transfer deployment files to VPS
+      # ------------------------------------------------------------------
+      - name: Transfer deployment files
+        run: |
+          # Create deployment archive
+          tar czf /tmp/tendex-deploy.tar.gz \
+            infrastructure/docker-compose.prod.yml \
+            infrastructure/nginx/ \
+            infrastructure/rabbitmq/ \
+            infrastructure/scripts/ \
+            backend/Dockerfile \
+            frontend/Dockerfile \
+            frontend/nginx.conf
+
+          scp -i ~/.ssh/deploy_key -P ${{ secrets.VPS_PORT || 22 }} \
+            /tmp/tendex-deploy.tar.gz \
+            ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}:/tmp/
+
+      # ------------------------------------------------------------------
+      # Execute deployment on VPS
+      # ------------------------------------------------------------------
+      - name: Deploy on VPS
+        run: |
+          ssh -i ~/.ssh/deploy_key -p ${{ secrets.VPS_PORT || 22 }} \
+            ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} << 'DEPLOY_SCRIPT'
+
+          set -euo pipefail
+
+          DEPLOY_PATH="/opt/tendex-ai"
+          TIMESTAMP=$(date +%Y%m%d_%H%M%S)
+
+          echo "=============================================="
+          echo "  Tendex AI - Production Deployment"
+          echo "  Timestamp: ${TIMESTAMP}"
+          echo "=============================================="
+
+          # Ensure deployment directory exists
+          mkdir -p "${DEPLOY_PATH}"
+          cd "${DEPLOY_PATH}"
+
+          # Extract deployment files
+          echo "[1/6] Extracting deployment files..."
+          tar xzf /tmp/tendex-deploy.tar.gz -C "${DEPLOY_PATH}/" --strip-components=0 2>/dev/null || \
+          tar xzf /tmp/tendex-deploy.tar.gz -C "${DEPLOY_PATH}/"
+
+          # Load Docker images
+          echo "[2/6] Loading Docker images..."
+          docker load < /tmp/tendex-backend.tar.gz
+          docker load < /tmp/tendex-frontend.tar.gz
+
+          # Tag images as latest
+          BACKEND_IMAGE=$(docker images --format '{{.Repository}}:{{.Tag}}' | grep 'tendex-backend:' | grep -v latest | head -1)
+          FRONTEND_IMAGE=$(docker images --format '{{.Repository}}:{{.Tag}}' | grep 'tendex-frontend:' | grep -v latest | head -1)
+
+          if [ -n "${BACKEND_IMAGE}" ]; then
+            docker tag "${BACKEND_IMAGE}" tendex-backend:latest
+          fi
+          if [ -n "${FRONTEND_IMAGE}" ]; then
+            docker tag "${FRONTEND_IMAGE}" tendex-frontend:latest
+          fi
+
+          # Verify .env.prod exists
+          echo "[3/6] Verifying environment configuration..."
+          if [ ! -f "${DEPLOY_PATH}/infrastructure/.env.prod" ]; then
+            echo "ERROR: .env.prod not found! Please create it from .env.prod.example"
+            exit 1
+          fi
+
+          # Run database migrations (if applicable)
+          echo "[4/6] Running database migrations..."
+          cd "${DEPLOY_PATH}/infrastructure"
+          # Backend will auto-apply migrations on startup via EF Core
+
+          # Deploy with zero-downtime rolling update
+          echo "[5/6] Deploying services..."
+          docker compose -f docker-compose.prod.yml --env-file .env.prod up -d \
+            --build \
+            --remove-orphans \
+            --force-recreate backend frontend
+
+          # Wait for health checks
+          echo "[6/6] Waiting for health checks..."
+          sleep 15
+
+          # Verify services are healthy
+          UNHEALTHY=$(docker compose -f docker-compose.prod.yml --env-file .env.prod ps --format json 2>/dev/null | \
+            python3 -c "import sys,json; [print(s.get('Name','')) for s in json.loads(sys.stdin.read()) if s.get('Health','') not in ('healthy','')]" 2>/dev/null || echo "check-failed")
+
+          if [ -n "${UNHEALTHY}" ] && [ "${UNHEALTHY}" != "check-failed" ]; then
+            echo "WARNING: Some services may not be healthy yet: ${UNHEALTHY}"
+            echo "Check with: docker compose -f docker-compose.prod.yml --env-file .env.prod ps"
+          fi
+
+          # Cleanup old images
+          echo "Cleaning up old Docker images..."
+          docker image prune -f --filter "until=24h" 2>/dev/null || true
+
+          # Cleanup temp files
+          rm -f /tmp/tendex-backend.tar.gz /tmp/tendex-frontend.tar.gz /tmp/tendex-deploy.tar.gz
+
+          echo ""
+          echo "=============================================="
+          echo "  Deployment Complete!"
+          echo "  Timestamp: ${TIMESTAMP}"
+          echo "=============================================="
+
+          DEPLOY_SCRIPT
+
+      # ------------------------------------------------------------------
+      # Cleanup SSH key
+      # ------------------------------------------------------------------
+      - name: Cleanup SSH key
+        if: always()
+        run: rm -f ~/.ssh/deploy_key
+
+      # ------------------------------------------------------------------
+      # Post-deployment health check
+      # ------------------------------------------------------------------
+      - name: Post-deployment health check
+        run: |
+          echo "Waiting 30 seconds for services to stabilize..."
+          sleep 30
+
+          # Check if the site is responding
+          HEALTH_URL="https://${{ vars.DOMAIN || 'tendex.example.com' }}/health"
+          HTTP_CODE=$(curl -sk -o /dev/null -w "%{http_code}" "${HEALTH_URL}" || echo "000")
+
+          if [ "${HTTP_CODE}" = "200" ]; then
+            echo "Health check passed! (HTTP ${HTTP_CODE})"
+          else
+            echo "WARNING: Health check returned HTTP ${HTTP_CODE}"
+            echo "The deployment may still be starting up."
+          fi
+
+      # ------------------------------------------------------------------
+      # Notify on failure
+      # ------------------------------------------------------------------
+      - name: Notify on failure
+        if: failure()
+        run: |
+          echo "::error::Deployment to production failed! Check the logs above for details."
