@@ -159,15 +159,20 @@ public static class DependencyInjection
                 if (!string.IsNullOrWhiteSpace(signingKey))
                 {
                     var keyBytes = System.Text.Encoding.UTF8.GetBytes(signingKey);
-                    var signingSecurityKey = new SymmetricSecurityKey(keyBytes);
-                    options.AddSigningKey(signingSecurityKey);
 
-                    // OpenIddict encryption requires exactly 256-bit key
+                    // OpenIddict requires an asymmetric signing key (RSA)
+                    // Use ephemeral RSA key for OpenIddict token signing
+                    options.AddEphemeralSigningKey();
+
+                    // OpenIddict encryption requires exactly 256-bit symmetric key
                     var encryptionKeyBytes = keyBytes.Length > 32
                         ? keyBytes[..32]
                         : keyBytes;
                     var encryptionSecurityKey = new SymmetricSecurityKey(encryptionKeyBytes);
                     options.AddEncryptionKey(encryptionSecurityKey);
+
+                    // Disable access token encryption so JWT tokens are readable
+                    options.DisableAccessTokenEncryption();
                 }
                 else
                 {
