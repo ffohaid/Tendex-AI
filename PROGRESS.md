@@ -15,13 +15,57 @@
 | Sprint 6: لوحة تحكم المشغل | ✅ مكتمل | 100% | تم إنجاز TASK-601, TASK-602, TASK-603, TASK-604 |
 | Sprint 7: الاختبار والنشر | ✅ مكتمل | 100% | تم إنجاز TASK-701, TASK-702, TASK-703, TASK-704 |
 | Sprint 8: النشر والتشغيل | ✅ مكتمل | 100% | تم إنجاز TASK-801, TASK-802, TASK-803 |
-| Sprint 9: إصلاحات التشغيل الفعلي | 🔄 قيد التنفيذ | 85% | تم إنجاز TASK-901 إلى TASK-907. TASK-908 قيد الانتظار. |
+| Sprint 9: إصلاحات التشغيل الفعلي | 🔄 قيد التنفيذ | 95% | تم إنجاز TASK-901 إلى TASK-908. |
 
 ---
 
 ## سجل المهام المنجزة (Completed Tasks Log)
 
 *يرجى إضافة أحدث مهمة منجزة في أعلى هذه القائمة.*
+
+### 2026-03-30 - TASK-908: إصلاح الأخطاء الحرجة في المصادقة والمساعد الذكي وتكامل Gemini
+- **الحالة:** ✅ مكتمل
+- **ما تم إنجازه:**
+  - **إصلاح خطأ 500 في تسجيل الدخول (SaveChangesAsync):**
+    - اكتشاف أن جميع معالجات المصادقة (8 ملفات) لا تستدعي `SaveChangesAsync()` بعد عمليات قاعدة البيانات.
+    - إضافة `SaveChangesAsync()` إلى: `LoginCommandHandler`, `RefreshTokenCommandHandler`, `LogoutCommandHandler`, `ResetPasswordCommandHandler`, `ForgotPasswordCommandHandler`, `SetupMfaCommandHandler`, `VerifyMfaCommandHandler`, `DisableMfaCommandHandler`.
+    - إضافة `SaveChangesAsync()` إلى واجهات المستودعات: `IRefreshTokenRepository`, `IUserRepository`, `IAuditLogRepository`.
+  - **إصلاح مشكلة انتهاء الجلسة عند التنقل:**
+    - إصلاح `authService.ts` لإرسال `X-Tenant-Id` header بشكل صريح عند تسجيل الدخول.
+    - إصلاح `OpenIddictKeyManager.cs` لتخزين مفتاح RSA مؤقتاً (caching) لمنع عدم تطابق التوقيع.
+  - **إصلاح خطأ CurrentUserService.SessionId:**
+    - إصلاح `CurrentUserService.cs` للتعامل مع حالة عدم وجود Session بدلاً من رمي استثناء.
+  - **إصلاح الترجمات المفقودة:**
+    - إضافة ترجمات `evaluation.status.undefined`, `evaluation.status.draft`, `evaluation.status.not_started` بالعربية والإنجليزية.
+    - إصلاح `StatusBadge.vue` للتعامل مع الحالات غير المحددة.
+  - **تكامل Google Gemini:**
+    - إنشاء `GoogleGeminiProviderClient.cs` مع دعم كامل لـ completions و embeddings.
+    - تسجيل المزود في `AiServiceRegistration.cs`.
+    - إضافة `Security__AiEncryptionKey` إلى `docker-compose.prod.yml`.
+    - إعداد Gemini كمزود AI نشط مع نموذج `gemini-2.5-flash`.
+  - **إصلاح PII Logging:**
+    - تفعيل `IdentityModelEventSource.ShowPII` مؤقتاً لتشخيص مشاكل JWT.
+- **الملفات المعدلة:**
+  - `backend/src/TendexAI.Application/Features/Auth/Commands/*.cs` (8 ملفات)
+  - `backend/src/TendexAI.Domain/Entities/Identity/IRefreshTokenRepository.cs`
+  - `backend/src/TendexAI.Domain/Entities/Identity/IUserRepository.cs`
+  - `backend/src/TendexAI.Domain/Entities/Identity/IAuditLogRepository.cs`
+  - `backend/src/TendexAI.Infrastructure/Persistence/Repositories/*.cs` (3 ملفات)
+  - `backend/src/TendexAI.Infrastructure/Security/OpenIddictKeyManager.cs`
+  - `backend/src/TendexAI.Infrastructure/Services/CurrentUserService.cs`
+  - `backend/src/TendexAI.Infrastructure/AI/Providers/GoogleGeminiProviderClient.cs` (جديد)
+  - `backend/src/TendexAI.Infrastructure/AI/AiServiceRegistration.cs`
+  - `backend/src/TendexAI.API/Program.cs`
+  - `frontend/src/services/authService.ts`
+  - `frontend/src/components/common/StatusBadge.vue`
+  - `frontend/src/locales/ar.json`
+  - `frontend/src/locales/en.json`
+  - `infrastructure/docker-compose.prod.yml`
+- **نتائج الاختبار بعد الإصلاح:**
+  - جميع الصفحات الـ 13 تعمل بنجاح بدون أخطاء.
+  - تسجيل الدخول يعمل بشكل صحيح مع حفظ Refresh Token.
+  - الجلسة تبقى نشطة عند التنقل بين جميع الصفحات.
+  - المساعد الذكي يعمل مع Gemini ويرد باللغة العربية.
 
 ### 2026-03-30 - فحص المنصة الحية بعد TASK-907 (نتائج الاختبار)
 - **الحالة:** ✅ تم الفحص
