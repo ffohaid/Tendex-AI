@@ -31,6 +31,12 @@ public sealed class CompetitionRepository : ICompetitionRepository, IDisposable
             .FirstOrDefaultAsync(c => c.Id == id && !c.IsDeleted, cancellationToken);
     }
 
+    public async Task<Competition?> GetByIdForUpdateAsync(Guid id, CancellationToken cancellationToken = default)
+    {
+        return await _context.Competitions
+            .FirstOrDefaultAsync(c => c.Id == id && !c.IsDeleted, cancellationToken);
+    }
+
     public async Task<Competition?> GetByIdWithDetailsAsync(Guid id, CancellationToken cancellationToken = default)
     {
         return await _context.Competitions
@@ -40,6 +46,17 @@ public sealed class CompetitionRepository : ICompetitionRepository, IDisposable
             .Include(c => c.Attachments.OrderBy(a => a.SortOrder))
             .AsSplitQuery()
             .AsNoTracking()
+            .FirstOrDefaultAsync(c => c.Id == id && !c.IsDeleted, cancellationToken);
+    }
+
+    public async Task<Competition?> GetByIdWithDetailsForUpdateAsync(Guid id, CancellationToken cancellationToken = default)
+    {
+        return await _context.Competitions
+            .Include(c => c.Sections.OrderBy(s => s.SortOrder))
+            .Include(c => c.BoqItems.OrderBy(b => b.SortOrder))
+            .Include(c => c.EvaluationCriteria.OrderBy(e => e.SortOrder))
+            .Include(c => c.Attachments.OrderBy(a => a.SortOrder))
+            .AsSplitQuery()
             .FirstOrDefaultAsync(c => c.Id == id && !c.IsDeleted, cancellationToken);
     }
 

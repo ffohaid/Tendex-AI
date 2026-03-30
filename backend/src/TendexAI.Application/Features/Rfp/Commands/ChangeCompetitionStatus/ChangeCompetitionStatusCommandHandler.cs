@@ -30,7 +30,7 @@ public sealed class ChangeCompetitionStatusCommandHandler
         ChangeCompetitionStatusCommand request,
         CancellationToken cancellationToken)
     {
-        var competition = await _repository.GetByIdWithDetailsAsync(request.CompetitionId, cancellationToken);
+        var competition = await _repository.GetByIdWithDetailsForUpdateAsync(request.CompetitionId, cancellationToken);
         if (competition is null)
             return Result.Failure<CompetitionDetailDto>("Competition not found.");
 
@@ -46,7 +46,7 @@ public sealed class ChangeCompetitionStatusCommandHandler
         if (result.IsFailure)
             return Result.Failure<CompetitionDetailDto>(result.Error!);
 
-        _repository.Update(competition);
+        // Entity is already tracked — no need to call Update()
         await _repository.SaveChangesAsync(cancellationToken);
 
         var statusName = request.NewStatus.ToString();

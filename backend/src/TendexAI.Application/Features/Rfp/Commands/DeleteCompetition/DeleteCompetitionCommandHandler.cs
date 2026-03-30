@@ -26,7 +26,7 @@ public sealed class DeleteCompetitionCommandHandler
         DeleteCompetitionCommand request,
         CancellationToken cancellationToken)
     {
-        var competition = await _repository.GetByIdAsync(request.CompetitionId, cancellationToken);
+        var competition = await _repository.GetByIdForUpdateAsync(request.CompetitionId, cancellationToken);
         if (competition is null)
             return Result.Failure("Competition not found.");
 
@@ -34,7 +34,7 @@ public sealed class DeleteCompetitionCommandHandler
         if (result.IsFailure)
             return result;
 
-        _repository.Update(competition);
+        // Entity is already tracked by GetByIdForUpdateAsync
         await _repository.SaveChangesAsync(cancellationToken);
 
         _logger.LogCompetitionDeleted(request.CompetitionId, request.DeletedByUserId);

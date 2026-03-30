@@ -28,7 +28,7 @@ public sealed class AddBoqItemCommandHandler
         AddBoqItemCommand request,
         CancellationToken cancellationToken)
     {
-        var competition = await _repository.GetByIdWithDetailsAsync(request.CompetitionId, cancellationToken);
+        var competition = await _repository.GetByIdWithDetailsForUpdateAsync(request.CompetitionId, cancellationToken);
         if (competition is null)
             return Result.Failure<BoqItemDto>("Competition not found.");
 
@@ -50,7 +50,7 @@ public sealed class AddBoqItemCommandHandler
         if (result.IsFailure)
             return Result.Failure<BoqItemDto>(result.Error!);
 
-        _repository.Update(competition);
+        // Entity is already tracked — no need to call Update()
         await _repository.SaveChangesAsync(cancellationToken);
 
         _logger.LogBoqItemAdded(item.Id, request.CompetitionId);

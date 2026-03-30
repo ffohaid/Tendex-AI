@@ -28,7 +28,7 @@ public sealed class AddRfpSectionCommandHandler
         AddRfpSectionCommand request,
         CancellationToken cancellationToken)
     {
-        var competition = await _repository.GetByIdWithDetailsAsync(request.CompetitionId, cancellationToken);
+        var competition = await _repository.GetByIdWithDetailsForUpdateAsync(request.CompetitionId, cancellationToken);
         if (competition is null)
             return Result.Failure<RfpSectionDto>("Competition not found.");
 
@@ -48,7 +48,7 @@ public sealed class AddRfpSectionCommandHandler
         if (result.IsFailure)
             return Result.Failure<RfpSectionDto>(result.Error!);
 
-        _repository.Update(competition);
+        // Entity is already tracked — no need to call Update()
         await _repository.SaveChangesAsync(cancellationToken);
 
         _logger.LogSectionAdded(section.Id, request.CompetitionId);

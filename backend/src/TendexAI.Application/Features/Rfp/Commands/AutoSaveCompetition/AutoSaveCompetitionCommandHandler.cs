@@ -30,7 +30,7 @@ public sealed class AutoSaveCompetitionCommandHandler
         AutoSaveCompetitionCommand request,
         CancellationToken cancellationToken)
     {
-        var competition = await _repository.GetByIdAsync(request.CompetitionId, cancellationToken);
+        var competition = await _repository.GetByIdForUpdateAsync(request.CompetitionId, cancellationToken);
         if (competition is null)
             return Result.Failure<AutoSaveResultDto>("Competition not found.");
 
@@ -57,7 +57,7 @@ public sealed class AutoSaveCompetitionCommandHandler
         // Record the auto-save with optional wizard step
         competition.RecordAutoSave(request.CurrentWizardStep);
 
-        _repository.Update(competition);
+        // Entity is already tracked by GetByIdForUpdateAsync — no need to call Update()
         await _repository.SaveChangesAsync(cancellationToken);
 
         _logger.LogAutoSaveCompleted(competition.Id, competition.Version);

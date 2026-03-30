@@ -28,7 +28,7 @@ public sealed class AddEvaluationCriterionCommandHandler
         AddEvaluationCriterionCommand request,
         CancellationToken cancellationToken)
     {
-        var competition = await _repository.GetByIdWithDetailsAsync(request.CompetitionId, cancellationToken);
+        var competition = await _repository.GetByIdWithDetailsForUpdateAsync(request.CompetitionId, cancellationToken);
         if (competition is null)
             return Result.Failure<EvaluationCriterionDto>("Competition not found.");
 
@@ -50,7 +50,7 @@ public sealed class AddEvaluationCriterionCommandHandler
         if (result.IsFailure)
             return Result.Failure<EvaluationCriterionDto>(result.Error!);
 
-        _repository.Update(competition);
+        // Entity is already tracked — no need to call Update()
         await _repository.SaveChangesAsync(cancellationToken);
 
         _logger.LogEvaluationCriterionAdded(criterion.Id, request.CompetitionId);

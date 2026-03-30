@@ -10,7 +10,17 @@ public interface ICompetitionRepository
 {
     Task<Competition?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default);
 
+    /// <summary>
+    /// Retrieves a competition by ID with change tracking enabled (for update operations).
+    /// </summary>
+    Task<Competition?> GetByIdForUpdateAsync(Guid id, CancellationToken cancellationToken = default);
+
     Task<Competition?> GetByIdWithDetailsAsync(Guid id, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Retrieves a competition by ID with all details and change tracking enabled (for update operations).
+    /// </summary>
+    Task<Competition?> GetByIdWithDetailsForUpdateAsync(Guid id, CancellationToken cancellationToken = default);
 
     Task<Competition?> GetByReferenceNumberAsync(string referenceNumber, CancellationToken cancellationToken = default);
 

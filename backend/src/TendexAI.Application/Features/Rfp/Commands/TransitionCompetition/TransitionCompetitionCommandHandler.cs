@@ -41,7 +41,7 @@ public sealed class TransitionCompetitionCommandHandler
         CancellationToken cancellationToken)
     {
         // 1. Load competition
-        var competition = await _competitionRepository.GetByIdWithDetailsAsync(
+        var competition = await _competitionRepository.GetByIdWithDetailsForUpdateAsync(
             request.CompetitionId, cancellationToken);
 
         if (competition is null)
@@ -90,7 +90,7 @@ public sealed class TransitionCompetitionCommandHandler
             request.Reason);
 
         // 6. Persist changes
-        _competitionRepository.Update(competition);
+        // Entity is already tracked — no need to call Update()
         await _competitionRepository.SaveChangesAsync(cancellationToken);
 
         _logger.LogInformation(
