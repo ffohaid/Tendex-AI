@@ -7,7 +7,8 @@
  * - Generate section content using AI with RAG-grounded citations
  * - Refine existing content with natural language feedback
  * - Show AI confidence score and citations
- * - Animated typing effect for generated content
+ *
+ * Backend returns: { isSuccess, draft: { contentHtml, citations, groundingConfidenceScore, ... } }
  */
 import { ref, computed } from 'vue'
 import { useI18n } from 'vue-i18n'
@@ -49,20 +50,29 @@ const showCitations = ref(false)
 
 const hasContent = computed(() => props.currentContent && props.currentContent.trim().length > 0)
 
+/** Confidence score from the nested draft object (0-100 scale from backend) */
+const confidenceScore = computed(() => {
+  return lastResult.value?.draft?.groundingConfidenceScore ?? 0
+})
+
 const confidenceLabel = computed(() => {
-  if (!lastResult.value) return ''
-  const score = lastResult.value.confidenceScore
-  if (score >= 0.8) return t('ai.confidence.high')
-  if (score >= 0.5) return t('ai.confidence.medium')
+  if (!lastResult.value?.draft) return ''
+  const score = confidenceScore.value
+  if (score >= 80) return t('ai.confidence.high')
+  if (score >= 50) return t('ai.confidence.medium')
   return t('ai.confidence.low')
 })
 
 const confidenceColor = computed(() => {
-  if (!lastResult.value) return ''
-  const score = lastResult.value.confidenceScore
-  if (score >= 0.8) return 'text-success'
-  if (score >= 0.5) return 'text-warning'
+  if (!lastResult.value?.draft) return ''
+  const score = confidenceScore.value
+  if (score >= 80) return 'text-success'
+  if (score >= 50) return 'text-warning'
   return 'text-danger'
+})
+
+const warnings = computed(() => {
+  return lastResult.value?.draft?.warnings ?? []
 })
 
 async function handleGenerate() {
@@ -82,10 +92,10 @@ async function handleGenerate() {
       additionalInstructions: additionalInstructions.value || undefined,
     })
 
-    if (result.isSuccess) {
+    if (result.isSuccess && result.draft) {
       lastResult.value = result
-      citations.value = result.citations || []
-      emit('content-generated', result.contentHtml)
+      citations.value = result.draft.citations || []
+      emit('content-generated', result.draft.contentHtml)
     } else {
       error.value = result.errorMessage || t('ai.errors.generationFailed')
     }
@@ -112,9 +122,9 @@ async function handleRefine() {
       userFeedbackAr: refineFeedback.value,
     })
 
-    if (result.isSuccess) {
-      citations.value = result.citations || []
-      emit('content-refined', result.refinedContentHtml)
+    if (result.isSuccess && result.draft) {
+      citations.value = result.draft.citations || []
+      emit('content-refined', result.draft.contentHtml)
       refineFeedback.value = ''
       showRefineInput.value = false
     } else {
@@ -199,7 +209,7 @@ function togglePanel() {
           <button
             v-if="hasContent"
             type="button"
-            class="btn btn-sm border border-ai-200 bg-white text-ai-600 hover:bg-ai-50"
+            class="rounded-lg border border-ai-200 bg-white px-3 py-1.5 text-xs text-ai-600 hover:bg-ai-50"
             :disabled="isRefining"
             @click="showRefineInput = !showRefineInput"
           >
@@ -211,7 +221,7 @@ function togglePanel() {
           <button
             v-if="citations.length > 0"
             type="button"
-            class="btn btn-sm border border-secondary-200 bg-white text-secondary-600 hover:bg-secondary-50"
+            class="rounded-lg border border-secondary-200 bg-white px-3 py-1.5 text-xs text-secondary-600 hover:bg-secondary-50"
             @click="showCitations = !showCitations"
           >
             <i class="pi pi-book text-xs"></i>
@@ -247,13 +257,13 @@ function togglePanel() {
         </Transition>
 
         <!-- Confidence Score -->
-        <div v-if="lastResult" class="mt-3 flex items-center gap-3 text-xs">
+        <div v-if="lastResult?.draft" class="mt-3 flex items-center gap-3 text-xs">
           <span class="text-secondary-500">{{ t('ai.confidenceScore') }}:</span>
           <span class="font-semibold" :class="confidenceColor">
-            {{ confidenceLabel }} ({{ Math.round((lastResult.confidenceScore || 0) * 100) }}%)
+            {{ confidenceLabel }} ({{ Math.round(confidenceScore) }}%)
           </span>
-          <div v-if="lastResult.suggestedImprovements?.length" class="ms-auto">
-            <span class="text-secondary-400">{{ t('ai.suggestions') }}: {{ lastResult.suggestedImprovements.length }}</span>
+          <div v-if="warnings.length" class="ms-auto">
+            <span class="text-secondary-400">{{ t('ai.suggestions') }}: {{ warnings.length }}</span>
           </div>
         </div>
 
@@ -282,7 +292,7 @@ function togglePanel() {
         </Transition>
 
         <!-- Error Message -->
-        <div v-if="error" class="mt-3 rounded-lg border border-danger-50 bg-danger-50 p-2.5 text-xs text-danger">
+        <div v-if="error" class="mt-3 rounded-lg border border-danger/20 bg-danger/5 p-2.5 text-xs text-danger">
           <i class="pi pi-exclamation-circle me-1"></i>
           {{ error }}
         </div>

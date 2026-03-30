@@ -4,12 +4,19 @@
  *
  * Generates Bill of Quantities items using AI based on
  * the project description and sections content.
+ *
+ * Maps backend GeneratedBoqItem → frontend BoqItem for the parent.
  */
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useAuthStore } from '@/stores/auth'
 import { useRfpStore } from '@/stores/rfp'
-import { generateBoq, type GenerateBoqResult, type BoqItem } from '@/services/aiSpecificationService'
+import {
+  generateBoq,
+  type GenerateBoqResult,
+  type GeneratedBoqItem,
+  type BoqItem,
+} from '@/services/aiSpecificationService'
 
 const emit = defineEmits<{
   (e: 'boq-generated', items: BoqItem[]): void
@@ -23,6 +30,23 @@ const isGenerating = ref(false)
 const result = ref<GenerateBoqResult | null>(null)
 const error = ref('')
 const showPreview = ref(false)
+
+/** Convenience accessor: backend nests items inside `boq` */
+const boqItems = computed<GeneratedBoqItem[]>(() => {
+  return result.value?.boq?.items ?? []
+})
+
+const boqSummary = computed<string>(() => {
+  return result.value?.boq?.summaryAr ?? ''
+})
+
+const boqWarnings = computed<string[]>(() => {
+  return result.value?.boq?.warnings ?? []
+})
+
+const totalCost = computed<number>(() => {
+  return result.value?.boq?.totalEstimatedCost ?? 0
+})
 
 async function handleGenerate() {
   isGenerating.value = true
@@ -45,7 +69,7 @@ async function handleGenerate() {
       specificationsContentHtml: sectionsContent || undefined,
     })
 
-    if (response.isSuccess) {
+    if (response.isSuccess && response.boq?.items?.length) {
       result.value = response
       showPreview.value = true
     } else {
@@ -58,15 +82,29 @@ async function handleGenerate() {
   }
 }
 
+/**
+ * Map backend GeneratedBoqItem → frontend BoqItem and emit.
+ */
 function applyBoq() {
-  if (result.value?.items) {
-    emit('boq-generated', result.value.items)
-    showPreview.value = false
-  }
+  if (!boqItems.value.length) return
+
+  const mapped: BoqItem[] = boqItems.value.map((item) => ({
+    itemNumber: item.itemNumber,
+    descriptionAr: item.descriptionAr,
+    unit: item.unit,
+    estimatedQuantity: item.quantity,
+    estimatedUnitPrice: item.estimatedUnitPrice ?? 0,
+    estimatedTotalPrice: (item.quantity ?? 0) * (item.estimatedUnitPrice ?? 0),
+    category: item.category ?? '',
+    notes: item.justificationAr,
+  }))
+
+  emit('boq-generated', mapped)
+  showPreview.value = false
 }
 
-function formatNumber(num: number) {
-  return new Intl.NumberFormat('en-SA', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(num)
+function formatNumber(num: number | undefined | null) {
+  return new Intl.NumberFormat('en-SA', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(num ?? 0)
 }
 </script>
 
@@ -114,7 +152,7 @@ function formatNumber(num: number) {
               <div>
                 <h3 class="text-base font-bold text-secondary-800">{{ t('ai.suggestedBoq') }}</h3>
                 <p class="text-xs text-secondary-500">
-                  {{ t('ai.reviewAndApplyBoq') }} - {{ result.items?.length || 0 }} {{ t('rfp.boqFields.items') }}
+                  {{ t('ai.reviewAndApplyBoq') }} - {{ boqItems.length }} {{ t('rfp.boqFields.items') }}
                 </p>
               </div>
               <button
@@ -129,13 +167,22 @@ function formatNumber(num: number) {
 
           <!-- BOQ Items Table -->
           <div class="max-h-[55vh] overflow-auto p-5">
-            <div v-if="result.assumptions && result.assumptions.length > 0" class="mb-4 rounded-lg bg-ai-50 p-3">
-              <p class="mb-1 text-xs font-semibold text-ai-700">
+            <!-- Summary -->
+            <div v-if="boqSummary" class="mb-4 rounded-lg bg-ai-50 p-3">
+              <p class="text-xs leading-relaxed text-ai-700">
                 <i class="pi pi-info-circle me-1"></i>
+                {{ boqSummary }}
+              </p>
+            </div>
+
+            <!-- Warnings -->
+            <div v-if="boqWarnings.length > 0" class="mb-4 rounded-lg bg-warning/5 border border-warning/20 p-3">
+              <p class="mb-1 text-xs font-semibold text-warning">
+                <i class="pi pi-exclamation-triangle me-1"></i>
                 {{ t('ai.assumptions') }}
               </p>
-              <ul class="list-inside list-disc space-y-0.5 text-xs text-ai-600">
-                <li v-for="(assumption, idx) in result.assumptions" :key="idx">{{ assumption }}</li>
+              <ul class="list-inside list-disc space-y-0.5 text-xs text-warning/80">
+                <li v-for="(warning, idx) in boqWarnings" :key="idx">{{ warning }}</li>
               </ul>
             </div>
 
@@ -154,24 +201,26 @@ function formatNumber(num: number) {
                 </thead>
                 <tbody>
                   <tr
-                    v-for="(item, idx) in result.items"
+                    v-for="(item, idx) in boqItems"
                     :key="idx"
                     class="border-t border-secondary-100 transition-colors hover:bg-secondary-50/50"
                   >
-                    <td class="px-3 py-2 text-center text-xs text-secondary-400">{{ idx + 1 }}</td>
-                    <td class="px-3 py-2 text-xs font-medium text-secondary-700">{{ item.category }}</td>
+                    <td class="px-3 py-2 text-center text-xs text-secondary-400">{{ item.itemNumber || idx + 1 }}</td>
+                    <td class="px-3 py-2 text-xs font-medium text-secondary-700">{{ item.category || '-' }}</td>
                     <td class="px-3 py-2 text-xs text-secondary-600">{{ item.descriptionAr }}</td>
                     <td class="px-3 py-2 text-center text-xs text-secondary-500">{{ item.unit }}</td>
-                    <td class="px-3 py-2 text-center text-xs text-secondary-600">{{ item.estimatedQuantity }}</td>
-                    <td class="px-3 py-2 text-end text-xs text-secondary-600">{{ formatNumber(item.estimatedUnitPrice) }}</td>
-                    <td class="px-3 py-2 text-end text-xs font-medium text-secondary-700">{{ formatNumber(item.estimatedTotalPrice) }}</td>
+                    <td class="px-3 py-2 text-center text-xs text-secondary-600">{{ item.quantity }}</td>
+                    <td class="px-3 py-2 text-end text-xs text-secondary-600">{{ item.estimatedUnitPrice ? formatNumber(item.estimatedUnitPrice) : '-' }}</td>
+                    <td class="px-3 py-2 text-end text-xs font-medium text-secondary-700">
+                      {{ item.estimatedUnitPrice ? formatNumber(item.quantity * item.estimatedUnitPrice) : '-' }}
+                    </td>
                   </tr>
                 </tbody>
-                <tfoot class="border-t-2 border-primary/20 bg-primary/5">
+                <tfoot v-if="totalCost" class="border-t-2 border-primary/20 bg-primary/5">
                   <tr>
                     <td colspan="6" class="px-3 py-2.5 text-end text-xs font-bold text-primary">{{ t('rfp.boqFields.grandTotal') }}</td>
                     <td class="px-3 py-2.5 text-end text-xs font-bold text-primary">
-                      {{ formatNumber(result.items?.reduce((s, i) => s + i.estimatedTotalPrice, 0) || 0) }}
+                      {{ formatNumber(totalCost) }}
                     </td>
                   </tr>
                 </tfoot>
@@ -191,6 +240,7 @@ function formatNumber(num: number) {
             <button
               type="button"
               class="flex items-center gap-2 rounded-lg bg-gradient-to-r from-ai-500 to-ai-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:from-ai-600 hover:to-ai-700"
+              :disabled="!boqItems.length"
               @click="applyBoq"
             >
               <i class="pi pi-check text-xs"></i>

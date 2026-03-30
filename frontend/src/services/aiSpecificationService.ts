@@ -79,23 +79,66 @@ export interface AiCitation {
   excerpt: string
 }
 
+/** Matches backend AiRegulatoryReference record */
+export interface AiRegulatoryReference {
+  regulationName: string
+  articleNumber?: string
+  excerpt: string
+}
+
+/** Matches backend AiSpecificationDraftResult record */
+export interface AiSpecificationDraftResult {
+  contentHtml: string
+  contentPlainText: string
+  citations: AiCitation[]
+  regulatoryReferences: AiRegulatoryReference[]
+  groundingConfidenceScore: number
+  warnings: string[]
+  providerName: string
+  modelName: string
+  latencyMs: number
+}
+
 export interface GenerateSectionDraftResult {
   isSuccess: boolean
   errorMessage?: string
-  contentHtml: string
-  citations: AiCitation[]
-  confidenceScore: number
-  suggestedImprovements: string[]
+  draft?: AiSpecificationDraftResult
 }
 
 export interface RefineSectionDraftResult {
   isSuccess: boolean
   errorMessage?: string
-  refinedContentHtml: string
-  changesSummary: string
-  citations: AiCitation[]
+  draft?: AiSpecificationDraftResult
 }
 
+/** Matches backend ProposedSection record */
+export interface ProposedSection {
+  titleAr: string
+  titleEn: string
+  sectionType: string
+  isMandatory: boolean
+  descriptionAr: string
+  sortOrder: number
+  subSections?: ProposedSection[]
+}
+
+/** Matches backend AiBookletStructureResult record */
+export interface AiBookletStructureResult {
+  sections: ProposedSection[]
+  structureSummaryAr: string
+  citations: AiCitation[]
+  providerName: string
+  modelName: string
+  latencyMs: number
+}
+
+export interface GenerateBookletStructureResult {
+  isSuccess: boolean
+  errorMessage?: string
+  structure?: AiBookletStructureResult
+}
+
+/** Legacy alias kept for backward compatibility in components */
 export interface BookletSection {
   sectionTitleAr: string
   sectionType: string
@@ -105,13 +148,46 @@ export interface BookletSection {
   orderIndex: number
 }
 
-export interface GenerateBookletStructureResult {
-  isSuccess: boolean
-  errorMessage?: string
-  sections: BookletSection[]
-  rationale: string
+/** Matches backend GeneratedBoqItem record */
+export interface GeneratedBoqItem {
+  itemNumber: string
+  descriptionAr: string
+  descriptionEn: string
+  unit: string
+  quantity: number
+  estimatedUnitPrice?: number
+  priceEstimateSource?: string
+  category?: string
+  justificationAr: string
+  sortOrder: number
 }
 
+/** Matches backend AiBoqGenerationResult record */
+export interface AiBoqGenerationResult {
+  items: GeneratedBoqItem[]
+  summaryAr: string
+  totalEstimatedCost?: number
+  citations: AiCitation[]
+  groundingConfidenceScore: number
+  warnings: string[]
+  providerName: string
+  modelName: string
+  latencyMs: number
+}
+
+export interface GenerateBoqResult {
+  isSuccess: boolean
+  errorMessage?: string
+  boq?: AiBoqGenerationResult
+}
+
+export interface RefineBoqResult {
+  isSuccess: boolean
+  errorMessage?: string
+  boq?: AiBoqGenerationResult
+}
+
+/** Legacy alias used in store mapping */
 export interface BoqItem {
   itemNumber: string
   descriptionAr: string
@@ -121,23 +197,6 @@ export interface BoqItem {
   estimatedTotalPrice: number
   category: string
   notes?: string
-}
-
-export interface GenerateBoqResult {
-  isSuccess: boolean
-  errorMessage?: string
-  items: BoqItem[]
-  totalEstimatedCost: number
-  citations: AiCitation[]
-  assumptions: string[]
-}
-
-export interface RefineBoqResult {
-  isSuccess: boolean
-  errorMessage?: string
-  items: BoqItem[]
-  totalEstimatedCost: number
-  changesSummary: string
 }
 
 // ═══════════════════════════════════════════════════════════════
