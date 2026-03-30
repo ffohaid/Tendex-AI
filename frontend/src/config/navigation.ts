@@ -11,6 +11,10 @@ import type { NavigationItem } from '@/types/navigation'
  *
  * IMPORTANT: Route names MUST exactly match the `name` property
  * defined in `@/router/index.ts`. Any mismatch will break navigation.
+ *
+ * TASK-1001: Added Workflow Designer, Task Center, Knowledge Base,
+ * Permissions Matrix, Competition Templates, Notifications, Report Export,
+ * and enhanced Operator Portal navigation.
  */
 export const sidebarNavigation: NavigationItem[] = [
   {
@@ -18,6 +22,13 @@ export const sidebarNavigation: NavigationItem[] = [
     labelKey: 'nav.dashboard',
     icon: 'pi pi-home',
     route: 'Dashboard',
+  },
+  /* Unified Task Center (TASK-1001) */
+  {
+    key: 'task-center',
+    labelKey: 'nav.taskCenter',
+    icon: 'pi pi-check-square',
+    route: 'TaskCenter',
   },
   {
     key: 'rfp',
@@ -35,6 +46,12 @@ export const sidebarNavigation: NavigationItem[] = [
         labelKey: 'nav.rfp.create',
         icon: 'pi pi-plus-circle',
         route: 'rfp-create',
+      },
+      {
+        key: 'rfp-templates',
+        labelKey: 'nav.rfpTemplates',
+        icon: 'pi pi-copy',
+        route: 'RfpTemplates',
       },
     ],
   },
@@ -82,17 +99,64 @@ export const sidebarNavigation: NavigationItem[] = [
     icon: 'pi pi-check-circle',
     route: 'Approvals',
   },
+  /* Workflow Designer (TASK-1001) */
+  {
+    key: 'workflow',
+    labelKey: 'nav.workflowDesigner',
+    icon: 'pi pi-sitemap',
+    children: [
+      {
+        key: 'workflow-list',
+        labelKey: 'nav.workflowList',
+        icon: 'pi pi-list',
+        route: 'WorkflowList',
+      },
+      {
+        key: 'workflow-designer',
+        labelKey: 'nav.workflowDesigner',
+        icon: 'pi pi-pencil',
+        route: 'WorkflowDesigner',
+      },
+    ],
+  },
+  /* Permissions Matrix (TASK-1001) */
+  {
+    key: 'permissions-matrix',
+    labelKey: 'nav.permissionsMatrix',
+    icon: 'pi pi-th-large',
+    route: 'PermissionsMatrix',
+  },
   {
     key: 'inquiries',
     labelKey: 'nav.inquiries',
     icon: 'pi pi-comments',
     route: 'Inquiries',
   },
+  /* Knowledge Base (TASK-1001) */
+  {
+    key: 'knowledge-base',
+    labelKey: 'nav.knowledgeBase',
+    icon: 'pi pi-book',
+    route: 'KnowledgeBase',
+  },
   {
     key: 'reports',
     labelKey: 'nav.reports',
     icon: 'pi pi-chart-line',
-    route: 'Reports',
+    children: [
+      {
+        key: 'reports-analytics',
+        labelKey: 'nav.reports',
+        icon: 'pi pi-chart-bar',
+        route: 'Reports',
+      },
+      {
+        key: 'reports-export',
+        labelKey: 'nav.reportGenerator',
+        icon: 'pi pi-download',
+        route: 'ReportGenerator',
+      },
+    ],
   },
   {
     key: 'ai-assistant',
@@ -100,10 +164,18 @@ export const sidebarNavigation: NavigationItem[] = [
     icon: 'pi pi-sparkles',
     route: 'AiAssistant',
   },
+  /* Notifications (TASK-1001) */
+  {
+    key: 'notifications',
+    labelKey: 'notifications.title',
+    icon: 'pi pi-bell',
+    route: 'Notifications',
+  },
   {
     key: 'operator',
     labelKey: 'nav.operator.title',
     icon: 'pi pi-shield',
+    requiredRoles: ['SuperAdmin', 'Operator'],
     children: [
       {
         key: 'operator-dashboard',
@@ -122,6 +194,42 @@ export const sidebarNavigation: NavigationItem[] = [
         labelKey: 'nav.operator.purchaseOrders',
         icon: 'pi pi-file',
         route: 'PurchaseOrderList',
+      },
+      /* TASK-1001: New operator pages */
+      {
+        key: 'operator-ai-settings',
+        labelKey: 'operator.aiSettings',
+        icon: 'pi pi-sparkles',
+        route: 'OperatorAiSettings',
+        requiredRoles: ['SuperAdmin', 'Operator'],
+      },
+      {
+        key: 'operator-system-health',
+        labelKey: 'operator.systemHealth',
+        icon: 'pi pi-server',
+        route: 'OperatorSystemHealth',
+        requiredRoles: ['SuperAdmin', 'Operator'],
+      },
+      {
+        key: 'operator-consumption',
+        labelKey: 'operator.consumption',
+        icon: 'pi pi-chart-bar',
+        route: 'OperatorConsumption',
+        requiredRoles: ['SuperAdmin', 'Operator'],
+      },
+      {
+        key: 'operator-subscriptions',
+        labelKey: 'operator.subscriptions',
+        icon: 'pi pi-credit-card',
+        route: 'OperatorSubscriptions',
+        requiredRoles: ['SuperAdmin', 'Operator'],
+      },
+      {
+        key: 'operator-impersonation',
+        labelKey: 'nav.operator.impersonation',
+        icon: 'pi pi-user-edit',
+        route: 'OperatorImpersonation',
+        requiredRoles: ['SuperAdmin', 'SupportAdmin'],
       },
     ],
   },
@@ -147,21 +255,6 @@ export const sidebarNavigation: NavigationItem[] = [
         labelKey: 'nav.settings.roles',
         icon: 'pi pi-key',
         route: 'SettingsRoles',
-      },
-    ],
-  },
-  {
-    key: 'operator-advanced',
-    labelKey: 'nav.operator.title',
-    icon: 'pi pi-shield',
-    requiredRoles: ['SuperAdmin', 'SupportAdmin'],
-    children: [
-      {
-        key: 'operator-impersonation',
-        labelKey: 'nav.operator.impersonation',
-        icon: 'pi pi-user-edit',
-        route: 'OperatorImpersonation',
-        requiredRoles: ['SuperAdmin', 'SupportAdmin'],
       },
     ],
   },

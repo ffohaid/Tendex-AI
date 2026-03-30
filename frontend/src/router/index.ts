@@ -217,6 +217,110 @@ const routes: RouteRecordRaw[] = [
           requiredRoles: ['SuperAdmin', 'SupportAdmin'],
         },
       },
+      /* ── TASK-1001: New Routes ── */
+      /* Workflow Designer */
+      {
+        path: 'workflow',
+        name: 'WorkflowList',
+        component: () => import('@/views/workflow/WorkflowListView.vue'),
+        meta: { title: 'Tendex AI - Workflow Templates', requiresAuth: true },
+      },
+      {
+        path: 'workflow/designer',
+        name: 'WorkflowDesigner',
+        component: () => import('@/views/workflow/WorkflowDesignerView.vue'),
+        meta: { title: 'Tendex AI - Workflow Designer', requiresAuth: true },
+      },
+      {
+        path: 'workflow/designer/:id',
+        name: 'WorkflowDesignerEdit',
+        component: () => import('@/views/workflow/WorkflowDesignerView.vue'),
+        meta: { title: 'Tendex AI - Edit Workflow', requiresAuth: true },
+        props: true,
+      },
+      /* 4D Permissions Matrix */
+      {
+        path: 'permissions/matrix',
+        name: 'PermissionsMatrix',
+        component: () => import('@/views/permissions/PermissionsMatrixView.vue'),
+        meta: { title: 'Tendex AI - Permissions Matrix', requiresAuth: true },
+      },
+      /* Unified Task Center */
+      {
+        path: 'task-center',
+        name: 'TaskCenter',
+        component: () => import('@/views/task-center/TaskCenterView.vue'),
+        meta: { title: 'Tendex AI - Task Center', requiresAuth: true },
+      },
+      /* Knowledge Base / RAG */
+      {
+        path: 'knowledge-base',
+        name: 'KnowledgeBase',
+        component: () => import('@/views/knowledge-base/KnowledgeBaseView.vue'),
+        meta: { title: 'Tendex AI - Knowledge Base', requiresAuth: true },
+      },
+      /* Competition Templates */
+      {
+        path: 'rfp/templates',
+        name: 'RfpTemplates',
+        component: () => import('@/views/rfp/RfpTemplatesView.vue'),
+        meta: { title: 'Tendex AI - Competition Templates', requiresAuth: true },
+      },
+      /* Notifications */
+      {
+        path: 'notifications',
+        name: 'Notifications',
+        component: () => import('@/views/notifications/NotificationsView.vue'),
+        meta: { title: 'Tendex AI - Notifications', requiresAuth: true },
+      },
+      /* Report Generator / Export */
+      {
+        path: 'reports/export',
+        name: 'ReportGenerator',
+        component: () => import('@/views/reports/ReportGeneratorView.vue'),
+        meta: { title: 'Tendex AI - Export Reports', requiresAuth: true },
+      },
+      /* Operator Portal - New Pages (TASK-1001) */
+      {
+        path: 'operator/ai-settings',
+        name: 'OperatorAiSettings',
+        component: () => import('@/views/operator/AiSettingsView.vue'),
+        meta: {
+          title: 'Tendex AI - AI Settings',
+          requiresAuth: true,
+          requiredRoles: ['SuperAdmin', 'Operator'],
+        },
+      },
+      {
+        path: 'operator/system-health',
+        name: 'OperatorSystemHealth',
+        component: () => import('@/views/operator/SystemHealthView.vue'),
+        meta: {
+          title: 'Tendex AI - System Health',
+          requiresAuth: true,
+          requiredRoles: ['SuperAdmin', 'Operator'],
+        },
+      },
+      {
+        path: 'operator/consumption',
+        name: 'OperatorConsumption',
+        component: () => import('@/views/operator/ConsumptionView.vue'),
+        meta: {
+          title: 'Tendex AI - Consumption',
+          requiresAuth: true,
+          requiredRoles: ['SuperAdmin', 'Operator'],
+        },
+      },
+      {
+        path: 'operator/subscriptions',
+        name: 'OperatorSubscriptions',
+        component: () => import('@/views/operator/SubscriptionsView.vue'),
+        meta: {
+          title: 'Tendex AI - Subscriptions',
+          requiresAuth: true,
+          requiredRoles: ['SuperAdmin', 'Operator'],
+        },
+      },
     ],
   },
   {

@@ -134,8 +134,33 @@
       "dashboard": "نظرة عامة",
       "tenants": "الجهات الحكومية",
       "purchaseOrders": "أوامر التعميد",
-      "impersonation": "انتحال المستخدم"
-    }
+      "impersonation": "انتحال المستخدم",
+      "aiSettings": "إعدادات الذكاء الاصطناعي",
+      "subscriptions": "الخطط والاشتراكات",
+      "consumption": "مراقبة الاستهلاك",
+      "support": "الدعم الفني",
+      "health": "صحة النظام"
+    },
+    "workflow": {
+      "title": "مسارات الاعتماد",
+      "designer": "مصمم المسارات",
+      "list": "قائمة المسارات"
+    },
+    "knowledgeBase": "قاعدة المعرفة",
+    "permissions": {
+      "title": "الصلاحيات",
+      "matrix": "مصفوفة الصلاحيات"
+    },
+    "workflowDesigner": "مصمم سير العمل",
+    "workflowList": "قوالب سير العمل",
+    "permissionsMatrix": "مصفوفة الصلاحيات",
+    "rfpTemplates": "قوالب المنافسات",
+    "reportGenerator": "تصدير التقارير",
+    "aiSettings": "إعدادات الذكاء الاصطناعي",
+    "systemHealth": "صحة النظام",
+    "consumption": "مراقبة الاستهلاك",
+    "subscriptions": "الاشتراكات والخطط",
+    "operatorPortal": "لوحة المشغل"
   },
   "header": {
     "searchPlaceholder": "البحث في المنصة...",
@@ -227,6 +252,13 @@
       "avgEvalTime": "متوسط زمن التقييم",
       "slaCompliance": "الالتزام بالمهل الزمنية",
       "days": "يوم"
+    },
+    "greetingMorning": "صباح الخير",
+    "greetingAfternoon": "مساء الخير",
+    "greetingEvening": "مساء الخير",
+    "tabs": {
+      "pendingTasks": "المهام المعلقة",
+      "myCommittees": "لجاني"
     }
   },
   "rfp": {
@@ -455,7 +487,12 @@
       "teamQualifications": "مؤهلات فريق العمل",
       "slaTemplate": "نموذج اتفاقية مستوى الخدمة",
       "ndaTemplate": "نموذج اتفاقية السرية"
-    }
+    },
+    "templates": "قوالب المنافسات",
+    "createFromTemplate": "إنشاء من قالب",
+    "copyCompetition": "نسخ منافسة",
+    "semanticEditor": "المحرر الذكي",
+    "aiGenerate": "توليد بالذكاء الاصطناعي"
   },
   "evaluation": {
     "searchPlaceholder": "البحث بالاسم أو رقم المنافسة...",
@@ -1621,7 +1658,18 @@
       "competitions": "المنافسات",
       "avgCycleTime": "متوسط دورة الإنجاز",
       "complianceRate": "نسبة الامتثال"
-    }
+    },
+    "types": {
+      "competitionSummary": "ملخص المنافسات",
+      "departmentPerformance": "أداء الإدارات",
+      "compliance": "تقرير الامتثال",
+      "financialAnalysis": "التحليل المالي",
+      "offerComparison": "مقارنة العروض",
+      "timeline": "تقرير الجدول الزمني"
+    },
+    "generate": "توليد التقرير",
+    "export": "تصدير",
+    "recentExports": "التصديرات الأخيرة"
   },
   "inquiries": {
     "title": "الاستفسارات",
@@ -1745,5 +1793,263 @@
       "boqGenerationFailed": "فشل في توليد جدول الكميات. يرجى المحاولة مرة أخرى.",
       "evaluationFailed": "فشل في تحليل التقييم. يرجى المحاولة مرة أخرى."
     }
+  },
+  "workflow": {
+    "title": "مصمم سير العمل",
+    "designer": "مصمم المسارات",
+    "list": "قائمة المسارات",
+    "create": "إنشاء مسار جديد",
+    "edit": "تعديل المسار",
+    "activate": "تفعيل",
+    "deactivate": "إلغاء التفعيل",
+    "save": "حفظ",
+    "saveDraft": "حفظ كمسودة",
+    "preview": "معاينة",
+    "delete": "حذف",
+    "name": "اسم المسار",
+    "nameAr": "الاسم بالعربية",
+    "nameEn": "الاسم بالإنجليزية",
+    "description": "تصميم وإدارة مسارات العمل والاعتمادات",
+    "status": {
+      "draft": "مسودة",
+      "published": "منشور",
+      "archived": "مؤرشف"
+    },
+    "nodes": {
+      "start": "البداية",
+      "end": "النهاية",
+      "approval": "موافقة",
+      "conditional": "تفرع مشروط",
+      "parallel": "تنفيذ متوازي"
+    },
+    "nodeProperties": {
+      "stageName": "اسم المرحلة",
+      "approver": "المعتمد",
+      "approverType": "نوع المعتمد",
+      "user": "مستخدم",
+      "role": "دور",
+      "committee": "لجنة",
+      "sla": "مدة SLA",
+      "hours": "ساعات",
+      "days": "أيام",
+      "escalation": "إجراء التصعيد",
+      "actions": "الإجراءات المتاحة",
+      "approve": "موافقة",
+      "reject": "رفض",
+      "return": "إعادة",
+      "suspend": "تعليق"
+    },
+    "toolbar": {
+      "addNode": "إضافة عقدة",
+      "zoomIn": "تكبير",
+      "zoomOut": "تصغير",
+      "fitView": "ملائمة العرض",
+      "minimap": "الخريطة المصغرة"
+    },
+    "empty": "لا توجد مسارات اعتماد",
+    "emptyDescription": "ابدأ بإنشاء مسار اعتماد جديد لتنظيم عمليات الموافقة",
+    "listTitle": "قوالب سير العمل",
+    "createNew": "إنشاء قالب جديد",
+    "stages": "المراحل",
+    "transitions": "الانتقالات",
+    "conditions": "الشروط",
+    "actions": "الإجراءات",
+    "slaHours": "ساعات SLA",
+    "autoEscalation": "تصعيد تلقائي",
+    "parallelApproval": "اعتماد متوازي",
+    "sequentialApproval": "اعتماد تسلسلي",
+    "addStage": "إضافة مرحلة",
+    "addTransition": "إضافة انتقال",
+    "saveTemplate": "حفظ القالب",
+    "publishTemplate": "نشر القالب",
+    "templateName": "اسم القالب",
+    "templateDescription": "وصف القالب",
+    "stageTypes": {
+      "approval": "اعتماد",
+      "review": "مراجعة",
+      "task": "مهمة",
+      "notification": "إشعار",
+      "condition": "شرط"
+    },
+    "noTemplates": "لا توجد قوالب سير عمل"
+  },
+  "taskCenter": {
+    "title": "مركز المهام الموحد",
+    "subtitle": "جميع المهام المسندة إليك في مكان واحد",
+    "filters": {
+      "all": "الكل",
+      "approval": "اعتمادات",
+      "evaluation": "تقييمات",
+      "inquiry": "استفسارات",
+      "review": "مراجعات",
+      "pending": "معلقة",
+      "in_progress": "قيد التنفيذ",
+      "completed": "مكتملة",
+      "overdue": "متأخرة"
+    },
+    "sortBy": {
+      "priority": "الأولوية",
+      "deadline": "الموعد النهائي",
+      "type": "النوع",
+      "date": "التاريخ"
+    },
+    "sla": {
+      "remaining": "المتبقي",
+      "overdue": "متأخر",
+      "onTime": "في الوقت",
+      "approaching": "اقتراب الموعد"
+    },
+    "actions": {
+      "approve": "موافقة",
+      "reject": "رفض",
+      "return": "إعادة",
+      "view": "عرض التفاصيل"
+    },
+    "empty": "لا توجد مهام معلقة",
+    "emptyDescription": "تم إنجاز جميع المهام المسندة إليك",
+    "description": "جميع المهام والاعتمادات المطلوبة منك",
+    "pendingTasks": "مهام معلقة",
+    "completedTasks": "مهام مكتملة",
+    "overdueTasks": "مهام متأخرة",
+    "avgCompletion": "متوسط وقت الإنجاز",
+    "priority": {
+      "urgent": "عاجل",
+      "high": "مرتفع",
+      "medium": "متوسط",
+      "low": "منخفض"
+    },
+    "noTasks": "لا توجد مهام حالياً",
+    "dueDate": "تاريخ الاستحقاق",
+    "assignedBy": "مُسندة من",
+    "takeAction": "اتخاذ إجراء"
+  },
+  "knowledgeBase": {
+    "title": "قاعدة المعرفة",
+    "subtitle": "المستندات المرجعية والأنظمة واللوائح",
+    "upload": "رفع مستند",
+    "search": "البحث في قاعدة المعرفة",
+    "categories": {
+      "regulations": "أنظمة ولوائح",
+      "templates": "قوالب",
+      "circulars": "التعاميم والقرارات",
+      "previousCompetitions": "المنافسات السابقة",
+      "guides": "أدلة الاستخدام",
+      "all": "الكل",
+      "guidelines": "إرشادات",
+      "previous": "منافسات سابقة"
+    },
+    "document": {
+      "name": "اسم المستند",
+      "category": "التصنيف",
+      "uploadDate": "تاريخ الرفع",
+      "size": "الحجم",
+      "status": "الحالة",
+      "indexed": "مفهرس",
+      "pending": "قيد الفهرسة",
+      "failed": "فشل الفهرسة"
+    },
+    "empty": "لا توجد مستندات في قاعدة المعرفة",
+    "emptyDescription": "ابدأ برفع المستندات المرجعية لبناء قاعدة معرفة شاملة",
+    "description": "إدارة المستندات والأنظمة المفهرسة بالذكاء الاصطناعي",
+    "totalDocuments": "إجمالي المستندات",
+    "indexedDocuments": "مستندات مفهرسة",
+    "pendingIndexing": "بانتظار الفهرسة",
+    "totalChunks": "إجمالي الأجزاء",
+    "uploadDocument": "رفع مستند",
+    "searchDocuments": "البحث في المستندات",
+    "status": {
+      "indexed": "مفهرس",
+      "processing": "قيد المعالجة",
+      "failed": "فشل الفهرسة"
+    }
+  },
+  "permissions": {
+    "title": "مصفوفة الصلاحيات رباعية الأبعاد",
+    "subtitle": "إدارة الصلاحيات متعددة الأبعاد",
+    "dimensions": {
+      "competition": "المنافسة",
+      "stage": "المرحلة",
+      "committeeRole": "دور اللجنة",
+      "userRole": "دور المستخدم",
+      "committee": "اللجنة/الفريق",
+      "role": "الدور"
+    },
+    "roles": {
+      "systemAdmin": "مدير النظام",
+      "competitionManager": "مدير المنافسات",
+      "committeeMember": "عضو لجنة",
+      "reviewer": "مراجع",
+      "auditor": "مدقق",
+      "committeeChair": "رئيس لجنة",
+      "secretary": "مقرر",
+      "observer": "مراقب"
+    },
+    "actions": {
+      "view": "عرض",
+      "create": "إنشاء",
+      "edit": "تعديل",
+      "delete": "حذف",
+      "approve": "اعتماد",
+      "export": "تصدير",
+      "reject": "رفض"
+    },
+    "templates": "قوالب الصلاحيات",
+    "effectivePermissions": "الصلاحيات الفعالة",
+    "saveTemplate": "حفظ كقالب",
+    "applyTemplate": "تطبيق قالب",
+    "description": "إدارة الصلاحيات حسب المنافسة والمرحلة واللجنة والدور",
+    "saveMatrix": "حفظ المصفوفة",
+    "resetToDefault": "إعادة للافتراضي",
+    "bulkGrant": "منح جماعي",
+    "bulkRevoke": "سحب جماعي"
+  },
+  "operatorAi": {
+    "title": "إعدادات الذكاء الاصطناعي",
+    "providers": "مزودو الذكاء الاصطناعي",
+    "addProvider": "إضافة مزود",
+    "provider": "المزود",
+    "model": "النموذج",
+    "apiKey": "مفتاح API",
+    "endpoint": "نقطة النهاية",
+    "status": "الحالة",
+    "active": "نشط",
+    "inactive": "غير نشط",
+    "test": "اختبار الاتصال",
+    "testSuccess": "الاتصال ناجح",
+    "testFailed": "فشل الاتصال",
+    "ragSettings": "إعدادات RAG",
+    "vectorDb": "قاعدة المتجهات",
+    "featureFlags": "أعلام الميزات"
+  },
+  "notifications": {
+    "title": "الإشعارات",
+    "markAllRead": "تحديد الكل كمقروء",
+    "noNotifications": "لا توجد إشعارات",
+    "newTask": "مهمة جديدة",
+    "approvalRequired": "اعتماد مطلوب",
+    "slaEscalation": "تصعيد SLA",
+    "newInquiry": "استفسار جديد",
+    "competitionUpdate": "تحديث منافسة",
+    "preferences": "تفضيلات الإشعارات",
+    "inApp": "داخل التطبيق",
+    "email": "البريد الإلكتروني",
+    "viewAll": "عرض الكل",
+    "types": {
+      "task": "مهمة جديدة",
+      "approval": "اعتماد مطلوب",
+      "sla_escalation": "تصعيد SLA",
+      "inquiry": "استفسار جديد",
+      "competition_update": "تحديث منافسة",
+      "system": "إشعار نظام"
+    }
+  },
+  "operator": {
+    "portal": "لوحة المشغل",
+    "aiSettings": "إعدادات الذكاء الاصطناعي",
+    "systemHealth": "صحة النظام",
+    "consumption": "مراقبة الاستهلاك",
+    "subscriptions": "الاشتراكات والخطط",
+    "tenantManagement": "إدارة الجهات",
+    "featureFlags": "إدارة الميزات"
   }
 }

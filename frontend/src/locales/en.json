@@ -134,8 +134,33 @@
       "dashboard": "Overview",
       "tenants": "Government Entities",
       "purchaseOrders": "Purchase Orders",
-      "impersonation": "User Impersonation"
-    }
+      "impersonation": "User Impersonation",
+      "aiSettings": "AI Settings",
+      "subscriptions": "Plans & Subscriptions",
+      "consumption": "Consumption Monitoring",
+      "support": "Technical Support",
+      "health": "System Health"
+    },
+    "workflow": {
+      "title": "Approval Workflows",
+      "designer": "Workflow Designer",
+      "list": "Workflow List"
+    },
+    "knowledgeBase": "Knowledge Base",
+    "permissions": {
+      "title": "Permissions",
+      "matrix": "Permissions Matrix"
+    },
+    "workflowDesigner": "Workflow Designer",
+    "workflowList": "Workflow Templates",
+    "permissionsMatrix": "Permissions Matrix",
+    "rfpTemplates": "Competition Templates",
+    "reportGenerator": "Export Reports",
+    "aiSettings": "AI Settings",
+    "systemHealth": "System Health",
+    "consumption": "Consumption Monitoring",
+    "subscriptions": "Plans & Subscriptions",
+    "operatorPortal": "Operator Portal"
   },
   "header": {
     "searchPlaceholder": "Search the platform...",
@@ -227,6 +252,13 @@
       "avgEvalTime": "Avg. Evaluation Time",
       "slaCompliance": "SLA Compliance",
       "days": "days"
+    },
+    "greetingMorning": "Good Morning",
+    "greetingAfternoon": "Good Afternoon",
+    "greetingEvening": "Good Evening",
+    "tabs": {
+      "pendingTasks": "Pending Tasks",
+      "myCommittees": "My Committees"
     }
   },
   "rfp": {
@@ -455,7 +487,12 @@
       "teamQualifications": "Team Qualifications",
       "slaTemplate": "SLA Template",
       "ndaTemplate": "NDA Template"
-    }
+    },
+    "templates": "Competition Templates",
+    "createFromTemplate": "Create from Template",
+    "copyCompetition": "Copy Competition",
+    "semanticEditor": "Smart Editor",
+    "aiGenerate": "AI Generate"
   },
   "evaluation": {
     "searchPlaceholder": "Search by name or competition number...",
@@ -1621,7 +1658,18 @@
       "competitions": "Competitions",
       "avgCycleTime": "Avg. Cycle Time",
       "complianceRate": "Compliance Rate"
-    }
+    },
+    "types": {
+      "competitionSummary": "Competition Summary",
+      "departmentPerformance": "Department Performance",
+      "compliance": "Compliance Report",
+      "financialAnalysis": "Financial Analysis",
+      "offerComparison": "Offer Comparison",
+      "timeline": "Timeline Report"
+    },
+    "generate": "Generate Report",
+    "export": "Export",
+    "recentExports": "Recent Exports"
   },
   "inquiries": {
     "title": "Inquiries",
@@ -1745,5 +1793,263 @@
       "boqGenerationFailed": "Failed to generate BOQ. Please try again.",
       "evaluationFailed": "Failed to analyze evaluation. Please try again."
     }
+  },
+  "workflow": {
+    "title": "Workflow Designer",
+    "designer": "Workflow Designer",
+    "list": "Workflow List",
+    "create": "Create New Workflow",
+    "edit": "Edit Workflow",
+    "activate": "Activate",
+    "deactivate": "Deactivate",
+    "save": "Save",
+    "saveDraft": "Save as Draft",
+    "preview": "Preview",
+    "delete": "Delete",
+    "name": "Workflow Name",
+    "nameAr": "Name (Arabic)",
+    "nameEn": "Name (English)",
+    "description": "Design and manage workflow and approval paths",
+    "status": {
+      "draft": "Draft",
+      "published": "Published",
+      "archived": "Archived"
+    },
+    "nodes": {
+      "start": "Start",
+      "end": "End",
+      "approval": "Approval",
+      "conditional": "Conditional Branch",
+      "parallel": "Parallel Execution"
+    },
+    "nodeProperties": {
+      "stageName": "Stage Name",
+      "approver": "Approver",
+      "approverType": "Approver Type",
+      "user": "User",
+      "role": "Role",
+      "committee": "Committee",
+      "sla": "SLA Duration",
+      "hours": "Hours",
+      "days": "Days",
+      "escalation": "Escalation Action",
+      "actions": "Available Actions",
+      "approve": "Approve",
+      "reject": "Reject",
+      "return": "Return",
+      "suspend": "Suspend"
+    },
+    "toolbar": {
+      "addNode": "Add Node",
+      "zoomIn": "Zoom In",
+      "zoomOut": "Zoom Out",
+      "fitView": "Fit View",
+      "minimap": "Minimap"
+    },
+    "empty": "No approval workflows",
+    "emptyDescription": "Start by creating a new approval workflow to organize your approval processes",
+    "listTitle": "Workflow Templates",
+    "createNew": "Create New Template",
+    "stages": "Stages",
+    "transitions": "Transitions",
+    "conditions": "Conditions",
+    "actions": "Actions",
+    "slaHours": "SLA Hours",
+    "autoEscalation": "Auto Escalation",
+    "parallelApproval": "Parallel Approval",
+    "sequentialApproval": "Sequential Approval",
+    "addStage": "Add Stage",
+    "addTransition": "Add Transition",
+    "saveTemplate": "Save Template",
+    "publishTemplate": "Publish Template",
+    "templateName": "Template Name",
+    "templateDescription": "Template Description",
+    "stageTypes": {
+      "approval": "Approval",
+      "review": "Review",
+      "task": "Task",
+      "notification": "Notification",
+      "condition": "Condition"
+    },
+    "noTemplates": "No workflow templates"
+  },
+  "taskCenter": {
+    "title": "Unified Task Center",
+    "subtitle": "All tasks assigned to you in one place",
+    "filters": {
+      "all": "All",
+      "approval": "Approvals",
+      "evaluation": "Evaluations",
+      "inquiry": "Inquiries",
+      "review": "Reviews",
+      "pending": "Pending",
+      "in_progress": "In Progress",
+      "completed": "Completed",
+      "overdue": "Overdue"
+    },
+    "sortBy": {
+      "priority": "Priority",
+      "deadline": "Deadline",
+      "type": "Type",
+      "date": "Date"
+    },
+    "sla": {
+      "remaining": "Remaining",
+      "overdue": "Overdue",
+      "onTime": "On Time",
+      "approaching": "Approaching"
+    },
+    "actions": {
+      "approve": "Approve",
+      "reject": "Reject",
+      "return": "Return",
+      "view": "View Details"
+    },
+    "empty": "No pending tasks",
+    "emptyDescription": "All tasks assigned to you have been completed",
+    "description": "All tasks and approvals assigned to you",
+    "pendingTasks": "Pending Tasks",
+    "completedTasks": "Completed Tasks",
+    "overdueTasks": "Overdue Tasks",
+    "avgCompletion": "Avg. Completion Time",
+    "priority": {
+      "urgent": "Urgent",
+      "high": "High",
+      "medium": "Medium",
+      "low": "Low"
+    },
+    "noTasks": "No tasks at the moment",
+    "dueDate": "Due Date",
+    "assignedBy": "Assigned By",
+    "takeAction": "Take Action"
+  },
+  "knowledgeBase": {
+    "title": "Knowledge Base",
+    "subtitle": "Reference documents, regulations, and policies",
+    "upload": "Upload Document",
+    "search": "Search Knowledge Base",
+    "categories": {
+      "regulations": "Regulations",
+      "templates": "Templates",
+      "circulars": "Circulars & Decisions",
+      "previousCompetitions": "Previous Competitions",
+      "guides": "User Guides",
+      "all": "All",
+      "guidelines": "Guidelines",
+      "previous": "Previous Competitions"
+    },
+    "document": {
+      "name": "Document Name",
+      "category": "Category",
+      "uploadDate": "Upload Date",
+      "size": "Size",
+      "status": "Status",
+      "indexed": "Indexed",
+      "pending": "Pending Indexing",
+      "failed": "Indexing Failed"
+    },
+    "empty": "No documents in the knowledge base",
+    "emptyDescription": "Start by uploading reference documents to build a comprehensive knowledge base",
+    "description": "Manage AI-indexed documents and regulations",
+    "totalDocuments": "Total Documents",
+    "indexedDocuments": "Indexed Documents",
+    "pendingIndexing": "Pending Indexing",
+    "totalChunks": "Total Chunks",
+    "uploadDocument": "Upload Document",
+    "searchDocuments": "Search Documents",
+    "status": {
+      "indexed": "Indexed",
+      "processing": "Processing",
+      "failed": "Failed"
+    }
+  },
+  "permissions": {
+    "title": "4D Permissions Matrix",
+    "subtitle": "Multi-dimensional permissions management",
+    "dimensions": {
+      "competition": "Competition",
+      "stage": "Stage",
+      "committeeRole": "Committee Role",
+      "userRole": "User Role",
+      "committee": "Committee/Team",
+      "role": "Role"
+    },
+    "roles": {
+      "systemAdmin": "System Admin",
+      "competitionManager": "Competition Manager",
+      "committeeMember": "Committee Member",
+      "reviewer": "Reviewer",
+      "auditor": "Auditor",
+      "committeeChair": "Committee Chair",
+      "secretary": "Secretary",
+      "observer": "Observer"
+    },
+    "actions": {
+      "view": "View",
+      "create": "Create",
+      "edit": "Edit",
+      "delete": "Delete",
+      "approve": "Approve",
+      "export": "Export",
+      "reject": "Reject"
+    },
+    "templates": "Permission Templates",
+    "effectivePermissions": "Effective Permissions",
+    "saveTemplate": "Save as Template",
+    "applyTemplate": "Apply Template",
+    "description": "Manage permissions by competition, stage, committee, and role",
+    "saveMatrix": "Save Matrix",
+    "resetToDefault": "Reset to Default",
+    "bulkGrant": "Bulk Grant",
+    "bulkRevoke": "Bulk Revoke"
+  },
+  "operatorAi": {
+    "title": "AI Settings",
+    "providers": "AI Providers",
+    "addProvider": "Add Provider",
+    "provider": "Provider",
+    "model": "Model",
+    "apiKey": "API Key",
+    "endpoint": "Endpoint",
+    "status": "Status",
+    "active": "Active",
+    "inactive": "Inactive",
+    "test": "Test Connection",
+    "testSuccess": "Connection Successful",
+    "testFailed": "Connection Failed",
+    "ragSettings": "RAG Settings",
+    "vectorDb": "Vector Database",
+    "featureFlags": "Feature Flags"
+  },
+  "notifications": {
+    "title": "Notifications",
+    "markAllRead": "Mark All as Read",
+    "noNotifications": "No notifications",
+    "newTask": "New Task",
+    "approvalRequired": "Approval Required",
+    "slaEscalation": "SLA Escalation",
+    "newInquiry": "New Inquiry",
+    "competitionUpdate": "Competition Update",
+    "preferences": "Notification Preferences",
+    "inApp": "In-App",
+    "email": "Email",
+    "viewAll": "View All",
+    "types": {
+      "task": "New Task",
+      "approval": "Approval Required",
+      "sla_escalation": "SLA Escalation",
+      "inquiry": "New Inquiry",
+      "competition_update": "Competition Update",
+      "system": "System Notification"
+    }
+  },
+  "operator": {
+    "portal": "Operator Portal",
+    "aiSettings": "AI Settings",
+    "systemHealth": "System Health",
+    "consumption": "Consumption Monitoring",
+    "subscriptions": "Plans & Subscriptions",
+    "tenantManagement": "Tenant Management",
+    "featureFlags": "Feature Flags"
   }
 }
