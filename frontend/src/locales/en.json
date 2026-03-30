@@ -664,7 +664,16 @@
       "adminEmail": "Admin Email",
       "adminPhone": "Admin Phone",
       "createdAt": "Created At",
-      "notes": "Notes"
+      "notes": "Notes",
+      "contactEmail": "Contact Email",
+      "contactName": "Contact Name",
+      "contactPhone": "Contact Phone",
+      "databaseName": "Database Name",
+      "logoUrl": "Logo URL",
+      "primaryColor": "Primary Color",
+      "provisionedAt": "Provisioned At",
+      "secondaryColor": "Secondary Color",
+      "subdomain": "Subdomain"
     },
     "placeholders": {
       "nameAr": "Enter entity name in Arabic",
@@ -680,7 +689,12 @@
       "adminEmail": "admin@gov.sa",
       "adminPhone": "+966XXXXXXXXX",
       "notes": "Enter any additional notes",
-      "search": "Search by name or identifier..."
+      "search": "Search by name or identifier...",
+      "contactEmail": "Enter contact email",
+      "contactName": "Enter contact name",
+      "contactPhone": "Enter contact phone",
+      "logoUrl": "Enter logo URL",
+      "subdomain": "Enter subdomain"
     },
     "sections": {
       "basicInfo": "Basic Information",
@@ -688,7 +702,8 @@
       "subscriptionInfo": "Subscription Information",
       "adminInfo": "Admin Details",
       "purchaseOrders": "Purchase Orders",
-      "notes": "Notes"
+      "notes": "Notes",
+      "branding": "Branding"
     },
     "statuses": {
       "active": "Active",
@@ -702,14 +717,20 @@
       "activate": "Activate",
       "suspend": "Suspend",
       "backToList": "Back to List",
-      "viewDetails": "View Details"
+      "viewDetails": "View Details",
+      "createFirst": "Create First Tenant",
+      "createNew": "Create New Tenant",
+      "provision": "Provision Tenant"
     },
     "validation": {
       "nameArRequired": "Arabic name is required",
       "nameEnRequired": "English name is required",
       "identifierRequired": "Identifier is required",
       "emailInvalid": "Invalid email address",
-      "maxUsersRequired": "Max users is required"
+      "maxUsersRequired": "Max users is required",
+      "identifierFormat": "Identifier must contain only lowercase letters, numbers, and hyphens",
+      "subdomainFormat": "Subdomain must contain only lowercase letters, numbers, and hyphens",
+      "subdomainRequired": "Subdomain is required"
     },
     "messages": {
       "createSuccess": "Government entity added successfully",
@@ -717,7 +738,8 @@
       "statusChangeSuccess": "Entity status changed successfully",
       "noTenants": "No government entities registered",
       "noTenantsDesc": "Start by adding a new government entity",
-      "noPurchaseOrders": "No purchase orders for this entity"
+      "noPurchaseOrders": "No purchase orders for this entity",
+      "noTransitions": "No transitions available"
     },
     "labels": {
       "totalTenants": "Total Entities",
@@ -741,6 +763,31 @@
       "featureFlagsDesc": "Manage available features and modules for this entity",
       "branding": "Visual Identity",
       "brandingDesc": "Customize logo and brand colors for this entity"
+    },
+    "dialogs": {
+      "statusChangeMessage": "Are you sure you want to change this tenant's status?",
+      "statusChangeTitle": "Change Tenant Status"
+    },
+    "expiry": {
+      "days": "days",
+      "expired": "Expired"
+    },
+    "hints": {
+      "identifier": "Unique identifier for the tenant (cannot be changed later)"
+    },
+    "pagination": {
+      "of": "of",
+      "showing": "Showing"
+    },
+    "tableHeaders": {
+      "actions": "Actions",
+      "createdAt": "Created At",
+      "identifier": "Identifier",
+      "name": "Name",
+      "provisioned": "Provisioned",
+      "status": "Status",
+      "subdomain": "Subdomain",
+      "subscriptionExpiry": "Subscription Expiry"
     }
   },
   "purchaseOrders": {
@@ -809,7 +856,9 @@
       "create": "Create Purchase Order",
       "backToList": "Back to List",
       "uploadDocument": "Upload Document",
-      "changeStatus": "Change Status"
+      "changeStatus": "Change Status",
+      "createFirst": "Create First Purchase Order",
+      "createNew": "Create New Purchase Order"
     },
     "validation": {
       "tenantRequired": "Government entity is required",
@@ -823,7 +872,8 @@
       "months": "months",
       "viewDocument": "View Document",
       "noDocument": "No document uploaded yet",
-      "statusTransitions": "Change Status"
+      "statusTransitions": "Change Status",
+      "total": "Total"
     },
     "dialogs": {
       "statusChangeTitle": "Confirm Status Change",
@@ -834,7 +884,30 @@
       "statusChangeSuccess": "Purchase order status changed successfully",
       "uploadSuccess": "Document uploaded successfully",
       "noPurchaseOrders": "No purchase orders",
-      "noPurchaseOrdersDesc": "Start by creating a new purchase order"
+      "noPurchaseOrdersDesc": "Start by creating a new purchase order",
+      "noOrders": "No Purchase Orders",
+      "noOrdersDesc": "No purchase orders have been created yet. Create your first purchase order."
+    },
+    "expiry": {
+      "days": "days",
+      "expired": "Expired"
+    },
+    "filters": {
+      "allTenants": "All Tenants"
+    },
+    "pagination": {
+      "of": "of",
+      "showing": "Showing"
+    },
+    "tableHeaders": {
+      "actions": "Actions",
+      "amount": "Amount",
+      "daysRemaining": "Days Remaining",
+      "plan": "Subscription Plan",
+      "poNumber": "PO Number",
+      "status": "Status",
+      "subscriptionEnd": "Subscription End",
+      "tenant": "Tenant"
     }
   },
   "renewalAlerts": {
@@ -1118,7 +1191,8 @@
     "sections": {
       "logo": "Entity Logo",
       "colors": "Brand Colors",
-      "preview": "Live Preview"
+      "preview": "Live Preview",
+      "palette": "Color Palette"
     },
     "logo": {
       "title": "Entity Logo",
@@ -1150,7 +1224,9 @@
       "buttonText": "Primary Action",
       "menuItem": "Menu Item",
       "activeItem": "Active Item",
-      "entityName": "Entity Name"
+      "entityName": "Entity Name",
+      "platform": "Platform Preview",
+      "secondary": "Secondary"
     },
     "messages": {
       "saveSuccess": "Visual identity updated successfully",
@@ -1163,7 +1239,25 @@
     "actions": {
       "save": "Save Changes",
       "reset": "Reset to Defaults",
-      "preview": "Preview"
+      "preview": "Preview",
+      "removeLogo": "Remove Logo",
+      "resetDefaults": "Reset Defaults",
+      "selectFile": "Select File"
+    },
+    "descriptions": {
+      "primaryColor": "Primary color used for main UI elements",
+      "secondaryColor": "Secondary color used for supporting elements"
+    },
+    "fields": {
+      "primaryColor": "Primary Color",
+      "secondaryColor": "Secondary Color"
+    },
+    "labels": {
+      "currentLogo": "Current Logo",
+      "dragDrop": "Drag and drop file here",
+      "fileRequirements": "PNG or SVG, max 2MB",
+      "orClickToUpload": "or click to upload",
+      "uploading": "Uploading..."
     }
   },
   "committees": {

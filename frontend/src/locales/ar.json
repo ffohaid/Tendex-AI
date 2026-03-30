@@ -664,7 +664,16 @@
       "adminEmail": "بريد المسؤول",
       "adminPhone": "هاتف المسؤول",
       "createdAt": "تاريخ الإنشاء",
-      "notes": "ملاحظات"
+      "notes": "ملاحظات",
+      "contactEmail": "البريد الإلكتروني للتواصل",
+      "contactName": "اسم جهة الاتصال",
+      "contactPhone": "رقم الهاتف",
+      "databaseName": "اسم قاعدة البيانات",
+      "logoUrl": "رابط الشعار",
+      "primaryColor": "اللون الأساسي",
+      "provisionedAt": "تاريخ التفعيل",
+      "secondaryColor": "اللون الثانوي",
+      "subdomain": "النطاق الفرعي"
     },
     "placeholders": {
       "nameAr": "أدخل اسم الجهة بالعربية",
@@ -680,7 +689,12 @@
       "adminEmail": "admin@gov.sa",
       "adminPhone": "+966XXXXXXXXX",
       "notes": "أدخل أي ملاحظات إضافية",
-      "search": "البحث بالاسم أو الرقم التعريفي..."
+      "search": "البحث بالاسم أو الرقم التعريفي...",
+      "contactEmail": "أدخل البريد الإلكتروني",
+      "contactName": "أدخل اسم جهة الاتصال",
+      "contactPhone": "أدخل رقم الهاتف",
+      "logoUrl": "أدخل رابط الشعار",
+      "subdomain": "أدخل النطاق الفرعي"
     },
     "sections": {
       "basicInfo": "المعلومات الأساسية",
@@ -688,7 +702,8 @@
       "subscriptionInfo": "معلومات الاشتراك",
       "adminInfo": "بيانات المسؤول",
       "purchaseOrders": "أوامر التعميد",
-      "notes": "ملاحظات"
+      "notes": "ملاحظات",
+      "branding": "العلامة التجارية"
     },
     "statuses": {
       "active": "نشطة",
@@ -702,14 +717,20 @@
       "activate": "تفعيل",
       "suspend": "تعليق",
       "backToList": "العودة للقائمة",
-      "viewDetails": "عرض التفاصيل"
+      "viewDetails": "عرض التفاصيل",
+      "createFirst": "إنشاء أول جهة",
+      "createNew": "إنشاء جهة جديدة",
+      "provision": "تفعيل الجهة"
     },
     "validation": {
       "nameArRequired": "اسم الجهة بالعربية مطلوب",
       "nameEnRequired": "اسم الجهة بالإنجليزية مطلوب",
       "identifierRequired": "الرقم التعريفي مطلوب",
       "emailInvalid": "البريد الإلكتروني غير صحيح",
-      "maxUsersRequired": "الحد الأقصى للمستخدمين مطلوب"
+      "maxUsersRequired": "الحد الأقصى للمستخدمين مطلوب",
+      "identifierFormat": "المعرّف يجب أن يحتوي على أحرف إنجليزية صغيرة وأرقام وشرطات فقط",
+      "subdomainFormat": "النطاق الفرعي يجب أن يحتوي على أحرف إنجليزية صغيرة وأرقام وشرطات فقط",
+      "subdomainRequired": "النطاق الفرعي مطلوب"
     },
     "messages": {
       "createSuccess": "تم إضافة الجهة الحكومية بنجاح",
@@ -717,7 +738,8 @@
       "statusChangeSuccess": "تم تغيير حالة الجهة بنجاح",
       "noTenants": "لا توجد جهات حكومية مسجلة",
       "noTenantsDesc": "ابدأ بإضافة جهة حكومية جديدة",
-      "noPurchaseOrders": "لا توجد أوامر تعميد لهذه الجهة"
+      "noPurchaseOrders": "لا توجد أوامر تعميد لهذه الجهة",
+      "noTransitions": "لا توجد انتقالات متاحة"
     },
     "labels": {
       "totalTenants": "إجمالي الجهات",
@@ -741,6 +763,31 @@
       "featureFlagsDesc": "إدارة الميزات والوحدات المتاحة لهذه الجهة",
       "branding": "الهوية البصرية",
       "brandingDesc": "تخصيص الشعار وألوان العلامة التجارية لهذه الجهة"
+    },
+    "dialogs": {
+      "statusChangeMessage": "هل أنت متأكد من تغيير حالة هذه الجهة؟",
+      "statusChangeTitle": "تغيير حالة الجهة"
+    },
+    "expiry": {
+      "days": "يوم",
+      "expired": "منتهي"
+    },
+    "hints": {
+      "identifier": "معرّف فريد للجهة (لا يمكن تغييره لاحقاً)"
+    },
+    "pagination": {
+      "of": "من",
+      "showing": "عرض"
+    },
+    "tableHeaders": {
+      "actions": "الإجراءات",
+      "createdAt": "تاريخ الإنشاء",
+      "identifier": "المعرّف",
+      "name": "الاسم",
+      "provisioned": "مُفعّل",
+      "status": "الحالة",
+      "subdomain": "النطاق الفرعي",
+      "subscriptionExpiry": "انتهاء الاشتراك"
     }
   },
   "purchaseOrders": {
@@ -809,7 +856,9 @@
       "create": "إنشاء أمر تعميد",
       "backToList": "العودة للقائمة",
       "uploadDocument": "رفع المستند",
-      "changeStatus": "تغيير الحالة"
+      "changeStatus": "تغيير الحالة",
+      "createFirst": "إنشاء أول أمر تعميد",
+      "createNew": "إنشاء أمر تعميد جديد"
     },
     "validation": {
       "tenantRequired": "الجهة الحكومية مطلوبة",
@@ -823,7 +872,8 @@
       "months": "شهر",
       "viewDocument": "عرض المستند",
       "noDocument": "لم يتم رفع مستند بعد",
-      "statusTransitions": "تغيير الحالة"
+      "statusTransitions": "تغيير الحالة",
+      "total": "الإجمالي"
     },
     "dialogs": {
       "statusChangeTitle": "تأكيد تغيير الحالة",
@@ -834,7 +884,30 @@
       "statusChangeSuccess": "تم تغيير حالة أمر التعميد بنجاح",
       "uploadSuccess": "تم رفع المستند بنجاح",
       "noPurchaseOrders": "لا توجد أوامر تعميد",
-      "noPurchaseOrdersDesc": "ابدأ بإنشاء أمر تعميد جديد"
+      "noPurchaseOrdersDesc": "ابدأ بإنشاء أمر تعميد جديد",
+      "noOrders": "لا توجد أوامر تعميد",
+      "noOrdersDesc": "لم يتم إنشاء أي أوامر تعميد بعد. قم بإنشاء أول أمر تعميد."
+    },
+    "expiry": {
+      "days": "يوم",
+      "expired": "منتهي"
+    },
+    "filters": {
+      "allTenants": "جميع الجهات"
+    },
+    "pagination": {
+      "of": "من",
+      "showing": "عرض"
+    },
+    "tableHeaders": {
+      "actions": "الإجراءات",
+      "amount": "المبلغ",
+      "daysRemaining": "الأيام المتبقية",
+      "plan": "خطة الاشتراك",
+      "poNumber": "رقم أمر التعميد",
+      "status": "الحالة",
+      "subscriptionEnd": "نهاية الاشتراك",
+      "tenant": "الجهة"
     }
   },
   "renewalAlerts": {
@@ -1118,7 +1191,8 @@
     "sections": {
       "logo": "شعار الجهة",
       "colors": "ألوان العلامة التجارية",
-      "preview": "المعاينة الحية"
+      "preview": "المعاينة الحية",
+      "palette": "لوحة الألوان"
     },
     "logo": {
       "title": "شعار الجهة",
@@ -1150,7 +1224,9 @@
       "buttonText": "إجراء أساسي",
       "menuItem": "عنصر قائمة",
       "activeItem": "عنصر نشط",
-      "entityName": "اسم الجهة"
+      "entityName": "اسم الجهة",
+      "platform": "معاينة المنصة",
+      "secondary": "ثانوي"
     },
     "messages": {
       "saveSuccess": "تم تحديث الهوية البصرية بنجاح",
@@ -1163,7 +1239,25 @@
     "actions": {
       "save": "حفظ التغييرات",
       "reset": "إعادة تعيين",
-      "preview": "معاينة"
+      "preview": "معاينة",
+      "removeLogo": "إزالة الشعار",
+      "resetDefaults": "إعادة الإعدادات الافتراضية",
+      "selectFile": "اختيار ملف"
+    },
+    "descriptions": {
+      "primaryColor": "اللون الأساسي المستخدم في العناصر الرئيسية",
+      "secondaryColor": "اللون الثانوي المستخدم في العناصر المساعدة"
+    },
+    "fields": {
+      "primaryColor": "اللون الأساسي",
+      "secondaryColor": "اللون الثانوي"
+    },
+    "labels": {
+      "currentLogo": "الشعار الحالي",
+      "dragDrop": "اسحب وأفلت الملف هنا",
+      "fileRequirements": "PNG أو SVG، الحد الأقصى 2 ميجابايت",
+      "orClickToUpload": "أو انقر للرفع",
+      "uploading": "جارٍ الرفع..."
     }
   },
   "committees": {
