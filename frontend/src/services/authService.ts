@@ -21,11 +21,20 @@ const AUTH_BASE = '/v1/auth'
 /**
  * Authenticate user with email and password.
  * If MFA is required, response will have mfaRequired=true and a sessionId.
+ *
+ * NOTE: Explicitly passes X-Tenant-Id header from the request payload
+ * because the global interceptor reads from localStorage which may not
+ * be populated yet during the first login after clearing auth state.
  */
 export async function login(payload: LoginRequest): Promise<AuthTokenResponse> {
   const { data } = await httpClient.post<AuthTokenResponse>(
     `${AUTH_BASE}/login`,
     payload,
+    {
+      headers: {
+        'X-Tenant-Id': payload.tenantId,
+      },
+    },
   )
   return data
 }
@@ -39,6 +48,11 @@ export async function verifyMfa(
   const { data } = await httpClient.post<MfaVerifyResponse>(
     `${AUTH_BASE}/mfa/verify`,
     payload,
+    {
+      headers: {
+        'X-Tenant-Id': payload.tenantId,
+      },
+    },
   )
   return data
 }
@@ -52,6 +66,11 @@ export async function refreshToken(
   const { data } = await httpClient.post<AuthTokenResponse>(
     `${AUTH_BASE}/refresh-token`,
     payload,
+    {
+      headers: {
+        'X-Tenant-Id': payload.tenantId,
+      },
+    },
   )
   return data
 }
