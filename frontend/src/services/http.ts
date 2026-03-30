@@ -5,6 +5,7 @@
  * - Reads base URL from VITE_API_BASE_URL environment variable.
  * - Automatically attaches Authorization header when a token exists.
  * - Handles 401 responses by attempting a silent token refresh.
+ * - Only redirects to login when refresh token is truly invalid/expired.
  * - Tenant-aware headers (X-Tenant-Id).
  * - Generic typed HTTP helpers (httpGet, httpPost, httpPut, httpPatch, httpDelete).
  */
@@ -62,6 +63,23 @@ function processQueue(error: unknown): void {
   failedQueue = []
 }
 
+/**
+ * Redirect to login page and clear auth state.
+ * Uses Vue Router navigation when available, falls back to window.location.
+ */
+function redirectToLogin(): void {
+  localStorage.removeItem('access_token')
+  localStorage.removeItem('refresh_token')
+  localStorage.removeItem('tenant_id')
+  localStorage.removeItem('user')
+
+  /* Use soft navigation to avoid full page reload */
+  const currentPath = window.location.pathname
+  if (currentPath !== '/auth/login') {
+    window.location.href = '/auth/login'
+  }
+}
+
 httpClient.interceptors.response.use(
   (response: AxiosResponse) => response,
   async (error: AxiosError) => {
@@ -69,68 +87,101 @@ httpClient.interceptors.response.use(
       _retry?: boolean
     }
 
+    /* ---------------------------------------------------------------- */
+    /*  Handle network errors and non-401 errors gracefully             */
+    /* ---------------------------------------------------------------- */
+
+    /* If there's no response (network error, timeout, etc.), just reject */
+    if (!error.response) {
+      return Promise.reject(error)
+    }
+
+    /* For non-401 errors (404, 500, etc.), just reject without logout */
+    if (error.response.status !== 401) {
+      return Promise.reject(error)
+    }
+
+    /* ---------------------------------------------------------------- */
+    /*  Handle 401 Unauthorized                                         */
+    /* ---------------------------------------------------------------- */
+
     /* Skip refresh for auth endpoints themselves */
     const isAuthEndpoint =
       originalRequest?.url?.includes('/auth/login') ||
       originalRequest?.url?.includes('/auth/refresh-token')
 
-    if (
-      error.response?.status === 401 &&
-      !originalRequest._retry &&
-      !isAuthEndpoint
-    ) {
-      if (isRefreshing) {
-        return new Promise<AxiosResponse>((resolve, reject) => {
-          failedQueue.push({ resolve, reject, config: originalRequest })
-        })
-      }
-
-      originalRequest._retry = true
-      isRefreshing = true
-
-      try {
-        const refreshToken = localStorage.getItem('refresh_token')
-        const tenantId = localStorage.getItem('tenant_id')
-
-        if (!refreshToken || !tenantId) {
-          throw new Error('No refresh token available')
-        }
-
-        const { data } = await axios.post(
-          `${API_BASE_URL}/v1/auth/refresh-token`,
-          { refreshToken, tenantId },
-        )
-
-        localStorage.setItem('access_token', data.accessToken)
-        localStorage.setItem('refresh_token', data.refreshToken)
-
-        /* Retry queued requests */
-        for (const { resolve, config } of failedQueue) {
-          config.headers.Authorization = `Bearer ${data.accessToken}`
-          const retryResponse = await httpClient(config)
-          resolve(retryResponse)
-        }
-        failedQueue = []
-
-        /* Retry original request */
-        originalRequest.headers.Authorization = `Bearer ${data.accessToken}`
-        return httpClient(originalRequest)
-      } catch (refreshError) {
-        processQueue(refreshError)
-
-        /* Clear auth state and redirect to login */
-        localStorage.removeItem('access_token')
-        localStorage.removeItem('refresh_token')
-        localStorage.removeItem('tenant_id')
-        localStorage.removeItem('user')
-        window.location.href = '/auth/login'
-        return Promise.reject(refreshError)
-      } finally {
-        isRefreshing = false
-      }
+    if (isAuthEndpoint) {
+      return Promise.reject(error)
     }
 
-    return Promise.reject(error)
+    /* Prevent infinite retry loops */
+    if (originalRequest._retry) {
+      return Promise.reject(error)
+    }
+
+    /* Check if we have a refresh token before attempting refresh */
+    const refreshToken = localStorage.getItem('refresh_token')
+    const tenantId = localStorage.getItem('tenant_id')
+
+    if (!refreshToken || !tenantId) {
+      /* No refresh token available — redirect to login */
+      redirectToLogin()
+      return Promise.reject(error)
+    }
+
+    if (isRefreshing) {
+      return new Promise<AxiosResponse>((resolve, reject) => {
+        failedQueue.push({ resolve, reject, config: originalRequest })
+      })
+    }
+
+    originalRequest._retry = true
+    isRefreshing = true
+
+    try {
+      const { data } = await axios.post(
+        `${API_BASE_URL}/v1/auth/refresh-token`,
+        { refreshToken, tenantId },
+      )
+
+      localStorage.setItem('access_token', data.accessToken)
+      localStorage.setItem('refresh_token', data.refreshToken)
+
+      /* Retry queued requests */
+      for (const { resolve, config } of failedQueue) {
+        config.headers.Authorization = `Bearer ${data.accessToken}`
+        const retryResponse = await httpClient(config)
+        resolve(retryResponse)
+      }
+      failedQueue = []
+
+      /* Retry original request */
+      originalRequest.headers.Authorization = `Bearer ${data.accessToken}`
+      return httpClient(originalRequest)
+    } catch (refreshError) {
+      processQueue(refreshError)
+
+      /*
+       * Only redirect to login if the refresh endpoint itself returned
+       * 401 or 403, meaning the refresh token is truly invalid/expired.
+       * For other errors (network, 500, 404), just reject without logout
+       * to prevent unnecessary session loss.
+       */
+      const refreshAxiosError = refreshError as AxiosError
+      const refreshStatus = refreshAxiosError?.response?.status
+
+      if (
+        refreshStatus === 401 ||
+        refreshStatus === 403 ||
+        refreshStatus === undefined /* no response = likely network error on refresh */
+      ) {
+        redirectToLogin()
+      }
+
+      return Promise.reject(refreshError)
+    } finally {
+      isRefreshing = false
+    }
   },
 )
 
