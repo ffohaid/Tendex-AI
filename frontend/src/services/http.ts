@@ -142,6 +142,12 @@ httpClient.interceptors.response.use(
       const { data } = await axios.post(
         `${API_BASE_URL}/v1/auth/refresh-token`,
         { refreshToken, tenantId },
+        {
+          headers: {
+            'Content-Type': 'application/json',
+            'X-Tenant-Id': tenantId,
+          },
+        },
       )
 
       localStorage.setItem('access_token', data.accessToken)
