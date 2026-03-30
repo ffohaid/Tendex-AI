@@ -5,27 +5,31 @@ using Microsoft.IdentityModel.JsonWebTokens;
 using Microsoft.IdentityModel.Tokens;
 using TendexAI.Application.Common.Interfaces.Identity;
 using TendexAI.Domain.Entities.Identity;
+using TendexAI.Infrastructure.Security;
 
 namespace TendexAI.Infrastructure.Services.Identity;
 
 /// <summary>
 /// Service for generating and validating JWT access tokens and refresh tokens.
+/// Uses the same RSA signing key as OpenIddict to ensure token validation consistency.
 /// Access Token validity: 60 minutes. Refresh Token validity: 8 hours.
 /// </summary>
 public sealed class TokenService : ITokenService
 {
     private readonly IConfiguration _configuration;
+    private readonly OpenIddictKeyManager _keyManager;
 
-    public TokenService(IConfiguration configuration)
+    public TokenService(IConfiguration configuration, OpenIddictKeyManager keyManager)
     {
         _configuration = configuration;
+        _keyManager = keyManager;
     }
 
     /// <inheritdoc />
     public string GenerateAccessToken(ApplicationUser user, IEnumerable<string> roles, IEnumerable<string> permissions, Guid tenantId)
     {
-        var signingKey = GetSigningKey();
-        var credentials = new SigningCredentials(signingKey, SecurityAlgorithms.HmacSha256);
+        var signingKey = _keyManager.GetOrCreateSigningKey();
+        var credentials = new SigningCredentials(signingKey, SecurityAlgorithms.RsaSha256);
 
         var claims = new List<Claim>
         {
@@ -81,7 +85,7 @@ public sealed class TokenService : ITokenService
     /// <inheritdoc />
     public ClaimsPrincipal? ValidateAccessToken(string token)
     {
-        var signingKey = GetSigningKey();
+        var signingKey = _keyManager.GetOrCreateSigningKey();
         var issuer = _configuration["Authentication:Issuer"] ?? "https://tendex-ai.com";
         var audience = _configuration["Authentication:Audience"] ?? "tendex-ai-client";
 
@@ -111,17 +115,5 @@ public sealed class TokenService : ITokenService
                        ?? principal?.FindFirst(ClaimTypes.NameIdentifier)?.Value;
 
         return subClaim is not null && Guid.TryParse(subClaim, out var userId) ? userId : null;
-    }
-
-    private SymmetricSecurityKey GetSigningKey()
-    {
-        var keyString = _configuration["Authentication:SigningKey"]
-            ?? throw new InvalidOperationException("Authentication:SigningKey is not configured.");
-        var keyBytes = System.Text.Encoding.UTF8.GetBytes(keyString);
-
-        if (keyBytes.Length < 32)
-            throw new InvalidOperationException("Authentication:SigningKey must be at least 256 bits (32 bytes).");
-
-        return new SymmetricSecurityKey(keyBytes);
     }
 }

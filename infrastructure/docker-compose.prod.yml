@@ -75,11 +75,20 @@ services:
       ASPNETCORE_ENVIRONMENT: ${ASPNETCORE_ENVIRONMENT:-Production}
       ASPNETCORE_URLS: "http://+:8080"
       ConnectionStrings__DefaultConnection: ${CONNECTION_STRING}
+      ConnectionStrings__MasterPlatform: ${CONNECTION_STRING}
       ConnectionStrings__Redis: ${REDIS_CONNECTION}
       ConnectionStrings__RabbitMQ: ${RABBITMQ_CONNECTION}
+      RabbitMQ__UserName: ${RABBITMQ_USER}
+      RabbitMQ__Password: ${RABBITMQ_PASSWORD}
+      RabbitMQ__HostName: tendex-rabbitmq
+      RabbitMQ__Port: "5672"
+      RabbitMQ__VirtualHost: ${RABBITMQ_VHOST:-tendex}
       Jwt__SecretKey: ${JWT_SECRET_KEY}
       Jwt__Issuer: ${JWT_ISSUER}
       Jwt__Audience: ${JWT_AUDIENCE}
+      Authentication__SigningKey: ${JWT_SECRET_KEY}
+      Authentication__Issuer: ${JWT_ISSUER}
+      Authentication__Audience: ${JWT_AUDIENCE}
       MinIO__Endpoint: ${MINIO_ENDPOINT}
       MinIO__AccessKey: ${MINIO_ACCESS_KEY}
       MinIO__SecretKey: ${MINIO_SECRET_KEY}

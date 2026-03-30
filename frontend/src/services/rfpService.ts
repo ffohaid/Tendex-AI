@@ -1,12 +1,13 @@
 /**
- * RFP API Service.
+ * RFP (Competition) API Service.
  *
- * Provides methods to interact with the backend RFP APIs (TASK-301).
+ * Provides methods to interact with the backend Competition APIs.
  * All data is fetched dynamically — no mock/hardcoded arrays allowed.
  *
- * NOTE: API base URL is configured via environment variables.
- * Until the backend is deployed, calls will gracefully degrade.
+ * Uses the centralized httpClient (Axios) for automatic auth token
+ * and tenant ID injection.
  */
+import httpClient, { httpGet, httpPost, httpPut, httpPatch, httpDelete } from '@/services/http'
 import type {
   RfpFormData,
   RfpListItem,
@@ -15,100 +16,76 @@ import type {
   RfpAttachment,
 } from '@/types/rfp'
 
-const API_BASE = import.meta.env.VITE_API_BASE_URL || '/api'
+const BASE_URL = '/v1/competitions'
 
-/**
- * Generic fetch wrapper with error handling.
- */
-async function apiFetch<T>(
-  endpoint: string,
-  options: RequestInit = {},
-): Promise<ApiResponse<T>> {
-  const url = `${API_BASE}${endpoint}`
-  const headers: Record<string, string> = {
-    'Content-Type': 'application/json',
-    'Accept-Language': document.documentElement.lang || 'ar',
-    ...((options.headers as Record<string, string>) || {}),
-  }
+/* ------------------------------------------------------------------ */
+/*  Helper: Wrap httpClient responses into ApiResponse format          */
+/* ------------------------------------------------------------------ */
 
+async function apiCall<T>(fn: () => Promise<T>): Promise<ApiResponse<T>> {
   try {
-    const response = await fetch(url, { ...options, headers })
-
-    if (!response.ok) {
-      const errorBody = await response.json().catch(() => ({}))
-      return {
-        data: null as unknown as T,
-        success: false,
-        message: errorBody.message || `خطأ في الاتصال بالخادم (${response.status})`,
-        errors: errorBody.errors || [],
-      }
-    }
-
-    const data = await response.json()
+    const data = await fn()
     return {
-      data: data.data ?? data,
+      data,
       success: true,
-      message: data.message || '',
+      message: '',
       errors: [],
     }
-  } catch (error) {
+  } catch (error: unknown) {
+    const axiosError = error as { response?: { data?: { message?: string; errors?: string[] }; status?: number }; message?: string }
+    const errorBody = axiosError?.response?.data
     return {
       data: null as unknown as T,
       success: false,
-      message: 'تعذر الاتصال بالخادم. يرجى التحقق من اتصال الإنترنت.',
-      errors: [(error as Error).message],
+      message: errorBody?.message || `خطأ في الاتصال بالخادم (${axiosError?.response?.status || 'unknown'})`,
+      errors: errorBody?.errors || [axiosError?.message || 'Unknown error'],
     }
   }
 }
 
 /* ------------------------------------------------------------------ */
-/*  RFP CRUD Operations                                               */
+/*  Competition CRUD Operations                                       */
 /* ------------------------------------------------------------------ */
 
-/** Fetch paginated list of RFPs */
+/** Fetch paginated list of competitions (RFPs) */
 export async function fetchRfpList(params: {
   page?: number
   pageSize?: number
   status?: string
   search?: string
 }): Promise<ApiResponse<PaginatedResponse<RfpListItem>>> {
-  const query = new URLSearchParams()
-  if (params.page) query.set('pageNumber', String(params.page))
-  if (params.pageSize) query.set('pageSize', String(params.pageSize))
-  if (params.status) query.set('status', params.status)
-  if (params.search) query.set('search', params.search)
-
-  return apiFetch<PaginatedResponse<RfpListItem>>(
-    `/rfp?${query.toString()}`,
+  return apiCall(() =>
+    httpGet<PaginatedResponse<RfpListItem>>(BASE_URL, {
+      params: {
+        pageNumber: params.page,
+        pageSize: params.pageSize,
+        status: params.status,
+        search: params.search,
+      },
+    }),
   )
 }
 
-/** Fetch a single RFP by ID */
+/** Fetch a single competition by ID */
 export async function fetchRfpById(
   id: string,
 ): Promise<ApiResponse<RfpFormData>> {
-  return apiFetch<RfpFormData>(`/rfp/${id}`)
+  return apiCall(() => httpGet<RfpFormData>(`${BASE_URL}/${id}`))
 }
 
-/** Create a new RFP (returns the created RFP with ID) */
+/** Create a new competition (RFP) */
 export async function createRfp(
   data: Partial<RfpFormData>,
 ): Promise<ApiResponse<RfpFormData>> {
-  return apiFetch<RfpFormData>('/rfp', {
-    method: 'POST',
-    body: JSON.stringify(data),
-  })
+  return apiCall(() => httpPost<RfpFormData>(BASE_URL, data))
 }
 
-/** Update an existing RFP */
+/** Update an existing competition */
 export async function updateRfp(
   id: string,
   data: Partial<RfpFormData>,
 ): Promise<ApiResponse<RfpFormData>> {
-  return apiFetch<RfpFormData>(`/rfp/${id}`, {
-    method: 'PUT',
-    body: JSON.stringify(data),
-  })
+  return apiCall(() => httpPut<RfpFormData>(`${BASE_URL}/${id}`, data))
 }
 
 /** Auto-save draft (lightweight PATCH) */
@@ -116,35 +93,32 @@ export async function autoSaveDraft(
   id: string,
   data: Partial<RfpFormData>,
 ): Promise<ApiResponse<{ savedAt: string }>> {
-  return apiFetch<{ savedAt: string }>(`/rfp/${id}/auto-save`, {
-    method: 'PATCH',
-    body: JSON.stringify(data),
-  })
+  return apiCall(() =>
+    httpPatch<{ savedAt: string }>(`${BASE_URL}/${id}/auto-save`, data),
+  )
 }
 
-/** Submit RFP for approval */
+/** Submit competition for approval */
 export async function submitRfpForApproval(
   id: string,
 ): Promise<ApiResponse<RfpFormData>> {
-  return apiFetch<RfpFormData>(`/rfp/${id}/submit`, {
-    method: 'POST',
-  })
+  return apiCall(() =>
+    httpPost<RfpFormData>(`${BASE_URL}/${id}/submit`),
+  )
 }
 
-/** Delete a draft RFP */
+/** Delete a draft competition */
 export async function deleteRfp(
   id: string,
 ): Promise<ApiResponse<void>> {
-  return apiFetch<void>(`/rfp/${id}`, {
-    method: 'DELETE',
-  })
+  return apiCall(() => httpDelete<void>(`${BASE_URL}/${id}`))
 }
 
 /* ------------------------------------------------------------------ */
 /*  Attachment Operations                                             */
 /* ------------------------------------------------------------------ */
 
-/** Upload an attachment for an RFP */
+/** Upload an attachment for a competition */
 export async function uploadAttachment(
   rfpId: string,
   file: File,
@@ -154,36 +128,18 @@ export async function uploadAttachment(
   formData.append('file', file)
   formData.append('isRequired', String(isRequired))
 
-  const url = `${API_BASE}/rfp/${rfpId}/attachments`
-  try {
-    const response = await fetch(url, {
-      method: 'POST',
-      body: formData,
-      headers: {
-        'Accept-Language': document.documentElement.lang || 'ar',
+  return apiCall(async () => {
+    const { data } = await httpClient.post<RfpAttachment>(
+      `${BASE_URL}/${rfpId}/attachments`,
+      formData,
+      {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
       },
-    })
-
-    if (!response.ok) {
-      const errorBody = await response.json().catch(() => ({}))
-      return {
-        data: null as unknown as RfpAttachment,
-        success: false,
-        message: errorBody.message || 'فشل رفع المرفق',
-        errors: errorBody.errors || [],
-      }
-    }
-
-    const data = await response.json()
-    return { data, success: true, message: '', errors: [] }
-  } catch (error) {
-    return {
-      data: null as unknown as RfpAttachment,
-      success: false,
-      message: 'تعذر رفع المرفق. يرجى المحاولة مرة أخرى.',
-      errors: [(error as Error).message],
-    }
-  }
+    )
+    return data
+  })
 }
 
 /** Delete an attachment */
@@ -191,9 +147,9 @@ export async function deleteAttachment(
   rfpId: string,
   attachmentId: string,
 ): Promise<ApiResponse<void>> {
-  return apiFetch<void>(`/rfp/${rfpId}/attachments/${attachmentId}`, {
-    method: 'DELETE',
-  })
+  return apiCall(() =>
+    httpDelete<void>(`${BASE_URL}/${rfpId}/attachments/${attachmentId}`),
+  )
 }
 
 /* ------------------------------------------------------------------ */
@@ -204,14 +160,18 @@ export async function deleteAttachment(
 export async function fetchTemplates(): Promise<
   ApiResponse<{ id: string; name: string; description: string }[]>
 > {
-  return apiFetch('/rfp/templates')
+  return apiCall(() =>
+    httpGet<{ id: string; name: string; description: string }[]>(
+      `${BASE_URL}/templates`,
+    ),
+  )
 }
 
-/** Clone an existing RFP */
+/** Clone an existing competition */
 export async function cloneRfp(
   sourceId: string,
 ): Promise<ApiResponse<RfpFormData>> {
-  return apiFetch<RfpFormData>(`/rfp/${sourceId}/clone`, {
-    method: 'POST',
-  })
+  return apiCall(() =>
+    httpPost<RfpFormData>(`${BASE_URL}/${sourceId}/clone`),
+  )
 }

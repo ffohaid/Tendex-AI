@@ -1,11 +1,20 @@
 /**
  * Evaluation API service.
+ *
  * All data MUST be fetched from backend APIs.
  * NO mock/hardcoded data in Vue components.
  *
- * Note: API base URL is configured via environment variables.
- * This service provides typed wrappers around fetch calls.
+ * Uses the centralized httpClient (Axios) for automatic auth token
+ * and tenant ID injection.
+ *
+ * Backend endpoints:
+ * - Technical: /api/v1/competitions/{competitionId}/technical-evaluation
+ * - Financial: /api/v1/competitions/{competitionId}/financial-evaluation
+ * - AI Analysis: /api/v1/competitions/{competitionId}/technical-evaluation/ai-analysis
+ * - Minutes: /api/v1/competitions/{competitionId}/minutes
+ * - Award: /api/v1/competitions/{competitionId}/award
  */
+import { httpGet, httpPost, httpPut } from '@/services/http'
 import type {
   Committee,
   CompetitionEvaluation,
@@ -20,40 +29,18 @@ import type {
   VarianceAlert,
 } from '@/types/evaluation'
 
-const API_BASE = import.meta.env.VITE_API_BASE_URL ?? '/api'
-
-/**
- * Generic fetch wrapper with error handling.
- */
-async function apiFetch<T>(endpoint: string, options?: RequestInit): Promise<T> {
-  const url = `${API_BASE}${endpoint}`
-  const response = await fetch(url, {
-    headers: {
-      'Content-Type': 'application/json',
-      'Accept-Language': document.documentElement.lang || 'ar',
-      ...options?.headers,
-    },
-    ...options,
-  })
-
-  if (!response.ok) {
-    const errorBody = await response.text().catch(() => '')
-    throw new Error(`API Error ${response.status}: ${errorBody}`)
-  }
-
-  return response.json() as Promise<T>
-}
+const COMPETITIONS_BASE = '/v1/competitions'
 
 /* ──────────────────────────────────────────────
  * Competition Evaluations
  * ────────────────────────────────────────────── */
 
 export function fetchCompetitionEvaluations(): Promise<CompetitionEvaluation[]> {
-  return apiFetch<CompetitionEvaluation[]>('/evaluations/competitions')
+  return httpGet<CompetitionEvaluation[]>(COMPETITIONS_BASE)
 }
 
 export function fetchCompetitionEvaluation(id: string): Promise<CompetitionEvaluation> {
-  return apiFetch<CompetitionEvaluation>(`/evaluations/competitions/${id}`)
+  return httpGet<CompetitionEvaluation>(`${COMPETITIONS_BASE}/${id}`)
 }
 
 /* ──────────────────────────────────────────────
@@ -61,7 +48,7 @@ export function fetchCompetitionEvaluation(id: string): Promise<CompetitionEvalu
  * ────────────────────────────────────────────── */
 
 export function fetchCommittee(competitionId: string, type: string): Promise<Committee> {
-  return apiFetch<Committee>(`/evaluations/competitions/${competitionId}/committees/${type}`)
+  return httpGet<Committee>(`/v1/committees?competitionId=${competitionId}&type=${type}`)
 }
 
 /* ──────────────────────────────────────────────
@@ -69,7 +56,8 @@ export function fetchCommittee(competitionId: string, type: string): Promise<Com
  * ────────────────────────────────────────────── */
 
 export function fetchCriteria(competitionId: string, type: string): Promise<EvaluationCriterion[]> {
-  return apiFetch<EvaluationCriterion[]>(`/evaluations/competitions/${competitionId}/criteria/${type}`)
+  const evalType = type === 'technical' ? 'technical-evaluation' : 'financial-evaluation'
+  return httpGet<EvaluationCriterion[]>(`${COMPETITIONS_BASE}/${competitionId}/${evalType}/criteria`)
 }
 
 /* ──────────────────────────────────────────────
@@ -77,7 +65,8 @@ export function fetchCriteria(competitionId: string, type: string): Promise<Eval
  * ────────────────────────────────────────────── */
 
 export function fetchVendors(competitionId: string, type: string): Promise<Vendor[]> {
-  return apiFetch<Vendor[]>(`/evaluations/competitions/${competitionId}/vendors/${type}`)
+  const evalType = type === 'technical' ? 'technical-evaluation' : 'financial-evaluation'
+  return httpGet<Vendor[]>(`${COMPETITIONS_BASE}/${competitionId}/${evalType}/vendors`)
 }
 
 /* ──────────────────────────────────────────────
@@ -85,21 +74,15 @@ export function fetchVendors(competitionId: string, type: string): Promise<Vendo
  * ────────────────────────────────────────────── */
 
 export function fetchTechnicalScores(competitionId: string): Promise<TechnicalScore[]> {
-  return apiFetch<TechnicalScore[]>(`/evaluations/competitions/${competitionId}/technical/scores`)
+  return httpGet<TechnicalScore[]>(`${COMPETITIONS_BASE}/${competitionId}/technical-evaluation/scores`)
 }
 
 export function submitTechnicalScore(competitionId: string, score: Partial<TechnicalScore>): Promise<TechnicalScore> {
-  return apiFetch<TechnicalScore>(`/evaluations/competitions/${competitionId}/technical/scores`, {
-    method: 'POST',
-    body: JSON.stringify(score),
-  })
+  return httpPost<TechnicalScore>(`${COMPETITIONS_BASE}/${competitionId}/technical-evaluation/scores`, score)
 }
 
 export function saveTechnicalScores(competitionId: string, scores: Partial<TechnicalScore>[]): Promise<void> {
-  return apiFetch<void>(`/evaluations/competitions/${competitionId}/technical/scores/batch`, {
-    method: 'PUT',
-    body: JSON.stringify({ scores }),
-  })
+  return httpPut<void>(`${COMPETITIONS_BASE}/${competitionId}/technical-evaluation/scores/batch`, { scores })
 }
 
 /* ──────────────────────────────────────────────
@@ -107,25 +90,19 @@ export function saveTechnicalScores(competitionId: string, scores: Partial<Techn
  * ────────────────────────────────────────────── */
 
 export function fetchFinancialOffers(competitionId: string): Promise<FinancialOffer[]> {
-  return apiFetch<FinancialOffer[]>(`/evaluations/competitions/${competitionId}/financial/offers`)
+  return httpGet<FinancialOffer[]>(`${COMPETITIONS_BASE}/${competitionId}/financial-evaluation/offers`)
 }
 
 export function fetchFinancialScores(competitionId: string): Promise<FinancialScore[]> {
-  return apiFetch<FinancialScore[]>(`/evaluations/competitions/${competitionId}/financial/scores`)
+  return httpGet<FinancialScore[]>(`${COMPETITIONS_BASE}/${competitionId}/financial-evaluation/scores`)
 }
 
 export function submitFinancialScore(competitionId: string, score: Partial<FinancialScore>): Promise<FinancialScore> {
-  return apiFetch<FinancialScore>(`/evaluations/competitions/${competitionId}/financial/scores`, {
-    method: 'POST',
-    body: JSON.stringify(score),
-  })
+  return httpPost<FinancialScore>(`${COMPETITIONS_BASE}/${competitionId}/financial-evaluation/scores`, score)
 }
 
 export function saveFinancialScores(competitionId: string, scores: Partial<FinancialScore>[]): Promise<void> {
-  return apiFetch<void>(`/evaluations/competitions/${competitionId}/financial/scores/batch`, {
-    method: 'PUT',
-    body: JSON.stringify({ scores }),
-  })
+  return httpPut<void>(`${COMPETITIONS_BASE}/${competitionId}/financial-evaluation/scores/batch`, { scores })
 }
 
 /* ──────────────────────────────────────────────
@@ -133,18 +110,15 @@ export function saveFinancialScores(competitionId: string, scores: Partial<Finan
  * ────────────────────────────────────────────── */
 
 export function requestAiEvaluation(competitionId: string, vendorId: string): Promise<AiEvaluation[]> {
-  return apiFetch<AiEvaluation[]>(`/evaluations/competitions/${competitionId}/ai/evaluate`, {
-    method: 'POST',
-    body: JSON.stringify({ vendorId }),
-  })
+  return httpPost<AiEvaluation[]>(`${COMPETITIONS_BASE}/${competitionId}/technical-evaluation/ai-analysis/evaluate`, { vendorId })
 }
 
 export function fetchAiEvaluations(competitionId: string): Promise<AiEvaluation[]> {
-  return apiFetch<AiEvaluation[]>(`/evaluations/competitions/${competitionId}/ai/evaluations`)
+  return httpGet<AiEvaluation[]>(`${COMPETITIONS_BASE}/${competitionId}/technical-evaluation/ai-analysis`)
 }
 
 export function fetchVarianceAlerts(competitionId: string): Promise<VarianceAlert[]> {
-  return apiFetch<VarianceAlert[]>(`/evaluations/competitions/${competitionId}/ai/variance-alerts`)
+  return httpGet<VarianceAlert[]>(`${COMPETITIONS_BASE}/${competitionId}/technical-evaluation/ai-analysis/variance-alerts`)
 }
 
 /* ──────────────────────────────────────────────
@@ -152,7 +126,8 @@ export function fetchVarianceAlerts(competitionId: string): Promise<VarianceAler
  * ────────────────────────────────────────────── */
 
 export function fetchComparisonMatrix(competitionId: string, type: string): Promise<ComparisonMatrix> {
-  return apiFetch<ComparisonMatrix>(`/evaluations/competitions/${competitionId}/comparison/${type}`)
+  const evalType = type === 'technical' ? 'technical-evaluation' : 'financial-evaluation'
+  return httpGet<ComparisonMatrix>(`${COMPETITIONS_BASE}/${competitionId}/${evalType}/comparison`)
 }
 
 /* ──────────────────────────────────────────────
@@ -160,17 +135,13 @@ export function fetchComparisonMatrix(competitionId: string, type: string): Prom
  * ────────────────────────────────────────────── */
 
 export function fetchMinutes(competitionId: string, type: string): Promise<EvaluationMinutes> {
-  return apiFetch<EvaluationMinutes>(`/evaluations/competitions/${competitionId}/minutes/${type}`)
+  return httpGet<EvaluationMinutes>(`${COMPETITIONS_BASE}/${competitionId}/minutes?type=${type}`)
 }
 
 export function approveMinutes(competitionId: string, minutesId: string): Promise<EvaluationMinutes> {
-  return apiFetch<EvaluationMinutes>(`/evaluations/competitions/${competitionId}/minutes/${minutesId}/approve`, {
-    method: 'POST',
-  })
+  return httpPost<EvaluationMinutes>(`${COMPETITIONS_BASE}/${competitionId}/minutes/${minutesId}/approve`)
 }
 
 export function signMinutes(competitionId: string, minutesId: string): Promise<void> {
-  return apiFetch<void>(`/evaluations/competitions/${competitionId}/minutes/${minutesId}/sign`, {
-    method: 'POST',
-  })
+  return httpPost<void>(`${COMPETITIONS_BASE}/${competitionId}/minutes/${minutesId}/sign`)
 }

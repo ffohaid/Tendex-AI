@@ -9,7 +9,7 @@
  * from the backend APIs. If the API is unavailable, the service
  * returns empty/default values and logs the error.
  */
-import { httpGet } from '@/services/http'
+import { httpGet, httpPost } from '@/services/http'
 import type {
   DashboardStats,
   ActiveCompetition,
@@ -22,13 +22,13 @@ import type {
 } from '@/types/dashboard'
 
 const ENDPOINTS = {
-  stats: '/dashboard/stats',
-  competitions: '/competitions',
-  tasks: '/tasks/pending',
-  notifications: '/notifications',
-  committees: '/committees',
-  activities: '/dashboard/activities',
-  metrics: '/dashboard/metrics',
+  stats: '/v1/dashboard/stats',
+  competitions: '/v1/competitions',
+  tasks: '/v1/tasks/pending',
+  notifications: '/v1/notifications',
+  committees: '/v1/committees',
+  activities: '/v1/dashboard/activities',
+  metrics: '/v1/dashboard/metrics',
 } as const
 
 /**
@@ -82,7 +82,7 @@ export async function fetchNotifications(
  * Marks a notification as read.
  */
 export async function markNotificationRead(notificationId: string): Promise<void> {
-  return httpGet(`${ENDPOINTS.notifications}/${notificationId}/read`)
+  return httpPost(`${ENDPOINTS.notifications}/${notificationId}/read`)
 }
 
 /**
