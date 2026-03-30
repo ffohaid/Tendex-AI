@@ -739,7 +739,10 @@
       "noTenants": "لا توجد جهات حكومية مسجلة",
       "noTenantsDesc": "ابدأ بإضافة جهة حكومية جديدة",
       "noPurchaseOrders": "لا توجد أوامر تعميد لهذه الجهة",
-      "noTransitions": "لا توجد انتقالات متاحة"
+      "noTransitions": "لا توجد انتقالات متاحة",
+      "brandingSuccess": "تم تحديث العلامة التجارية بنجاح",
+      "provisionSuccess": "تم تفعيل الجهة بنجاح",
+      "statusChanged": "تم تغيير حالة الجهة بنجاح"
     },
     "labels": {
       "totalTenants": "إجمالي الجهات",
@@ -788,6 +791,9 @@
       "status": "الحالة",
       "subdomain": "النطاق الفرعي",
       "subscriptionExpiry": "انتهاء الاشتراك"
+    },
+    "errors": {
+      "unexpected": "حدث خطأ غير متوقع. يرجى المحاولة مرة أخرى."
     }
   },
   "purchaseOrders": {
@@ -886,14 +892,17 @@
       "noPurchaseOrders": "لا توجد أوامر تعميد",
       "noPurchaseOrdersDesc": "ابدأ بإنشاء أمر تعميد جديد",
       "noOrders": "لا توجد أوامر تعميد",
-      "noOrdersDesc": "لم يتم إنشاء أي أوامر تعميد بعد. قم بإنشاء أول أمر تعميد."
+      "noOrdersDesc": "لم يتم إنشاء أي أوامر تعميد بعد. قم بإنشاء أول أمر تعميد.",
+      "documentUploaded": "تم رفع المستند بنجاح",
+      "statusChanged": "تم تغيير الحالة بنجاح"
     },
     "expiry": {
       "days": "يوم",
       "expired": "منتهي"
     },
     "filters": {
-      "allTenants": "جميع الجهات"
+      "allTenants": "جميع الجهات",
+      "allStatuses": "جميع الحالات"
     },
     "pagination": {
       "of": "من",
@@ -908,6 +917,9 @@
       "status": "الحالة",
       "subscriptionEnd": "نهاية الاشتراك",
       "tenant": "الجهة"
+    },
+    "errors": {
+      "unexpected": "حدث خطأ غير متوقع. يرجى المحاولة مرة أخرى."
     }
   },
   "renewalAlerts": {

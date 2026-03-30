@@ -739,7 +739,10 @@
       "noTenants": "No government entities registered",
       "noTenantsDesc": "Start by adding a new government entity",
       "noPurchaseOrders": "No purchase orders for this entity",
-      "noTransitions": "No transitions available"
+      "noTransitions": "No transitions available",
+      "brandingSuccess": "Branding updated successfully",
+      "provisionSuccess": "Tenant provisioned successfully",
+      "statusChanged": "Tenant status changed successfully"
     },
     "labels": {
       "totalTenants": "Total Entities",
@@ -788,6 +791,9 @@
       "status": "Status",
       "subdomain": "Subdomain",
       "subscriptionExpiry": "Subscription Expiry"
+    },
+    "errors": {
+      "unexpected": "An unexpected error occurred. Please try again."
     }
   },
   "purchaseOrders": {
@@ -886,14 +892,17 @@
       "noPurchaseOrders": "No purchase orders",
       "noPurchaseOrdersDesc": "Start by creating a new purchase order",
       "noOrders": "No Purchase Orders",
-      "noOrdersDesc": "No purchase orders have been created yet. Create your first purchase order."
+      "noOrdersDesc": "No purchase orders have been created yet. Create your first purchase order.",
+      "documentUploaded": "Document uploaded successfully",
+      "statusChanged": "Status changed successfully"
     },
     "expiry": {
       "days": "days",
       "expired": "Expired"
     },
     "filters": {
-      "allTenants": "All Tenants"
+      "allTenants": "All Tenants",
+      "allStatuses": "All Statuses"
     },
     "pagination": {
       "of": "of",
@@ -908,6 +917,9 @@
       "status": "Status",
       "subscriptionEnd": "Subscription End",
       "tenant": "Tenant"
+    },
+    "errors": {
+      "unexpected": "An unexpected error occurred. Please try again."
     }
   },
   "renewalAlerts": {
