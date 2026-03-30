@@ -1,4 +1,5 @@
 using TendexAI.API.Endpoints;
+using Microsoft.IdentityModel.Logging;
 using TendexAI.Application;
 using TendexAI.Infrastructure;
 using TendexAI.API.Endpoints.Auth;
@@ -14,6 +15,9 @@ using TendexAI.API.Endpoints.Tasks;
 using TendexAI.API.Endpoints.Notifications;
 using TendexAI.API.Endpoints.Reports;
 using TendexAI.API.Endpoints.Inquiries;
+
+// Enable PII logging for debugging JWT validation issues (TEMPORARY)
+IdentityModelEventSource.ShowPII = true;
 
 var builder = WebApplication.CreateBuilder(args);
 
