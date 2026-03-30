@@ -254,7 +254,7 @@ onMounted(() => {
         class="rounded-lg border border-danger/20 bg-danger/5 p-8 text-center"
       >
         <i class="pi pi-exclamation-triangle mb-3 text-3xl text-danger"></i>
-        <p class="text-sm text-danger">{{ error }}</p>
+        <p class="text-sm text-danger">{{ t(error) }}</p>
         <button
           type="button"
           class="mt-4 rounded-lg bg-primary px-4 py-2 text-sm text-white hover:bg-primary-dark"
