@@ -96,6 +96,8 @@ services:
       Qdrant__Endpoint: ${QDRANT_ENDPOINT}
       Qdrant__CollectionPrefix: ${QDRANT_COLLECTION_PREFIX}
       Elasticsearch__Url: ${ELASTICSEARCH_URL}
+      Security__AiEncryptionKey: ${AI_ENCRYPTION_KEY}
+      Security__EncryptionKey: ${AI_ENCRYPTION_KEY}
       OpenIddict__KeyDirectory: /app/keys
     volumes:
       - openiddict-keys:/app/keys
