@@ -15,13 +15,56 @@
 | Sprint 6: لوحة تحكم المشغل | ✅ مكتمل | 100% | تم إنجاز TASK-601, TASK-602, TASK-603, TASK-604 |
 | Sprint 7: الاختبار والنشر | ✅ مكتمل | 100% | تم إنجاز TASK-701, TASK-702, TASK-703, TASK-704 |
 | Sprint 8: النشر والتشغيل | ✅ مكتمل | 100% | تم إنجاز TASK-801, TASK-802, TASK-803 |
-| Sprint 9: إصلاحات التشغيل الفعلي | 🔄 قيد التنفيذ | 95% | تم إنجاز TASK-901 إلى TASK-908. |
+| Sprint 9: إصلاحات التشغيل الفعلي | 🔄 قيد التنفيذ | 98% | تم إنجاز TASK-901 إلى TASK-909. |
 
 ---
 
 ## سجل المهام المنجزة (Completed Tasks Log)
 
 *يرجى إضافة أحدث مهمة منجزة في أعلى هذه القائمة.*
+
+### 2026-03-30 - TASK-909: إصلاح مكونات الذكاء الاصطناعي وتوافق الأنواع بين الواجهة الأمامية والخلفية
+- **الحالة:** ✅ مكتمل
+- **ما تم إنجازه:**
+  - **إصلاح أخطاء TypeScript في مكونات الذكاء الاصطناعي:**
+    - إصلاح `AiStructureGenerator.vue` لاستخدام بنية الاستجابة الصحيحة `result.structure.sections`
+    - إصلاح `AiBoqGenerator.vue` لاستخدام `result.boq.items` بدلاً من `result.items`
+    - إصلاح `AiSectionAssistant.vue` لقراءة `result.draft.contentHtml` بدلاً من `result.contentHtml`
+    - إصلاح `AiComparisonMatrix.vue` لإزالة المتغيرات غير المستخدمة
+  - **إصلاح نموذج التضمين (Embedding Model):**
+    - تحديث `GoogleGeminiProviderClient.cs` لاستخدام `gemini-embedding-001` بدلاً من `text-embedding-004` (المتوقف)
+    - إضافة دالة `ResolveEmbeddingModel` للتحقق تلقائياً من نوع النموذج
+  - **إصلاح مشكلة JSON المقطوع:**
+    - زيادة `MaxTokensOverride` من 6000 إلى 16000 لجميع خدمات الذكاء الاصطناعي
+    - إضافة آلية `RepairTruncatedJson` في `AiSpecificationDraftingService.cs`
+    - تحسين البرومبت لتقييد عمق الأقسام الفرعية
+  - **إصلاح مهلة الانتظار (Timeout):**
+    - زيادة مهلة HTTP من 30 ثانية إلى 120 ثانية لاستدعاءات الذكاء الاصطناعي
+    - تحديث `aiSpecificationService.ts` و `aiEvaluationService.ts`
+  - **توافق الأنواع (Type Alignment):**
+    - إضافة `AiRegulatoryReference` و `AiSpecificationDraftResult` للواجهة الأمامية
+    - تحديث `ProposedSection` و `GeneratedBoqItem` لمطابقة الواجهة الخلفية
+    - إصلاح جميع أنواع الاستجابة لتعكس البنية المتداخلة الفعلية
+  - **إصلاح Tailwind CSS v4:**
+    - إصلاح مشكلة `@apply` للفئات المرجعية الذاتية (`btn`, `skeleton`, `stat-card`)
+    - إضافة ألوان AI المفقودة (300, 400) للثيم
+  - **إضافة مفاتيح الترجمة:**
+    - إضافة جميع مفاتيح i18n المفقودة لمكونات الذكاء الاصطناعي بالعربية والإنجليزية
+- **الملفات المعدلة:**
+  - `frontend/src/components/rfp/AiStructureGenerator.vue`
+  - `frontend/src/components/rfp/AiBoqGenerator.vue`
+  - `frontend/src/components/rfp/AiSectionAssistant.vue`
+  - `frontend/src/components/rfp/Step4Boq.vue`
+  - `frontend/src/components/evaluation/AiComparisonMatrix.vue`
+  - `frontend/src/services/aiSpecificationService.ts`
+  - `frontend/src/services/aiEvaluationService.ts`
+  - `frontend/src/assets/css/main.css`
+  - `frontend/src/locales/ar.json`
+  - `frontend/src/locales/en.json`
+  - `backend/src/TendexAI.Infrastructure/AI/Providers/GoogleGeminiProviderClient.cs`
+  - `backend/src/TendexAI.Infrastructure/AI/AiSpecificationDraftingService.cs`
+  - `backend/src/TendexAI.Infrastructure/AI/AiBoqGenerationService.cs`
+- **نتيجة الاختبار:** تم اختبار توليد هيكل الكراسة بالذكاء الاصطناعي بنجاح - 8 أقسام مقترحة تتبع قوالب EXPRO
 
 ### 2026-03-30 - TASK-908: إصلاح الأخطاء الحرجة في المصادقة والمساعد الذكي وتكامل Gemini
 - **الحالة:** ✅ مكتمل
