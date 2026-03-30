@@ -18,7 +18,7 @@ public sealed class GoogleGeminiProviderClient : IAiProviderClient
 {
     private const string DefaultGeminiEndpoint = "https://generativelanguage.googleapis.com/v1beta";
     private const string DefaultModel = "gemini-2.5-flash";
-    private const string DefaultEmbeddingModel = "text-embedding-004";
+    private const string DefaultEmbeddingModel = "gemini-embedding-001";
 
     private readonly IHttpClientFactory _httpClientFactory;
     private readonly ILogger<GoogleGeminiProviderClient> _logger;
@@ -119,6 +119,8 @@ public sealed class GoogleGeminiProviderClient : IAiProviderClient
     // Known Gemini embedding models that support embedContent API
     private static readonly HashSet<string> s_knownEmbeddingModels = new(StringComparer.OrdinalIgnoreCase)
     {
+        "gemini-embedding-001",
+        "gemini-embedding-exp-03-07",
         "text-embedding-004",
         "text-embedding-005",
         "embedding-001",

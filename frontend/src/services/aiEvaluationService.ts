@@ -12,7 +12,7 @@
  * - GET  /api/v1/competitions/{id}/technical-evaluation/ai-analysis/comparison-matrix
  * - POST /api/v1/competitions/{id}/technical-evaluation/ai-analysis/{analysisId}/review
  */
-import { httpGet, httpPost } from '@/services/http'
+import http, { httpGet, httpPost } from '@/services/http'
 
 /* ── Types ──────────────────────────────────── */
 
@@ -99,17 +99,22 @@ export interface AiComparisonMatrix {
 
 const BASE = '/v1/competitions'
 
+/** Extended timeout for AI endpoints (3 minutes for multi-offer analysis) */
+const AI_TIMEOUT = 180_000
+
 /**
  * Trigger AI analysis for all offers in a technical evaluation.
  */
-export function triggerAiAnalysis(
+export async function triggerAiAnalysis(
   competitionId: string,
   evaluationId: string
 ): Promise<AiAnalysisSummary> {
-  return httpPost<AiAnalysisSummary>(
+  const response = await http.post<AiAnalysisSummary>(
     `${BASE}/${competitionId}/technical-evaluation/ai-analysis/trigger`,
-    { evaluationId }
+    { evaluationId },
+    { timeout: AI_TIMEOUT },
   )
+  return response.data
 }
 
 /**

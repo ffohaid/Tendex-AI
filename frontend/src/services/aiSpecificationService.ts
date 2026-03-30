@@ -149,12 +149,16 @@ const BASE_URL = '/v1/ai/specifications'
 /**
  * Generate an AI-assisted draft for an RFP booklet section.
  */
+/** Extended timeout for AI endpoints (2 minutes) */
+const AI_TIMEOUT = 120_000
+
 export async function generateSectionDraft(
   request: GenerateSectionDraftRequest,
 ): Promise<GenerateSectionDraftResult> {
   const response = await http.post<GenerateSectionDraftResult>(
     `${BASE_URL}/sections/generate`,
     request,
+    { timeout: AI_TIMEOUT },
   )
   return response.data
 }
@@ -168,6 +172,7 @@ export async function refineSectionDraft(
   const response = await http.post<RefineSectionDraftResult>(
     `${BASE_URL}/sections/refine`,
     request,
+    { timeout: AI_TIMEOUT },
   )
   return response.data
 }
@@ -181,6 +186,7 @@ export async function generateBookletStructure(
   const response = await http.post<GenerateBookletStructureResult>(
     `${BASE_URL}/structure/generate`,
     request,
+    { timeout: AI_TIMEOUT },
   )
   return response.data
 }
@@ -194,6 +200,7 @@ export async function generateBoq(
   const response = await http.post<GenerateBoqResult>(
     `${BASE_URL}/boq/generate`,
     request,
+    { timeout: AI_TIMEOUT },
   )
   return response.data
 }
@@ -207,6 +214,7 @@ export async function refineBoq(
   const response = await http.post<RefineBoqResult>(
     `${BASE_URL}/boq/refine`,
     request,
+    { timeout: AI_TIMEOUT },
   )
   return response.data
 }
