@@ -35,8 +35,17 @@ const COMPETITIONS_BASE = '/v1/competitions'
  * Competition Evaluations
  * ────────────────────────────────────────────── */
 
-export function fetchCompetitionEvaluations(): Promise<CompetitionEvaluation[]> {
-  return httpGet<CompetitionEvaluation[]>(COMPETITIONS_BASE)
+export async function fetchCompetitionEvaluations(): Promise<CompetitionEvaluation[]> {
+  // Backend requires page and pageSize params; fetch all competitions for evaluation list
+  const response = await httpGet<{ items: CompetitionEvaluation[]; totalCount: number }>(
+    `${COMPETITIONS_BASE}?page=1&pageSize=100`
+  )
+  // Backend returns paginated result with items array
+  if (response && typeof response === 'object' && 'items' in response) {
+    return (response as { items: CompetitionEvaluation[] }).items
+  }
+  // Fallback: if response is already an array
+  return Array.isArray(response) ? response : []
 }
 
 export function fetchCompetitionEvaluation(id: string): Promise<CompetitionEvaluation> {
