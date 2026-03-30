@@ -58,6 +58,12 @@ public static class AiServiceRegistration
             client.DefaultRequestHeaders.Add("Accept", "application/json");
         });
 
+        services.AddHttpClient("GoogleGemini", client =>
+        {
+            client.Timeout = TimeSpan.FromSeconds(120);
+            client.DefaultRequestHeaders.Add("Accept", "application/json");
+        });
+
         // ----- AI Provider Clients -----
         // Each provider is registered as IAiProviderClient so the gateway
         // can resolve all of them via IEnumerable<IAiProviderClient>
@@ -65,6 +71,7 @@ public static class AiServiceRegistration
         services.AddSingleton<IAiProviderClient, AnthropicProviderClient>();
         services.AddSingleton<IAiProviderClient, AzureOpenAiProviderClient>();
         services.AddSingleton<IAiProviderClient, LocalModelProviderClient>();
+        services.AddSingleton<IAiProviderClient, GoogleGeminiProviderClient>();
 
         // ----- Unified AI Gateway -----
         services.AddScoped<IAiGateway, AiGateway>();
