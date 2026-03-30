@@ -83,7 +83,7 @@ public sealed class JwtAuthenticationHandler : AuthenticationHandler<JwtAuthenti
     protected override Task HandleChallengeAsync(AuthenticationProperties properties)
     {
         Response.StatusCode = 401;
-        Response.Headers.Append("WWW-Authenticate", "Bearer");
+        Response.Headers["WWW-Authenticate"] = "Bearer";
         return Task.CompletedTask;
     }
 
