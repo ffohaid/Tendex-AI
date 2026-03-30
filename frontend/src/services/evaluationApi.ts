@@ -35,17 +35,107 @@ const COMPETITIONS_BASE = '/v1/competitions'
  * Competition Evaluations
  * ────────────────────────────────────────────── */
 
+/**
+ * Backend CompetitionListItemDto shape (from /api/v1/competitions).
+ * We map this to the frontend CompetitionEvaluation interface.
+ */
+interface BackendCompetitionItem {
+  id: string
+  referenceNumber: string
+  projectNameAr: string
+  projectNameEn: string
+  competitionType: string
+  status: string
+  creationMethod: string
+  estimatedBudget: number | null
+  currency: string
+  submissionDeadline: string | null
+  sectionsCount: number
+  boqItemsCount: number
+  attachmentsCount: number
+  createdAt: string
+  createdBy: string | null
+}
+
+/**
+ * Maps a backend competition status to an evaluation stage.
+ */
+function mapStatusToStage(status: string): 'technical' | 'financial' | 'completed' {
+  switch (status) {
+    case 'TechnicalEvaluation':
+    case 'Draft':
+    case 'Published':
+    case 'ReceivingOffers':
+      return 'technical'
+    case 'FinancialEvaluation':
+      return 'financial'
+    case 'Completed':
+    case 'Awarded':
+    case 'Cancelled':
+      return 'completed'
+    default:
+      return 'technical'
+  }
+}
+
+/**
+ * Maps a backend competition status to a technical evaluation status.
+ */
+function mapToEvalStatus(status: string): 'pending' | 'in_progress' | 'completed' | 'approved' {
+  switch (status) {
+    case 'Draft':
+    case 'Published':
+    case 'ReceivingOffers':
+      return 'pending'
+    case 'TechnicalEvaluation':
+      return 'in_progress'
+    case 'FinancialEvaluation':
+    case 'Completed':
+    case 'Awarded':
+      return 'completed'
+    default:
+      return 'pending'
+  }
+}
+
 export async function fetchCompetitionEvaluations(): Promise<CompetitionEvaluation[]> {
-  // Backend requires page and pageSize params; fetch all competitions for evaluation list
-  const response = await httpGet<{ items: CompetitionEvaluation[]; totalCount: number }>(
+  // Backend returns CompetitionListItemDto from /api/v1/competitions
+  const response = await httpGet<{ items: BackendCompetitionItem[]; totalCount: number }>(
     `${COMPETITIONS_BASE}?page=1&pageSize=100`
   )
-  // Backend returns paginated result with items array
+
+  let items: BackendCompetitionItem[] = []
   if (response && typeof response === 'object' && 'items' in response) {
-    return (response as { items: CompetitionEvaluation[] }).items
+    items = (response as { items: BackendCompetitionItem[] }).items
+  } else if (Array.isArray(response)) {
+    items = response as unknown as BackendCompetitionItem[]
   }
-  // Fallback: if response is already an array
-  return Array.isArray(response) ? response : []
+
+  // Map backend DTO to frontend CompetitionEvaluation interface
+  return items.map((item): CompetitionEvaluation => {
+    const stage = mapStatusToStage(item.status)
+    const techStatus = mapToEvalStatus(item.status)
+    const finStatus = stage === 'financial' ? 'in_progress' as const
+      : stage === 'completed' ? 'completed' as const
+      : 'pending' as const
+
+    return {
+      id: item.id,
+      competitionNumber: item.referenceNumber,
+      competitionName: item.projectNameAr,
+      projectName: item.projectNameAr,
+      stage,
+      technicalStatus: techStatus,
+      financialStatus: finStatus,
+      vendorCount: 0,
+      passedVendorCount: 0,
+      estimatedBudget: item.estimatedBudget ?? 0,
+      deadlineGregorian: item.submissionDeadline ?? '',
+      deadlineHijri: '',
+      assignedCommittee: '-',
+      progress: stage === 'completed' ? 100 : stage === 'financial' ? 60 : 30,
+    }
+  })
 }
 
 export function fetchCompetitionEvaluation(id: string): Promise<CompetitionEvaluation> {

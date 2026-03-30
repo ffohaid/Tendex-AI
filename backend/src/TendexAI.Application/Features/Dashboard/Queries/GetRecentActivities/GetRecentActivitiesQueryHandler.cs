@@ -10,6 +10,7 @@ namespace TendexAI.Application.Features.Dashboard.Queries.GetRecentActivities;
 /// <summary>
 /// Handles retrieving recent activity log entries from the tenant's AuditLogs table.
 /// Activities are sourced from the tenant-specific audit log.
+/// User names are resolved from the ApplicationUser table.
 /// </summary>
 public sealed class GetRecentActivitiesQueryHandler
     : IQueryHandler<GetRecentActivitiesQuery, RecentActivitiesPagedResultDto>
@@ -36,6 +37,7 @@ public sealed class GetRecentActivitiesQueryHandler
         var dbContext = _dbContextFactory.CreateDbContext();
 
         var auditLogs = dbContext.GetDbSet<AuditLog>();
+        var users = dbContext.GetDbSet<ApplicationUser>();
 
         var query = auditLogs
             .AsNoTracking()
@@ -43,18 +45,30 @@ public sealed class GetRecentActivitiesQueryHandler
 
         var totalCount = await query.CountAsync(cancellationToken);
 
+        // Use a left join to resolve user names from the ApplicationUser table
         var items = await query
             .Skip((request.PageNumber - 1) * request.PageSize)
             .Take(request.PageSize)
-            .Select(a => new RecentActivityDto(
-                Id: a.Id.ToString(),
-                ActionAr: MapActionToArabic(a.Action),
-                ActionEn: a.Action,
-                UserNameAr: a.UserId.HasValue ? a.UserId.Value.ToString() : "النظام",
-                UserNameEn: a.UserId.HasValue ? a.UserId.Value.ToString() : "System",
-                Timestamp: a.Timestamp.ToString("o"),
-                EntityType: a.EntityType,
-                EntityId: a.EntityId ?? ""))
+            .GroupJoin(
+                users.AsNoTracking(),
+                a => a.UserId,
+                u => u.Id,
+                (a, userGroup) => new { AuditLog = a, Users = userGroup })
+            .SelectMany(
+                x => x.Users.DefaultIfEmpty(),
+                (x, user) => new RecentActivityDto(
+                    Id: x.AuditLog.Id.ToString(),
+                    ActionAr: MapActionToArabic(x.AuditLog.Action),
+                    ActionEn: x.AuditLog.Action,
+                    UserNameAr: user != null
+                        ? user.FirstName + " " + user.LastName
+                        : "النظام",
+                    UserNameEn: user != null
+                        ? user.FirstName + " " + user.LastName
+                        : "System",
+                    Timestamp: x.AuditLog.Timestamp.ToString("o"),
+                    EntityType: x.AuditLog.EntityType,
+                    EntityId: x.AuditLog.EntityId ?? ""))
             .ToListAsync(cancellationToken);
 
         return Result.Success(new RecentActivitiesPagedResultDto(
