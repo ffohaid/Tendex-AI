@@ -21,7 +21,7 @@ const statusConfig = computed(() => {
     approved: { class: 'badge-success', icon: 'pi-verified' },
     rejected: { class: 'badge-danger', icon: 'pi-times-circle' },
   }
-  return configs[props.status] ?? configs.pending
+  return configs[props.status || 'pending'] ?? configs.pending
 })
 
 const sizeClass = computed(() =>
@@ -35,6 +35,6 @@ const sizeClass = computed(() =>
     :class="[statusConfig.class, sizeClass]"
   >
     <i class="pi text-xs" :class="statusConfig.icon" />
-    {{ t(`evaluation.status.${status}`) }}
+    {{ t(`evaluation.status.${status || 'pending'}`) }}
   </span>
 </template>

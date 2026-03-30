@@ -99,6 +99,9 @@ public sealed class VerifyMfaCommandHandler : IRequestHandler<VerifyMfaCommand, 
         user.RecordSuccessfulLogin(request.IpAddress);
         _userRepository.Update(user);
 
+        // Persist all changes (refresh token, user update) to the database
+        await _refreshTokenRepository.SaveChangesAsync(cancellationToken);
+
         // 7. Create authenticated session
         var sessionData = new SessionData
         {
@@ -143,5 +146,6 @@ public sealed class VerifyMfaCommandHandler : IRequestHandler<VerifyMfaCommand, 
         var auditLog = new AuditLog(userId, action, entityType, entityId,
             null, newValues, ipAddress, userAgent, tenantId);
         await _auditLogRepository.AddAsync(auditLog, cancellationToken);
+        await _auditLogRepository.SaveChangesAsync(cancellationToken);
     }
 }

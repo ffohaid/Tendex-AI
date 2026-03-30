@@ -483,7 +483,10 @@
       "in_progress": "In Progress",
       "completed": "Completed",
       "approved": "Approved",
-      "rejected": "Rejected"
+      "rejected": "Rejected",
+      "undefined": "Not Set",
+      "draft": "Draft",
+      "not_started": "Not Started"
     },
     "roles": {
       "chair": "Committee Chair",

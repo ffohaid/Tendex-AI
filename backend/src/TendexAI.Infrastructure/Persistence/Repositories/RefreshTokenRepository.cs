@@ -51,4 +51,9 @@ public sealed class RefreshTokenRepository : IRefreshTokenRepository
             token.Revoke(reason);
         }
     }
+
+    public async Task SaveChangesAsync(CancellationToken cancellationToken = default)
+    {
+        await _context.SaveChangesAsync(cancellationToken);
+    }
 }

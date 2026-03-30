@@ -58,6 +58,9 @@ public sealed class DisableMfaCommandHandler : IRequestHandler<DisableMfaCommand
             request.IpAddress, request.UserAgent, request.TenantId);
         await _auditLogRepository.AddAsync(auditLog, cancellationToken);
 
+        // Persist all changes to the database
+        await _userRepository.SaveChangesAsync(cancellationToken);
+
         AuthLogMessages.LogMfaDisabled(_logger, user.Id);
 
         return Result.Success();

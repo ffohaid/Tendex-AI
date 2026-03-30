@@ -109,6 +109,9 @@ public sealed class ResetPasswordCommandHandler : ICommandHandler<ResetPasswordC
 
         await _auditLogRepository.AddAsync(auditLog, cancellationToken);
 
+        // Persist all changes to the database
+        await _userRepository.SaveChangesAsync(cancellationToken);
+
         _logger.LogInformation("Password successfully reset for user {UserId}", user.Id);
 
         return Result.Success();

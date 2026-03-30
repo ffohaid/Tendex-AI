@@ -51,6 +51,7 @@ public sealed class RefreshTokenCommandHandler : IRequestHandler<RefreshTokenCom
             // Revoke all tokens for this user as a security measure
             await _refreshTokenRepository.RevokeAllByUserIdAsync(
                 existingToken.UserId, "SecurityBreach:TokenReuse", cancellationToken);
+            await _refreshTokenRepository.SaveChangesAsync(cancellationToken);
 
             await _sessionStore.RevokeAllUserSessionsAsync(existingToken.UserId, cancellationToken);
 
@@ -71,6 +72,7 @@ public sealed class RefreshTokenCommandHandler : IRequestHandler<RefreshTokenCom
         {
             existingToken.Revoke("UserNotFound");
             _refreshTokenRepository.Update(existingToken);
+            await _refreshTokenRepository.SaveChangesAsync(cancellationToken);
             return Result.Failure<AuthTokenResponse>("User account not found or deactivated.");
         }
 
@@ -87,6 +89,9 @@ public sealed class RefreshTokenCommandHandler : IRequestHandler<RefreshTokenCom
             request.UserAgent);
 
         await _refreshTokenRepository.AddAsync(newRefreshToken, cancellationToken);
+
+        // Persist refresh token rotation changes
+        await _refreshTokenRepository.SaveChangesAsync(cancellationToken);
 
         // 6. Generate new access token
         var roles = user.UserRoles
@@ -121,6 +126,7 @@ public sealed class RefreshTokenCommandHandler : IRequestHandler<RefreshTokenCom
         var auditLog = new AuditLog(user.Id, "TokenRefresh", "RefreshToken", existingToken.Id.ToString(),
             null, $"{{\"sessionId\":\"{sessionId}\"}}", request.IpAddress, request.UserAgent, request.TenantId);
         await _auditLogRepository.AddAsync(auditLog, cancellationToken);
+        await _auditLogRepository.SaveChangesAsync(cancellationToken);
 
         AuthLogMessages.LogTokenRefreshed(_logger, user.Id);
 

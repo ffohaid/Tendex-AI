@@ -17,4 +17,5 @@ public interface IUserRepository
     Task AddUserRoleAsync(UserRole userRole, CancellationToken cancellationToken = default);
     Task RemoveUserRoleAsync(Guid userId, Guid roleId, CancellationToken cancellationToken = default);
     Task<bool> HasRoleAsync(Guid userId, Guid roleId, CancellationToken cancellationToken = default);
+    Task SaveChangesAsync(CancellationToken cancellationToken = default);
 }

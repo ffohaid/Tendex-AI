@@ -101,6 +101,9 @@ public sealed class ForgotPasswordCommandHandler : ICommandHandler<ForgotPasswor
 
         await _auditLogRepository.AddAsync(auditLog, cancellationToken);
 
+        // Persist audit log to the database
+        await _auditLogRepository.SaveChangesAsync(cancellationToken);
+
         _logger.LogInformation("Password reset token generated for user {UserId}", user.Id);
 
         return Result.Success();

@@ -160,6 +160,9 @@ public sealed class LoginCommandHandler : IRequestHandler<LoginCommand, Result<A
         user.RecordSuccessfulLogin(ipAddress);
         _userRepository.Update(user);
 
+        // Persist all changes (refresh token, user update, audit log) to the database
+        await _refreshTokenRepository.SaveChangesAsync(cancellationToken);
+
         // Create session in Redis
         var sessionData = new SessionData
         {
@@ -205,5 +208,6 @@ public sealed class LoginCommandHandler : IRequestHandler<LoginCommand, Result<A
         var auditLog = new AuditLog(userId, action, entityType, entityId,
             null, newValues, ipAddress, userAgent, tenantId);
         await _auditLogRepository.AddAsync(auditLog, cancellationToken);
+        await _auditLogRepository.SaveChangesAsync(cancellationToken);
     }
 }

@@ -54,6 +54,9 @@ public sealed class LogoutCommandHandler : IRequestHandler<LogoutCommand, Result
             request.IpAddress, request.UserAgent, request.TenantId);
         await _auditLogRepository.AddAsync(auditLog, cancellationToken);
 
+        // Persist all changes to the database
+        await _refreshTokenRepository.SaveChangesAsync(cancellationToken);
+
         AuthLogMessages.LogUserLoggedOut(_logger, request.UserId);
 
         return Result.Success();

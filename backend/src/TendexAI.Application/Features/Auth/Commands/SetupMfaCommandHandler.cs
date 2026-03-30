@@ -72,6 +72,9 @@ public sealed class SetupMfaCommandHandler : IRequestHandler<SetupMfaCommand, Re
             request.IpAddress, request.UserAgent, request.TenantId);
         await _auditLogRepository.AddAsync(auditLog, cancellationToken);
 
+        // Persist all changes to the database
+        await _userRepository.SaveChangesAsync(cancellationToken);
+
         AuthLogMessages.LogMfaEnabled(_logger, user.Id);
 
         var response = new MfaSetupResponse(

@@ -42,4 +42,9 @@ public sealed class AuditLogRepository : IAuditLogRepository
             .AsNoTracking()
             .ToListAsync(cancellationToken);
     }
+
+    public async Task SaveChangesAsync(CancellationToken cancellationToken = default)
+    {
+        await _context.SaveChangesAsync(cancellationToken);
+    }
 }
