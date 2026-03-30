@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using Minio;
 using TendexAI.Application.Common.Interfaces;
@@ -144,68 +145,46 @@ public static class DependencyInjection
         // ----- OpenIddict Key Manager (Persistent RSA Keys) -----
         services.AddSingleton<Security.OpenIddictKeyManager>();
 
-        // ----- OpenIddict Configuration -----
-        services.AddOpenIddict()
-            .AddCore(options =>
-            {
-                options.UseEntityFrameworkCore()
-                    .UseDbContext<TenantDbContext>();
-            })
-            .AddServer(options =>
-            {
-                // Set the issuer URI to match the TokenService issuer
-                var issuerUri = configuration["Authentication:Issuer"] ?? "https://tendex-ai.com";
-                options.SetIssuer(new Uri(issuerUri));
+        // ----- JWT Bearer Authentication -----
+        // Uses the same RSA signing key as TokenService for token validation.
+        // This replaces OpenIddict validation which required a token store in the DB.
+        var keyManager = services.BuildServiceProvider()
+            .GetRequiredService<Security.OpenIddictKeyManager>();
+        var signingKey = keyManager.GetOrCreateSigningKey();
 
-                // Enable the token endpoint for password and refresh token flows
-                options.SetTokenEndpointUris("connect/token")
-                    .SetIntrospectionEndpointUris("connect/introspect");
+        var issuer = configuration["Authentication:Issuer"] ?? "https://tendex-ai.com";
+        var audience = configuration["Authentication:Audience"] ?? "tendex-ai-client";
 
-                // Enable the authorization code, refresh token, and client credentials flows
-                options.AllowPasswordFlow()
-                    .AllowRefreshTokenFlow()
-                    .AllowClientCredentialsFlow();
-
-                // Set token lifetimes
-                options.SetAccessTokenLifetime(TimeSpan.FromMinutes(60))  // 60-minute access token
-                    .SetRefreshTokenLifetime(TimeSpan.FromHours(8));      // 8-hour refresh token
-
-                // ---------------------------------------------------------------
-                // TASK-905: Persistent RSA keys for signing and encryption.
-                // Keys are stored as PEM files on disk, surviving server restarts.
-                // This replaces the previous AddEphemeralSigningKey() approach
-                // that invalidated all tokens on every restart.
-                // ---------------------------------------------------------------
-                var keyManager = services.BuildServiceProvider()
-                    .GetRequiredService<Security.OpenIddictKeyManager>();
-
-                var signingKey = keyManager.GetOrCreateSigningKey();
-                var encryptionKey = keyManager.GetOrCreateEncryptionKey();
-
-                options.AddSigningKey(signingKey);
-                options.AddEncryptionKey(encryptionKey);
-
-                // Disable access token encryption so JWT tokens are readable
-                // by the frontend and API validation middleware
-                options.DisableAccessTokenEncryption();
-
-                // Register ASP.NET Core host
-                options.UseAspNetCore()
-                    .EnableTokenEndpointPassthrough()
-                    .DisableTransportSecurityRequirement();
-            })
-            .AddValidation(options =>
-            {
-                options.UseLocalServer();
-                options.UseAspNetCore();
-            });
-
-        // ----- Authentication & Authorization -----
         services.AddAuthentication(options =>
         {
-            options.DefaultScheme = OpenIddict.Validation.AspNetCore.OpenIddictValidationAspNetCoreDefaults.AuthenticationScheme;
-            options.DefaultAuthenticateScheme = OpenIddict.Validation.AspNetCore.OpenIddictValidationAspNetCoreDefaults.AuthenticationScheme;
-            options.DefaultChallengeScheme = OpenIddict.Validation.AspNetCore.OpenIddictValidationAspNetCoreDefaults.AuthenticationScheme;
+            options.DefaultScheme = JwtBearerDefaults.AuthenticationScheme;
+            options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+            options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+        })
+        .AddJwtBearer(options =>
+        {
+            options.TokenValidationParameters = new TokenValidationParameters
+            {
+                ValidateIssuer = true,
+                ValidIssuer = issuer,
+                ValidateAudience = true,
+                ValidAudience = audience,
+                ValidateIssuerSigningKey = true,
+                IssuerSigningKey = signingKey,
+                ValidateLifetime = true,
+                ClockSkew = TimeSpan.FromMinutes(2), // Allow 2 minutes clock skew
+                ValidTypes = new[] { "at+jwt", "JWT" }
+            };
+            options.Events = new JwtBearerEvents
+            {
+                OnAuthenticationFailed = context =>
+                {
+                    var logger = context.HttpContext.RequestServices.GetRequiredService<ILoggerFactory>()
+                        .CreateLogger("JwtBearerAuth");
+                    logger.LogWarning("JWT authentication failed: {Error}", context.Exception.Message);
+                    return Task.CompletedTask;
+                }
+            };
         });
 
         services.AddAuthorization(options =>
