@@ -57,8 +57,8 @@ export async function fetchRfpList(params: {
   return apiCall(() =>
     httpGet<PaginatedResponse<RfpListItem>>(BASE_URL, {
       params: {
-        pageNumber: params.page,
-        pageSize: params.pageSize,
+        page: params.page || 1,
+        pageSize: params.pageSize || 10,
         status: params.status,
         search: params.search,
       },
