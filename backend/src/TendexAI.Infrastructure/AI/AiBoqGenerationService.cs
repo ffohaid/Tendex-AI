@@ -86,7 +86,7 @@ public sealed class AiBoqGenerationService : IAiBoqGenerationService
                 SystemPrompt = systemPrompt,
                 UserPrompt = userPrompt,
                 RagContext = ragResult?.FormattedContext,
-                MaxTokensOverride = 8000,
+                MaxTokensOverride = 16000,
                 TemperatureOverride = 0.15 // Very low temperature for structured data consistency
             };
 
@@ -175,7 +175,7 @@ public sealed class AiBoqGenerationService : IAiBoqGenerationService
                 SystemPrompt = systemPrompt,
                 UserPrompt = userPrompt,
                 RagContext = ragResult?.FormattedContext,
-                MaxTokensOverride = 8000,
+                MaxTokensOverride = 16000,
                 TemperatureOverride = 0.15
             };
 

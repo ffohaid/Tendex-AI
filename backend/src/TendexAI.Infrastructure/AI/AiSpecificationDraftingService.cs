@@ -88,7 +88,7 @@ public sealed class AiSpecificationDraftingService : IAiSpecificationDraftingSer
                 SystemPrompt = systemPrompt,
                 UserPrompt = userPrompt,
                 RagContext = ragResult?.FormattedContext,
-                MaxTokensOverride = 8000,
+                MaxTokensOverride = 16000,
                 TemperatureOverride = 0.2 // Low temperature for formal Arabic consistency
             };
 
@@ -177,7 +177,7 @@ public sealed class AiSpecificationDraftingService : IAiSpecificationDraftingSer
                 SystemPrompt = systemPrompt,
                 UserPrompt = userPrompt,
                 RagContext = ragResult?.FormattedContext,
-                MaxTokensOverride = 8000,
+                MaxTokensOverride = 16000,
                 TemperatureOverride = 0.2
             };
 
@@ -252,7 +252,7 @@ public sealed class AiSpecificationDraftingService : IAiSpecificationDraftingSer
                 SystemPrompt = systemPrompt,
                 UserPrompt = userPrompt,
                 RagContext = ragResult?.FormattedContext,
-                MaxTokensOverride = 6000,
+                MaxTokensOverride = 16000,
                 TemperatureOverride = 0.2
             };
 
@@ -600,8 +600,11 @@ public sealed class AiSpecificationDraftingService : IAiSpecificationDraftingSer
             3. اعتمد على المستندات المرجعية في تحديد الأقسام الإلزامية.
             4. رتّب الأقسام ترتيباً منطقياً متسلسلاً.
             5. وضّح لكل قسم ما إذا كان إلزامياً أو اختيارياً.
-            6. قدم وصفاً موجزاً لمحتوى كل قسم.
-            7. أعد الإجابة بتنسيق JSON المحدد أدناه.
+            6. قدم وصفاً موجزاً لمحتوى كل قسم (جملة أو جملتان فقط لكل وصف).
+            7. لا تتجاوز مستوى واحداً من الأقسام الفرعية (subSections). لا تضع أقساماً فرعية داخل أقسام فرعية.
+            8. اجعل وصف كل قسم فرعي (descriptionAr) مختصراً جداً (لا يتجاوز 50 كلمة).
+            9. أعد الإجابة بتنسيق JSON المحدد أدناه فقط. تأكد من أن JSON كامل وصالح.
+            10. لا تضف أي نص قبل أو بعد كائن JSON.
             </instructions>
 
             <output_format>
@@ -615,7 +618,17 @@ public sealed class AiSpecificationDraftingService : IAiSpecificationDraftingSer
                   "isMandatory": true,
                   "descriptionAr": "وصف موجز لمحتوى القسم",
                   "sortOrder": 1,
-                  "subSections": [...]
+                  "subSections": [
+                    {
+                      "titleAr": "عنوان القسم الفرعي",
+                      "titleEn": "Sub-Section Title",
+                      "sectionType": "Custom",
+                      "isMandatory": false,
+                      "descriptionAr": "وصف مختصر",
+                      "sortOrder": 1,
+                      "subSections": []
+                    }
+                  ]
                 }
               ],
               "structureSummaryAr": "ملخص الهيكل المقترح...",
@@ -628,6 +641,7 @@ public sealed class AiSpecificationDraftingService : IAiSpecificationDraftingSer
                 }
               ]
             }
+            تأكد من إغلاق جميع الأقواس والمصفوفات بشكل صحيح. يجب أن يكون JSON صالحاً تماماً.
             </output_format>
             """;
     }
@@ -823,7 +837,8 @@ public sealed class AiSpecificationDraftingService : IAiSpecificationDraftingSer
     }
 
     /// <summary>
-    /// Extracts JSON content from AI response, handling potential markdown code blocks.
+    /// Extracts JSON content from AI response, handling potential markdown code blocks
+    /// and attempting to repair truncated JSON responses.
     /// </summary>
     private static string ExtractJsonFromResponse(string content)
     {
@@ -859,7 +874,81 @@ public sealed class AiSpecificationDraftingService : IAiSpecificationDraftingSer
             return trimmed[firstBrace..(lastBrace + 1)];
         }
 
+        // If no closing brace found, the JSON may be truncated.
+        // Attempt to repair by closing all open brackets and braces.
+        if (firstBrace >= 0)
+        {
+            return RepairTruncatedJson(trimmed[firstBrace..]);
+        }
+
         return trimmed;
+    }
+
+    /// <summary>
+    /// Attempts to repair truncated JSON by closing all unclosed brackets and braces.
+    /// This handles cases where the AI response was cut off due to token limits.
+    /// </summary>
+    private static string RepairTruncatedJson(string truncatedJson)
+    {
+        var sb = new StringBuilder(truncatedJson);
+
+        // Remove any trailing incomplete string value (cut off mid-string)
+        var lastQuote = truncatedJson.LastIndexOf('"');
+        if (lastQuote > 0)
+        {
+            // Check if the quote is an opening quote without a closing pair
+            var quoteCount = 0;
+            var inEscape = false;
+            for (var i = 0; i < truncatedJson.Length; i++)
+            {
+                if (inEscape) { inEscape = false; continue; }
+                if (truncatedJson[i] == '\\') { inEscape = true; continue; }
+                if (truncatedJson[i] == '"') quoteCount++;
+            }
+
+            // If odd number of quotes, close the last string
+            if (quoteCount % 2 != 0)
+            {
+                sb.Append('"');
+            }
+        }
+
+        // Count unclosed brackets and braces
+        var openBraces = 0;
+        var openBrackets = 0;
+        var inString = false;
+        var escaped = false;
+
+        foreach (var ch in sb.ToString())
+        {
+            if (escaped) { escaped = false; continue; }
+            if (ch == '\\' && inString) { escaped = true; continue; }
+            if (ch == '"') { inString = !inString; continue; }
+            if (inString) continue;
+
+            switch (ch)
+            {
+                case '{': openBraces++; break;
+                case '}': openBraces--; break;
+                case '[': openBrackets++; break;
+                case ']': openBrackets--; break;
+            }
+        }
+
+        // Remove trailing comma if present (invalid JSON)
+        var result = sb.ToString().TrimEnd();
+        if (result.EndsWith(','))
+        {
+            result = result[..^1];
+        }
+
+        sb = new StringBuilder(result);
+
+        // Close all unclosed brackets and braces in reverse order
+        for (var i = 0; i < openBrackets; i++) sb.Append(']');
+        for (var i = 0; i < openBraces; i++) sb.Append('}');
+
+        return sb.ToString();
     }
 
     // ═══════════════════════════════════════════════════════════════

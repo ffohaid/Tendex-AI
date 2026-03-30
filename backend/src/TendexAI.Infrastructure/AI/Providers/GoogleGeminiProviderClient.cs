@@ -116,6 +116,37 @@ public sealed class GoogleGeminiProviderClient : IAiProviderClient
         }
     }
 
+    // Known Gemini embedding models that support embedContent API
+    private static readonly HashSet<string> s_knownEmbeddingModels = new(StringComparer.OrdinalIgnoreCase)
+    {
+        "text-embedding-004",
+        "text-embedding-005",
+        "embedding-001",
+        "text-multilingual-embedding-002"
+    };
+
+    /// <summary>
+    /// Determines the correct embedding model to use.
+    /// If the caller passes a completion model (e.g., gemini-2.5-flash) instead of
+    /// an embedding model, we fall back to the DefaultEmbeddingModel.
+    /// </summary>
+    private static string ResolveEmbeddingModel(string? modelName)
+    {
+        if (string.IsNullOrWhiteSpace(modelName))
+            return DefaultEmbeddingModel;
+
+        // If the model is a known embedding model, use it directly
+        if (s_knownEmbeddingModels.Contains(modelName))
+            return modelName;
+
+        // If the model contains "embedding" in its name, assume it's valid
+        if (modelName.Contains("embedding", StringComparison.OrdinalIgnoreCase))
+            return modelName;
+
+        // Otherwise, the caller likely passed a completion model — use default embedding model
+        return DefaultEmbeddingModel;
+    }
+
     /// <inheritdoc />
     public async Task<AiEmbeddingResponse> SendEmbeddingAsync(
         string apiKey,
@@ -125,7 +156,7 @@ public sealed class GoogleGeminiProviderClient : IAiProviderClient
         CancellationToken cancellationToken = default)
     {
         var baseUrl = endpoint ?? DefaultGeminiEndpoint;
-        var embeddingModel = string.IsNullOrWhiteSpace(modelName) ? DefaultEmbeddingModel : modelName;
+        var embeddingModel = ResolveEmbeddingModel(modelName);
 
         try
         {
