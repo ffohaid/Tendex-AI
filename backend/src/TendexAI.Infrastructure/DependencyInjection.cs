@@ -153,6 +153,10 @@ public static class DependencyInjection
             })
             .AddServer(options =>
             {
+                // Set the issuer URI to match the TokenService issuer
+                var issuerUri = configuration["Authentication:Issuer"] ?? "https://tendex-ai.com";
+                options.SetIssuer(new Uri(issuerUri));
+
                 // Enable the token endpoint for password and refresh token flows
                 options.SetTokenEndpointUris("connect/token")
                     .SetIntrospectionEndpointUris("connect/introspect");
