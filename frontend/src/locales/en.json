@@ -338,7 +338,8 @@
       "actions": "Actions",
       "subtotal": "Subtotal",
       "vat": "VAT",
-      "grandTotal": "Grand Total"
+      "grandTotal": "Grand Total",
+      "items": "item"
     },
     "statuses": {
       "all": "All Statuses",
@@ -1589,6 +1590,54 @@
     "welcome": {
       "title": "Welcome to the AI Assistant",
       "subtitle": "I can help you draft specification booklets, analyze offers, and check compliance with regulations. Choose a quick action or type your question directly."
+    }
+  },
+  "ai": {
+    "title": "AI Analysis",
+    "subtitle": "AI-powered analysis and evaluation",
+    "assistSection": "AI Assistant",
+    "sectionAssistant": "Smart Section Assistant",
+    "sectionAssistantDesc": "Generate and refine section content using AI",
+    "additionalInstructions": "Additional Instructions",
+    "additionalInstructionsPlaceholder": "Add additional instructions for AI (optional)...",
+    "generateContent": "Generate Content",
+    "generating": "Generating...",
+    "regenerate": "Regenerate",
+    "refineContent": "Refine Content",
+    "refinePlaceholder": "Write your feedback to refine the content...",
+    "citations": "Citations",
+    "citationsSources": "Citation Sources",
+    "page": "Page",
+    "confidenceScore": "Confidence Score",
+    "confidence": {
+      "high": "High",
+      "medium": "Medium",
+      "low": "Low"
+    },
+    "suggestions": "Improvement Suggestions",
+    "generateStructure": "Generate Booklet Structure with AI",
+    "generateStructureDesc": "Analyze the project and suggest optimal sections automatically",
+    "generatingStructure": "Generating structure...",
+    "suggestedStructure": "Suggested Structure",
+    "reviewAndApply": "Review the suggested sections and apply",
+    "applyStructure": "Apply Structure",
+    "regenerateStructure": "Regenerate Structure",
+    "generateBoq": "Generate BOQ with AI",
+    "generateBoqDesc": "Analyze specifications and suggest quantity items automatically",
+    "generatingBoq": "Generating BOQ...",
+    "suggestedBoq": "Suggested BOQ",
+    "reviewAndApplyBoq": "Review the suggested items and apply",
+    "applyBoq": "Apply BOQ",
+    "regenerateBoq": "Regenerate BOQ",
+    "assumptions": "Assumptions",
+    "generateEvaluation": "AI Evaluation",
+    "analyzing": "Analyzing...",
+    "errors": {
+      "generationFailed": "Failed to generate content. Please try again.",
+      "refineFailed": "Failed to refine content. Please try again.",
+      "structureGenerationFailed": "Failed to generate booklet structure. Please try again.",
+      "boqGenerationFailed": "Failed to generate BOQ. Please try again.",
+      "evaluationFailed": "Failed to analyze evaluation. Please try again."
     }
   }
 }

@@ -4,7 +4,6 @@
  * Shows a side-by-side comparison of AI-suggested scores for all offers.
  */
 import { ref, onMounted } from 'vue'
-import { useI18n } from 'vue-i18n'
 import {
   getAiComparisonMatrix,
   type AiComparisonMatrix,
@@ -15,8 +14,6 @@ const props = defineProps<{
   competitionId: string
   evaluationId: string
 }>()
-
-const { t } = useI18n()
 
 const matrix = ref<AiComparisonMatrix | null>(null)
 const isLoading = ref(false)

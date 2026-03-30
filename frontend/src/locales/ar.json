@@ -338,7 +338,8 @@
       "actions": "الإجراءات",
       "subtotal": "المجموع الفرعي",
       "vat": "ضريبة القيمة المضافة",
-      "grandTotal": "المجموع الكلي"
+      "grandTotal": "المجموع الكلي",
+      "items": "بند"
     },
     "statuses": {
       "all": "جميع الحالات",
@@ -1589,6 +1590,54 @@
     "welcome": {
       "title": "مرحباً بك في المساعد الذكي",
       "subtitle": "يمكنني مساعدتك في صياغة كراسات الشروط، تحليل العروض، والتحقق من الامتثال للأنظمة. اختر أحد الإجراءات السريعة أو اكتب سؤالك مباشرة."
+    }
+  },
+  "ai": {
+    "title": "الذكاء الاصطناعي",
+    "subtitle": "تحليل وتقييم مدعوم بالذكاء الاصطناعي",
+    "assistSection": "مساعد الذكاء الاصطناعي",
+    "sectionAssistant": "مساعد القسم الذكي",
+    "sectionAssistantDesc": "توليد وتحسين محتوى القسم باستخدام الذكاء الاصطناعي",
+    "additionalInstructions": "تعليمات إضافية",
+    "additionalInstructionsPlaceholder": "أضف تعليمات إضافية للذكاء الاصطناعي (اختياري)...",
+    "generateContent": "توليد المحتوى",
+    "generating": "جارٍ التوليد...",
+    "regenerate": "إعادة التوليد",
+    "refineContent": "تحسين المحتوى",
+    "refinePlaceholder": "اكتب ملاحظاتك لتحسين المحتوى...",
+    "citations": "الاستشهادات",
+    "citationsSources": "مصادر الاستشهادات",
+    "page": "صفحة",
+    "confidenceScore": "درجة الثقة",
+    "confidence": {
+      "high": "عالية",
+      "medium": "متوسطة",
+      "low": "منخفضة"
+    },
+    "suggestions": "اقتراحات التحسين",
+    "generateStructure": "توليد هيكل الكراسة بالذكاء الاصطناعي",
+    "generateStructureDesc": "تحليل المشروع واقتراح الأقسام المثلى تلقائياً",
+    "generatingStructure": "جارٍ توليد الهيكل...",
+    "suggestedStructure": "الهيكل المقترح",
+    "reviewAndApply": "راجع الأقسام المقترحة ثم طبّقها",
+    "applyStructure": "تطبيق الهيكل",
+    "regenerateStructure": "إعادة توليد الهيكل",
+    "generateBoq": "توليد جدول الكميات بالذكاء الاصطناعي",
+    "generateBoqDesc": "تحليل المواصفات واقتراح بنود الكميات تلقائياً",
+    "generatingBoq": "جارٍ توليد جدول الكميات...",
+    "suggestedBoq": "جدول الكميات المقترح",
+    "reviewAndApplyBoq": "راجع البنود المقترحة ثم طبّقها",
+    "applyBoq": "تطبيق جدول الكميات",
+    "regenerateBoq": "إعادة توليد جدول الكميات",
+    "assumptions": "الافتراضات",
+    "generateEvaluation": "تقييم بالذكاء الاصطناعي",
+    "analyzing": "جارٍ التحليل...",
+    "errors": {
+      "generationFailed": "فشل في توليد المحتوى. يرجى المحاولة مرة أخرى.",
+      "refineFailed": "فشل في تحسين المحتوى. يرجى المحاولة مرة أخرى.",
+      "structureGenerationFailed": "فشل في توليد هيكل الكراسة. يرجى المحاولة مرة أخرى.",
+      "boqGenerationFailed": "فشل في توليد جدول الكميات. يرجى المحاولة مرة أخرى.",
+      "evaluationFailed": "فشل في تحليل التقييم. يرجى المحاولة مرة أخرى."
     }
   }
 }

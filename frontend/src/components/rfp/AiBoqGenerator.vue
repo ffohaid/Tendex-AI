@@ -40,8 +40,9 @@ async function handleGenerate() {
       competitionId: rfpStore.formData.id || crypto.randomUUID(),
       projectNameAr: rfpStore.formData.basicInfo.projectName || '',
       projectDescriptionAr: rfpStore.formData.basicInfo.projectDescription || '',
-      sectionsContent,
-      estimatedBudget: rfpStore.formData.basicInfo.estimatedBudget,
+      projectType: (rfpStore.formData.basicInfo.competitionType as string) || 'general',
+      estimatedBudget: rfpStore.formData.basicInfo.estimatedValue ?? undefined,
+      specificationsContentHtml: sectionsContent || undefined,
     })
 
     if (response.isSuccess) {
@@ -128,11 +129,14 @@ function formatNumber(num: number) {
 
           <!-- BOQ Items Table -->
           <div class="max-h-[55vh] overflow-auto p-5">
-            <div v-if="result.rationale" class="mb-4 rounded-lg bg-ai-50 p-3">
-              <p class="text-xs leading-relaxed text-ai-700">
+            <div v-if="result.assumptions && result.assumptions.length > 0" class="mb-4 rounded-lg bg-ai-50 p-3">
+              <p class="mb-1 text-xs font-semibold text-ai-700">
                 <i class="pi pi-info-circle me-1"></i>
-                {{ result.rationale }}
+                {{ t('ai.assumptions') }}
               </p>
+              <ul class="list-inside list-disc space-y-0.5 text-xs text-ai-600">
+                <li v-for="(assumption, idx) in result.assumptions" :key="idx">{{ assumption }}</li>
+              </ul>
             </div>
 
             <div class="overflow-x-auto rounded-lg border border-secondary-100">
@@ -156,18 +160,18 @@ function formatNumber(num: number) {
                   >
                     <td class="px-3 py-2 text-center text-xs text-secondary-400">{{ idx + 1 }}</td>
                     <td class="px-3 py-2 text-xs font-medium text-secondary-700">{{ item.category }}</td>
-                    <td class="px-3 py-2 text-xs text-secondary-600">{{ item.description }}</td>
+                    <td class="px-3 py-2 text-xs text-secondary-600">{{ item.descriptionAr }}</td>
                     <td class="px-3 py-2 text-center text-xs text-secondary-500">{{ item.unit }}</td>
-                    <td class="px-3 py-2 text-center text-xs text-secondary-600">{{ item.quantity }}</td>
-                    <td class="px-3 py-2 text-end text-xs text-secondary-600">{{ formatNumber(item.estimatedPrice) }}</td>
-                    <td class="px-3 py-2 text-end text-xs font-medium text-secondary-700">{{ formatNumber(item.quantity * item.estimatedPrice) }}</td>
+                    <td class="px-3 py-2 text-center text-xs text-secondary-600">{{ item.estimatedQuantity }}</td>
+                    <td class="px-3 py-2 text-end text-xs text-secondary-600">{{ formatNumber(item.estimatedUnitPrice) }}</td>
+                    <td class="px-3 py-2 text-end text-xs font-medium text-secondary-700">{{ formatNumber(item.estimatedTotalPrice) }}</td>
                   </tr>
                 </tbody>
                 <tfoot class="border-t-2 border-primary/20 bg-primary/5">
                   <tr>
                     <td colspan="6" class="px-3 py-2.5 text-end text-xs font-bold text-primary">{{ t('rfp.boqFields.grandTotal') }}</td>
                     <td class="px-3 py-2.5 text-end text-xs font-bold text-primary">
-                      {{ formatNumber(result.items?.reduce((s, i) => s + i.quantity * i.estimatedPrice, 0) || 0) }}
+                      {{ formatNumber(result.items?.reduce((s, i) => s + i.estimatedTotalPrice, 0) || 0) }}
                     </td>
                   </tr>
                 </tfoot>

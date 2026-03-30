@@ -18,7 +18,7 @@ import { useRfpStore } from '@/stores/rfp'
 import { formatCurrency } from '@/utils/numbers'
 import draggable from 'vuedraggable'
 import AiBoqGenerator from './AiBoqGenerator.vue'
-import type { BoqItem } from '@/services/aiSpecificationService'
+import type { BoqItem as AiBoqItem } from '@/services/aiSpecificationService'
 
 const { t } = useI18n()
 const rfpStore = useRfpStore()
@@ -76,16 +76,16 @@ function onDragEnd() {
 }
 
 /** Handle AI-generated BOQ items */
-function handleAiBoq(items: BoqItem[]) {
+function handleAiBoq(items: AiBoqItem[]) {
   // Clear existing items and add AI-generated ones
   rfpStore.formData.boq.items = []
   items.forEach((item) => {
     rfpStore.addBoqItem({
       category: item.category,
-      description: item.description,
-      unit: item.unit,
-      quantity: item.quantity,
-      estimatedPrice: item.estimatedPrice,
+      description: item.descriptionAr,
+      unit: item.unit as any,
+      quantity: item.estimatedQuantity,
+      estimatedPrice: item.estimatedUnitPrice,
     })
   })
 }

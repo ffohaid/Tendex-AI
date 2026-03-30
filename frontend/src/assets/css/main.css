@@ -47,6 +47,8 @@
   --color-ai-50: #F5F3FF;
   --color-ai-100: #EDE9FE;
   --color-ai-200: #DDD6FE;
+  --color-ai-300: #C4B5FD;
+  --color-ai-400: #A78BFA;
   --color-ai-500: #8B5CF6;
   --color-ai-600: #7C3AED;
   --color-ai-700: #6D28D9;
@@ -237,27 +239,27 @@
   }
 
   .btn-primary {
-    @apply btn bg-primary text-white hover:bg-primary-dark focus:ring-primary shadow-xs hover:shadow-card;
+    @apply inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2.5 text-sm font-semibold transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed bg-primary text-white hover:bg-primary-dark focus:ring-primary shadow-xs hover:shadow-card;
   }
 
   .btn-secondary {
-    @apply btn bg-secondary text-white hover:bg-secondary-light focus:ring-secondary;
+    @apply inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2.5 text-sm font-semibold transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed bg-secondary text-white hover:bg-secondary-light focus:ring-secondary;
   }
 
   .btn-outline {
-    @apply btn border border-secondary-200 bg-white text-secondary hover:bg-surface-muted focus:ring-secondary-200;
+    @apply inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2.5 text-sm font-semibold transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed border border-secondary-200 bg-white text-secondary hover:bg-surface-muted focus:ring-secondary-200;
   }
 
   .btn-ghost {
-    @apply btn text-secondary hover:bg-surface-muted focus:ring-secondary-200;
+    @apply inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2.5 text-sm font-semibold transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed text-secondary hover:bg-surface-muted focus:ring-secondary-200;
   }
 
   .btn-ai {
-    @apply btn bg-gradient-to-r from-ai to-ai-dark text-white hover:from-ai-dark hover:to-ai-700 focus:ring-ai shadow-xs hover:shadow-glow-ai;
+    @apply inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2.5 text-sm font-semibold transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed bg-gradient-to-r from-ai to-ai-dark text-white hover:from-ai-dark hover:to-ai-700 focus:ring-ai shadow-xs hover:shadow-glow-ai;
   }
 
   .btn-danger {
-    @apply btn bg-danger text-white hover:bg-danger-dark focus:ring-danger;
+    @apply inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2.5 text-sm font-semibold transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed bg-danger text-white hover:bg-danger-dark focus:ring-danger;
   }
 
   .btn-sm {
@@ -339,28 +341,28 @@
   }
 
   .skeleton-text {
-    @apply skeleton h-4 w-full;
+    @apply animate-pulse rounded-md bg-secondary-200 h-4 w-full;
   }
 
   .skeleton-title {
-    @apply skeleton h-6 w-3/4;
+    @apply animate-pulse rounded-md bg-secondary-200 h-6 w-3/4;
   }
 
   .skeleton-avatar {
-    @apply skeleton h-10 w-10 rounded-full;
+    @apply animate-pulse rounded-md bg-secondary-200 h-10 w-10 rounded-full;
   }
 
   .skeleton-card {
-    @apply skeleton h-32 w-full rounded-xl;
+    @apply animate-pulse rounded-md bg-secondary-200 h-32 w-full rounded-xl;
   }
 
   .skeleton-btn {
-    @apply skeleton h-10 w-24 rounded-lg;
+    @apply animate-pulse rounded-md bg-secondary-200 h-10 w-24 rounded-lg;
   }
 
   /* ── Stat Card ── */
   .stat-card {
-    @apply card flex items-start gap-4;
+    @apply rounded-xl border border-secondary-200 bg-white p-6 shadow-card transition-shadow duration-200 flex items-start gap-4;
   }
 
   .stat-icon {

@@ -40,8 +40,8 @@ async function handleGenerate() {
       competitionId: rfpStore.formData.id || crypto.randomUUID(),
       projectNameAr: rfpStore.formData.basicInfo.projectName || '',
       projectDescriptionAr: rfpStore.formData.basicInfo.projectDescription || '',
-      projectType: rfpStore.formData.basicInfo.projectType || 'general',
-      estimatedBudget: rfpStore.formData.basicInfo.estimatedBudget,
+      projectType: (rfpStore.formData.basicInfo.competitionType as string) || 'general',
+      estimatedBudget: rfpStore.formData.basicInfo.estimatedValue ?? undefined,
     })
 
     if (response.isSuccess) {

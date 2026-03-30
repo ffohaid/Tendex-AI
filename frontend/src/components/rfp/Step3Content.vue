@@ -66,7 +66,7 @@ function handleAiStructure(sections: BookletSection[]) {
   sections.forEach((section) => {
     rfpStore.addSection({
       title: section.sectionTitleAr,
-      colorCode: section.colorCode || 'green',
+      colorCode: (section.colorCode || 'green') as import('@/types/rfp').TextColorCode,
       isRequired: section.isRequired,
       content: section.suggestedContentBrief || '',
     })
