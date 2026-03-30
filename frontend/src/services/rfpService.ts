@@ -194,9 +194,10 @@ function mapFromBackendResponse(dto: Record<string, unknown>): RfpFormData {
       financialWeight: (dto.financialWeight as number) || 30,
       minimumTechnicalScore: (dto.technicalPassingScore as number) || 60,
       allowPartialOffers: false,
-      requireSampleSubmission: false,
-      requireSitVisit: false,
-      preQualificationRequired: false,
+      requireBankGuarantee: true,
+      guaranteePercentage: 5,
+      inquiryPeriodDays: 14,
+      evaluationCriteria: [],
     },
     content: {
       sections: (dto.sections as unknown[])?.map((s: unknown) => {
@@ -207,11 +208,14 @@ function mapFromBackendResponse(dto: Record<string, unknown>): RfpFormData {
           content: (sec.content as string) || '',
           order: (sec.order as number) || 0,
           isRequired: (sec.isRequired as boolean) || false,
-          colorCode: 'default' as const,
+          colorCode: ((sec.colorCode as string) || 'green') as import('@/types/rfp').TextColorCode,
           assignedTo: null,
           isCompleted: false,
         }
       }) || [],
+      creationMethod: ((dto.creationMethod as string) || 'wizard') as import('@/types/rfp').RfpCreationMethod,
+      templateId: (dto.sourceTemplateId as string) || null,
+      cloneFromId: (dto.sourceCompetitionId as string) || null,
     },
     boq: {
       items: (dto.boqItems as unknown[])?.map((b: unknown) => {
@@ -220,7 +224,7 @@ function mapFromBackendResponse(dto: Record<string, unknown>): RfpFormData {
           id: String(item.id || ''),
           category: (item.category as string) || '',
           description: (item.description as string) || '',
-          unit: (item.unit as string) || 'unit',
+          unit: ((item.unit as string) || 'unit') as import('@/types/rfp').UnitOfMeasure,
           quantity: (item.quantity as number) || 0,
           estimatedPrice: (item.estimatedPrice as number) || 0,
           totalPrice: (item.totalPrice as number) || 0,
@@ -228,12 +232,12 @@ function mapFromBackendResponse(dto: Record<string, unknown>): RfpFormData {
           order: (item.order as number) || 0,
         }
       }) || [],
-      totalEstimatedCost: 0,
+      totalEstimatedValue: 0,
+      includesVat: true,
+      vatPercentage: 15,
     },
     attachments: {
       files: [],
-      maxFileSize: 50,
-      allowedTypes: [],
     },
     status: 'draft',
     createdAt: (dto.createdAt as string) || '',

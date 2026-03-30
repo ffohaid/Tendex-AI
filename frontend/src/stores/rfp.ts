@@ -395,12 +395,9 @@ export const useRfpStore = defineStore('rfp', () => {
    */
   function hasMinimumRequiredFields(): boolean {
     const basic = formData.value.basicInfo
-    return !!(
-      basic.projectName &&
-      basic.projectName.trim().length > 0 &&
-      basic.competitionType &&
-      basic.competitionType !== ''
-    )
+    const hasName = basic.projectName && basic.projectName.trim().length > 0
+    const hasType = !!basic.competitionType && (basic.competitionType as string) !== ''
+    return !!(hasName && hasType)
   }
 
   async function performAutoSave() {
