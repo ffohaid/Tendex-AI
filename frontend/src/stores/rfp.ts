@@ -386,10 +386,31 @@ export const useRfpStore = defineStore('rfp', () => {
   /* ---------------------------------------------------------------- */
   /*  Actions: Auto-save (every 30 seconds)                           */
   /* ---------------------------------------------------------------- */
+
+  /**
+   * Checks whether the minimum required fields are filled before
+   * attempting to create a new competition via the backend.
+   * This prevents 400 errors from the backend validation when the
+   * user has only partially filled the form.
+   */
+  function hasMinimumRequiredFields(): boolean {
+    const basic = formData.value.basicInfo
+    return !!(
+      basic.projectName &&
+      basic.projectName.trim().length > 0 &&
+      basic.competitionType &&
+      basic.competitionType !== ''
+    )
+  }
+
   async function performAutoSave() {
     if (!isDirty.value || isSaving.value) return
     if (!formData.value.id) {
-      /* First save: create the RFP */
+      /* First save: create the RFP — only if minimum fields are filled */
+      if (!hasMinimumRequiredFields()) {
+        // Not enough data yet; skip this auto-save cycle silently
+        return
+      }
       isSaving.value = true
       autoSaveStatus.value = 'saving'
       const response = await createRfp(formData.value)

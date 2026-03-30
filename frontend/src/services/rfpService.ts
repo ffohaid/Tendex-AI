@@ -113,6 +113,65 @@ const reverseCompetitionTypeMap: Record<number, CompetitionType> = {
   4: 'reverse_auction',
 }
 
+/**
+ * Maps backend CompetitionStatus enum (int) to frontend RfpStatus string.
+ * The frontend RfpStatus type has fewer values than the backend, so we
+ * group related backend statuses into the closest frontend equivalent.
+ */
+const statusIntToString: Record<number, string> = {
+  0: 'draft',               // Draft
+  1: 'draft',               // UnderPreparation → still draft phase
+  2: 'pending_approval',    // PendingApproval
+  3: 'approved',            // Approved
+  4: 'published',           // Published
+  5: 'published',           // InquiryPeriod → still published phase
+  6: 'receiving_offers',    // ReceivingOffers
+  7: 'receiving_offers',    // OffersClosed → still in offers phase
+  8: 'technical_evaluation', // TechnicalAnalysis
+  9: 'technical_evaluation', // TechnicalAnalysisCompleted
+  10: 'financial_evaluation', // FinancialAnalysis
+  11: 'financial_evaluation', // FinancialAnalysisCompleted
+  12: 'awarding',           // AwardNotification
+  13: 'awarding',           // AwardApproved
+  14: 'contracting',        // ContractApproval
+  15: 'contracting',        // ContractApproved
+  16: 'completed',          // ContractSigned
+  90: 'cancelled',          // Rejected → mapped to cancelled
+  91: 'cancelled',          // Cancelled
+  92: 'cancelled',          // Suspended → mapped to cancelled
+}
+
+/* ------------------------------------------------------------------ */
+/*  Mapping: Backend CompetitionListItemDto → Frontend RfpListItem      */
+/* ------------------------------------------------------------------ */
+
+function mapListItemFromBackend(dto: Record<string, unknown>): RfpListItem {
+  return {
+    id: String(dto.id || ''),
+    projectName: (dto.projectNameAr as string) || (dto.projectNameEn as string) || '',
+    referenceNumber: (dto.referenceNumber as string) || '',
+    competitionType: reverseCompetitionTypeMap[dto.competitionType as number] || 'public_tender',
+    status: (statusIntToString[dto.status as number] || 'draft') as RfpListItem['status'],
+    estimatedValue: (dto.estimatedBudget as number) || 0,
+    createdAt: (dto.createdAt as string) || '',
+    updatedAt: '',
+    createdBy: (dto.createdBy as string) || '',
+    department: '',
+    completionPercentage: 0,
+  }
+}
+
+function mapPagedResponseFromBackend(dto: Record<string, unknown>): PaginatedResponse<RfpListItem> {
+  const items = (dto.items as Record<string, unknown>[]) || []
+  return {
+    items: items.map(mapListItemFromBackend),
+    totalCount: (dto.totalCount as number) || 0,
+    pageNumber: (dto.pageNumber as number) || 1,
+    pageSize: (dto.pageSize as number) || 10,
+    totalPages: (dto.totalPages as number) || 0,
+  }
+}
+
 function mapFromBackendResponse(dto: Record<string, unknown>): RfpFormData {
   return {
     id: String(dto.id || ''),
@@ -233,16 +292,17 @@ export async function fetchRfpList(params: {
   status?: string
   search?: string
 }): Promise<ApiResponse<PaginatedResponse<RfpListItem>>> {
-  return apiCall(() =>
-    httpGet<PaginatedResponse<RfpListItem>>(BASE_URL, {
+  return apiCall(async () => {
+    const dto = await httpGet<Record<string, unknown>>(BASE_URL, {
       params: {
         page: params.page || 1,
         pageSize: params.pageSize || 10,
         status: params.status,
         search: params.search,
       },
-    }),
-  )
+    })
+    return mapPagedResponseFromBackend(dto)
+  })
 }
 
 /** Fetch a single competition by ID */
