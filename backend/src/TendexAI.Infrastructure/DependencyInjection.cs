@@ -2,7 +2,6 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using Minio;
 using TendexAI.Application.Common.Interfaces;
@@ -145,46 +144,22 @@ public static class DependencyInjection
         // ----- OpenIddict Key Manager (Persistent RSA Keys) -----
         services.AddSingleton<Security.OpenIddictKeyManager>();
 
-        // ----- JWT Bearer Authentication -----
-        // Uses the same RSA signing key as TokenService for token validation.
+        // ----- Custom JWT Authentication -----
+        // Uses a custom authentication handler with the same RSA signing key as TokenService.
         // This replaces OpenIddict validation which required a token store in the DB.
-        var keyManager = services.BuildServiceProvider()
-            .GetRequiredService<Security.OpenIddictKeyManager>();
-        var signingKey = keyManager.GetOrCreateSigningKey();
-
-        var issuer = configuration["Authentication:Issuer"] ?? "https://tendex-ai.com";
-        var audience = configuration["Authentication:Audience"] ?? "tendex-ai-client";
+        var jwtIssuer = configuration["Authentication:Issuer"] ?? "https://tendex-ai.com";
+        var jwtAudience = configuration["Authentication:Audience"] ?? "tendex-ai-client";
 
         services.AddAuthentication(options =>
         {
-            options.DefaultScheme = JwtBearerDefaults.AuthenticationScheme;
-            options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
-            options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+            options.DefaultScheme = "TendexJwt";
+            options.DefaultAuthenticateScheme = "TendexJwt";
+            options.DefaultChallengeScheme = "TendexJwt";
         })
-        .AddJwtBearer(options =>
+        .AddScheme<JwtAuthenticationOptions, JwtAuthenticationHandler>("TendexJwt", options =>
         {
-            options.TokenValidationParameters = new TokenValidationParameters
-            {
-                ValidateIssuer = true,
-                ValidIssuer = issuer,
-                ValidateAudience = true,
-                ValidAudience = audience,
-                ValidateIssuerSigningKey = true,
-                IssuerSigningKey = signingKey,
-                ValidateLifetime = true,
-                ClockSkew = TimeSpan.FromMinutes(2), // Allow 2 minutes clock skew
-                ValidTypes = new[] { "at+jwt", "JWT" }
-            };
-            options.Events = new JwtBearerEvents
-            {
-                OnAuthenticationFailed = context =>
-                {
-                    var logger = context.HttpContext.RequestServices.GetRequiredService<ILoggerFactory>()
-                        .CreateLogger("JwtBearerAuth");
-                    logger.LogWarning("JWT authentication failed: {Error}", context.Exception.Message);
-                    return Task.CompletedTask;
-                }
-            };
+            options.Issuer = jwtIssuer;
+            options.Audience = jwtAudience;
         });
 
         services.AddAuthorization(options =>
