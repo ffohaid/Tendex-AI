@@ -1,53 +1,108 @@
 @import "tailwindcss";
 
 /*
- * Tendex AI - Custom Theme Configuration
- * Brand colors aligned with SDAIA AI Year 2026 identity guidelines.
+ * Tendex AI - Modern Design System
+ * A professional, modern theme for government procurement AI platform.
+ * Color palette: Olive (primary), Blue (interactive), Sky (info),
+ *                Purple (AI), Green (success), Red (error)
  * Font: Diodrum Arabic (Arabic + English)
  * All utilities use logical properties for RTL/LTR support.
  */
 
 @theme {
-  /* Brand Colors */
+  /* ── Primary Brand Colors ── */
   --color-primary: #2BB673;
-  --color-primary-light: #3DC882;
-  --color-primary-dark: #229A5E;
+  --color-primary-light: #34D68A;
+  --color-primary-dark: #1F9A5C;
+  --color-primary-50: #ECFDF5;
+  --color-primary-100: #D1FAE5;
+  --color-primary-500: #2BB673;
+  --color-primary-600: #1F9A5C;
+  --color-primary-700: #15803D;
 
-  --color-secondary: #0D2745;
-  --color-secondary-light: #1A3A5C;
-  --color-secondary-dark: #081B30;
+  /* ── Secondary (Dark Navy) ── */
+  --color-secondary: #0F172A;
+  --color-secondary-light: #1E293B;
+  --color-secondary-dark: #020617;
+  --color-secondary-50: #F8FAFC;
+  --color-secondary-100: #F1F5F9;
+  --color-secondary-200: #E2E8F0;
+  --color-secondary-300: #CBD5E1;
+  --color-secondary-400: #94A3B8;
+  --color-secondary-500: #64748B;
+  --color-secondary-600: #475569;
+  --color-secondary-700: #334155;
+  --color-secondary-800: #1E293B;
+  --color-secondary-900: #0F172A;
 
-  --color-tertiary: #255877;
-  --color-tertiary-light: #337A9E;
-  --color-tertiary-dark: #1B4259;
+  /* ── Tertiary (Slate Blue) ── */
+  --color-tertiary: #64748B;
+  --color-tertiary-light: #94A3B8;
+  --color-tertiary-dark: #475569;
 
+  /* ── AI Purple (Distinctive AI features) ── */
+  --color-ai: #8B5CF6;
+  --color-ai-light: #A78BFA;
+  --color-ai-dark: #7C3AED;
+  --color-ai-50: #F5F3FF;
+  --color-ai-100: #EDE9FE;
+  --color-ai-200: #DDD6FE;
+  --color-ai-500: #8B5CF6;
+  --color-ai-600: #7C3AED;
+  --color-ai-700: #6D28D9;
+
+  /* ── Interactive Blue ── */
+  --color-interactive: #3B82F6;
+  --color-interactive-light: #60A5FA;
+  --color-interactive-dark: #2563EB;
+  --color-interactive-50: #EFF6FF;
+  --color-interactive-100: #DBEAFE;
+
+  /* ── Surface Colors ── */
   --color-surface: #FFFFFF;
-  --color-surface-dim: #DBDBDB;
-  --color-surface-muted: #F5F5F5;
+  --color-surface-dim: #E2E8F0;
+  --color-surface-muted: #F8FAFC;
+  --color-surface-subtle: #F1F5F9;
 
-  /* Semantic Colors */
-  --color-success: #2BB673;
+  /* ── Semantic Colors ── */
+  --color-success: #10B981;
+  --color-success-light: #34D399;
+  --color-success-dark: #059669;
+  --color-success-50: #ECFDF5;
   --color-warning: #F59E0B;
+  --color-warning-light: #FBBF24;
+  --color-warning-dark: #D97706;
+  --color-warning-50: #FFFBEB;
   --color-danger: #EF4444;
-  --color-info: #3B82F6;
+  --color-danger-light: #F87171;
+  --color-danger-dark: #DC2626;
+  --color-danger-50: #FEF2F2;
+  --color-info: #0EA5E9;
+  --color-info-light: #38BDF8;
+  --color-info-dark: #0284C7;
+  --color-info-50: #F0F9FF;
 
-  /* Typography */
+  /* ── Typography ── */
   --font-sans: 'Diodrum Arabic', 'Inter', system-ui, -apple-system, sans-serif;
 
-  /* Border Radius */
-  --radius-sm: 0.25rem;
+  /* ── Border Radius ── */
+  --radius-sm: 0.375rem;
   --radius-md: 0.5rem;
   --radius-lg: 0.75rem;
   --radius-xl: 1rem;
+  --radius-2xl: 1.25rem;
 
-  /* Shadows */
-  --shadow-card: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
-  --shadow-dropdown: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+  /* ── Shadows (Modern, subtle) ── */
+  --shadow-xs: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+  --shadow-card: 0 1px 3px 0 rgb(0 0 0 / 0.06), 0 1px 2px -1px rgb(0 0 0 / 0.06);
+  --shadow-dropdown: 0 4px 6px -1px rgb(0 0 0 / 0.07), 0 2px 4px -2px rgb(0 0 0 / 0.05);
+  --shadow-modal: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
+  --shadow-glow-ai: 0 0 20px rgb(139 92 246 / 0.15);
+  --shadow-glow-primary: 0 0 20px rgb(43 182 115 / 0.15);
 }
 
 /*
  * Base layer: global resets and defaults.
- * Using logical properties exclusively for RTL/LTR compatibility.
  */
 @layer base {
   html {
@@ -58,31 +113,44 @@
   }
 
   body {
-    @apply bg-surface text-secondary;
+    @apply bg-surface-muted text-secondary;
   }
 
-  /* Ensure all elements use border-box */
   *,
   *::before,
   *::after {
     box-sizing: border-box;
   }
 
-  /*
-   * Force English numerals in all interfaces.
-   * This CSS feature ensures consistent numeral display
-   * regardless of the document language.
-   */
+  /* Force English numerals in all interfaces */
   * {
     font-variant-numeric: lining-nums tabular-nums;
   }
 
-  /* Smooth scrolling */
   html {
     scroll-behavior: smooth;
   }
 
-  /* Custom scrollbar for sidebar */
+  /* Modern scrollbar */
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: rgb(148 163 184 / 0.3);
+    border-radius: 3px;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background: rgb(148 163 184 / 0.5);
+  }
+
+  /* Sidebar custom scrollbar */
   .sidebar-scroll::-webkit-scrollbar {
     width: 4px;
   }
@@ -92,12 +160,12 @@
   }
 
   .sidebar-scroll::-webkit-scrollbar-thumb {
-    background: rgba(255, 255, 255, 0.2);
+    background: rgba(255, 255, 255, 0.15);
     border-radius: 2px;
   }
 
   .sidebar-scroll::-webkit-scrollbar-thumb:hover {
-    background: rgba(255, 255, 255, 0.3);
+    background: rgba(255, 255, 255, 0.25);
   }
 }
 
@@ -105,33 +173,326 @@
  * Component layer: reusable component styles.
  */
 @layer components {
-  /* Card component */
+  /* ── Card Variants ── */
   .card {
-    @apply rounded-xl border border-surface-dim bg-white p-6 shadow-sm;
+    @apply rounded-xl border border-secondary-200 bg-white p-6 shadow-card transition-shadow duration-200;
   }
 
-  /* Badge component */
+  .card:hover {
+    @apply shadow-dropdown;
+  }
+
+  .card-flat {
+    @apply rounded-xl bg-white p-6;
+  }
+
+  .card-ai {
+    @apply rounded-xl border border-ai-200 bg-gradient-to-br from-ai-50 to-white p-6 shadow-card;
+  }
+
+  .card-interactive {
+    @apply rounded-xl border border-secondary-200 bg-white p-6 shadow-card transition-all duration-200 cursor-pointer;
+  }
+
+  .card-interactive:hover {
+    @apply border-primary shadow-dropdown -translate-y-0.5;
+  }
+
+  /* ── Badge Variants ── */
   .badge {
-    @apply inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium;
+    @apply inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-semibold;
   }
 
   .badge-primary {
-    @apply bg-primary/10 text-primary;
+    @apply bg-primary-50 text-primary-600;
   }
 
   .badge-secondary {
-    @apply bg-secondary/10 text-secondary;
+    @apply bg-secondary-100 text-secondary-600;
   }
 
   .badge-success {
-    @apply bg-success/10 text-success;
+    @apply bg-success-50 text-success-dark;
   }
 
   .badge-warning {
-    @apply bg-warning/10 text-warning;
+    @apply bg-warning-50 text-warning-dark;
   }
 
   .badge-danger {
-    @apply bg-danger/10 text-danger;
+    @apply bg-danger-50 text-danger-dark;
+  }
+
+  .badge-info {
+    @apply bg-info-50 text-info-dark;
+  }
+
+  .badge-ai {
+    @apply bg-ai-50 text-ai-600;
+  }
+
+  /* ── Button Variants ── */
+  .btn {
+    @apply inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2.5 text-sm font-semibold transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+
+  .btn-primary {
+    @apply btn bg-primary text-white hover:bg-primary-dark focus:ring-primary shadow-xs hover:shadow-card;
+  }
+
+  .btn-secondary {
+    @apply btn bg-secondary text-white hover:bg-secondary-light focus:ring-secondary;
+  }
+
+  .btn-outline {
+    @apply btn border border-secondary-200 bg-white text-secondary hover:bg-surface-muted focus:ring-secondary-200;
+  }
+
+  .btn-ghost {
+    @apply btn text-secondary hover:bg-surface-muted focus:ring-secondary-200;
+  }
+
+  .btn-ai {
+    @apply btn bg-gradient-to-r from-ai to-ai-dark text-white hover:from-ai-dark hover:to-ai-700 focus:ring-ai shadow-xs hover:shadow-glow-ai;
+  }
+
+  .btn-danger {
+    @apply btn bg-danger text-white hover:bg-danger-dark focus:ring-danger;
+  }
+
+  .btn-sm {
+    @apply px-3 py-1.5 text-xs;
+  }
+
+  .btn-lg {
+    @apply px-6 py-3 text-base;
+  }
+
+  .btn-icon {
+    @apply inline-flex items-center justify-center rounded-lg p-2 transition-colors duration-200;
+  }
+
+  /* ── Input Styles ── */
+  .input {
+    @apply w-full rounded-lg border border-secondary-200 bg-white px-4 py-2.5 text-sm text-secondary outline-none transition-all duration-200 placeholder:text-secondary-400 focus:border-primary focus:ring-2 focus:ring-primary/20;
+  }
+
+  .input-error {
+    @apply border-danger focus:border-danger focus:ring-danger/20;
+  }
+
+  /* ── Table Styles ── */
+  .table-modern {
+    @apply w-full text-sm;
+  }
+
+  .table-modern thead {
+    @apply bg-surface-subtle;
+  }
+
+  .table-modern th {
+    @apply px-4 py-3 text-start text-xs font-semibold uppercase tracking-wider text-secondary-500;
+  }
+
+  .table-modern td {
+    @apply px-4 py-3.5 text-secondary-700;
+  }
+
+  .table-modern tbody tr {
+    @apply border-b border-secondary-100 transition-colors duration-150;
+  }
+
+  .table-modern tbody tr:hover {
+    @apply bg-surface-muted;
+  }
+
+  /* ── Section Header ── */
+  .section-header {
+    @apply mb-6 flex items-center justify-between;
+  }
+
+  .section-title {
+    @apply text-xl font-bold text-secondary;
+  }
+
+  .section-subtitle {
+    @apply mt-1 text-sm text-tertiary;
+  }
+
+  /* ── AI Feature Highlight ── */
+  .ai-highlight {
+    @apply relative overflow-hidden rounded-xl border border-ai-200 bg-gradient-to-br from-ai-50 via-white to-ai-50 p-6;
+  }
+
+  .ai-highlight::before {
+    content: '';
+    @apply absolute inset-0 bg-gradient-to-r from-ai/5 to-transparent;
+  }
+
+  .ai-sparkle {
+    @apply inline-flex items-center gap-1.5 text-ai-600;
+  }
+
+  /* ── Skeleton Loading ── */
+  .skeleton {
+    @apply animate-pulse rounded-md bg-secondary-200;
+  }
+
+  .skeleton-text {
+    @apply skeleton h-4 w-full;
+  }
+
+  .skeleton-title {
+    @apply skeleton h-6 w-3/4;
+  }
+
+  .skeleton-avatar {
+    @apply skeleton h-10 w-10 rounded-full;
+  }
+
+  .skeleton-card {
+    @apply skeleton h-32 w-full rounded-xl;
+  }
+
+  .skeleton-btn {
+    @apply skeleton h-10 w-24 rounded-lg;
+  }
+
+  /* ── Stat Card ── */
+  .stat-card {
+    @apply card flex items-start gap-4;
+  }
+
+  .stat-icon {
+    @apply flex h-12 w-12 items-center justify-center rounded-xl text-lg;
+  }
+
+  .stat-value {
+    @apply text-2xl font-bold text-secondary;
+  }
+
+  .stat-label {
+    @apply text-sm text-tertiary;
+  }
+
+  /* ── Empty State ── */
+  .empty-state {
+    @apply flex flex-col items-center justify-center py-16 text-center;
+  }
+
+  .empty-state-icon {
+    @apply mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-surface-subtle text-2xl text-secondary-400;
+  }
+
+  .empty-state-title {
+    @apply text-lg font-semibold text-secondary;
+  }
+
+  .empty-state-text {
+    @apply mt-1 text-sm text-tertiary;
+  }
+
+  /* ── Page Header ── */
+  .page-header {
+    @apply mb-8;
+  }
+
+  .page-title {
+    @apply text-2xl font-bold text-secondary;
+  }
+
+  .page-description {
+    @apply mt-2 text-sm text-tertiary;
+  }
+
+  /* ── Divider ── */
+  .divider {
+    @apply border-t border-secondary-100;
+  }
+
+  /* ── Progress Bar ── */
+  .progress-bar {
+    @apply h-2 w-full overflow-hidden rounded-full bg-secondary-100;
+  }
+
+  .progress-bar-fill {
+    @apply h-full rounded-full transition-all duration-500 ease-out;
+  }
+
+  /* ── Tab Navigation ── */
+  .tab-nav {
+    @apply flex gap-1 border-b border-secondary-100;
+  }
+
+  .tab-item {
+    @apply relative px-4 py-2.5 text-sm font-medium text-tertiary transition-colors duration-200 hover:text-secondary;
+  }
+
+  .tab-item-active {
+    @apply text-primary;
+  }
+
+  .tab-item-active::after {
+    content: '';
+    @apply absolute inset-x-0 bottom-0 h-0.5 rounded-full bg-primary;
+  }
+
+  /* ── Notification Dot ── */
+  .notification-dot {
+    @apply absolute -end-0.5 -top-0.5 h-2.5 w-2.5 rounded-full border-2 border-white bg-danger;
+  }
+
+  /* ── Gradient Backgrounds ── */
+  .gradient-primary {
+    @apply bg-gradient-to-r from-primary to-primary-dark;
+  }
+
+  .gradient-ai {
+    @apply bg-gradient-to-r from-ai to-ai-dark;
+  }
+
+  .gradient-hero {
+    @apply bg-gradient-to-br from-secondary via-secondary-light to-secondary;
+  }
+}
+
+/*
+ * Utility layer: custom utilities.
+ */
+@layer utilities {
+  /* Glass morphism effect */
+  .glass {
+    backdrop-filter: blur(12px);
+    background: rgb(255 255 255 / 0.8);
+  }
+
+  .glass-dark {
+    backdrop-filter: blur(12px);
+    background: rgb(15 23 42 / 0.8);
+  }
+
+  /* Text gradient */
+  .text-gradient-ai {
+    background: linear-gradient(135deg, #8B5CF6, #7C3AED);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .text-gradient-primary {
+    background: linear-gradient(135deg, #2BB673, #1F9A5C);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  /* Smooth transitions */
+  .transition-smooth {
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  /* Focus visible ring */
+  .focus-ring {
+    @apply focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2;
   }
 }

@@ -3,6 +3,7 @@
  * TechnicalEvaluationDetail - Main technical evaluation workspace.
  * Implements blind evaluation with AI-assisted dual scoring.
  * Vendors are shown with anonymous codes only.
+ * Now includes dedicated AI analysis tab.
  */
 import { onMounted, onUnmounted, ref, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
@@ -11,6 +12,8 @@ import { useEvaluationStore } from '@/stores/evaluation'
 import EvaluationHeader from '@/components/evaluation/EvaluationHeader.vue'
 import CriteriaPanel from '@/components/evaluation/CriteriaPanel.vue'
 import VendorScoreCard from '@/components/evaluation/VendorScoreCard.vue'
+import AiEvaluationPanel from '@/components/evaluation/AiEvaluationPanel.vue'
+import AiComparisonMatrix from '@/components/evaluation/AiComparisonMatrix.vue'
 import type { EvaluationCriterion } from '@/types/evaluation'
 
 const { t } = useI18n()
@@ -20,7 +23,7 @@ const store = useEvaluationStore()
 
 const competitionId = computed(() => route.params.id as string)
 const selectedCriterion = ref<EvaluationCriterion | null>(null)
-const activeTab = ref<'scoring' | 'matrix' | 'minutes'>('scoring')
+const activeTab = ref<'scoring' | 'ai-analysis' | 'matrix' | 'minutes'>('scoring')
 const savingStatus = ref<'idle' | 'saving' | 'saved' | 'error'>('idle')
 
 /* Local score map: vendorId -> { score, notes } */
@@ -156,23 +159,28 @@ const completedCriteria = computed(() => {
       <!-- Tab navigation -->
       <div class="flex gap-1 rounded-xl border border-surface-dim bg-surface-muted p-1">
         <button
-          v-for="tab in (['scoring', 'matrix', 'minutes'] as const)"
+          v-for="tab in (['scoring', 'ai-analysis', 'matrix', 'minutes'] as const)"
           :key="tab"
           class="flex-1 rounded-lg px-4 py-2 text-sm font-medium transition-all"
-          :class="activeTab === tab
-            ? 'bg-white text-primary shadow-sm'
-            : 'text-secondary/60 hover:text-secondary'"
+          :class="[
+            activeTab === tab
+              ? tab === 'ai-analysis'
+                ? 'bg-gradient-to-l from-ai-600 to-ai-500 text-white shadow-sm'
+                : 'bg-white text-primary shadow-sm'
+              : 'text-secondary/60 hover:text-secondary',
+          ]"
           @click="activeTab = tab"
         >
           <i
             class="pi me-1.5"
             :class="{
               'pi-pencil': tab === 'scoring',
+              'pi-sparkles': tab === 'ai-analysis',
               'pi-th-large': tab === 'matrix',
               'pi-file-edit': tab === 'minutes',
             }"
           />
-          {{ t(`evaluation.tabs.${tab}`) }}
+          {{ tab === 'ai-analysis' ? t('ai.title') : t(`evaluation.tabs.${tab}`) }}
         </button>
       </div>
 
@@ -252,7 +260,7 @@ const completedCriteria = computed(() => {
                 <button
                   v-for="vendor in store.vendors"
                   :key="`ai-${vendor.id}`"
-                  class="flex items-center gap-1.5 rounded-lg border border-info/30 bg-info/5 px-3 py-2 text-xs font-medium text-info transition-colors hover:bg-info/10"
+                  class="flex items-center gap-1.5 rounded-lg border border-ai-300 bg-ai-50 px-3 py-2 text-xs font-medium text-ai-600 transition-colors hover:bg-ai-100"
                   @click="requestAiHelp(vendor.id)"
                 >
                   <i class="pi pi-sparkles" />
@@ -288,6 +296,18 @@ const completedCriteria = computed(() => {
             <p class="mt-3 text-sm text-secondary/60">{{ t('evaluation.selectCriterion') }}</p>
           </div>
         </div>
+      </div>
+
+      <!-- AI Analysis tab -->
+      <div v-else-if="activeTab === 'ai-analysis'" class="space-y-6">
+        <AiEvaluationPanel
+          :competition-id="competitionId"
+          :evaluation-id="store.selectedCompetition.id"
+        />
+        <AiComparisonMatrix
+          :competition-id="competitionId"
+          :evaluation-id="store.selectedCompetition.id"
+        />
       </div>
 
       <!-- Matrix tab -->

@@ -71,7 +71,7 @@ onMounted(async () => {
 
 <template>
   <header
-    class="fixed inset-inline-0 top-0 z-50 flex h-16 items-center border-b border-surface-dim bg-white shadow-sm"
+    class="fixed inset-inline-0 top-0 z-50 flex h-16 items-center border-b border-secondary-200/60 bg-white/95 backdrop-blur-sm"
   >
     <!-- Start section: Sidebar toggle + Logo -->
     <div class="flex items-center gap-3 ps-4">
@@ -101,7 +101,7 @@ onMounted(async () => {
         <!-- Default platform icon -->
         <div
           v-else
-          class="flex h-9 w-9 items-center justify-center rounded-lg bg-primary text-white"
+          class="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-primary to-primary-dark text-white shadow-xs"
         >
           <i class="pi pi-bolt text-lg"></i>
         </div>
@@ -133,19 +133,19 @@ onMounted(async () => {
         <input
           type="text"
           :placeholder="t('header.searchPlaceholder')"
-          class="w-full rounded-lg border border-surface-dim bg-surface-muted py-2 pe-4 ps-10 text-sm text-secondary outline-none transition-colors placeholder:text-surface-dim focus:border-primary focus:ring-1 focus:ring-primary"
+          class="w-full rounded-xl border border-secondary-200 bg-surface-subtle py-2.5 pe-4 ps-10 text-sm text-secondary outline-none transition-all placeholder:text-secondary-400 focus:border-primary focus:bg-white focus:ring-2 focus:ring-primary/20"
         />
       </div>
     </div>
 
     <!-- End section: Actions -->
     <div class="flex items-center gap-2 pe-4">
-      <!-- AI Year 2026 Badge -->
+      <!-- AI Powered Badge -->
       <div
-        class="hidden items-center gap-1.5 rounded-full bg-primary/10 px-3 py-1.5 lg:flex"
+        class="hidden items-center gap-1.5 rounded-full bg-gradient-to-r from-ai-50 to-ai-100 px-3 py-1.5 lg:flex"
       >
-        <i class="pi pi-sparkles text-xs text-primary"></i>
-        <span class="text-xs font-medium text-primary">
+        <i class="pi pi-sparkles text-xs text-ai-600"></i>
+        <span class="text-xs font-semibold text-ai-600">
           {{ t('header.aiYearBadge') }}
         </span>
       </div>
@@ -153,20 +153,23 @@ onMounted(async () => {
       <!-- Notifications -->
       <button
         type="button"
-        class="relative flex h-10 w-10 items-center justify-center rounded-lg text-secondary transition-colors hover:bg-surface-muted"
+        class="relative flex h-10 w-10 items-center justify-center rounded-xl text-secondary-600 transition-all hover:bg-surface-subtle hover:text-secondary"
         :aria-label="t('common.notifications')"
       >
         <i class="pi pi-bell text-lg"></i>
         <!-- Notification dot -->
         <span
-          class="absolute end-2 top-2 h-2 w-2 rounded-full bg-red-500"
-        ></span>
+          class="absolute end-2 top-2 flex h-2.5 w-2.5 items-center justify-center"
+        >
+          <span class="absolute h-full w-full animate-ping rounded-full bg-danger opacity-75"></span>
+          <span class="relative h-2 w-2 rounded-full bg-danger"></span>
+        </span>
       </button>
 
       <!-- Language switcher -->
       <button
         type="button"
-        class="flex h-10 items-center gap-1.5 rounded-lg px-3 text-sm font-medium text-secondary transition-colors hover:bg-surface-muted"
+        class="flex h-10 items-center gap-1.5 rounded-xl px-3 text-sm font-medium text-secondary-600 transition-all hover:bg-surface-subtle hover:text-secondary"
         @click="switchLanguage"
       >
         <i class="pi pi-globe text-base"></i>
@@ -176,7 +179,7 @@ onMounted(async () => {
       <!-- User avatar -->
       <button
         type="button"
-        class="flex h-10 w-10 items-center justify-center rounded-full bg-secondary text-sm font-bold text-white transition-opacity hover:opacity-90"
+        class="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-secondary to-secondary-light text-sm font-bold text-white ring-2 ring-secondary-200 transition-all hover:ring-primary/50"
         :aria-label="t('common.profile')"
       >
         <i class="pi pi-user"></i>

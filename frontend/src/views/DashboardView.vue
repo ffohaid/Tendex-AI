@@ -103,23 +103,23 @@ async function handleManualRefresh(): Promise<void> {
     <!-- Page Header -->
     <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
       <div>
-        <h1 class="text-2xl font-bold text-secondary">
+        <h1 class="text-2xl font-bold text-secondary-800">
           {{ t('nav.dashboard') }}
         </h1>
-        <p class="mt-1 text-sm text-tertiary">
+        <p class="mt-1 text-sm text-secondary-500">
           {{ t('dashboard.subtitle') }}
         </p>
       </div>
 
       <div class="flex items-center gap-3">
         <!-- Last updated indicator -->
-        <span v-if="lastUpdated" class="text-xs text-surface-dim">
+        <span v-if="lastUpdated" class="text-xs text-secondary-400">
           {{ t('dashboard.lastUpdated') }}: {{ formatDateTime(lastUpdated.toISOString()) }}
         </span>
 
         <!-- Refresh button -->
         <button
-          class="flex items-center gap-1.5 rounded-lg border border-surface-dim bg-white px-3 py-2 text-sm font-medium text-secondary transition-all duration-200 hover:border-primary/30 hover:shadow-sm disabled:opacity-50"
+          class="flex items-center gap-1.5 rounded-xl border border-secondary-200 bg-white px-4 py-2.5 text-sm font-medium text-secondary-700 transition-all duration-200 hover:border-primary/30 hover:shadow-sm disabled:opacity-50"
           :disabled="isRefreshing"
           @click="handleManualRefresh"
         >

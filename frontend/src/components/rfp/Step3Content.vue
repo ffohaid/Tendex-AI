@@ -7,6 +7,8 @@
  * - Rich text editing per section
  * - Color-coded template compliance
  * - Section assignment to team members
+ * - AI-powered structure generation
+ * - AI-powered section content generation and refinement
  */
 import { ref } from 'vue'
 import { useI18n } from 'vue-i18n'
@@ -15,7 +17,9 @@ import { toTypedSchema } from '@vee-validate/zod'
 import { contentSchema } from '@/validations/rfp'
 import { useRfpStore } from '@/stores/rfp'
 import draggable from 'vuedraggable'
-
+import AiSectionAssistant from './AiSectionAssistant.vue'
+import AiStructureGenerator from './AiStructureGenerator.vue'
+import type { BookletSection } from '@/services/aiSpecificationService'
 
 const { t } = useI18n()
 const rfpStore = useRfpStore()
@@ -52,6 +56,26 @@ function addDefaultSections() {
       isRequired: section.isRequired,
     })
   })
+}
+
+/** Handle AI-generated structure */
+function handleAiStructure(sections: BookletSection[]) {
+  // Clear existing sections
+  rfpStore.formData.content.sections = []
+  // Add AI-generated sections
+  sections.forEach((section) => {
+    rfpStore.addSection({
+      title: section.sectionTitleAr,
+      colorCode: section.colorCode || 'green',
+      isRequired: section.isRequired,
+      content: section.suggestedContentBrief || '',
+    })
+  })
+}
+
+/** Handle AI-generated content for a section */
+function handleAiContent(sectionId: string, content: string) {
+  rfpStore.updateSection(sectionId, { content })
 }
 
 /** Add a new empty section */
@@ -123,6 +147,11 @@ defineExpose({
       </div>
     </div>
 
+    <!-- AI Structure Generator (shown when no sections exist) -->
+    <div v-if="rfpStore.formData.content.sections.length === 0" class="mb-6">
+      <AiStructureGenerator @structure-generated="handleAiStructure" />
+    </div>
+
     <!-- Action bar -->
     <div class="flex flex-wrap items-center gap-3">
       <button
@@ -142,6 +171,17 @@ defineExpose({
       >
         <i class="pi pi-file text-xs"></i>
         {{ t('rfp.actions.addDefaultSections') }}
+      </button>
+
+      <!-- AI Regenerate Structure (shown when sections exist) -->
+      <button
+        v-if="rfpStore.formData.content.sections.length > 0"
+        type="button"
+        class="flex items-center gap-2 rounded-lg border border-ai-300 bg-ai-50 px-4 py-2 text-sm font-medium text-ai-600 transition-colors hover:bg-ai-100"
+        @click="rfpStore.formData.content.sections = []; "
+      >
+        <i class="pi pi-sparkles text-xs"></i>
+        {{ t('ai.regenerateStructure') }}
       </button>
     </div>
 
@@ -243,6 +283,18 @@ defineExpose({
               v-if="editingSectionId === section.id"
               class="border-t border-surface-dim p-4"
             >
+              <!-- AI Section Assistant -->
+              <div class="mb-4">
+                <AiSectionAssistant
+                  :section-id="section.id"
+                  :section-title="section.title"
+                  :section-type="section.colorCode === 'black' ? 'mandatory' : 'editable'"
+                  :current-content="section.content || ''"
+                  @content-generated="(content) => handleAiContent(section.id, content)"
+                  @content-refined="(content) => handleAiContent(section.id, content)"
+                />
+              </div>
+
               <div class="mb-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
                 <!-- Color code selector -->
                 <div>

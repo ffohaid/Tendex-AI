@@ -1,6 +1,6 @@
 <script setup lang="ts">
 /**
- * StatsCards Component
+ * StatsCards Component - Modern Design
  *
  * Displays quick KPI statistics as cards at the top of the dashboard.
  * Data is fetched dynamically from the dashboard store.
@@ -22,59 +22,65 @@ const { formatNumber, formatPercentage } = useFormatters()
 interface StatCard {
   key: string
   icon: string
-  color: string
-  bgColor: string
+  iconBg: string
+  iconColor: string
+  borderAccent: string
   value: string
   labelKey: string
-  trend?: 'up' | 'down' | 'neutral'
 }
 
 const cards = computed<StatCard[]>(() => [
   {
     key: 'activeCompetitions',
     icon: 'pi-briefcase',
-    color: 'text-primary',
-    bgColor: 'bg-primary/10',
+    iconBg: 'bg-primary-50',
+    iconColor: 'text-primary',
+    borderAccent: 'border-t-primary',
     value: formatNumber(props.stats.activeCompetitions),
     labelKey: 'dashboard.stats.activeCompetitions',
   },
   {
     key: 'completedCompetitions',
     icon: 'pi-check-circle',
-    color: 'text-success',
-    bgColor: 'bg-success/10',
+    iconBg: 'bg-success-50',
+    iconColor: 'text-success',
+    borderAccent: 'border-t-success',
     value: formatNumber(props.stats.completedCompetitions),
     labelKey: 'dashboard.stats.completedCompetitions',
   },
   {
     key: 'pendingEvaluations',
     icon: 'pi-clipboard',
-    color: 'text-warning',
-    bgColor: 'bg-warning/10',
+    iconBg: 'bg-warning-50',
+    iconColor: 'text-warning',
+    borderAccent: 'border-t-warning',
     value: formatNumber(props.stats.pendingEvaluations),
     labelKey: 'dashboard.stats.pendingEvaluations',
   },
   {
     key: 'pendingTasks',
     icon: 'pi-list-check',
-    color: 'text-info',
-    bgColor: 'bg-info/10',
+    iconBg: 'bg-info-50',
+    iconColor: 'text-info',
+    borderAccent: 'border-t-info',
     value: formatNumber(props.stats.pendingTasks),
     labelKey: 'dashboard.stats.pendingTasks',
   },
   {
     key: 'totalOffers',
     icon: 'pi-file',
-    color: 'text-tertiary',
-    bgColor: 'bg-tertiary/10',
+    iconBg: 'bg-secondary-50',
+    iconColor: 'text-secondary',
+    borderAccent: 'border-t-secondary',
     value: formatNumber(props.stats.totalOffers),
     labelKey: 'dashboard.stats.totalOffers',
   },
   {
     key: 'complianceRate',
     icon: 'pi-shield',
-    color: 'text-success',
-    bgColor: 'bg-success/10',
+    iconBg: 'bg-success-50',
+    iconColor: 'text-success',
+    borderAccent: 'border-t-success',
     value: formatPercentage(props.stats.complianceRate),
     labelKey: 'dashboard.stats.complianceRate',
   },
@@ -86,34 +92,40 @@ const cards = computed<StatCard[]>(() => [
     <div
       v-for="card in cards"
       :key="card.key"
-      class="card group transition-all duration-200 hover:shadow-md"
+      class="group relative overflow-hidden rounded-xl border border-secondary-100 bg-white p-5 shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg"
+      :class="['border-t-[3px]', card.borderAccent]"
     >
       <!-- Loading skeleton -->
       <template v-if="isLoading">
         <div class="mb-3 flex items-center justify-between">
-          <div class="h-10 w-10 animate-pulse rounded-lg bg-surface-dim"></div>
+          <div class="h-11 w-11 animate-pulse rounded-xl bg-secondary-100"></div>
         </div>
-        <div class="h-3 w-20 animate-pulse rounded bg-surface-dim"></div>
-        <div class="mt-2 h-7 w-14 animate-pulse rounded bg-surface-muted"></div>
+        <div class="h-3 w-20 animate-pulse rounded-md bg-secondary-100"></div>
+        <div class="mt-2 h-8 w-14 animate-pulse rounded-md bg-secondary-50"></div>
       </template>
 
       <!-- Loaded content -->
       <template v-else>
         <div class="mb-3 flex items-center justify-between">
           <div
-            class="flex h-10 w-10 items-center justify-center rounded-lg transition-transform duration-200 group-hover:scale-110"
-            :class="card.bgColor"
+            class="flex h-11 w-11 items-center justify-center rounded-xl transition-transform duration-300 group-hover:scale-110"
+            :class="card.iconBg"
           >
-            <i class="pi text-lg" :class="[card.icon, card.color]"></i>
+            <i class="pi text-lg" :class="[card.icon, card.iconColor]"></i>
           </div>
         </div>
-        <p class="text-xs font-medium text-tertiary">
+        <p class="text-xs font-medium text-secondary-500">
           {{ t(card.labelKey) }}
         </p>
-        <p class="mt-1 text-2xl font-bold text-secondary" :class="card.color">
+        <p class="mt-1 text-2xl font-bold text-secondary-800">
           {{ card.value }}
         </p>
       </template>
+
+      <!-- Decorative gradient overlay on hover -->
+      <div
+        class="pointer-events-none absolute inset-0 bg-gradient-to-br from-transparent to-secondary-50/50 opacity-0 transition-opacity duration-300 group-hover:opacity-100"
+      ></div>
     </div>
   </div>
 </template>

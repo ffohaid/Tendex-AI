@@ -17,6 +17,8 @@ import { boqSchema } from '@/validations/rfp'
 import { useRfpStore } from '@/stores/rfp'
 import { formatCurrency } from '@/utils/numbers'
 import draggable from 'vuedraggable'
+import AiBoqGenerator from './AiBoqGenerator.vue'
+import type { BoqItem } from '@/services/aiSpecificationService'
 
 const { t } = useI18n()
 const rfpStore = useRfpStore()
@@ -73,6 +75,21 @@ function onDragEnd() {
   rfpStore.reorderBoqItems(rfpStore.formData.boq.items)
 }
 
+/** Handle AI-generated BOQ items */
+function handleAiBoq(items: BoqItem[]) {
+  // Clear existing items and add AI-generated ones
+  rfpStore.formData.boq.items = []
+  items.forEach((item) => {
+    rfpStore.addBoqItem({
+      category: item.category,
+      description: item.description,
+      unit: item.unit,
+      quantity: item.quantity,
+      estimatedPrice: item.estimatedPrice,
+    })
+  })
+}
+
 /** Toggle VAT */
 function toggleVat(event: Event) {
   rfpStore.updateBoq({ includesVat: (event.target as HTMLInputElement).checked })
@@ -102,16 +119,34 @@ defineExpose({
       </p>
     </div>
 
+    <!-- AI BOQ Generator -->
+    <div v-if="rfpStore.formData.boq.items.length === 0" class="mb-4">
+      <AiBoqGenerator @boq-generated="handleAiBoq" />
+    </div>
+
     <!-- Action bar -->
     <div class="flex flex-wrap items-center justify-between gap-3">
-      <button
-        type="button"
-        class="flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-primary-dark"
-        @click="addItem"
-      >
-        <i class="pi pi-plus text-xs"></i>
-        {{ t('rfp.actions.addBoqItem') }}
-      </button>
+      <div class="flex items-center gap-3">
+        <button
+          type="button"
+          class="flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-primary-dark"
+          @click="addItem"
+        >
+          <i class="pi pi-plus text-xs"></i>
+          {{ t('rfp.actions.addBoqItem') }}
+        </button>
+
+        <!-- AI Regenerate BOQ (shown when items exist) -->
+        <button
+          v-if="rfpStore.formData.boq.items.length > 0"
+          type="button"
+          class="flex items-center gap-2 rounded-lg border border-ai-300 bg-ai-50 px-4 py-2 text-sm font-medium text-ai-600 transition-colors hover:bg-ai-100"
+          @click="rfpStore.formData.boq.items = []"
+        >
+          <i class="pi pi-sparkles text-xs"></i>
+          {{ t('ai.regenerateBoq') }}
+        </button>
+      </div>
 
       <div class="flex items-center gap-4">
         <!-- VAT toggle -->

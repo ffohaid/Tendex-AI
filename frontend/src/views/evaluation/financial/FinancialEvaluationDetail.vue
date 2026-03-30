@@ -1,7 +1,7 @@
 <script setup lang="ts">
 /**
  * FinancialEvaluationDetail - Financial evaluation workspace.
- * Implements price comparison, arithmetic verification, and scoring.
+ * Implements price comparison, arithmetic verification, scoring, and AI analysis.
  * Only accessible after technical evaluation approval.
  */
 import { onMounted, onUnmounted, ref, computed } from 'vue'
@@ -10,6 +10,7 @@ import { useI18n } from 'vue-i18n'
 import { useEvaluationStore } from '@/stores/evaluation'
 import { formatCurrency } from '@/utils/numbers'
 import EvaluationHeader from '@/components/evaluation/EvaluationHeader.vue'
+import AiEvaluationPanel from '@/components/evaluation/AiEvaluationPanel.vue'
 
 const { t } = useI18n()
 const route = useRoute()
@@ -17,7 +18,7 @@ const router = useRouter()
 const store = useEvaluationStore()
 
 const competitionId = computed(() => route.params.id as string)
-const activeTab = ref<'prices' | 'scoring' | 'ranking' | 'minutes'>('prices')
+const activeTab = ref<'prices' | 'ai-analysis' | 'scoring' | 'ranking' | 'minutes'>('prices')
 
 onMounted(async () => {
   await store.selectCompetition(competitionId.value)
@@ -85,24 +86,29 @@ function goToComparison() {
       <!-- Tab navigation -->
       <div class="flex gap-1 rounded-xl border border-surface-dim bg-surface-muted p-1">
         <button
-          v-for="tab in (['prices', 'scoring', 'ranking', 'minutes'] as const)"
+          v-for="tab in (['prices', 'ai-analysis', 'scoring', 'ranking', 'minutes'] as const)"
           :key="tab"
           class="flex-1 rounded-lg px-4 py-2 text-sm font-medium transition-all"
-          :class="activeTab === tab
-            ? 'bg-white text-primary shadow-sm'
-            : 'text-secondary/60 hover:text-secondary'"
+          :class="[
+            activeTab === tab
+              ? tab === 'ai-analysis'
+                ? 'bg-gradient-to-l from-ai-600 to-ai-500 text-white shadow-sm'
+                : 'bg-white text-primary shadow-sm'
+              : 'text-secondary/60 hover:text-secondary',
+          ]"
           @click="activeTab = tab"
         >
           <i
             class="pi me-1.5"
             :class="{
               'pi-dollar': tab === 'prices',
+              'pi-sparkles': tab === 'ai-analysis',
               'pi-pencil': tab === 'scoring',
               'pi-sort-amount-down': tab === 'ranking',
               'pi-file-edit': tab === 'minutes',
             }"
           />
-          {{ t(`evaluation.financial.tabs.${tab}`) }}
+          {{ tab === 'ai-analysis' ? t('ai.title') : t(`evaluation.financial.tabs.${tab}`) }}
         </button>
       </div>
 
@@ -253,6 +259,105 @@ function goToComparison() {
                 </tr>
               </tbody>
             </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- AI Analysis tab -->
+      <div v-else-if="activeTab === 'ai-analysis'" class="space-y-6">
+        <!-- AI Financial Analysis Panel -->
+        <AiEvaluationPanel
+          :competition-id="competitionId"
+          :evaluation-id="store.selectedCompetition.id"
+        />
+
+        <!-- AI Price Anomaly Detection -->
+        <div class="rounded-xl border border-ai-200 bg-gradient-to-bl from-ai-50 to-white p-6">
+          <div class="mb-4 flex items-center gap-3">
+            <div class="flex h-10 w-10 items-center justify-center rounded-lg bg-ai-100">
+              <i class="pi pi-chart-line text-ai-600" />
+            </div>
+            <div>
+              <h3 class="text-lg font-bold text-secondary">تحليل الأسعار بالذكاء الاصطناعي</h3>
+              <p class="text-sm text-secondary/60">كشف الانحرافات السعرية والتسعير غير الواقعي</p>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-1 gap-4 md:grid-cols-3">
+            <!-- Price Range Analysis -->
+            <div class="rounded-lg border border-surface-dim bg-white p-4">
+              <div class="mb-2 flex items-center gap-2">
+                <i class="pi pi-arrows-h text-primary" />
+                <span class="text-sm font-semibold text-secondary">نطاق الأسعار</span>
+              </div>
+              <div v-if="sortedOffers.length >= 2" class="space-y-2">
+                <div class="flex justify-between text-xs text-secondary/60">
+                  <span>أقل عرض</span>
+                  <span class="font-medium text-success">{{ formatCurrency(sortedOffers[0]?.totalAmount ?? 0) }}</span>
+                </div>
+                <div class="flex justify-between text-xs text-secondary/60">
+                  <span>أعلى عرض</span>
+                  <span class="font-medium text-danger">{{ formatCurrency(sortedOffers[sortedOffers.length - 1]?.totalAmount ?? 0) }}</span>
+                </div>
+                <div class="mt-2 h-2 w-full overflow-hidden rounded-full bg-surface-muted">
+                  <div class="h-full rounded-full bg-gradient-to-l from-danger to-success" style="width: 100%" />
+                </div>
+              </div>
+              <p v-else class="text-xs text-secondary/40">لا توجد عروض كافية</p>
+            </div>
+
+            <!-- Arithmetic Verification -->
+            <div class="rounded-lg border border-surface-dim bg-white p-4">
+              <div class="mb-2 flex items-center gap-2">
+                <i class="pi pi-calculator text-warning" />
+                <span class="text-sm font-semibold text-secondary">التحقق الحسابي</span>
+              </div>
+              <div class="space-y-1.5">
+                <div
+                  v-for="offer in store.financialOffers"
+                  :key="`arith-${offer.id}`"
+                  class="flex items-center justify-between text-xs"
+                >
+                  <span class="text-secondary/60">{{ offer.vendorCode }}</span>
+                  <span
+                    class="rounded-full px-2 py-0.5 text-[10px] font-medium"
+                    :class="offer.arithmeticValid ? 'bg-success/10 text-success' : 'bg-danger/10 text-danger'"
+                  >
+                    {{ offer.arithmeticValid ? 'صحيح' : 'خطأ حسابي' }}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Deviation Summary -->
+            <div class="rounded-lg border border-surface-dim bg-white p-4">
+              <div class="mb-2 flex items-center gap-2">
+                <i class="pi pi-percentage text-ai-600" />
+                <span class="text-sm font-semibold text-secondary">الانحراف عن التقدير</span>
+              </div>
+              <div class="space-y-1.5">
+                <div
+                  v-for="offer in store.financialOffers"
+                  :key="`dev-${offer.id}`"
+                  class="flex items-center justify-between text-xs"
+                >
+                  <span class="text-secondary/60">{{ offer.vendorCode }}</span>
+                  <span
+                    v-if="offer.deviationFromEstimate !== undefined"
+                    class="rounded-full px-2 py-0.5 text-[10px] font-medium"
+                    :class="getDeviationBg(offer.deviationFromEstimate) + ' ' + getDeviationColor(offer.deviationFromEstimate)"
+                  >
+                    {{ offer.deviationFromEstimate > 0 ? '+' : '' }}{{ offer.deviationFromEstimate?.toFixed(1) }}%
+                  </span>
+                  <span v-else class="text-secondary/30">—</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="mt-4 rounded-lg border border-ai-200 bg-ai-50 p-2.5 text-center text-xs text-ai-600">
+            <i class="pi pi-info-circle me-1" />
+            التحليل المالي يعتمد على مقارنة الأسعار مع التقديرات الرسمية وكشف الانحرافات غير الطبيعية
           </div>
         </div>
       </div>

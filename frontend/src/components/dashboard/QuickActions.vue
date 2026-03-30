@@ -1,12 +1,12 @@
 <script setup lang="ts">
 /**
- * QuickActions Component
+ * QuickActions Component - Modern Design
  *
  * Provides quick access buttons for common actions:
  * - Create new competition
- * - Submit offer
  * - View reports
- * - AI Assistant
+ * - AI Assistant (highlighted with AI branding)
+ * - Manage committees
  */
 import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
@@ -19,8 +19,9 @@ interface QuickAction {
   icon: string
   labelKey: string
   route: string
-  color: string
-  bgColor: string
+  isAi?: boolean
+  iconBg: string
+  iconColor: string
 }
 
 const actions: QuickAction[] = [
@@ -29,32 +30,33 @@ const actions: QuickAction[] = [
     icon: 'pi-plus-circle',
     labelKey: 'dashboard.quickActions.createCompetition',
     route: '/rfp/create',
-    color: 'text-primary',
-    bgColor: 'bg-primary/10 hover:bg-primary/20',
+    iconBg: 'bg-primary-50',
+    iconColor: 'text-primary',
   },
   {
     key: 'viewReports',
     icon: 'pi-chart-bar',
     labelKey: 'dashboard.quickActions.viewReports',
     route: '/reports',
-    color: 'text-info',
-    bgColor: 'bg-info/10 hover:bg-info/20',
+    iconBg: 'bg-info-50',
+    iconColor: 'text-info',
   },
   {
     key: 'aiAssistant',
     icon: 'pi-sparkles',
     labelKey: 'dashboard.quickActions.aiAssistant',
     route: '/ai-assistant',
-    color: 'text-tertiary',
-    bgColor: 'bg-tertiary/10 hover:bg-tertiary/20',
+    isAi: true,
+    iconBg: 'bg-ai-50',
+    iconColor: 'text-ai-600',
   },
   {
     key: 'manageCommittees',
     icon: 'pi-users',
     labelKey: 'dashboard.quickActions.manageCommittees',
     route: '/committees/permanent',
-    color: 'text-warning',
-    bgColor: 'bg-warning/10 hover:bg-warning/20',
+    iconBg: 'bg-warning-50',
+    iconColor: 'text-warning',
   },
 ]
 
@@ -64,26 +66,49 @@ function navigateTo(route: string): void {
 </script>
 
 <template>
-  <div class="card">
-    <h3 class="mb-4 text-lg font-semibold text-secondary">
+  <div class="rounded-xl border border-secondary-100 bg-white p-5 shadow-sm">
+    <h3 class="mb-4 text-lg font-semibold text-secondary-800">
       {{ t('dashboard.quickActions.title') }}
     </h3>
     <div class="grid grid-cols-2 gap-3 sm:grid-cols-4">
       <button
         v-for="action in actions"
         :key="action.key"
-        class="flex flex-col items-center gap-2 rounded-xl p-4 transition-all duration-200"
-        :class="action.bgColor"
+        class="group flex flex-col items-center gap-3 rounded-xl border p-5 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-md"
+        :class="[
+          action.isAi
+            ? 'border-ai-200 bg-gradient-to-br from-ai-50 to-white hover:border-ai-300 hover:shadow-ai-100/50'
+            : 'border-secondary-100 bg-white hover:border-primary-200',
+        ]"
         @click="navigateTo(action.route)"
       >
         <div
-          class="flex h-10 w-10 items-center justify-center rounded-lg"
-          :class="action.bgColor"
+          class="flex h-12 w-12 items-center justify-center rounded-xl transition-transform duration-300 group-hover:scale-110"
+          :class="[
+            action.isAi
+              ? 'bg-gradient-to-br from-ai-100 to-ai-50'
+              : action.iconBg,
+          ]"
         >
-          <i class="pi text-xl" :class="[action.icon, action.color]"></i>
+          <i
+            class="pi text-xl"
+            :class="[action.icon, action.iconColor]"
+          ></i>
         </div>
-        <span class="text-center text-xs font-medium text-secondary">
+        <span
+          class="text-center text-xs font-semibold"
+          :class="[
+            action.isAi ? 'text-ai-700' : 'text-secondary-700',
+          ]"
+        >
           {{ t(action.labelKey) }}
+        </span>
+        <!-- AI badge -->
+        <span
+          v-if="action.isAi"
+          class="rounded-full bg-ai-100 px-2 py-0.5 text-[10px] font-bold text-ai-600"
+        >
+          Powered by AI
         </span>
       </button>
     </div>

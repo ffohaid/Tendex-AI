@@ -61,27 +61,41 @@ function navigateToChild(child: NavigationItem): void {
 </script>
 
 <template>
-  <li class="mb-1">
+  <li class="mb-0.5">
     <!-- Parent / Leaf item button -->
     <button
       type="button"
-      class="group flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-200"
+      class="group relative flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-200"
       :class="[
         isActive
-          ? 'bg-primary/10 text-primary'
-          : 'text-surface hover:bg-white/10 hover:text-white',
+          ? 'bg-white/10 text-white'
+          : item.key === 'ai-assistant'
+            ? 'text-ai-200 hover:bg-ai/10 hover:text-white'
+            : 'text-secondary-400 hover:bg-white/5 hover:text-white',
       ]"
       :title="isCollapsed ? t(item.labelKey) : undefined"
       @click="handleClick"
     >
+      <!-- Active indicator bar -->
+      <span
+        v-if="isActive"
+        class="absolute inset-y-1 rounded-full bg-primary"
+        :style="{ insetInlineStart: '-0.5rem', width: '3px' }"
+      ></span>
+
       <!-- Icon -->
-      <i
+      <span
+        class="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg transition-colors"
         :class="[
-          item.icon,
-          'text-base transition-colors',
-          isActive ? 'text-primary' : 'text-surface-dim group-hover:text-white',
+          isActive
+            ? 'bg-primary/20 text-primary'
+            : item.key === 'ai-assistant'
+              ? 'bg-ai/10 text-ai-light'
+              : 'text-secondary-400 group-hover:text-white',
         ]"
-      ></i>
+      >
+        <i :class="[item.icon, 'text-base']" />
+      </span>
 
       <!-- Label (hidden when sidebar is collapsed) -->
       <span
@@ -89,6 +103,14 @@ function navigateToChild(child: NavigationItem): void {
         class="flex-1 truncate text-start"
       >
         {{ t(item.labelKey) }}
+      </span>
+
+      <!-- AI sparkle badge for AI assistant -->
+      <span
+        v-if="item.key === 'ai-assistant' && !isCollapsed"
+        class="rounded-md bg-ai/20 px-1.5 py-0.5 text-[10px] font-bold text-ai-200"
+      >
+        AI
       </span>
 
       <!-- Badge -->
@@ -105,7 +127,7 @@ function navigateToChild(child: NavigationItem): void {
         class="pi text-xs transition-transform duration-200"
         :class="[
           isExpanded ? 'pi-chevron-down' : 'pi-chevron-left',
-          isActive ? 'text-primary' : 'text-surface-dim',
+          isActive ? 'text-white' : 'text-secondary-500',
         ]"
         :style="{ transform: isExpanded ? 'none' : (undefined) }"
       ></i>
@@ -122,7 +144,7 @@ function navigateToChild(child: NavigationItem): void {
     >
       <ul
         v-if="hasChildren && isExpanded && !isCollapsed"
-        class="mt-1 overflow-hidden ps-4"
+        class="mt-1 overflow-hidden ps-6"
       >
         <li
           v-for="child in item.children"
@@ -131,21 +153,27 @@ function navigateToChild(child: NavigationItem): void {
         >
           <button
             type="button"
-            class="group flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-sm transition-all duration-150"
+            class="group relative flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-sm transition-all duration-150"
             :class="[
               route.name === child.route
-                ? 'bg-primary/10 font-medium text-primary'
-                : 'text-surface-dim hover:bg-white/5 hover:text-white',
+                ? 'bg-white/10 font-medium text-white'
+                : 'text-secondary-400 hover:bg-white/5 hover:text-secondary-200',
             ]"
             @click="navigateToChild(child)"
           >
+            <!-- Active dot for child -->
+            <span
+              v-if="route.name === child.route"
+              class="absolute h-1.5 w-1.5 rounded-full bg-primary"
+              :style="{ insetInlineStart: '-0.75rem' }"
+            ></span>
             <i
               :class="[
                 child.icon,
                 'text-sm',
                 route.name === child.route
                   ? 'text-primary'
-                  : 'text-surface-dim group-hover:text-white',
+                  : 'text-secondary-500 group-hover:text-secondary-300',
               ]"
             ></i>
             <span class="truncate">{{ t(child.labelKey) }}</span>

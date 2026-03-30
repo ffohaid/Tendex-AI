@@ -30,12 +30,13 @@ const { toggleExpand, isExpanded } = useSidebarNavigation(filteredNavigation.val
 
 <template>
   <aside
-    class="fixed top-16 bottom-0 z-40 flex flex-col border-e border-secondary-dark bg-secondary transition-all duration-300"
+    class="fixed top-16 bottom-0 z-40 flex flex-col transition-all duration-300"
     :class="[isCollapsed ? 'w-16' : 'w-64']"
     :style="{ insetInlineStart: '0' }"
+    style="background: linear-gradient(180deg, #0F172A 0%, #1E293B 100%);"
   >
     <!-- Navigation menu -->
-    <nav class="flex-1 overflow-y-auto px-2 py-4" :aria-label="t('nav.dashboard')">
+    <nav class="sidebar-scroll flex-1 overflow-y-auto px-2 py-4" :aria-label="t('nav.dashboard')">
       <ul class="space-y-0.5">
         <SidebarMenuItem
           v-for="item in filteredNavigation"
@@ -49,10 +50,10 @@ const { toggleExpand, isExpanded } = useSidebarNavigation(filteredNavigation.val
     </nav>
 
     <!-- Sidebar footer: Collapse toggle -->
-    <div class="border-t border-secondary-dark p-2">
+    <div class="border-t border-white/10 p-2">
       <button
         type="button"
-        class="flex w-full items-center justify-center gap-2 rounded-lg px-3 py-2.5 text-sm text-surface-dim transition-colors hover:bg-white/10 hover:text-white"
+        class="flex w-full items-center justify-center gap-2 rounded-lg px-3 py-2.5 text-sm text-secondary-400 transition-colors hover:bg-white/10 hover:text-white"
         :aria-label="isCollapsed ? t('sidebar.expand') : t('sidebar.collapse')"
         @click="appStore.toggleSidebar()"
       >
