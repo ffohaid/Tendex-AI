@@ -39,9 +39,27 @@ public sealed class CurrentUserService : ICurrentUserService
         _httpContextAccessor.HttpContext?.Connection?.RemoteIpAddress?.ToString();
 
     /// <inheritdoc />
-    public string? SessionId =>
-        _httpContextAccessor.HttpContext?.User?.FindFirstValue("sid")
-        ?? _httpContextAccessor.HttpContext?.Session?.Id;
+    public string? SessionId
+    {
+        get
+        {
+            // First try to get session ID from JWT claims
+            var sidClaim = _httpContextAccessor.HttpContext?.User?.FindFirstValue("sid");
+            if (!string.IsNullOrEmpty(sidClaim))
+                return sidClaim;
+
+            // Safely try to access Session - it may not be configured for all requests
+            try
+            {
+                return _httpContextAccessor.HttpContext?.Session?.Id;
+            }
+            catch (InvalidOperationException)
+            {
+                // Session middleware is not configured or not available for this request
+                return null;
+            }
+        }
+    }
 
     /// <inheritdoc />
     public Guid? TenantId
