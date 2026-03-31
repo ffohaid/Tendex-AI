@@ -94,6 +94,9 @@ services:
       MinIO__SecretKey: ${MINIO_SECRET_KEY}
       MinIO__UseSSL: ${MINIO_USE_SSL:-false}
       Qdrant__Endpoint: ${QDRANT_ENDPOINT}
+      Qdrant__Host: tendex-qdrant
+      Qdrant__GrpcPort: "6334"
+      Qdrant__HttpPort: "6333"
       Qdrant__CollectionPrefix: ${QDRANT_COLLECTION_PREFIX}
       Elasticsearch__Url: ${ELASTICSEARCH_URL}
       Security__AiEncryptionKey: ${AI_ENCRYPTION_KEY}

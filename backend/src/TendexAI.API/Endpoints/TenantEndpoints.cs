@@ -27,7 +27,8 @@ public static class TenantEndpoints
     {
         var group = app.MapGroup("/api/v1/tenants")
             .WithTags("Tenants")
-            .WithDescription("Government entity (tenant) lifecycle management APIs");
+            .WithDescription("Government entity (tenant) lifecycle management APIs")
+            .RequireAuthorization();
 
         // GET /api/v1/tenants - List tenants with pagination and filtering
         group.MapGet("/", GetTenantsList)

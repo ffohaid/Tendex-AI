@@ -2080,7 +2080,8 @@
     "email": "Email",
     "inApp": "In-App",
     "sms": "SMS",
-    "type": "Notification Type"
+    "type": "Notification Type",
+    "viewAll": "View All"
   },
   "operator": {
     "aiSettings": "AI Settings",
