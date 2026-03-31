@@ -67,6 +67,21 @@ const statusMap: Record<number, { ar: string; en: string }> = {
   2: { ar: 'بانتظار الاعتماد', en: 'Pending Approval' },
   3: { ar: 'معتمدة', en: 'Approved' },
   4: { ar: 'منشورة', en: 'Published' },
+  5: { ar: 'فترة الاستفسارات', en: 'Inquiry Period' },
+  6: { ar: 'استقبال العروض', en: 'Receiving Offers' },
+  7: { ar: 'إغلاق العروض', en: 'Offers Closed' },
+  8: { ar: 'التحليل الفني', en: 'Technical Analysis' },
+  9: { ar: 'اكتمال التحليل الفني', en: 'Technical Analysis Completed' },
+  10: { ar: 'التحليل المالي', en: 'Financial Analysis' },
+  11: { ar: 'اكتمال التحليل المالي', en: 'Financial Analysis Completed' },
+  12: { ar: 'إشعار الترسية', en: 'Award Notification' },
+  13: { ar: 'اعتماد الترسية', en: 'Award Approved' },
+  14: { ar: 'إجازة العقد', en: 'Contract Approval' },
+  15: { ar: 'اعتماد العقد', en: 'Contract Approved' },
+  16: { ar: 'توقيع العقد', en: 'Contract Signed' },
+  90: { ar: 'مرفوضة', en: 'Rejected' },
+  91: { ar: 'ملغاة', en: 'Cancelled' },
+  92: { ar: 'معلقة', en: 'Suspended' },
 }
 
 function getTransitionLabel(from: number, to: number): string {
