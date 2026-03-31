@@ -106,7 +106,7 @@ const approveStepId = ref('')
 const competitionStatus = ref<number>(0) // 0=Draft, 1=UnderPreparation, 2=PendingApproval, 3=Approved
 
 const isReadOnly = computed(() => competitionStatus.value >= 2) // PendingApproval or Approved
-const canSubmitForApproval = computed(() => competitionStatus.value <= 1 && sectionProgress.value >= 50)
+const canSubmitForApproval = computed(() => competitionStatus.value <= 1)
 // Reserved for future use:
 // const isApprovalPhase = computed(() => competitionStatus.value === 2)
 // const isApproved = computed(() => competitionStatus.value === 3)
@@ -353,10 +353,10 @@ function getBlockBorderClass(colorType: ColorType): string {
 // ─── Approval Workflow Methods ──────────────────────────
 async function loadCompetitionStatus() {
   try {
-    const data = await httpGet<{ status: number }>(`/v1/competitions/${competitionId.value}/status`)
+    const data = await httpGet<{ status: number }>(`/v1/competitions/${competitionId.value}`)
     competitionStatus.value = data.status
   } catch {
-    // Default to draft if API not available
+    // Default to UnderPreparation if API not available
     competitionStatus.value = 1
   }
 }
