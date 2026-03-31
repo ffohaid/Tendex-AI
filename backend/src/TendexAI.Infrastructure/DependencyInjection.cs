@@ -13,6 +13,9 @@ using TendexAI.Domain.Entities.Committees;
 using TendexAI.Domain.Entities.Evaluation;
 using TendexAI.Domain.Entities.Rfp;
 using TendexAI.Domain.Entities.Notifications;
+using TendexAI.Domain.Entities.Workflow;
+using TendexAI.Application.Features.Rfp.Services;
+using TendexAI.Application.Features.Workflow.Services;
 using TendexAI.Infrastructure.Messaging.RabbitMQ;
 using TendexAI.Infrastructure.MultiTenancy;
 using TendexAI.Infrastructure.Persistence;
@@ -200,6 +203,16 @@ public static class DependencyInjection
         services.AddScoped<IEvaluationMinutesRepository, EvaluationMinutesRepository>();
         services.AddScoped<IAwardRecommendationRepository, AwardRecommendationRepository>();
         services.AddScoped<INotificationRepository, NotificationRepository>();
+
+        // ----- Approval Workflow & Permission Repositories -----
+        services.AddScoped<IApprovalWorkflowStepRepository, ApprovalWorkflowStepRepository>();
+        services.AddScoped<IWorkflowDefinitionRepository, WorkflowDefinitionRepository>();
+        services.AddScoped<ICompetitionPermissionMatrixRepository, CompetitionPermissionMatrixRepository>();
+        services.AddScoped<ICompetitionCommitteeMemberRepository, CompetitionCommitteeMemberRepository>();
+        services.AddScoped<IPhaseTransitionHistoryRepository, PhaseTransitionHistoryRepository>();
+
+        // ----- Approval Workflow Service -----
+        services.AddScoped<IApprovalWorkflowService, ApprovalWorkflowService>();
 
         // ----- Security Services -----
         services.AddSingleton<IConnectionStringEncryptor, ConnectionStringEncryptor>();

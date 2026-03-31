@@ -4,11 +4,13 @@ using TendexAI.Domain.Enums;
 namespace TendexAI.Domain.Entities.Rfp;
 
 /// <summary>
-/// Represents a single step in the approval workflow for a competition phase transition.
-/// Each phase may require multiple sequential approval steps from different roles.
-/// Steps must be completed in order — no step can be skipped.
-/// 
-/// PRD Reference: Section 7.1 — مسار الاعتماد لكل مرحلة
+/// Represents a single runtime step in the approval workflow for a competition phase transition.
+/// Each phase may require multiple sequential or parallel approval steps from different roles.
+///
+/// Steps at the same <see cref="StepOrder"/> are executed in parallel;
+/// steps at different orders are executed sequentially.
+///
+/// PRD Reference: Section 6 — محرك سير العمل المرئي, Section 7.1 — مسار الاعتماد لكل مرحلة
 /// </summary>
 public sealed class ApprovalWorkflowStep : BaseEntity<Guid>
 {
@@ -24,7 +26,9 @@ public sealed class ApprovalWorkflowStep : BaseEntity<Guid>
         CommitteeRole requiredCommitteeRole = CommitteeRole.None,
         string? stepNameAr = null,
         string? stepNameEn = null,
-        string createdBy = "system")
+        string createdBy = "system",
+        Guid? workflowStepDefinitionId = null,
+        int? slaHours = null)
     {
         return new ApprovalWorkflowStep
         {
@@ -39,10 +43,17 @@ public sealed class ApprovalWorkflowStep : BaseEntity<Guid>
             StepNameAr = stepNameAr ?? $"خطوة الاعتماد {stepOrder}",
             StepNameEn = stepNameEn ?? $"Approval Step {stepOrder}",
             Status = ApprovalStepStatus.Pending,
+            WorkflowStepDefinitionId = workflowStepDefinitionId,
+            SlaHours = slaHours,
+            SlaDeadline = slaHours.HasValue ? DateTime.UtcNow.AddHours(slaHours.Value) : null,
             CreatedAt = DateTime.UtcNow,
             CreatedBy = createdBy
         };
     }
+
+    // ═════════════════════════════════════════════════════════════
+    //  Properties
+    // ═════════════════════════════════════════════════════════════
 
     /// <summary>The competition this approval step belongs to.</summary>
     public Guid CompetitionId { get; private set; }
@@ -56,7 +67,10 @@ public sealed class ApprovalWorkflowStep : BaseEntity<Guid>
     /// <summary>The target status of the transition this step guards.</summary>
     public CompetitionStatus ToStatus { get; private set; }
 
-    /// <summary>The order of this step within the approval workflow (1-based).</summary>
+    /// <summary>
+    /// The order of this step within the approval workflow (1-based).
+    /// Steps with the same order are executed in parallel.
+    /// </summary>
     public int StepOrder { get; private set; }
 
     /// <summary>The system role required to complete this step.</summary>
@@ -82,6 +96,22 @@ public sealed class ApprovalWorkflowStep : BaseEntity<Guid>
 
     /// <summary>Comment or note left by the approver.</summary>
     public string? Comment { get; private set; }
+
+    /// <summary>
+    /// Optional reference to the workflow step definition template that created this step.
+    /// Null for legacy steps created before the dynamic workflow engine.
+    /// </summary>
+    public Guid? WorkflowStepDefinitionId { get; private set; }
+
+    /// <summary>SLA deadline in hours for this step (from definition).</summary>
+    public int? SlaHours { get; private set; }
+
+    /// <summary>Calculated SLA deadline timestamp.</summary>
+    public DateTime? SlaDeadline { get; private set; }
+
+    // ═════════════════════════════════════════════════════════════
+    //  Actions
+    // ═════════════════════════════════════════════════════════════
 
     /// <summary>
     /// Approves this step.
@@ -146,8 +176,21 @@ public sealed class ApprovalWorkflowStep : BaseEntity<Guid>
         CompletedByUserId = null;
         CompletedAt = null;
         Comment = null;
+        // Recalculate SLA deadline on reset
+        SlaDeadline = SlaHours.HasValue ? DateTime.UtcNow.AddHours(SlaHours.Value) : null;
         LastModifiedAt = DateTime.UtcNow;
     }
+
+    // ═════════════════════════════════════════════════════════════
+    //  Query Helpers
+    // ═════════════════════════════════════════════════════════════
+
+    /// <summary>Whether this step's SLA has been exceeded.</summary>
+    public bool IsSlaExceeded => SlaDeadline.HasValue && DateTime.UtcNow > SlaDeadline.Value
+                                 && Status is ApprovalStepStatus.Pending or ApprovalStepStatus.InProgress;
+
+    /// <summary>Whether this step is actionable (pending or in-progress).</summary>
+    public bool IsActionable => Status is ApprovalStepStatus.Pending or ApprovalStepStatus.InProgress;
 }
 
 /// <summary>

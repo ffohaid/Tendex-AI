@@ -122,6 +122,12 @@ export const sidebarNavigation: NavigationItem[] = [
         icon: 'pi pi-key',
         route: 'SettingsRoles',
       },
+      {
+        key: 'settings-workflows',
+        labelKey: 'nav.settings.workflows',
+        icon: 'pi pi-sitemap',
+        route: 'WorkflowList',
+      },
     ],
   },
   /* ── Advanced features (accessible from sidebar) ── */

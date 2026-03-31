@@ -256,10 +256,10 @@ onMounted(() => {
     <div class="flex items-center justify-between">
       <div>
         <h1 class="text-2xl font-bold text-secondary-800">
-          {{ locale === 'ar' ? 'قوالب المنافسات' : 'Competition Templates' }}
+          {{ locale === 'ar' ? 'قوالب من منافسات سابقة' : 'Templates from Previous Competitions' }}
         </h1>
         <p class="mt-1 text-sm text-secondary-500">
-          {{ locale === 'ar' ? 'إنشاء وإدارة قوالب كراسات الشروط والمواصفات الجاهزة' : 'Create and manage pre-built competition templates' }}
+          {{ locale === 'ar' ? 'إنشاء وإدارة قوالب من منافسات سابقة لإعادة استخدامها' : 'Create and manage templates from previous competitions for reuse' }}
         </p>
       </div>
       <button

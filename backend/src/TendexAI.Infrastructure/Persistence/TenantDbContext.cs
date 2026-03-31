@@ -5,6 +5,7 @@ using TendexAI.Domain.Entities.Committees;
 using TendexAI.Domain.Entities.Evaluation;
 using TendexAI.Domain.Entities.Notifications;
 using TendexAI.Domain.Entities.Rfp;
+using TendexAI.Domain.Entities.Workflow;
 using TendexAI.Application.Common.Interfaces;
 
 namespace TendexAI.Infrastructure.Persistence;
@@ -77,6 +78,16 @@ public sealed class TenantDbContext : DbContext, IUnitOfWork, ITenantDbContext
     // ----- Video Integrity Analysis DbSets -----
     public DbSet<VideoIntegrityAnalysis> VideoIntegrityAnalyses => Set<VideoIntegrityAnalysis>();
     public DbSet<VideoAnalysisFlag> VideoAnalysisFlags => Set<VideoAnalysisFlag>();
+
+    // ----- Approval Workflow DbSets -----
+    public DbSet<ApprovalWorkflowStep> ApprovalWorkflowSteps => Set<ApprovalWorkflowStep>();
+    public DbSet<CompetitionPermissionMatrix> CompetitionPermissionMatrices => Set<CompetitionPermissionMatrix>();
+    public DbSet<CompetitionCommitteeMember> CompetitionCommitteeMembers => Set<CompetitionCommitteeMember>();
+    public DbSet<PhaseTransitionHistory> PhaseTransitionHistories => Set<PhaseTransitionHistory>();
+
+    // ----- Workflow Engine DbSets -----
+    public DbSet<WorkflowDefinition> WorkflowDefinitions => Set<WorkflowDefinition>();
+    public DbSet<WorkflowStepDefinition> WorkflowStepDefinitions => Set<WorkflowStepDefinition>();
 
     // ----- Booklet Template DbSets (EXPRO Official Templates) -----
     public DbSet<BookletTemplate> BookletTemplates => Set<BookletTemplate>();

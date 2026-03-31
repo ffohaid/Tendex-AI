@@ -3,6 +3,14 @@ import { ref, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { httpGet, httpPost, httpPut } from '@/services/http'
+import {
+  initiateWorkflow,
+  getWorkflowStatus,
+  approveStep,
+  rejectStep,
+  type ApprovalWorkflowStatusResult,
+  ApprovalStepStatus,
+} from '@/services/workflowService'
 
 // ─── Types ──────────────────────────────────────────────
 interface BookletBlock {
@@ -79,6 +87,39 @@ const aiPrompt = ref('')
 const aiResult = ref('')
 const aiError = ref('')
 const aiIsGenerating = ref(false)
+
+// Approval Workflow state
+const approvalStatus = ref<ApprovalWorkflowStatusResult | null>(null)
+const isSubmittingForApproval = ref(false)
+const showApprovalModal = ref(false)
+const showApprovalTimeline = ref(false)
+const approvalError = ref('')
+const approvalSuccess = ref('')
+const rejectComment = ref('')
+const showRejectModal = ref(false)
+const rejectStepId = ref('')
+const approveComment = ref('')
+const showApproveModal = ref(false)
+const approveStepId = ref('')
+
+// Competition status (fetched from API)
+const competitionStatus = ref<number>(0) // 0=Draft, 1=UnderPreparation, 2=PendingApproval, 3=Approved
+
+const isReadOnly = computed(() => competitionStatus.value >= 2) // PendingApproval or Approved
+const canSubmitForApproval = computed(() => competitionStatus.value <= 1 && sectionProgress.value >= 50)
+// Reserved for future use:
+// const isApprovalPhase = computed(() => competitionStatus.value === 2)
+// const isApproved = computed(() => competitionStatus.value === 3)
+
+const statusLabel = computed(() => {
+  const labels: Record<number, { ar: string; en: string; class: string }> = {
+    0: { ar: 'مسودة', en: 'Draft', class: 'bg-gray-100 text-gray-600 border-gray-200' },
+    1: { ar: 'قيد الإعداد', en: 'Under Preparation', class: 'bg-amber-50 text-amber-700 border-amber-200' },
+    2: { ar: 'بانتظار الاعتماد', en: 'Pending Approval', class: 'bg-blue-50 text-blue-700 border-blue-200' },
+    3: { ar: 'معتمدة', en: 'Approved', class: 'bg-green-50 text-green-700 border-green-200' },
+  }
+  return labels[competitionStatus.value] || labels[0]
+})
 
 // ─── Computed ───────────────────────────────────────────
 const sectionProgress = computed(() => {
@@ -309,8 +350,126 @@ function getBlockBorderClass(colorType: ColorType): string {
   }
 }
 
-onMounted(() => {
-  loadBookletData()
+// ─── Approval Workflow Methods ──────────────────────────
+async function loadCompetitionStatus() {
+  try {
+    const data = await httpGet<{ status: number }>(`/v1/competitions/${competitionId.value}/status`)
+    competitionStatus.value = data.status
+  } catch {
+    // Default to draft if API not available
+    competitionStatus.value = 1
+  }
+}
+
+async function loadApprovalStatus() {
+  try {
+    const result = await getWorkflowStatus(
+      competitionId.value,
+      1, // UnderPreparation
+      2, // PendingApproval
+    )
+    approvalStatus.value = result
+  } catch {
+    approvalStatus.value = null
+  }
+}
+
+async function submitForApproval() {
+  isSubmittingForApproval.value = true
+  approvalError.value = ''
+  approvalSuccess.value = ''
+  try {
+    // Save changes first
+    await saveChanges()
+
+    // Initiate the workflow
+    await initiateWorkflow({
+      competitionId: competitionId.value,
+      fromStatus: 1, // UnderPreparation
+      toStatus: 2, // PendingApproval
+    })
+
+    approvalSuccess.value = locale.value === 'ar'
+      ? '\u062a\u0645 \u062a\u0642\u062f\u064a\u0645 \u0627\u0644\u0643\u0631\u0627\u0633\u0629 \u0644\u0644\u0627\u0639\u062a\u0645\u0627\u062f \u0628\u0646\u062c\u0627\u062d'
+      : 'Booklet submitted for approval successfully'
+    showApprovalModal.value = false
+    competitionStatus.value = 2
+    await loadApprovalStatus()
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : String(err)
+    approvalError.value = locale.value === 'ar'
+      ? `\u0641\u0634\u0644 \u0641\u064a \u062a\u0642\u062f\u064a\u0645 \u0627\u0644\u0643\u0631\u0627\u0633\u0629: ${msg}`
+      : `Failed to submit: ${msg}`
+  } finally {
+    isSubmittingForApproval.value = false
+  }
+}
+
+async function handleApproveStep() {
+  if (!approveStepId.value) return
+  try {
+    const result = await approveStep(approveStepId.value, { comment: approveComment.value || null })
+    showApproveModal.value = false
+    approveComment.value = ''
+    approveStepId.value = ''
+    approvalSuccess.value = locale.value === 'ar' ? '\u062a\u0645 \u0627\u0644\u0627\u0639\u062a\u0645\u0627\u062f \u0628\u0646\u062c\u0627\u062d' : 'Approved successfully'
+    if (result.isWorkflowCompleted) {
+      competitionStatus.value = result.toStatus
+    }
+    await loadApprovalStatus()
+    setTimeout(() => { approvalSuccess.value = '' }, 5000)
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : String(err)
+    approvalError.value = locale.value === 'ar' ? `\u0641\u0634\u0644 \u0641\u064a \u0627\u0644\u0627\u0639\u062a\u0645\u0627\u062f: ${msg}` : `Approval failed: ${msg}`
+  }
+}
+
+async function handleRejectStep() {
+  if (!rejectStepId.value || !rejectComment.value.trim()) return
+  try {
+    await rejectStep(rejectStepId.value, { reason: rejectComment.value })
+    showRejectModal.value = false
+    rejectComment.value = ''
+    rejectStepId.value = ''
+    approvalSuccess.value = locale.value === 'ar' ? '\u062a\u0645 \u0627\u0644\u0631\u0641\u0636 \u0648\u0625\u0639\u0627\u062f\u0629 \u0627\u0644\u0643\u0631\u0627\u0633\u0629 \u0644\u0644\u062a\u0639\u062f\u064a\u0644' : 'Rejected and returned for revision'
+    competitionStatus.value = 1 // Back to UnderPreparation
+    await loadApprovalStatus()
+    setTimeout(() => { approvalSuccess.value = '' }, 5000)
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : String(err)
+    approvalError.value = locale.value === 'ar' ? `\u0641\u0634\u0644 \u0641\u064a \u0627\u0644\u0631\u0641\u0636: ${msg}` : `Rejection failed: ${msg}`
+  }
+}
+
+function openApproveModal(stepId: string) {
+  approveStepId.value = stepId
+  approveComment.value = ''
+  showApproveModal.value = true
+}
+
+function openRejectModal(stepId: string) {
+  rejectStepId.value = stepId
+  rejectComment.value = ''
+  showRejectModal.value = true
+}
+
+function getStepStatusBadge(status: ApprovalStepStatus) {
+  const badges: Record<number, { ar: string; en: string; class: string; icon: string }> = {
+    [ApprovalStepStatus.Pending]: { ar: '\u0628\u0627\u0646\u062a\u0638\u0627\u0631', en: 'Pending', class: 'bg-gray-100 text-gray-600', icon: 'pi-clock' },
+    [ApprovalStepStatus.InProgress]: { ar: '\u062c\u0627\u0631\u064a', en: 'In Progress', class: 'bg-blue-100 text-blue-700', icon: 'pi-spinner' },
+    [ApprovalStepStatus.Approved]: { ar: '\u0645\u0639\u062a\u0645\u062f', en: 'Approved', class: 'bg-green-100 text-green-700', icon: 'pi-check' },
+    [ApprovalStepStatus.Rejected]: { ar: '\u0645\u0631\u0641\u0648\u0636', en: 'Rejected', class: 'bg-red-100 text-red-700', icon: 'pi-times' },
+    [ApprovalStepStatus.Skipped]: { ar: '\u062a\u0645 \u062a\u062e\u0637\u064a\u0647', en: 'Skipped', class: 'bg-gray-50 text-gray-400', icon: 'pi-forward' },
+  }
+  return badges[status] || badges[ApprovalStepStatus.Pending]
+}
+
+onMounted(async () => {
+  await loadBookletData()
+  await loadCompetitionStatus()
+  if (competitionStatus.value >= 2) {
+    await loadApprovalStatus()
+  }
 })
 </script>
 
@@ -343,6 +502,14 @@ onMounted(() => {
         </div>
       </div>
       <div class="flex items-center gap-3">
+        <!-- Status Badge -->
+        <span
+          class="inline-flex items-center rounded-md border px-2.5 py-1 text-xs font-semibold"
+          :class="statusLabel.class"
+        >
+          {{ locale === 'ar' ? statusLabel.ar : statusLabel.en }}
+        </span>
+
         <!-- Toggle Guidance -->
         <button
           class="rounded-lg border px-3 py-1.5 text-xs font-medium transition-all"
@@ -351,6 +518,17 @@ onMounted(() => {
         >
           <i class="pi pi-info-circle me-1"></i>
           {{ locale === 'ar' ? (showGuidance ? 'إخفاء الإرشادات' : 'إظهار الإرشادات') : (showGuidance ? 'Hide Guidance' : 'Show Guidance') }}
+        </button>
+
+        <!-- Approval Timeline Toggle -->
+        <button
+          v-if="approvalStatus?.hasWorkflow"
+          class="rounded-lg border px-3 py-1.5 text-xs font-medium transition-all"
+          :class="showApprovalTimeline ? 'border-primary/30 bg-primary/5 text-primary' : 'border-secondary-200 text-secondary-500'"
+          @click="showApprovalTimeline = !showApprovalTimeline"
+        >
+          <i class="pi pi-sitemap me-1"></i>
+          {{ locale === 'ar' ? 'مسار الاعتماد' : 'Approval Path' }}
         </button>
 
         <!-- Save Status -->
@@ -366,12 +544,24 @@ onMounted(() => {
 
         <!-- Save Button -->
         <button
+          v-if="!isReadOnly"
           class="rounded-xl bg-primary px-4 py-2 text-sm font-semibold text-white shadow-sm transition-all hover:bg-primary-600 disabled:opacity-50"
           :disabled="isSaving"
           @click="saveChanges"
         >
           <i class="pi pi-save me-1 text-xs"></i>
           {{ locale === 'ar' ? 'حفظ التعديلات' : 'Save Changes' }}
+        </button>
+
+        <!-- Submit for Approval Button -->
+        <button
+          v-if="canSubmitForApproval"
+          class="rounded-xl bg-green-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition-all hover:bg-green-700 disabled:opacity-50"
+          :disabled="isSubmittingForApproval"
+          @click="showApprovalModal = true"
+        >
+          <i class="pi pi-send me-1 text-xs"></i>
+          {{ locale === 'ar' ? 'تقديم للاعتماد' : 'Submit for Approval' }}
         </button>
       </div>
     </div>
@@ -719,6 +909,290 @@ onMounted(() => {
         </div>
       </Transition>
     </Teleport>
+
+    <!-- ═══ Approval Timeline Panel ═══ -->
+    <Teleport to="body">
+      <Transition name="slide-in">
+        <div
+          v-if="showApprovalTimeline && approvalStatus?.hasWorkflow"
+          class="fixed inset-0 z-50 flex"
+        >
+          <div class="flex-1 bg-black/30" @click="showApprovalTimeline = false"></div>
+          <div class="w-[400px] overflow-y-auto bg-white shadow-2xl">
+            <div class="sticky top-0 z-10 flex items-center justify-between border-b border-secondary-100 bg-white px-6 py-4">
+              <h3 class="text-base font-bold text-secondary-800">
+                <i class="pi pi-sitemap me-2 text-primary"></i>
+                {{ locale === 'ar' ? 'مسار الاعتماد' : 'Approval Path' }}
+              </h3>
+              <button class="rounded-lg p-1.5 text-secondary-400 hover:bg-secondary-100" @click="showApprovalTimeline = false">
+                <i class="pi pi-times text-sm"></i>
+              </button>
+            </div>
+
+            <!-- Progress Summary -->
+            <div class="border-b border-secondary-100 px-6 py-4">
+              <div class="flex items-center justify-between text-xs text-secondary-500">
+                <span>{{ locale === 'ar' ? 'التقدم' : 'Progress' }}</span>
+                <span class="font-semibold text-primary">{{ approvalStatus?.completedSteps || 0 }}/{{ approvalStatus?.totalSteps || 0 }}</span>
+              </div>
+              <div class="mt-2 h-2 overflow-hidden rounded-full bg-secondary-200">
+                <div
+                  class="h-full rounded-full transition-all duration-500"
+                  :class="approvalStatus?.isRejected ? 'bg-red-500' : approvalStatus?.isCompleted ? 'bg-green-500' : 'bg-primary'"
+                  :style="{ width: `${approvalStatus?.totalSteps ? (approvalStatus.completedSteps / approvalStatus.totalSteps) * 100 : 0}%` }"
+                ></div>
+              </div>
+            </div>
+
+            <!-- Steps Timeline -->
+            <div class="px-6 py-4">
+              <div class="space-y-0">
+                <div
+                  v-for="(step, idx) in (approvalStatus?.steps || [])"
+                  :key="step.stepId"
+                  class="relative"
+                >
+                  <!-- Connector line -->
+                  <div
+                    v-if="idx < (approvalStatus?.steps?.length || 0) - 1"
+                    class="absolute start-4 top-10 h-full w-0.5"
+                    :class="step.status === 2 ? 'bg-green-300' : step.status === 3 ? 'bg-red-300' : 'bg-secondary-200'"
+                  ></div>
+
+                  <div class="relative flex gap-3 pb-6">
+                    <!-- Status Icon -->
+                    <div
+                      class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full"
+                      :class="{
+                        'bg-green-100 text-green-600': step.status === 2,
+                        'bg-red-100 text-red-600': step.status === 3,
+                        'bg-blue-100 text-blue-600': step.status === 1,
+                        'bg-secondary-100 text-secondary-400': step.status === 0 || step.status === 4,
+                      }"
+                    >
+                      <i class="pi text-xs" :class="getStepStatusBadge(step.status).icon"></i>
+                    </div>
+
+                    <!-- Step Info -->
+                    <div class="flex-1">
+                      <div class="flex items-center justify-between">
+                        <h4 class="text-sm font-semibold text-secondary-800">
+                          {{ locale === 'ar' ? step.stepNameAr : step.stepNameEn }}
+                        </h4>
+                        <span
+                          class="rounded px-1.5 py-0.5 text-[10px] font-medium"
+                          :class="getStepStatusBadge(step.status).class"
+                        >
+                          {{ locale === 'ar' ? getStepStatusBadge(step.status).ar : getStepStatusBadge(step.status).en }}
+                        </span>
+                      </div>
+
+                      <!-- SLA Info -->
+                      <div v-if="step.slaDeadline" class="mt-1 text-[10px]" :class="step.isSlaExceeded ? 'text-red-500' : 'text-secondary-400'">
+                        <i class="pi pi-clock me-1"></i>
+                        {{ step.isSlaExceeded
+                          ? (locale === 'ar' ? 'تجاوز المهلة الزمنية' : 'SLA Exceeded')
+                          : (locale === 'ar' ? 'المهلة: ' : 'Deadline: ') + new Date(step.slaDeadline).toLocaleDateString(locale === 'ar' ? 'ar-SA' : 'en-US')
+                        }}
+                      </div>
+
+                      <!-- Comment -->
+                      <p v-if="step.comment" class="mt-1 text-[10px] text-secondary-500">
+                        <i class="pi pi-comment me-1"></i>{{ step.comment }}
+                      </p>
+
+                      <!-- Action Buttons for current step -->
+                      <div v-if="step.status === 1" class="mt-2 flex gap-2">
+                        <button
+                          class="rounded-lg bg-green-600 px-3 py-1 text-xs font-medium text-white hover:bg-green-700"
+                          @click="openApproveModal(step.stepId)"
+                        >
+                          <i class="pi pi-check me-1 text-[10px]"></i>
+                          {{ locale === 'ar' ? 'اعتماد' : 'Approve' }}
+                        </button>
+                        <button
+                          class="rounded-lg bg-red-50 px-3 py-1 text-xs font-medium text-red-600 hover:bg-red-100"
+                          @click="openRejectModal(step.stepId)"
+                        >
+                          <i class="pi pi-times me-1 text-[10px]"></i>
+                          {{ locale === 'ar' ? 'رفض' : 'Reject' }}
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </Transition>
+    </Teleport>
+
+    <!-- ═══ Submit for Approval Confirmation Modal ═══ -->
+    <Teleport to="body">
+      <Transition name="fade">
+        <div v-if="showApprovalModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+          <div class="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl">
+            <div class="mb-4 flex items-center gap-3">
+              <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-green-100">
+                <i class="pi pi-send text-lg text-green-600"></i>
+              </div>
+              <div>
+                <h3 class="text-base font-bold text-secondary-800">
+                  {{ locale === 'ar' ? 'تقديم الكراسة للاعتماد' : 'Submit for Approval' }}
+                </h3>
+                <p class="text-xs text-secondary-500">
+                  {{ locale === 'ar'
+                    ? 'سيتم قفل الكراسة للتعديل وإرسالها للمعتمدين'
+                    : 'The booklet will be locked and sent to approvers' }}
+                </p>
+              </div>
+            </div>
+
+            <div v-if="approvalError" class="mb-4 rounded-lg bg-red-50 p-3 text-sm text-red-600">
+              <i class="pi pi-exclamation-triangle me-1"></i>{{ approvalError }}
+            </div>
+
+            <div class="rounded-lg bg-amber-50 p-3 text-sm text-amber-700">
+              <i class="pi pi-info-circle me-1"></i>
+              {{ locale === 'ar'
+                ? 'بعد التقديم، لن تتمكن من تعديل الكراسة حتى يتم الاعتماد أو الرفض.'
+                : 'After submission, you cannot edit the booklet until it is approved or rejected.' }}
+            </div>
+
+            <div class="mt-6 flex justify-end gap-3">
+              <button
+                class="rounded-lg border border-secondary-200 px-4 py-2 text-sm font-medium text-secondary-600 hover:bg-secondary-50"
+                @click="showApprovalModal = false"
+              >
+                {{ locale === 'ar' ? 'إلغاء' : 'Cancel' }}
+              </button>
+              <button
+                class="rounded-lg bg-green-600 px-4 py-2 text-sm font-semibold text-white hover:bg-green-700 disabled:opacity-50"
+                :disabled="isSubmittingForApproval"
+                @click="submitForApproval"
+              >
+                <i v-if="isSubmittingForApproval" class="pi pi-spin pi-spinner me-1 text-xs"></i>
+                <i v-else class="pi pi-send me-1 text-xs"></i>
+                {{ isSubmittingForApproval
+                  ? (locale === 'ar' ? 'جاري التقديم...' : 'Submitting...')
+                  : (locale === 'ar' ? 'تأكيد التقديم' : 'Confirm Submit') }}
+              </button>
+            </div>
+          </div>
+        </div>
+      </Transition>
+    </Teleport>
+
+    <!-- ═══ Approve Step Modal ═══ -->
+    <Teleport to="body">
+      <Transition name="fade">
+        <div v-if="showApproveModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+          <div class="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl">
+            <div class="mb-4 flex items-center gap-3">
+              <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-green-100">
+                <i class="pi pi-check text-lg text-green-600"></i>
+              </div>
+              <h3 class="text-base font-bold text-secondary-800">
+                {{ locale === 'ar' ? 'اعتماد الخطوة' : 'Approve Step' }}
+              </h3>
+            </div>
+            <div>
+              <label class="mb-1 block text-xs font-semibold text-secondary-600">
+                {{ locale === 'ar' ? 'ملاحظات (اختياري)' : 'Comments (optional)' }}
+              </label>
+              <textarea
+                v-model="approveComment"
+                rows="3"
+                class="w-full rounded-lg border border-secondary-200 bg-secondary-50/50 px-4 py-2.5 text-sm outline-none focus:border-primary focus:ring-1 focus:ring-primary"
+                :placeholder="locale === 'ar' ? 'أضف ملاحظاتك هنا...' : 'Add your comments here...'"
+              ></textarea>
+            </div>
+            <div class="mt-4 flex justify-end gap-3">
+              <button class="rounded-lg border border-secondary-200 px-4 py-2 text-sm font-medium text-secondary-600 hover:bg-secondary-50" @click="showApproveModal = false">
+                {{ locale === 'ar' ? 'إلغاء' : 'Cancel' }}
+              </button>
+              <button class="rounded-lg bg-green-600 px-4 py-2 text-sm font-semibold text-white hover:bg-green-700" @click="handleApproveStep">
+                <i class="pi pi-check me-1 text-xs"></i>
+                {{ locale === 'ar' ? 'تأكيد الاعتماد' : 'Confirm Approval' }}
+              </button>
+            </div>
+          </div>
+        </div>
+      </Transition>
+    </Teleport>
+
+    <!-- ═══ Reject Step Modal ═══ -->
+    <Teleport to="body">
+      <Transition name="fade">
+        <div v-if="showRejectModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+          <div class="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl">
+            <div class="mb-4 flex items-center gap-3">
+              <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-red-100">
+                <i class="pi pi-times text-lg text-red-600"></i>
+              </div>
+              <h3 class="text-base font-bold text-secondary-800">
+                {{ locale === 'ar' ? 'رفض الخطوة' : 'Reject Step' }}
+              </h3>
+            </div>
+            <div>
+              <label class="mb-1 block text-xs font-semibold text-secondary-600">
+                {{ locale === 'ar' ? 'سبب الرفض' : 'Rejection Reason' }}
+                <span class="text-red-500">*</span>
+              </label>
+              <textarea
+                v-model="rejectComment"
+                rows="3"
+                class="w-full rounded-lg border border-secondary-200 bg-secondary-50/50 px-4 py-2.5 text-sm outline-none focus:border-primary focus:ring-1 focus:ring-primary"
+                :placeholder="locale === 'ar' ? 'اذكر سبب الرفض بالتفصيل...' : 'Describe the reason for rejection...'"
+              ></textarea>
+            </div>
+            <div class="mt-4 flex justify-end gap-3">
+              <button class="rounded-lg border border-secondary-200 px-4 py-2 text-sm font-medium text-secondary-600 hover:bg-secondary-50" @click="showRejectModal = false">
+                {{ locale === 'ar' ? 'إلغاء' : 'Cancel' }}
+              </button>
+              <button
+                class="rounded-lg bg-red-600 px-4 py-2 text-sm font-semibold text-white hover:bg-red-700 disabled:opacity-50"
+                :disabled="!rejectComment.trim()"
+                @click="handleRejectStep"
+              >
+                <i class="pi pi-times me-1 text-xs"></i>
+                {{ locale === 'ar' ? 'تأكيد الرفض' : 'Confirm Rejection' }}
+              </button>
+            </div>
+          </div>
+        </div>
+      </Transition>
+    </Teleport>
+
+    <!-- ═══ Approval Success/Error Banners ═══ -->
+    <Teleport to="body">
+      <Transition name="fade">
+        <div v-if="approvalSuccess" class="fixed start-1/2 top-4 z-[60] -translate-x-1/2">
+          <div class="flex items-center gap-3 rounded-xl border border-green-200 bg-green-50 px-5 py-3 shadow-lg">
+            <i class="pi pi-check-circle text-lg text-green-600"></i>
+            <p class="text-sm font-medium text-green-700">{{ approvalSuccess }}</p>
+            <button class="text-xs text-green-600 hover:underline" @click="approvalSuccess = ''">
+              <i class="pi pi-times"></i>
+            </button>
+          </div>
+        </div>
+      </Transition>
+    </Teleport>
+
+    <Teleport to="body">
+      <Transition name="fade">
+        <div v-if="approvalError" class="fixed start-1/2 top-4 z-[60] -translate-x-1/2">
+          <div class="flex items-center gap-3 rounded-xl border border-red-200 bg-red-50 px-5 py-3 shadow-lg">
+            <i class="pi pi-exclamation-triangle text-lg text-red-600"></i>
+            <p class="text-sm font-medium text-red-700">{{ approvalError }}</p>
+            <button class="text-xs text-red-600 hover:underline" @click="approvalError = ''">
+              <i class="pi pi-times"></i>
+            </button>
+          </div>
+        </div>
+      </Transition>
+    </Teleport>
   </div>
 </template>
 
@@ -734,5 +1208,14 @@ onMounted(() => {
 .slide-in-enter-from > div:last-child,
 .slide-in-leave-to > div:last-child {
   transform: translateX(100%);
+}
+
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.2s ease;
+}
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
 }
 </style>

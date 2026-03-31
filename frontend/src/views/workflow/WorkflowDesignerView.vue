@@ -1,508 +1,657 @@
 <script setup lang="ts">
 /**
- * WorkflowDesignerView - Visual Approval Workflow Designer (TASK-1001)
+ * WorkflowDesignerView — Workflow Definition Editor (Simplified Form-Based)
+ *
+ * Replaces the visual canvas designer with a simple, functional form-based editor
+ * for creating and editing workflow definitions. Connects to /api/v1/workflow-definitions.
  *
  * Features:
- * - Drag-and-drop node-based workflow canvas
- * - Node types: Start, End, Approval, Conditional, Parallel
- * - Node properties panel (approver, SLA, escalation)
- * - Toolbar with zoom, fit, minimap toggle
- * - Save/Load workflows from API
+ * - Create new workflow definitions with steps
+ * - Edit existing workflow definitions
+ * - Add/remove/reorder steps
+ * - Configure step roles, SLA, and conditions
+ * - Visual step timeline preview
  * - RTL/LTR support
- *
- * Uses a custom canvas implementation (no external dependency).
- * All data fetched dynamically from APIs.
  */
-import { ref, reactive, computed, onMounted } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRoute, useRouter } from 'vue-router'
+import {
+  getWorkflowDefinitionById,
+  createWorkflowDefinition,
+  updateWorkflowDefinition,
+  type WorkflowDefinitionDto,
+  type CreateWorkflowStepRequest,
+} from '@/services/workflowService'
 
-const { t, locale } = useI18n()
+const { locale } = useI18n()
 const route = useRoute()
 const router = useRouter()
 
-/* ── Types ── */
-interface WorkflowNode {
-  id: string
-  type: 'start' | 'end' | 'approval' | 'conditional' | 'parallel'
-  label: string
-  x: number
-  y: number
-  config: NodeConfig
-}
-
-interface NodeConfig {
-  stageNameAr?: string
-  stageNameEn?: string
-  approverType?: 'user' | 'role' | 'committee'
-  approverId?: string
-  approverName?: string
-  slaHours?: number
-  escalationAction?: 'notify_manager' | 'auto_approve' | 'escalate_up'
-  actions?: ('approve' | 'reject' | 'return' | 'suspend')[]
-  condition?: string
-}
-
-interface WorkflowEdge {
-  id: string
-  source: string
-  target: string
-  label?: string
-}
-
-interface Workflow {
-  id?: string
-  nameAr: string
-  nameEn: string
-  description: string
-  status: 'draft' | 'active' | 'inactive'
-  nodes: WorkflowNode[]
-  edges: WorkflowEdge[]
-}
-
-/* ── State ── */
+/* ------------------------------------------------------------------ */
+/*  State                                                              */
+/* ------------------------------------------------------------------ */
 const isLoading = ref(false)
 const isSaving = ref(false)
-const showMinimap = ref(true)
-const showNodePanel = ref(false)
-const selectedNode = ref<WorkflowNode | null>(null)
-const zoom = ref(1)
-const panX = ref(0)
-const panY = ref(0)
-
-const workflow = reactive<Workflow>({
-  nameAr: '',
-  nameEn: '',
-  description: '',
-  status: 'draft',
-  nodes: [],
-  edges: [],
-})
-
+const saveError = ref('')
+const saveSuccess = ref('')
 const isEditMode = computed(() => !!route.params.id)
+const workflowId = computed(() => route.params.id as string | undefined)
 
-/* ── Node palette ── */
-const nodePalette = [
-  { type: 'approval', icon: 'pi-check-circle', labelKey: 'workflow.nodes.approval', color: '#1B3A5C' },
-  { type: 'conditional', icon: 'pi-sitemap', labelKey: 'workflow.nodes.conditional', color: '#F39C12' },
-  { type: 'parallel', icon: 'pi-arrows-alt', labelKey: 'workflow.nodes.parallel', color: '#3498DB' },
-] as const
+// Form fields
+const nameAr = ref('')
+const nameEn = ref('')
+const descriptionAr = ref('')
+const descriptionEn = ref('')
+const transitionFrom = ref(1) // UnderPreparation
+const transitionTo = ref(2) // PendingApproval
+const isActive = ref(true)
 
-/* ── Methods ── */
-function addNode(type: WorkflowNode['type']): void {
-  const id = `node_${Date.now()}`
-  const centerX = 400 + (workflow.nodes.length * 50)
-  const centerY = 200 + (workflow.nodes.length * 30)
-
-  const newNode: WorkflowNode = {
-    id,
-    type,
-    label: t(`workflow.nodes.${type}`),
-    x: centerX,
-    y: centerY,
-    config: {
-      actions: ['approve', 'reject'],
-      slaHours: 48,
-      escalationAction: 'notify_manager',
-    },
-  }
-
-  workflow.nodes.push(newNode)
-
-  /* Auto-connect to last node if exists */
-  if (workflow.nodes.length > 1) {
-    const prevNode = workflow.nodes[workflow.nodes.length - 2]
-    workflow.edges.push({
-      id: `edge_${Date.now()}`,
-      source: prevNode.id,
-      target: newNode.id,
-    })
-  }
+// Steps
+interface StepForm {
+  id?: string
+  stepOrder: number
+  requiredSystemRole: number
+  requiredCommitteeRole: number
+  stepNameAr: string
+  stepNameEn: string
+  slaHours: number | null
+  isConditional: boolean
+  conditionExpression: string
 }
 
-function selectNode(node: WorkflowNode): void {
-  selectedNode.value = node
-  showNodePanel.value = true
+const steps = ref<StepForm[]>([])
+
+/* ------------------------------------------------------------------ */
+/*  Enum Mappings                                                      */
+/* ------------------------------------------------------------------ */
+const competitionStatuses = [
+  { value: 0, labelAr: 'مسودة', labelEn: 'Draft' },
+  { value: 1, labelAr: 'قيد الإعداد', labelEn: 'Under Preparation' },
+  { value: 2, labelAr: 'بانتظار الاعتماد', labelEn: 'Pending Approval' },
+  { value: 3, labelAr: 'معتمدة', labelEn: 'Approved' },
+  { value: 4, labelAr: 'منشورة', labelEn: 'Published' },
+  { value: 5, labelAr: 'فترة الاستفسارات', labelEn: 'Inquiry Period' },
+  { value: 6, labelAr: 'استقبال العروض', labelEn: 'Receiving Offers' },
+  { value: 7, labelAr: 'التحليل الفني', labelEn: 'Technical Analysis' },
+  { value: 8, labelAr: 'التحليل الفني مكتمل', labelEn: 'Technical Analysis Completed' },
+  { value: 9, labelAr: 'التحليل المالي', labelEn: 'Financial Analysis' },
+  { value: 10, labelAr: 'التحليل المالي مكتمل', labelEn: 'Financial Analysis Completed' },
+  { value: 11, labelAr: 'إشعار الترسية', labelEn: 'Award Notification' },
+  { value: 12, labelAr: 'الترسية معتمدة', labelEn: 'Award Approved' },
+  { value: 13, labelAr: 'اعتماد العقد', labelEn: 'Contract Approval' },
+  { value: 14, labelAr: 'العقد معتمد', labelEn: 'Contract Approved' },
+  { value: 15, labelAr: 'العقد موقع', labelEn: 'Contract Signed' },
+  { value: 99, labelAr: 'ملغاة', labelEn: 'Cancelled' },
+]
+
+const systemRoles = [
+  { value: 1, labelAr: 'صاحب الصلاحية', labelEn: 'Owner' },
+  { value: 2, labelAr: 'مشرف النظام', labelEn: 'Admin' },
+  { value: 3, labelAr: 'ممثل القطاع', labelEn: 'Sector Rep' },
+  { value: 4, labelAr: 'المراقب المالي', labelEn: 'Financial Controller' },
+  { value: 5, labelAr: 'عضو', labelEn: 'Member' },
+  { value: 6, labelAr: 'مشاهد', labelEn: 'Viewer' },
+]
+
+const committeeRoles = [
+  { value: 0, labelAr: 'لا يوجد (دور نظام فقط)', labelEn: 'None (System role only)' },
+  { value: 1, labelAr: 'رئيس لجنة الإعداد', labelEn: 'Preparation Committee Chair' },
+  { value: 2, labelAr: 'عضو لجنة الإعداد', labelEn: 'Preparation Committee Member' },
+  { value: 3, labelAr: 'رئيس لجنة الفحص الفني', labelEn: 'Technical Exam Committee Chair' },
+  { value: 4, labelAr: 'عضو لجنة الفحص الفني', labelEn: 'Technical Exam Committee Member' },
+  { value: 5, labelAr: 'رئيس لجنة الفحص المالي', labelEn: 'Financial Exam Committee Chair' },
+  { value: 6, labelAr: 'عضو لجنة الفحص المالي', labelEn: 'Financial Exam Committee Member' },
+  { value: 7, labelAr: 'رئيس لجنة مراجعة الاستفسارات', labelEn: 'Inquiry Review Committee Chair' },
+  { value: 8, labelAr: 'عضو لجنة مراجعة الاستفسارات', labelEn: 'Inquiry Review Committee Member' },
+  { value: 9, labelAr: 'سكرتير اللجنة', labelEn: 'Committee Secretary' },
+]
+
+/* ------------------------------------------------------------------ */
+/*  Helpers                                                            */
+/* ------------------------------------------------------------------ */
+function addStep() {
+  const maxOrder = steps.value.length > 0 ? Math.max(...steps.value.map(s => s.stepOrder)) : 0
+  steps.value.push({
+    stepOrder: maxOrder + 1,
+    requiredSystemRole: 5, // Member
+    requiredCommitteeRole: 0, // None
+    stepNameAr: '',
+    stepNameEn: '',
+    slaHours: 48,
+    isConditional: false,
+    conditionExpression: '',
+  })
 }
 
-function deleteNode(nodeId: string): void {
-  workflow.nodes = workflow.nodes.filter(n => n.id !== nodeId)
-  workflow.edges = workflow.edges.filter(e => e.source !== nodeId && e.target !== nodeId)
-  if (selectedNode.value?.id === nodeId) {
-    selectedNode.value = null
-    showNodePanel.value = false
-  }
+function removeStep(index: number) {
+  steps.value.splice(index, 1)
+  // Recalculate step orders
+  steps.value.forEach((s, i) => {
+    s.stepOrder = i + 1
+  })
 }
 
-function zoomIn(): void {
-  zoom.value = Math.min(zoom.value + 0.1, 2)
+function moveStepUp(index: number) {
+  if (index <= 0) return
+  const temp = steps.value[index]
+  steps.value[index] = steps.value[index - 1]
+  steps.value[index - 1] = temp
+  steps.value.forEach((s, i) => {
+    s.stepOrder = i + 1
+  })
 }
 
-function zoomOut(): void {
-  zoom.value = Math.max(zoom.value - 0.1, 0.3)
+function moveStepDown(index: number) {
+  if (index >= steps.value.length - 1) return
+  const temp = steps.value[index]
+  steps.value[index] = steps.value[index + 1]
+  steps.value[index + 1] = temp
+  steps.value.forEach((s, i) => {
+    s.stepOrder = i + 1
+  })
 }
 
-function fitView(): void {
-  zoom.value = 1
-  panX.value = 0
-  panY.value = 0
-}
-
-function getNodeColor(type: string): string {
-  const colors: Record<string, string> = {
-    start: '#27AE60',
-    end: '#E74C3C',
-    approval: '#1B3A5C',
-    conditional: '#F39C12',
-    parallel: '#3498DB',
-  }
-  return colors[type] || '#64748B'
-}
-
-function getNodeIcon(type: string): string {
-  const icons: Record<string, string> = {
-    start: 'pi-play',
-    end: 'pi-stop',
-    approval: 'pi-check-circle',
-    conditional: 'pi-sitemap',
-    parallel: 'pi-arrows-alt',
-  }
-  return icons[type] || 'pi-circle'
-}
-
-async function saveWorkflow(): Promise<void> {
-  isSaving.value = true
-  try {
-    /* API call would go here */
-    console.log('Saving workflow:', workflow)
-    /* TODO: POST /v1/workflows */
-  } catch (err) {
-    console.error('Failed to save workflow:', err)
-  } finally {
-    isSaving.value = false
-  }
-}
-
-async function loadWorkflow(_id: string): Promise<void> {
+/* ------------------------------------------------------------------ */
+/*  API Calls                                                          */
+/* ------------------------------------------------------------------ */
+async function loadWorkflow() {
+  if (!workflowId.value) return
   isLoading.value = true
   try {
-    /* API call would go here */
-    /* TODO: GET /v1/workflows/{id} */
+    const wf: WorkflowDefinitionDto = await getWorkflowDefinitionById(workflowId.value)
+    nameAr.value = wf.nameAr
+    nameEn.value = wf.nameEn
+    descriptionAr.value = wf.descriptionAr || ''
+    descriptionEn.value = wf.descriptionEn || ''
+    transitionFrom.value = wf.transitionFrom
+    transitionTo.value = wf.transitionTo
+    isActive.value = wf.isActive
+
+    steps.value = wf.steps
+      .sort((a, b) => a.stepOrder - b.stepOrder)
+      .map(s => ({
+        id: s.id,
+        stepOrder: s.stepOrder,
+        requiredSystemRole: s.requiredSystemRole,
+        requiredCommitteeRole: s.requiredCommitteeRole,
+        stepNameAr: s.stepNameAr,
+        stepNameEn: s.stepNameEn,
+        slaHours: s.slaHours,
+        isConditional: s.isConditional,
+        conditionExpression: s.conditionExpression || '',
+      }))
   } catch (err) {
     console.error('Failed to load workflow:', err)
+    saveError.value = locale.value === 'ar' ? 'فشل في تحميل مسار الاعتماد' : 'Failed to load workflow'
   } finally {
     isLoading.value = false
   }
 }
 
-/* ── Lifecycle ── */
+async function saveWorkflow() {
+  // Validation
+  if (!nameAr.value.trim() || !nameEn.value.trim()) {
+    saveError.value = locale.value === 'ar' ? 'يرجى إدخال اسم المسار بالعربية والإنجليزية' : 'Please enter workflow name in both languages'
+    return
+  }
+  if (steps.value.length === 0) {
+    saveError.value = locale.value === 'ar' ? 'يرجى إضافة خطوة واحدة على الأقل' : 'Please add at least one step'
+    return
+  }
+  for (const step of steps.value) {
+    if (!step.stepNameAr.trim() || !step.stepNameEn.trim()) {
+      saveError.value = locale.value === 'ar' ? 'يرجى إدخال اسم كل خطوة بالعربية والإنجليزية' : 'Please enter step names in both languages'
+      return
+    }
+  }
+
+  isSaving.value = true
+  saveError.value = ''
+  saveSuccess.value = ''
+
+  try {
+    if (isEditMode.value && workflowId.value) {
+      await updateWorkflowDefinition(workflowId.value, {
+        nameAr: nameAr.value,
+        nameEn: nameEn.value,
+        descriptionAr: descriptionAr.value || null,
+        descriptionEn: descriptionEn.value || null,
+        isActive: isActive.value,
+      })
+      saveSuccess.value = locale.value === 'ar' ? 'تم تحديث مسار الاعتماد بنجاح' : 'Workflow updated successfully'
+    } else {
+      const stepsPayload: CreateWorkflowStepRequest[] = steps.value.map(s => ({
+        stepOrder: s.stepOrder,
+        requiredSystemRole: s.requiredSystemRole,
+        requiredCommitteeRole: s.requiredCommitteeRole,
+        stepNameAr: s.stepNameAr,
+        stepNameEn: s.stepNameEn,
+        slaHours: s.slaHours,
+        isConditional: s.isConditional,
+        conditionExpression: s.conditionExpression || null,
+      }))
+
+      await createWorkflowDefinition({
+        nameAr: nameAr.value,
+        nameEn: nameEn.value,
+        descriptionAr: descriptionAr.value || null,
+        descriptionEn: descriptionEn.value || null,
+        transitionFrom: transitionFrom.value,
+        transitionTo: transitionTo.value,
+        steps: stepsPayload,
+      })
+      saveSuccess.value = locale.value === 'ar' ? 'تم إنشاء مسار الاعتماد بنجاح' : 'Workflow created successfully'
+    }
+
+    setTimeout(() => {
+      router.push({ name: 'WorkflowList' })
+    }, 1500)
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : String(err)
+    saveError.value = locale.value === 'ar' ? `فشل في الحفظ: ${msg}` : `Save failed: ${msg}`
+  } finally {
+    isSaving.value = false
+  }
+}
+
+/* ------------------------------------------------------------------ */
+/*  Lifecycle                                                          */
+/* ------------------------------------------------------------------ */
 onMounted(() => {
-  /* Initialize with start and end nodes */
-  if (!isEditMode.value) {
-    workflow.nodes = [
-      { id: 'start', type: 'start', label: t('workflow.nodes.start'), x: 100, y: 250, config: {} },
-      { id: 'end', type: 'end', label: t('workflow.nodes.end'), x: 800, y: 250, config: {} },
-    ]
+  if (isEditMode.value) {
+    loadWorkflow()
   } else {
-    loadWorkflow(route.params.id as string)
+    addStep()
   }
 })
 </script>
 
 <template>
-  <div class="flex h-[calc(100vh-8rem)] flex-col overflow-hidden rounded-2xl border border-secondary-200 bg-white shadow-card">
-    <!-- Header Bar -->
-    <div class="flex items-center justify-between border-b border-secondary-100 px-6 py-4">
-      <div class="flex items-center gap-4">
-        <button class="btn-ghost btn-sm" @click="router.back()">
-          <i class="pi pi-arrow-left rtl:pi-arrow-right"></i>
-        </button>
-        <div>
-          <h1 class="text-lg font-bold text-secondary">
-            {{ isEditMode ? t('workflow.edit') : t('workflow.create') }}
-          </h1>
-          <p class="text-xs text-tertiary">{{ t('workflow.designer') }}</p>
-        </div>
-      </div>
-      <div class="flex items-center gap-2">
-        <button class="btn-ghost btn-sm" @click="saveWorkflow" :disabled="isSaving">
-          <i class="pi pi-save"></i>
-          {{ t('workflow.saveDraft') }}
-        </button>
-        <button class="btn-primary btn-sm" @click="saveWorkflow" :disabled="isSaving">
-          <i class="pi pi-check" :class="{ 'animate-spin': isSaving }"></i>
-          {{ t('workflow.save') }}
-        </button>
+  <div class="mx-auto max-w-4xl space-y-6 pb-12">
+    <!-- Page Header -->
+    <div class="flex items-center gap-4">
+      <button
+        class="rounded-lg p-2 text-secondary-500 hover:bg-secondary-100"
+        @click="router.push({ name: 'WorkflowList' })"
+      >
+        <i class="pi" :class="locale === 'ar' ? 'pi-arrow-right' : 'pi-arrow-left'"></i>
+      </button>
+      <div>
+        <h1 class="text-2xl font-bold text-secondary-800">
+          {{ isEditMode
+            ? (locale === 'ar' ? 'تعديل مسار الاعتماد' : 'Edit Workflow')
+            : (locale === 'ar' ? 'إنشاء مسار اعتماد جديد' : 'Create New Workflow') }}
+        </h1>
+        <p class="mt-1 text-sm text-secondary-500">
+          {{ locale === 'ar'
+            ? 'حدد خطوات الاعتماد والأدوار المطلوبة لكل خطوة'
+            : 'Define approval steps and required roles for each step' }}
+        </p>
       </div>
     </div>
 
-    <div class="flex flex-1 overflow-hidden">
-      <!-- Node Palette (Left sidebar) -->
-      <div class="w-56 shrink-0 border-e border-secondary-100 bg-surface-subtle p-4">
-        <h3 class="mb-3 text-xs font-semibold uppercase tracking-wider text-secondary-500">
-          {{ t('workflow.toolbar.addNode') }}
-        </h3>
-        <div class="space-y-2">
-          <button
-            v-for="item in nodePalette"
-            :key="item.type"
-            class="flex w-full items-center gap-3 rounded-xl border border-secondary-200 bg-white p-3 text-start text-sm transition-all hover:border-primary hover:shadow-card"
-            @click="addNode(item.type as WorkflowNode['type'])"
-          >
-            <div
-              class="flex h-9 w-9 items-center justify-center rounded-lg text-white"
-              :style="{ backgroundColor: item.color }"
-            >
-              <i class="pi text-sm" :class="item.icon"></i>
-            </div>
-            <span class="font-medium text-secondary-700">{{ t(item.labelKey) }}</span>
-          </button>
-        </div>
+    <!-- Loading -->
+    <div v-if="isLoading" class="flex items-center justify-center py-16">
+      <i class="pi pi-spin pi-spinner text-3xl text-primary"></i>
+    </div>
 
-        <!-- Workflow Info -->
-        <div class="mt-6 space-y-3">
-          <h3 class="text-xs font-semibold uppercase tracking-wider text-secondary-500">
-            {{ t('workflow.name') }}
-          </h3>
-          <input
-            v-model="workflow.nameAr"
-            :placeholder="t('workflow.nameAr')"
-            class="input text-sm"
-          />
-          <input
-            v-model="workflow.nameEn"
-            :placeholder="t('workflow.nameEn')"
-            class="input text-sm"
-          />
-          <textarea
-            v-model="workflow.description"
-            :placeholder="t('workflow.description')"
-            class="input text-sm"
-            rows="2"
-          ></textarea>
-        </div>
+    <template v-else>
+      <!-- Error/Success Banners -->
+      <div v-if="saveError" class="flex items-center gap-3 rounded-lg border border-red-200 bg-red-50 p-4">
+        <i class="pi pi-exclamation-triangle text-lg text-red-600"></i>
+        <p class="flex-1 text-sm text-red-700">{{ saveError }}</p>
+        <button class="text-xs font-medium text-red-600 hover:underline" @click="saveError = ''">
+          {{ locale === 'ar' ? 'إغلاق' : 'Close' }}
+        </button>
       </div>
 
-      <!-- Canvas Area -->
-      <div class="relative flex-1 overflow-hidden bg-[#FAFBFC]">
-        <!-- Grid background -->
-        <svg class="absolute inset-0 h-full w-full" xmlns="http://www.w3.org/2000/svg">
-          <defs>
-            <pattern id="grid" width="20" height="20" patternUnits="userSpaceOnUse">
-              <path d="M 20 0 L 0 0 0 20" fill="none" stroke="#E2E8F0" stroke-width="0.5"/>
-            </pattern>
-          </defs>
-          <rect width="100%" height="100%" fill="url(#grid)" />
-        </svg>
+      <div v-if="saveSuccess" class="flex items-center gap-3 rounded-lg border border-green-200 bg-green-50 p-4">
+        <i class="pi pi-check-circle text-lg text-green-600"></i>
+        <p class="flex-1 text-sm text-green-700">{{ saveSuccess }}</p>
+      </div>
 
-        <!-- Toolbar -->
-        <div class="absolute start-4 top-4 z-10 flex items-center gap-1 rounded-xl border border-secondary-200 bg-white p-1 shadow-card">
-          <button class="btn-icon text-secondary-500 hover:bg-surface-subtle hover:text-secondary" @click="zoomIn" :title="t('workflow.toolbar.zoomIn')">
-            <i class="pi pi-plus text-xs"></i>
-          </button>
-          <span class="px-2 text-xs font-medium text-secondary-500">{{ Math.round(zoom * 100) }}%</span>
-          <button class="btn-icon text-secondary-500 hover:bg-surface-subtle hover:text-secondary" @click="zoomOut" :title="t('workflow.toolbar.zoomOut')">
-            <i class="pi pi-minus text-xs"></i>
-          </button>
-          <div class="mx-1 h-4 w-px bg-secondary-200"></div>
-          <button class="btn-icon text-secondary-500 hover:bg-surface-subtle hover:text-secondary" @click="fitView" :title="t('workflow.toolbar.fitView')">
-            <i class="pi pi-expand text-xs"></i>
-          </button>
-          <button
-            class="btn-icon hover:bg-surface-subtle"
-            :class="showMinimap ? 'text-primary' : 'text-secondary-500'"
-            @click="showMinimap = !showMinimap"
-            :title="t('workflow.toolbar.minimap')"
-          >
-            <i class="pi pi-map text-xs"></i>
-          </button>
-        </div>
+      <!-- Basic Info Card -->
+      <div class="rounded-xl border border-secondary-100 bg-white p-6 shadow-sm">
+        <h2 class="mb-4 text-base font-bold text-secondary-800">
+          <i class="pi pi-info-circle me-2 text-primary"></i>
+          {{ locale === 'ar' ? 'المعلومات الأساسية' : 'Basic Information' }}
+        </h2>
 
-        <!-- Nodes -->
-        <div
-          class="absolute inset-0"
-          :style="{
-            transform: `scale(${zoom}) translate(${panX}px, ${panY}px)`,
-            transformOrigin: 'center center',
-          }"
-        >
-          <!-- Edges (SVG lines) -->
-          <svg class="absolute inset-0 h-full w-full pointer-events-none">
-            <line
-              v-for="edge in workflow.edges"
-              :key="edge.id"
-              :x1="(workflow.nodes.find(n => n.id === edge.source)?.x ?? 0) + 70"
-              :y1="(workflow.nodes.find(n => n.id === edge.source)?.y ?? 0) + 25"
-              :x2="(workflow.nodes.find(n => n.id === edge.target)?.x ?? 0) + 70"
-              :y2="(workflow.nodes.find(n => n.id === edge.target)?.y ?? 0) + 25"
-              stroke="#94A3B8"
-              stroke-width="2"
-              stroke-dasharray="6,3"
-              marker-end="url(#arrowhead)"
+        <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
+          <!-- Name AR -->
+          <div>
+            <label class="mb-1 block text-xs font-semibold text-secondary-600">
+              {{ locale === 'ar' ? 'اسم المسار (عربي)' : 'Workflow Name (Arabic)' }}
+              <span class="text-red-500">*</span>
+            </label>
+            <input
+              v-model="nameAr"
+              type="text"
+              dir="rtl"
+              :placeholder="locale === 'ar' ? 'مثال: مسار اعتماد الكراسة' : 'e.g., Booklet Approval Workflow'"
+              class="w-full rounded-lg border border-secondary-200 bg-secondary-50/50 px-4 py-2.5 text-sm text-secondary-700 outline-none focus:border-primary focus:ring-1 focus:ring-primary"
             />
-            <defs>
-              <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="10" refY="3.5" orient="auto">
-                <polygon points="0 0, 10 3.5, 0 7" fill="#94A3B8" />
-              </marker>
-            </defs>
-          </svg>
-
-          <!-- Node elements -->
-          <div
-            v-for="node in workflow.nodes"
-            :key="node.id"
-            class="absolute cursor-pointer select-none rounded-xl border-2 bg-white p-3 shadow-card transition-all duration-200 hover:shadow-elevated"
-            :class="[
-              selectedNode?.id === node.id ? 'ring-2 ring-primary ring-offset-2' : '',
-              node.type === 'start' || node.type === 'end' ? 'w-28' : 'w-40',
-            ]"
-            :style="{
-              left: `${node.x}px`,
-              top: `${node.y}px`,
-              borderColor: getNodeColor(node.type),
-            }"
-            @click="selectNode(node)"
-          >
-            <div class="flex items-center gap-2">
-              <div
-                class="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-white"
-                :style="{ backgroundColor: getNodeColor(node.type) }"
-              >
-                <i class="pi text-xs" :class="getNodeIcon(node.type)"></i>
-              </div>
-              <div class="min-w-0 flex-1">
-                <p class="truncate text-xs font-semibold text-secondary-800">{{ node.label }}</p>
-                <p v-if="node.config.slaHours" class="text-[10px] text-secondary-400">
-                  SLA: {{ node.config.slaHours }}h
-                </p>
-              </div>
-            </div>
-            <!-- Delete button (not for start/end) -->
-            <button
-              v-if="node.type !== 'start' && node.type !== 'end'"
-              class="absolute -end-2 -top-2 flex h-5 w-5 items-center justify-center rounded-full bg-danger text-[10px] text-white opacity-0 transition-opacity group-hover:opacity-100 hover:opacity-100"
-              @click.stop="deleteNode(node.id)"
-              style="opacity: 0;"
-              @mouseenter="($event.target as HTMLElement).style.opacity = '1'"
-              @mouseleave="($event.target as HTMLElement).style.opacity = '0'"
-            >
-              <i class="pi pi-times"></i>
-            </button>
           </div>
-        </div>
 
-        <!-- Minimap -->
-        <div
-          v-if="showMinimap"
-          class="absolute bottom-4 end-4 h-32 w-48 rounded-xl border border-secondary-200 bg-white/90 p-2 shadow-card backdrop-blur-sm"
-        >
-          <div class="relative h-full w-full overflow-hidden rounded-lg bg-surface-subtle">
-            <div
-              v-for="node in workflow.nodes"
-              :key="`mini-${node.id}`"
-              class="absolute h-2 w-3 rounded-sm"
-              :style="{
-                left: `${(node.x / 1000) * 100}%`,
-                top: `${(node.y / 600) * 100}%`,
-                backgroundColor: getNodeColor(node.type),
-              }"
-            ></div>
+          <!-- Name EN -->
+          <div>
+            <label class="mb-1 block text-xs font-semibold text-secondary-600">
+              {{ locale === 'ar' ? 'اسم المسار (إنجليزي)' : 'Workflow Name (English)' }}
+              <span class="text-red-500">*</span>
+            </label>
+            <input
+              v-model="nameEn"
+              type="text"
+              dir="ltr"
+              placeholder="e.g., Booklet Approval Workflow"
+              class="w-full rounded-lg border border-secondary-200 bg-secondary-50/50 px-4 py-2.5 text-sm text-secondary-700 outline-none focus:border-primary focus:ring-1 focus:ring-primary"
+            />
+          </div>
+
+          <!-- Description AR -->
+          <div>
+            <label class="mb-1 block text-xs font-semibold text-secondary-600">
+              {{ locale === 'ar' ? 'الوصف (عربي)' : 'Description (Arabic)' }}
+            </label>
+            <textarea
+              v-model="descriptionAr"
+              dir="rtl"
+              rows="2"
+              class="w-full rounded-lg border border-secondary-200 bg-secondary-50/50 px-4 py-2.5 text-sm text-secondary-700 outline-none focus:border-primary focus:ring-1 focus:ring-primary"
+            ></textarea>
+          </div>
+
+          <!-- Description EN -->
+          <div>
+            <label class="mb-1 block text-xs font-semibold text-secondary-600">
+              {{ locale === 'ar' ? 'الوصف (إنجليزي)' : 'Description (English)' }}
+            </label>
+            <textarea
+              v-model="descriptionEn"
+              dir="ltr"
+              rows="2"
+              class="w-full rounded-lg border border-secondary-200 bg-secondary-50/50 px-4 py-2.5 text-sm text-secondary-700 outline-none focus:border-primary focus:ring-1 focus:ring-primary"
+            ></textarea>
+          </div>
+
+          <!-- Transition From -->
+          <div>
+            <label class="mb-1 block text-xs font-semibold text-secondary-600">
+              {{ locale === 'ar' ? 'الانتقال من حالة' : 'Transition From' }}
+            </label>
+            <select
+              v-model="transitionFrom"
+              :disabled="isEditMode"
+              class="w-full rounded-lg border border-secondary-200 bg-secondary-50/50 px-4 py-2.5 text-sm text-secondary-700 outline-none focus:border-primary focus:ring-1 focus:ring-primary disabled:opacity-50"
+            >
+              <option v-for="s in competitionStatuses" :key="s.value" :value="s.value">
+                {{ locale === 'ar' ? s.labelAr : s.labelEn }}
+              </option>
+            </select>
+          </div>
+
+          <!-- Transition To -->
+          <div>
+            <label class="mb-1 block text-xs font-semibold text-secondary-600">
+              {{ locale === 'ar' ? 'الانتقال إلى حالة' : 'Transition To' }}
+            </label>
+            <select
+              v-model="transitionTo"
+              :disabled="isEditMode"
+              class="w-full rounded-lg border border-secondary-200 bg-secondary-50/50 px-4 py-2.5 text-sm text-secondary-700 outline-none focus:border-primary focus:ring-1 focus:ring-primary disabled:opacity-50"
+            >
+              <option v-for="s in competitionStatuses" :key="s.value" :value="s.value">
+                {{ locale === 'ar' ? s.labelAr : s.labelEn }}
+              </option>
+            </select>
           </div>
         </div>
       </div>
 
-      <!-- Node Properties Panel (Right sidebar) -->
-      <Transition name="slide">
-        <div
-          v-if="showNodePanel && selectedNode && selectedNode.type !== 'start' && selectedNode.type !== 'end'"
-          class="w-72 shrink-0 overflow-y-auto border-s border-secondary-100 bg-white p-5"
-        >
-          <div class="flex items-center justify-between mb-4">
-            <h3 class="text-sm font-bold text-secondary">{{ t('workflow.nodeProperties.stageName') }}</h3>
-            <button class="btn-icon text-secondary-400 hover:text-secondary" @click="showNodePanel = false">
-              <i class="pi pi-times text-xs"></i>
-            </button>
+      <!-- Steps Card -->
+      <div class="rounded-xl border border-secondary-100 bg-white p-6 shadow-sm">
+        <div class="mb-4 flex items-center justify-between">
+          <h2 class="text-base font-bold text-secondary-800">
+            <i class="pi pi-list me-2 text-primary"></i>
+            {{ locale === 'ar' ? 'خطوات الاعتماد' : 'Approval Steps' }}
+            <span class="ms-2 text-xs font-normal text-secondary-400">
+              ({{ steps.length }} {{ locale === 'ar' ? 'خطوة' : 'steps' }})
+            </span>
+          </h2>
+          <button
+            class="flex items-center gap-1.5 rounded-lg border border-primary/30 bg-primary/5 px-3 py-1.5 text-xs font-medium text-primary transition-all hover:bg-primary/10"
+            @click="addStep"
+          >
+            <i class="pi pi-plus text-[10px]"></i>
+            {{ locale === 'ar' ? 'إضافة خطوة' : 'Add Step' }}
+          </button>
+        </div>
+
+        <!-- Visual Timeline Preview -->
+        <div v-if="steps.length > 0" class="mb-6 flex items-center gap-1 overflow-x-auto rounded-lg bg-secondary-50 p-3">
+          <div
+            v-for="(step, idx) in steps"
+            :key="idx"
+            class="flex items-center gap-1"
+          >
+            <div class="flex shrink-0 items-center gap-1.5 rounded-lg bg-white px-3 py-1.5 shadow-sm">
+              <span class="flex h-5 w-5 items-center justify-center rounded-full bg-primary/10 text-[10px] font-bold text-primary">
+                {{ step.stepOrder }}
+              </span>
+              <span class="max-w-[120px] truncate text-[10px] font-medium text-secondary-700">
+                {{ step.stepNameAr || (locale === 'ar' ? 'خطوة جديدة' : 'New Step') }}
+              </span>
+            </div>
+            <i v-if="idx < steps.length - 1" class="pi text-[10px] text-secondary-300" :class="locale === 'ar' ? 'pi-arrow-left' : 'pi-arrow-right'"></i>
           </div>
+        </div>
 
-          <div class="space-y-4">
-            <!-- Stage Name -->
-            <div>
-              <label class="mb-1 block text-xs font-medium text-secondary-600">{{ t('workflow.nameAr') }}</label>
-              <input v-model="selectedNode.config.stageNameAr" class="input text-sm" />
-            </div>
-            <div>
-              <label class="mb-1 block text-xs font-medium text-secondary-600">{{ t('workflow.nameEn') }}</label>
-              <input v-model="selectedNode.config.stageNameEn" class="input text-sm" />
-            </div>
-
-            <!-- Approver Type -->
-            <div>
-              <label class="mb-1 block text-xs font-medium text-secondary-600">{{ t('workflow.nodeProperties.approverType') }}</label>
-              <select v-model="selectedNode.config.approverType" class="input text-sm">
-                <option value="user">{{ t('workflow.nodeProperties.user') }}</option>
-                <option value="role">{{ t('workflow.nodeProperties.role') }}</option>
-                <option value="committee">{{ t('workflow.nodeProperties.committee') }}</option>
-              </select>
-            </div>
-
-            <!-- SLA -->
-            <div>
-              <label class="mb-1 block text-xs font-medium text-secondary-600">{{ t('workflow.nodeProperties.sla') }}</label>
+        <!-- Steps List -->
+        <div class="space-y-4">
+          <div
+            v-for="(step, index) in steps"
+            :key="index"
+            class="rounded-xl border border-secondary-100 bg-secondary-50/30 p-4 transition-all hover:border-primary/20"
+          >
+            <!-- Step Header -->
+            <div class="mb-3 flex items-center justify-between">
               <div class="flex items-center gap-2">
+                <span class="flex h-7 w-7 items-center justify-center rounded-lg bg-primary/10 text-xs font-bold text-primary">
+                  {{ step.stepOrder }}
+                </span>
+                <span class="text-sm font-semibold text-secondary-700">
+                  {{ locale === 'ar' ? 'الخطوة' : 'Step' }} {{ step.stepOrder }}
+                </span>
+              </div>
+              <div class="flex items-center gap-1">
+                <button
+                  v-if="index > 0"
+                  class="rounded p-1 text-secondary-400 hover:bg-secondary-100 hover:text-secondary-600"
+                  :title="locale === 'ar' ? 'نقل لأعلى' : 'Move Up'"
+                  @click="moveStepUp(index)"
+                >
+                  <i class="pi pi-arrow-up text-xs"></i>
+                </button>
+                <button
+                  v-if="index < steps.length - 1"
+                  class="rounded p-1 text-secondary-400 hover:bg-secondary-100 hover:text-secondary-600"
+                  :title="locale === 'ar' ? 'نقل لأسفل' : 'Move Down'"
+                  @click="moveStepDown(index)"
+                >
+                  <i class="pi pi-arrow-down text-xs"></i>
+                </button>
+                <button
+                  class="rounded p-1 text-red-400 hover:bg-red-50 hover:text-red-600"
+                  :title="locale === 'ar' ? 'حذف الخطوة' : 'Remove Step'"
+                  @click="removeStep(index)"
+                >
+                  <i class="pi pi-trash text-xs"></i>
+                </button>
+              </div>
+            </div>
+
+            <!-- Step Fields -->
+            <div class="grid grid-cols-1 gap-3 md:grid-cols-2">
+              <!-- Step Name AR -->
+              <div>
+                <label class="mb-1 block text-[10px] font-semibold uppercase tracking-wider text-secondary-400">
+                  {{ locale === 'ar' ? 'اسم الخطوة (عربي)' : 'Step Name (Arabic)' }}
+                  <span class="text-red-500">*</span>
+                </label>
                 <input
-                  v-model.number="selectedNode.config.slaHours"
+                  v-model="step.stepNameAr"
+                  type="text"
+                  dir="rtl"
+                  :placeholder="locale === 'ar' ? 'مثال: مراجعة رئيس لجنة الإعداد' : 'e.g., Preparation Chair Review'"
+                  class="w-full rounded-lg border border-secondary-200 bg-white px-3 py-2 text-sm outline-none focus:border-primary focus:ring-1 focus:ring-primary"
+                />
+              </div>
+
+              <!-- Step Name EN -->
+              <div>
+                <label class="mb-1 block text-[10px] font-semibold uppercase tracking-wider text-secondary-400">
+                  {{ locale === 'ar' ? 'اسم الخطوة (إنجليزي)' : 'Step Name (English)' }}
+                  <span class="text-red-500">*</span>
+                </label>
+                <input
+                  v-model="step.stepNameEn"
+                  type="text"
+                  dir="ltr"
+                  placeholder="e.g., Preparation Chair Review"
+                  class="w-full rounded-lg border border-secondary-200 bg-white px-3 py-2 text-sm outline-none focus:border-primary focus:ring-1 focus:ring-primary"
+                />
+              </div>
+
+              <!-- Required System Role -->
+              <div>
+                <label class="mb-1 block text-[10px] font-semibold uppercase tracking-wider text-secondary-400">
+                  {{ locale === 'ar' ? 'دور النظام المطلوب' : 'Required System Role' }}
+                </label>
+                <select
+                  v-model="step.requiredSystemRole"
+                  class="w-full rounded-lg border border-secondary-200 bg-white px-3 py-2 text-sm outline-none focus:border-primary focus:ring-1 focus:ring-primary"
+                >
+                  <option v-for="r in systemRoles" :key="r.value" :value="r.value">
+                    {{ locale === 'ar' ? r.labelAr : r.labelEn }}
+                  </option>
+                </select>
+              </div>
+
+              <!-- Required Committee Role -->
+              <div>
+                <label class="mb-1 block text-[10px] font-semibold uppercase tracking-wider text-secondary-400">
+                  {{ locale === 'ar' ? 'دور اللجنة المطلوب' : 'Required Committee Role' }}
+                </label>
+                <select
+                  v-model="step.requiredCommitteeRole"
+                  class="w-full rounded-lg border border-secondary-200 bg-white px-3 py-2 text-sm outline-none focus:border-primary focus:ring-1 focus:ring-primary"
+                >
+                  <option v-for="r in committeeRoles" :key="r.value" :value="r.value">
+                    {{ locale === 'ar' ? r.labelAr : r.labelEn }}
+                  </option>
+                </select>
+              </div>
+
+              <!-- SLA Hours -->
+              <div>
+                <label class="mb-1 block text-[10px] font-semibold uppercase tracking-wider text-secondary-400">
+                  {{ locale === 'ar' ? 'مدة الإنجاز (ساعات)' : 'SLA (Hours)' }}
+                </label>
+                <input
+                  v-model.number="step.slaHours"
                   type="number"
                   min="1"
-                  class="input text-sm flex-1"
+                  max="720"
+                  class="w-full rounded-lg border border-secondary-200 bg-white px-3 py-2 text-sm outline-none focus:border-primary focus:ring-1 focus:ring-primary"
                 />
-                <span class="text-xs text-secondary-500">{{ t('workflow.nodeProperties.hours') }}</span>
               </div>
-            </div>
 
-            <!-- Escalation -->
-            <div>
-              <label class="mb-1 block text-xs font-medium text-secondary-600">{{ t('workflow.nodeProperties.escalation') }}</label>
-              <select v-model="selectedNode.config.escalationAction" class="input text-sm">
-                <option value="notify_manager">{{ locale === "ar" ? "إشعار المدير" : "Notify Manager" }}</option>
-                <option value="auto_approve">{{ locale === "ar" ? "موافقة تلقائية" : "Auto Approve" }}</option>
-                <option value="escalate_up">{{ locale === "ar" ? "تصعيد" : "Escalate Up" }}</option>
-              </select>
-            </div>
-
-            <!-- Available Actions -->
-            <div>
-              <label class="mb-2 block text-xs font-medium text-secondary-600">{{ t('workflow.nodeProperties.actions') }}</label>
-              <div class="space-y-2">
-                <label v-for="action in ['approve', 'reject', 'return', 'suspend']" :key="action" class="flex items-center gap-2">
+              <!-- Conditional -->
+              <div class="flex items-end gap-3">
+                <label class="flex items-center gap-2 rounded-lg border border-secondary-200 bg-white px-3 py-2 text-sm">
                   <input
+                    v-model="step.isConditional"
                     type="checkbox"
-                    :value="action"
-                    v-model="selectedNode.config.actions"
                     class="h-4 w-4 rounded border-secondary-300 text-primary focus:ring-primary"
                   />
-                  <span class="text-xs text-secondary-700">{{ t(`workflow.nodeProperties.${action}`) }}</span>
+                  <span class="text-secondary-600">
+                    {{ locale === 'ar' ? 'خطوة مشروطة' : 'Conditional Step' }}
+                  </span>
                 </label>
               </div>
             </div>
+
+            <!-- Condition Expression (if conditional) -->
+            <div v-if="step.isConditional" class="mt-3">
+              <label class="mb-1 block text-[10px] font-semibold uppercase tracking-wider text-secondary-400">
+                {{ locale === 'ar' ? 'التعبير الشرطي' : 'Condition Expression' }}
+              </label>
+              <input
+                v-model="step.conditionExpression"
+                type="text"
+                dir="ltr"
+                :placeholder="locale === 'ar' ? 'مثال: EstimatedValue > 1000000' : 'e.g., EstimatedValue > 1000000'"
+                class="w-full rounded-lg border border-secondary-200 bg-white px-3 py-2 text-sm outline-none focus:border-primary focus:ring-1 focus:ring-primary"
+              />
+              <p class="mt-1 text-[10px] text-secondary-400">
+                {{ locale === 'ar'
+                  ? 'يتم تقييم هذا التعبير لتحديد ما إذا كانت الخطوة مطلوبة'
+                  : 'This expression is evaluated to determine if the step is required' }}
+              </p>
+            </div>
           </div>
         </div>
-      </Transition>
-    </div>
+
+        <!-- Empty Steps -->
+        <div v-if="steps.length === 0" class="flex flex-col items-center justify-center rounded-xl border-2 border-dashed border-secondary-200 py-12">
+          <i class="pi pi-list text-3xl text-secondary-300"></i>
+          <p class="mt-3 text-sm text-secondary-500">
+            {{ locale === 'ar' ? 'لا توجد خطوات بعد. أضف خطوة للبدء.' : 'No steps yet. Add a step to begin.' }}
+          </p>
+          <button
+            class="mt-4 flex items-center gap-1.5 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white"
+            @click="addStep"
+          >
+            <i class="pi pi-plus text-xs"></i>
+            {{ locale === 'ar' ? 'إضافة خطوة' : 'Add Step' }}
+          </button>
+        </div>
+      </div>
+
+      <!-- Action Buttons -->
+      <div class="flex items-center justify-between rounded-xl border border-secondary-100 bg-white p-4 shadow-sm">
+        <button
+          class="rounded-lg border border-secondary-200 px-4 py-2.5 text-sm font-medium text-secondary-600 transition-all hover:bg-secondary-50"
+          @click="router.push({ name: 'WorkflowList' })"
+        >
+          {{ locale === 'ar' ? 'إلغاء' : 'Cancel' }}
+        </button>
+        <div class="flex items-center gap-3">
+          <!-- Active Toggle -->
+          <label class="flex items-center gap-2 text-sm text-secondary-600">
+            <input
+              v-model="isActive"
+              type="checkbox"
+              class="h-4 w-4 rounded border-secondary-300 text-primary focus:ring-primary"
+            />
+            {{ locale === 'ar' ? 'نشط' : 'Active' }}
+          </label>
+
+          <!-- Save Button -->
+          <button
+            class="flex items-center gap-2 rounded-xl bg-primary px-6 py-2.5 text-sm font-semibold text-white shadow-sm transition-all hover:bg-primary-600 disabled:opacity-50"
+            :disabled="isSaving"
+            @click="saveWorkflow"
+          >
+            <i v-if="isSaving" class="pi pi-spin pi-spinner text-xs"></i>
+            <i v-else class="pi pi-save text-xs"></i>
+            {{ isSaving
+              ? (locale === 'ar' ? 'جاري الحفظ...' : 'Saving...')
+              : (locale === 'ar' ? 'حفظ المسار' : 'Save Workflow') }}
+          </button>
+        </div>
+      </div>
+    </template>
   </div>
 </template>
-
-<style scoped>
-.slide-enter-active,
-.slide-leave-active {
-  transition: all 0.3s ease;
-}
-.slide-enter-from,
-.slide-leave-to {
-  transform: translateX(100%);
-  opacity: 0;
-}
-[dir="rtl"] .slide-enter-from,
-[dir="rtl"] .slide-leave-to {
-  transform: translateX(-100%);
-}
-</style>

@@ -15,6 +15,7 @@ using TendexAI.API.Endpoints.Tasks;
 using TendexAI.API.Endpoints.Notifications;
 using TendexAI.API.Endpoints.Reports;
 using TendexAI.API.Endpoints.Inquiries;
+using TendexAI.API.Endpoints.Workflow;
 
 // Enable PII logging for debugging JWT validation issues (TEMPORARY)
 IdentityModelEventSource.ShowPII = true;
@@ -180,5 +181,8 @@ app.MapInquiryEndpoints();
 
 // Booklet Template endpoints (EXPRO official templates with color-coded editor)
 app.MapBookletTemplateEndpoints();
+
+// Approval Workflow endpoints (workflow engine & definitions)
+app.MapApprovalWorkflowEndpoints();
 
 app.Run();
