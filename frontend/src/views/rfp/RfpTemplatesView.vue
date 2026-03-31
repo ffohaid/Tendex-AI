@@ -79,6 +79,8 @@ const copyForm = ref({
   projectNameEn: '',
   description: ''
 })
+const copyError = ref('')
+const copySuccess = ref(false)
 
 const categories = [
   { key: 'all', labelAr: 'الكل', labelEn: 'All' },
@@ -206,6 +208,7 @@ async function handleCopyFromTemplate(): Promise<void> {
   if (!selectedTemplate.value || !copyForm.value.projectNameAr.trim()) return
 
   isCopying.value = selectedTemplate.value.id
+  copyError.value = ''
   try {
     const result = await httpPost<{ rfpId: string }>(
       `/v1/rfp/templates/${selectedTemplate.value.id}/copy`,
@@ -216,9 +219,16 @@ async function handleCopyFromTemplate(): Promise<void> {
       }
     )
     showCopyDialog.value = false
-    router.push({ name: 'RfpCreate', query: { id: result.rfpId } })
-  } catch {
-    console.error('Failed to copy from template')
+    copySuccess.value = true
+    // Navigate to edit the newly created competition
+    setTimeout(() => {
+      copySuccess.value = false
+      router.push({ name: 'rfp-edit', params: { id: result.rfpId } })
+    }, 1500)
+  } catch (err: unknown) {
+    const errorMsg = err instanceof Error ? err.message : 'حدث خطأ أثناء إنشاء المنافسة من القالب'
+    copyError.value = errorMsg
+    console.error('Failed to copy from template', err)
   } finally {
     isCopying.value = null
   }
@@ -684,6 +694,12 @@ onMounted(() => {
                 class="w-full rounded-xl border border-secondary-200 px-4 py-2.5 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
               ></textarea>
             </div>
+
+            <!-- Error Message -->
+            <div v-if="copyError" class="mb-3 rounded-xl bg-red-50 p-3 text-sm text-red-700">
+              <i class="pi pi-exclamation-triangle me-1 text-xs"></i>
+              {{ copyError }}
+            </div>
           </div>
 
           <!-- Dialog Footer -->
@@ -706,6 +722,19 @@ onMounted(() => {
           </div>
         </div>
       </div>
+    </Teleport>
+
+    <!-- Success Toast -->
+    <Teleport to="body">
+      <Transition name="fade">
+        <div
+          v-if="copySuccess"
+          class="fixed bottom-6 start-1/2 z-[60] -translate-x-1/2 rounded-xl bg-green-600 px-6 py-3 text-sm font-semibold text-white shadow-lg"
+        >
+          <i class="pi pi-check-circle me-2 text-xs"></i>
+          {{ locale === 'ar' ? 'تم إنشاء المنافسة بنجاح! جاري الانتقال...' : 'Competition created successfully! Redirecting...' }}
+        </div>
+      </Transition>
     </Teleport>
   </div>
 </template>
