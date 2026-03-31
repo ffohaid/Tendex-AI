@@ -20,6 +20,7 @@ export function useFormatters() {
    * Always uses English (Western) numerals per PRD requirement.
    */
   function formatNumber(value: number, decimals = 0): string {
+    if (value === null || value === undefined || isNaN(value)) return '0'
     return new Intl.NumberFormat('en-US', {
       minimumFractionDigits: decimals,
       maximumFractionDigits: decimals,

@@ -35,6 +35,8 @@ export interface Conversation {
  * ──────────────────────────────────────────── */
 export interface AiChatRequest {
   tenantId: string
+  preferredProvider?: number
+  modelNameOverride?: string
   systemPrompt?: string
   userPrompt: string
   conversationHistory?: Array<{

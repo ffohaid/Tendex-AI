@@ -184,6 +184,7 @@ async function handleSendMessage(text?: string): Promise<void> {
 
     const request: AiChatRequest = {
       tenantId: tenantId.value,
+      preferredProvider: 2, /* GoogleVertexAI / Gemini */
       systemPrompt: SYSTEM_PROMPT,
       userPrompt: messageText,
       conversationHistory,

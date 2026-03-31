@@ -39,6 +39,26 @@ export async function fetchDashboardStats(): Promise<DashboardStats> {
 }
 
 /**
+ * Maps backend integer competition status to frontend string.
+ * Backend: Draft=0, UnderReview=1, Approved=2, Published=3, InquiriesOpen=4, InquiriesClosed=5,
+ * ReceivingOffers=6, OffersClosed=7, TechnicalAnalysis=8, TechnicalAnalysisCompleted=9,
+ * FinancialAnalysis=10, FinancialAnalysisCompleted=11, AwardNotification=12, AwardApproved=13,
+ * ContractApproval=14, ContractApproved=15, ContractSigned=16, Rejected=90, Cancelled=91, Suspended=92
+ */
+function mapCompetitionStatus(status: number | string): string {
+  if (typeof status === 'string') return status
+  const statusMap: Record<number, string> = {
+    0: 'draft', 1: 'draft', 2: 'draft', 3: 'published',
+    4: 'published', 5: 'published', 6: 'receiving_offers', 7: 'receiving_offers',
+    8: 'technical_evaluation', 9: 'technical_evaluation',
+    10: 'financial_evaluation', 11: 'financial_evaluation',
+    12: 'awarding', 13: 'awarding', 14: 'awarding', 15: 'completed', 16: 'completed',
+    90: 'cancelled', 91: 'cancelled', 92: 'cancelled',
+  }
+  return statusMap[status] ?? 'draft'
+}
+
+/**
  * Fetches active competitions list with current phase info.
  */
 export async function fetchActiveCompetitions(
@@ -48,7 +68,25 @@ export async function fetchActiveCompetitions(
     status?: string
   },
 ): Promise<{ items: ActiveCompetition[]; totalCount: number }> {
-  return httpGet(ENDPOINTS.competitions, { params })
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const response = await httpGet<{ items: any[]; totalCount: number }>(ENDPOINTS.competitions, { params })
+  return {
+    ...response,
+    items: (response.items || []).map(item => ({
+      id: item.id,
+      referenceNumber: item.referenceNumber ?? '',
+      titleAr: item.projectNameAr ?? item.titleAr ?? '',
+      titleEn: item.projectNameEn ?? item.titleEn ?? '',
+      status: mapCompetitionStatus(item.status) as ActiveCompetition['status'],
+      currentPhase: item.currentPhase ?? { id: 0, nameAr: '', nameEn: '' },
+      estimatedBudget: item.estimatedBudget ?? 0,
+      offersCount: item.offersCount ?? 0,
+      createdAt: item.createdAt ?? '',
+      deadline: item.submissionDeadline ?? item.deadline ?? '',
+      progress: item.progress ?? 0,
+      isDelayed: item.isDelayed ?? false,
+    })),
+  }
 }
 
 /**
@@ -86,6 +124,31 @@ export async function markNotificationRead(notificationId: string): Promise<void
 }
 
 /**
+ * Maps backend integer committee type to frontend string.
+ * Backend: TechnicalEvaluation=1, FinancialEvaluation=2, BookletPreparation=3, InquiryReview=4, OtherPermanent=5
+ */
+function mapCommitteeType(type: number | string): 'permanent' | 'temporary' {
+  if (typeof type === 'string') return type as 'permanent' | 'temporary'
+  // Types 1,2,5 are permanent; 3,4 are temporary
+  return [3, 4].includes(type) ? 'temporary' : 'permanent'
+}
+
+/**
+ * Maps backend integer committee status to frontend string.
+ * Backend: Active=1, Suspended=2, Dissolved=3, Expired=4
+ */
+function mapCommitteeStatus(status: number | string): 'active' | 'expired' | 'suspended' {
+  const statusMap: Record<number, 'active' | 'expired' | 'suspended'> = {
+    1: 'active',
+    2: 'suspended',
+    3: 'expired',
+    4: 'expired',
+  }
+  if (typeof status === 'string') return status as 'active' | 'expired' | 'suspended'
+  return statusMap[status] ?? 'active'
+}
+
+/**
  * Fetches active committees.
  */
 export async function fetchActiveCommittees(
@@ -95,7 +158,20 @@ export async function fetchActiveCommittees(
     type?: string
   },
 ): Promise<{ items: ActiveCommittee[]; totalCount: number }> {
-  return httpGet(ENDPOINTS.committees, { params })
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const response = await httpGet<{ items: any[]; totalCount: number }>(ENDPOINTS.committees, { params })
+  return {
+    ...response,
+    items: response.items.map(item => ({
+      ...item,
+      type: mapCommitteeType(item.type),
+      status: mapCommitteeStatus(item.status),
+      membersCount: item.membersCount ?? item.activeMemberCount ?? 0,
+      nameAr: item.nameAr ?? item.name ?? '',
+      nameEn: item.nameEn ?? item.name ?? '',
+      expiryDate: item.expiryDate ?? item.endDate ?? null,
+    })),
+  }
 }
 
 /**

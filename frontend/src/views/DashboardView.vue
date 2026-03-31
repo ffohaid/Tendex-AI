@@ -219,7 +219,7 @@ function getActivityColor(type: string): string {
                     'bg-secondary-100 text-secondary-500': comp.status === 'draft',
                   }"
                 >
-                  {{ t(`competition.status.${comp.status}`) }}
+                  {{ t(`dashboard.competitionStatus.${comp.status}`) }}
                 </span>
               </div>
             </div>
