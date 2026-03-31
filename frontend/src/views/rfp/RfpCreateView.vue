@@ -94,6 +94,8 @@ async function validateCurrentStep(): Promise<boolean> {
 async function handleNext() {
   const isValid = await validateCurrentStep()
   if (isValid) {
+    // Save current step data to backend before advancing
+    await rfpStore.saveCurrentStep()
     rfpStore.nextStep()
     window.scrollTo({ top: 0, behavior: 'smooth' })
   }

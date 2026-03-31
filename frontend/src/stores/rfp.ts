@@ -28,6 +28,7 @@ import {
   createRfp,
   autoSaveDraft,
   fetchRfpById,
+  saveStepData,
 } from '@/services/rfpService'
 
 /** Generate a unique ID */
@@ -494,6 +495,58 @@ export const useRfpStore = defineStore('rfp', () => {
     await performAutoSave()
   }
 
+  /**
+   * Save the current step's data to the backend.
+   * Called by the wizard when the user clicks "Next".
+   * Returns true if save was successful, false otherwise.
+   */
+  async function saveCurrentStep(): Promise<boolean> {
+    // Ensure the competition is created first
+    if (!formData.value.id) {
+      if (!hasMinimumRequiredFields()) {
+        console.warn('[SaveStep] Not enough data to create competition')
+        return false
+      }
+      isSaving.value = true
+      autoSaveStatus.value = 'saving'
+      const createResponse = await createRfp(formData.value)
+      isSaving.value = false
+      if (createResponse.success && createResponse.data) {
+        formData.value.id = createResponse.data.id
+        formData.value.lastAutoSavedAt = new Date().toISOString()
+        autoSaveStatus.value = 'saved'
+        isDirty.value = false
+      } else {
+        autoSaveStatus.value = 'error'
+        console.warn('[SaveStep] Create failed:', createResponse.message)
+        return false
+      }
+    }
+
+    // Now save the step-specific data
+    isSaving.value = true
+    autoSaveStatus.value = 'saving'
+    const result = await saveStepData(
+      formData.value.id!,
+      currentStep.value,
+      formData.value,
+    )
+    isSaving.value = false
+
+    if (result.success) {
+      formData.value.lastAutoSavedAt = new Date().toISOString()
+      formData.value.updatedAt = new Date().toISOString()
+      autoSaveStatus.value = 'saved'
+      isDirty.value = false
+      return true
+    } else {
+      autoSaveStatus.value = 'error'
+      console.warn('[SaveStep] Step save failed:', result.message)
+      // Non-blocking: allow user to continue even if save fails
+      return true
+    }
+  }
+
   /* ---------------------------------------------------------------- */
   /*  Watch for dirty state to update timestamp                       */
   /* ---------------------------------------------------------------- */
@@ -559,6 +612,7 @@ export const useRfpStore = defineStore('rfp', () => {
     startAutoSave,
     stopAutoSave,
     performAutoSave,
+    saveCurrentStep,
 
     /* Load / Reset */
     loadRfp,

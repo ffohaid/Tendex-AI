@@ -18,6 +18,12 @@ import type {
   PaginatedResponse,
   RfpAttachment,
   CompetitionType,
+  EvaluationCriterion,
+  RfpSection,
+  BoqItem,
+  UnitOfMeasure,
+  TextColorCode,
+  RfpCreationMethod,
 } from '@/types/rfp'
 
 const BASE_URL = '/v1/competitions'
@@ -37,6 +43,60 @@ const competitionTypeMap: Record<string, number> = {
 function mapCompetitionType(type: CompetitionType | string | undefined): number {
   if (type === undefined || type === '') return 0
   return competitionTypeMap[type] ?? 0
+}
+
+/* ------------------------------------------------------------------ */
+/*  Mapping: Frontend UnitOfMeasure string → Backend BoqItemUnit int   */
+/* ------------------------------------------------------------------ */
+
+const unitOfMeasureToBackend: Record<string, number> = {
+  unit: 0,       // Each
+  lump_sum: 1,   // LumpSum
+  sqm: 2,        // SquareMeter
+  meter: 3,      // LinearMeter
+  cbm: 4,        // CubicMeter
+  kg: 5,         // Kilogram
+  ton: 6,        // Ton
+  hour: 7,       // Hour
+  day: 8,        // Day
+  month: 9,      // Month
+  liter: 10,     // Year (closest mapping)
+  trip: 11,      // Trip
+  set: 12,       // Set
+}
+
+const backendUnitToFrontend: Record<number, UnitOfMeasure> = {
+  0: 'unit',
+  1: 'lump_sum',
+  2: 'sqm',
+  3: 'meter',
+  4: 'cbm',
+  5: 'kg',
+  6: 'ton',
+  7: 'hour',
+  8: 'day',
+  9: 'month',
+  10: 'liter',
+  11: 'trip',
+  12: 'set',
+}
+
+/* ------------------------------------------------------------------ */
+/*  Mapping: Frontend TextColorCode → Backend TextColorType int        */
+/* ------------------------------------------------------------------ */
+
+const colorCodeToBackend: Record<string, number> = {
+  black: 0,   // Mandatory
+  green: 1,   // Editable
+  red: 2,     // Example
+  blue: 3,    // Instruction
+}
+
+const backendColorToFrontend: Record<number, TextColorCode> = {
+  0: 'black',
+  1: 'green',
+  2: 'red',
+  3: 'blue',
 }
 
 /* ------------------------------------------------------------------ */
@@ -60,7 +120,7 @@ function mapToCreateRequest(data: Partial<RfpFormData>): CreateCompetitionReques
   const basic = data.basicInfo
   return {
     projectNameAr: basic?.projectName || '',
-    projectNameEn: basic?.projectName || '', // Use same name for both until bilingual support is added
+    projectNameEn: basic?.projectName || '',
     description: basic?.projectDescription || null,
     competitionType: mapCompetitionType(basic?.competitionType),
     creationMethod: 0, // ManualWizard = 0
@@ -113,32 +173,34 @@ const reverseCompetitionTypeMap: Record<number, CompetitionType> = {
   4: 'reverse_auction',
 }
 
-/**
- * Maps backend CompetitionStatus enum (int) to frontend RfpStatus string.
- * The frontend RfpStatus type has fewer values than the backend, so we
- * group related backend statuses into the closest frontend equivalent.
- */
 const statusIntToString: Record<number, string> = {
-  0: 'draft',               // Draft
-  1: 'draft',               // UnderPreparation → still draft phase
-  2: 'pending_approval',    // PendingApproval
-  3: 'approved',            // Approved
-  4: 'published',           // Published
-  5: 'published',           // InquiryPeriod → still published phase
-  6: 'receiving_offers',    // ReceivingOffers
-  7: 'receiving_offers',    // OffersClosed → still in offers phase
-  8: 'technical_evaluation', // TechnicalAnalysis
-  9: 'technical_evaluation', // TechnicalAnalysisCompleted
-  10: 'financial_evaluation', // FinancialAnalysis
-  11: 'financial_evaluation', // FinancialAnalysisCompleted
-  12: 'awarding',           // AwardNotification
-  13: 'awarding',           // AwardApproved
-  14: 'contracting',        // ContractApproval
-  15: 'contracting',        // ContractApproved
-  16: 'completed',          // ContractSigned
-  90: 'cancelled',          // Rejected → mapped to cancelled
-  91: 'cancelled',          // Cancelled
-  92: 'cancelled',          // Suspended → mapped to cancelled
+  0: 'draft',
+  1: 'draft',
+  2: 'pending_approval',
+  3: 'approved',
+  4: 'published',
+  5: 'published',
+  6: 'receiving_offers',
+  7: 'receiving_offers',
+  8: 'technical_evaluation',
+  9: 'technical_evaluation',
+  10: 'financial_evaluation',
+  11: 'financial_evaluation',
+  12: 'awarding',
+  13: 'awarding',
+  14: 'contracting',
+  15: 'contracting',
+  16: 'completed',
+  90: 'cancelled',
+  91: 'cancelled',
+  92: 'cancelled',
+}
+
+const creationMethodIntToString: Record<number, RfpCreationMethod> = {
+  0: 'wizard',
+  1: 'template',
+  2: 'clone',
+  3: 'ai',
 }
 
 /* ------------------------------------------------------------------ */
@@ -146,6 +208,19 @@ const statusIntToString: Record<number, string> = {
 /* ------------------------------------------------------------------ */
 
 function mapListItemFromBackend(dto: Record<string, unknown>): RfpListItem {
+  const sectionsCount = (dto.sectionsCount as number) || 0
+  const boqItemsCount = (dto.boqItemsCount as number) || 0
+  const attachmentsCount = (dto.attachmentsCount as number) || 0
+
+  // Calculate completion percentage based on available data
+  let completedSteps = 0
+  if (dto.projectNameAr) completedSteps++ // Step 1
+  if ((dto.technicalWeight as number) > 0) completedSteps++ // Step 2
+  if (sectionsCount > 0) completedSteps++ // Step 3
+  if (boqItemsCount > 0) completedSteps++ // Step 4
+  if (attachmentsCount > 0) completedSteps++ // Step 5
+  const completionPercentage = Math.round((completedSteps / 5) * 100)
+
   return {
     id: String(dto.id || ''),
     projectName: (dto.projectNameAr as string) || (dto.projectNameEn as string) || '',
@@ -154,10 +229,10 @@ function mapListItemFromBackend(dto: Record<string, unknown>): RfpListItem {
     status: (statusIntToString[dto.status as number] || 'draft') as RfpListItem['status'],
     estimatedValue: (dto.estimatedBudget as number) || 0,
     createdAt: (dto.createdAt as string) || '',
-    updatedAt: '',
+    updatedAt: (dto.lastModifiedAt as string) || '',
     createdBy: (dto.createdBy as string) || '',
     department: '',
-    completionPercentage: 0,
+    completionPercentage,
   }
 }
 
@@ -173,6 +248,99 @@ function mapPagedResponseFromBackend(dto: Record<string, unknown>): PaginatedRes
 }
 
 function mapFromBackendResponse(dto: Record<string, unknown>): RfpFormData {
+  // Map evaluation criteria from backend
+  const evaluationCriteria: EvaluationCriterion[] = ((dto.evaluationCriteria as unknown[]) || []).map((c: unknown) => {
+    const crit = c as Record<string, unknown>
+    return {
+      id: String(crit.id || ''),
+      name: (crit.nameAr as string) || (crit.nameEn as string) || '',
+      weight: (crit.weightPercentage as number) || 0,
+      description: (crit.descriptionAr as string) || (crit.descriptionEn as string) || '',
+      order: (crit.sortOrder as number) || 0,
+    }
+  })
+
+  // Map sections from backend
+  const sections: RfpSection[] = ((dto.sections as unknown[]) || []).map((s: unknown) => {
+    const sec = s as Record<string, unknown>
+    return {
+      id: String(sec.id || ''),
+      title: (sec.titleAr as string) || (sec.titleEn as string) || '',
+      content: (sec.contentHtml as string) || '',
+      order: (sec.sortOrder as number) || 0,
+      isRequired: (sec.isMandatory as boolean) || false,
+      colorCode: backendColorToFrontend[(sec.defaultTextColor as number) ?? 1] || 'green',
+      assignedTo: (sec.assignedToUserId as string) || null,
+      isCompleted: !!(sec.contentHtml as string),
+    }
+  })
+
+  // Map BOQ items from backend
+  const boqItems: BoqItem[] = ((dto.boqItems as unknown[]) || []).map((b: unknown) => {
+    const item = b as Record<string, unknown>
+    const quantity = (item.quantity as number) || 0
+    const unitPrice = (item.estimatedUnitPrice as number) || 0
+    return {
+      id: String(item.id || ''),
+      category: (item.category as string) || '',
+      description: (item.descriptionAr as string) || (item.descriptionEn as string) || '',
+      unit: backendUnitToFrontend[(item.unit as number) ?? 0] || 'unit',
+      quantity,
+      estimatedPrice: unitPrice,
+      totalPrice: (item.estimatedTotalPrice as number) || (quantity * unitPrice),
+      notes: '',
+      order: (item.sortOrder as number) || 0,
+    }
+  })
+
+  // Map attachments from backend
+  const attachments: RfpAttachment[] = ((dto.attachments as unknown[]) || []).map((a: unknown) => {
+    const att = a as Record<string, unknown>
+    return {
+      id: String(att.id || ''),
+      name: (att.fileName as string) || '',
+      fileUrl: (att.fileObjectKey as string) || '',
+      fileSize: (att.fileSizeBytes as number) || 0,
+      fileType: (att.contentType as string) || '',
+      isRequired: (att.isMandatory as boolean) || false,
+      uploadedAt: (att.createdAt as string) || '',
+      uploadedBy: (att.createdBy as string) || '',
+    }
+  })
+
+  // Determine evaluation method based on weights
+  const techWeight = (dto.technicalWeight as number) || 70
+  const finWeight = (dto.financialWeight as number) || 30
+  let evaluationMethod: string = ''
+  if (techWeight === 0 && finWeight === 100) {
+    evaluationMethod = 'lowest_price'
+  } else if (techWeight > 0 && finWeight > 0) {
+    evaluationMethod = 'weighted_criteria'
+  } else if (evaluationCriteria.length > 0) {
+    evaluationMethod = 'quality_cost_based'
+  }
+
+  // Calculate completion percentage
+  let completedSteps = 0
+  if (dto.projectNameAr) completedSteps++
+  if (evaluationCriteria.length > 0 || techWeight !== 70) completedSteps++
+  if (sections.length > 0) completedSteps++
+  if (boqItems.length > 0) completedSteps++
+  if (attachments.length > 0) completedSteps++
+  const completionPercentage = Math.round((completedSteps / 5) * 100)
+
+  // Calculate dates from projectDurationDays
+  const durationDays = (dto.projectDurationDays as number) || null
+  const submissionDeadline = (dto.submissionDeadline as string) || ''
+  let startDate = ''
+  let endDate = ''
+  if (submissionDeadline && durationDays) {
+    const deadline = new Date(submissionDeadline)
+    startDate = submissionDeadline
+    const end = new Date(deadline.getTime() + durationDays * 24 * 60 * 60 * 1000)
+    endDate = end.toISOString().split('T')[0]
+  }
+
   return {
     id: String(dto.id || ''),
     basicInfo: {
@@ -181,70 +349,45 @@ function mapFromBackendResponse(dto: Record<string, unknown>): RfpFormData {
       competitionType: reverseCompetitionTypeMap[dto.competitionType as number] || 'public_tender',
       estimatedValue: (dto.estimatedBudget as number) || null,
       currency: (dto.currency as string) || 'SAR',
-      startDate: '',
-      endDate: '',
-      submissionDeadline: (dto.submissionDeadline as string) || '',
+      startDate,
+      endDate,
+      submissionDeadline: submissionDeadline ? submissionDeadline.split('T')[0] : '',
       referenceNumber: (dto.referenceNumber as string) || '',
       department: '',
       fiscalYear: '',
     },
     settings: {
-      evaluationMethod: '',
-      technicalWeight: (dto.technicalWeight as number) || 70,
-      financialWeight: (dto.financialWeight as number) || 30,
+      evaluationMethod: evaluationMethod as RfpFormData['settings']['evaluationMethod'],
+      technicalWeight: techWeight,
+      financialWeight: finWeight,
       minimumTechnicalScore: (dto.technicalPassingScore as number) || 60,
       allowPartialOffers: false,
       requireBankGuarantee: true,
       guaranteePercentage: 5,
       inquiryPeriodDays: 14,
-      evaluationCriteria: [],
+      evaluationCriteria,
     },
     content: {
-      sections: (dto.sections as unknown[])?.map((s: unknown) => {
-        const sec = s as Record<string, unknown>
-        return {
-          id: String(sec.id || ''),
-          title: (sec.title as string) || '',
-          content: (sec.content as string) || '',
-          order: (sec.order as number) || 0,
-          isRequired: (sec.isRequired as boolean) || false,
-          colorCode: ((sec.colorCode as string) || 'green') as import('@/types/rfp').TextColorCode,
-          assignedTo: null,
-          isCompleted: false,
-        }
-      }) || [],
-      creationMethod: ((dto.creationMethod as string) || 'wizard') as import('@/types/rfp').RfpCreationMethod,
+      sections,
+      creationMethod: creationMethodIntToString[(dto.creationMethod as number) ?? 0] || 'wizard',
       templateId: (dto.sourceTemplateId as string) || null,
       cloneFromId: (dto.sourceCompetitionId as string) || null,
     },
     boq: {
-      items: (dto.boqItems as unknown[])?.map((b: unknown) => {
-        const item = b as Record<string, unknown>
-        return {
-          id: String(item.id || ''),
-          category: (item.category as string) || '',
-          description: (item.description as string) || '',
-          unit: ((item.unit as string) || 'unit') as import('@/types/rfp').UnitOfMeasure,
-          quantity: (item.quantity as number) || 0,
-          estimatedPrice: (item.estimatedPrice as number) || 0,
-          totalPrice: (item.totalPrice as number) || 0,
-          notes: (item.notes as string) || '',
-          order: (item.order as number) || 0,
-        }
-      }) || [],
-      totalEstimatedValue: 0,
+      items: boqItems,
+      totalEstimatedValue: boqItems.reduce((sum, item) => sum + item.totalPrice, 0),
       includesVat: true,
       vatPercentage: 15,
     },
     attachments: {
-      files: [],
+      files: attachments,
     },
-    status: 'draft',
+    status: (statusIntToString[dto.status as number] || 'draft') as RfpFormData['status'],
     createdAt: (dto.createdAt as string) || '',
     updatedAt: (dto.lastModifiedAt as string) || '',
     lastAutoSavedAt: (dto.lastAutoSavedAt as string) || null,
     currentStep: (dto.currentWizardStep as number) || 1,
-    completionPercentage: 0,
+    completionPercentage,
   }
 }
 
@@ -358,7 +501,10 @@ export async function submitRfpForApproval(
   id: string,
 ): Promise<ApiResponse<RfpFormData>> {
   return apiCall(async () => {
-    const dto = await httpPost<Record<string, unknown>>(`${BASE_URL}/${id}/submit`)
+    const dto = await httpPost<Record<string, unknown>>(`${BASE_URL}/${id}/status`, {
+      newStatus: 2, // PendingApproval
+      reason: null,
+    })
     return mapFromBackendResponse(dto)
   })
 }
@@ -368,6 +514,231 @@ export async function deleteRfp(
   id: string,
 ): Promise<ApiResponse<void>> {
   return apiCall(() => httpDelete<void>(`${BASE_URL}/${id}`))
+}
+
+/* ------------------------------------------------------------------ */
+/*  Step 2: Evaluation Settings & Criteria Operations                  */
+/* ------------------------------------------------------------------ */
+
+/** Update evaluation settings (weights and passing score) */
+export async function saveEvaluationSettings(
+  competitionId: string,
+  settings: {
+    technicalWeight: number
+    financialWeight: number
+    minimumTechnicalScore: number
+  },
+): Promise<ApiResponse<RfpFormData>> {
+  return apiCall(async () => {
+    const dto = await httpPut<Record<string, unknown>>(
+      `${BASE_URL}/${competitionId}/evaluation-settings`,
+      {
+        technicalPassingScore: settings.minimumTechnicalScore,
+        technicalWeight: settings.technicalWeight,
+        financialWeight: settings.financialWeight,
+      },
+    )
+    return mapFromBackendResponse(dto)
+  })
+}
+
+/** Add a single evaluation criterion */
+export async function addEvaluationCriterion(
+  competitionId: string,
+  criterion: EvaluationCriterion,
+): Promise<ApiResponse<Record<string, unknown>>> {
+  return apiCall(() =>
+    httpPost<Record<string, unknown>>(
+      `${BASE_URL}/${competitionId}/evaluation-criteria`,
+      {
+        nameAr: criterion.name,
+        nameEn: criterion.name,
+        descriptionAr: criterion.description || null,
+        descriptionEn: criterion.description || null,
+        weightPercentage: criterion.weight,
+        minimumPassingScore: null,
+        parentCriterionId: null,
+      },
+    ),
+  )
+}
+
+/** Save all evaluation criteria (batch: delete existing + add new) */
+export async function saveAllEvaluationCriteria(
+  competitionId: string,
+  criteria: EvaluationCriterion[],
+): Promise<ApiResponse<void>> {
+  try {
+    // Add each criterion one by one (backend supports individual adds)
+    for (const criterion of criteria) {
+      // Skip criteria that already have a valid UUID (already saved)
+      if (criterion.id && criterion.id.match(/^[0-9a-f]{8}-/)) {
+        continue
+      }
+      const result = await addEvaluationCriterion(competitionId, criterion)
+      if (!result.success) {
+        return {
+          data: undefined as unknown as void,
+          success: false,
+          message: result.message,
+          errors: result.errors,
+        }
+      }
+    }
+    return { data: undefined as unknown as void, success: true, message: '', errors: [] }
+  } catch (error: unknown) {
+    return {
+      data: undefined as unknown as void,
+      success: false,
+      message: 'فشل في حفظ معايير التقييم',
+      errors: [(error as Error).message],
+    }
+  }
+}
+
+/* ------------------------------------------------------------------ */
+/*  Step 3: Section Operations                                         */
+/* ------------------------------------------------------------------ */
+
+/** Add a single section to the competition */
+export async function addRfpSection(
+  competitionId: string,
+  section: RfpSection,
+): Promise<ApiResponse<Record<string, unknown>>> {
+  return apiCall(() =>
+    httpPost<Record<string, unknown>>(
+      `${BASE_URL}/${competitionId}/sections`,
+      {
+        titleAr: section.title,
+        titleEn: section.title,
+        sectionType: 6, // Custom
+        contentHtml: section.content || null,
+        isMandatory: section.isRequired || false,
+        isFromTemplate: false,
+        defaultTextColor: colorCodeToBackend[section.colorCode] ?? 1,
+        parentSectionId: null,
+      },
+    ),
+  )
+}
+
+/** Update an existing section */
+export async function updateRfpSection(
+  competitionId: string,
+  sectionId: string,
+  section: Partial<RfpSection>,
+): Promise<ApiResponse<Record<string, unknown>>> {
+  return apiCall(() =>
+    httpPut<Record<string, unknown>>(
+      `${BASE_URL}/${competitionId}/sections/${sectionId}`,
+      {
+        titleAr: section.title || null,
+        titleEn: section.title || null,
+        contentHtml: section.content || null,
+      },
+    ),
+  )
+}
+
+/** Save all sections (add new ones, update existing) */
+export async function saveAllSections(
+  competitionId: string,
+  sections: RfpSection[],
+): Promise<ApiResponse<void>> {
+  try {
+    for (const section of sections) {
+      // If section has a valid UUID, it's already saved - update it
+      if (section.id && section.id.match(/^[0-9a-f]{8}-/)) {
+        const result = await updateRfpSection(competitionId, section.id, section)
+        if (!result.success) {
+          return {
+            data: undefined as unknown as void,
+            success: false,
+            message: result.message,
+            errors: result.errors,
+          }
+        }
+      } else {
+        // New section - add it
+        const result = await addRfpSection(competitionId, section)
+        if (!result.success) {
+          return {
+            data: undefined as unknown as void,
+            success: false,
+            message: result.message,
+            errors: result.errors,
+          }
+        }
+      }
+    }
+    return { data: undefined as unknown as void, success: true, message: '', errors: [] }
+  } catch (error: unknown) {
+    return {
+      data: undefined as unknown as void,
+      success: false,
+      message: 'فشل في حفظ أقسام الكراسة',
+      errors: [(error as Error).message],
+    }
+  }
+}
+
+/* ------------------------------------------------------------------ */
+/*  Step 4: BOQ Item Operations                                        */
+/* ------------------------------------------------------------------ */
+
+/** Add a single BOQ item */
+export async function addBoqItem(
+  competitionId: string,
+  item: BoqItem,
+  index: number,
+): Promise<ApiResponse<Record<string, unknown>>> {
+  return apiCall(() =>
+    httpPost<Record<string, unknown>>(
+      `${BASE_URL}/${competitionId}/boq-items`,
+      {
+        itemNumber: String(index + 1),
+        descriptionAr: item.description,
+        descriptionEn: item.description,
+        unit: unitOfMeasureToBackend[item.unit] ?? 0,
+        quantity: item.quantity,
+        estimatedUnitPrice: item.estimatedPrice || null,
+        category: item.category || null,
+      },
+    ),
+  )
+}
+
+/** Save all BOQ items (add new ones) */
+export async function saveAllBoqItems(
+  competitionId: string,
+  items: BoqItem[],
+): Promise<ApiResponse<void>> {
+  try {
+    for (let i = 0; i < items.length; i++) {
+      const item = items[i]
+      // Skip items that already have a valid UUID (already saved)
+      if (item.id && item.id.match(/^[0-9a-f]{8}-/)) {
+        continue
+      }
+      const result = await addBoqItem(competitionId, item, i)
+      if (!result.success) {
+        return {
+          data: undefined as unknown as void,
+          success: false,
+          message: result.message,
+          errors: result.errors,
+        }
+      }
+    }
+    return { data: undefined as unknown as void, success: true, message: '', errors: [] }
+  } catch (error: unknown) {
+    return {
+      data: undefined as unknown as void,
+      success: false,
+      message: 'فشل في حفظ جدول الكميات',
+      errors: [(error as Error).message],
+    }
+  }
 }
 
 /* ------------------------------------------------------------------ */
@@ -431,4 +802,126 @@ export async function cloneRfp(
     const dto = await httpPost<Record<string, unknown>>(`${BASE_URL}/${sourceId}/clone`)
     return mapFromBackendResponse(dto)
   })
+}
+
+/* ------------------------------------------------------------------ */
+/*  Comprehensive Step Save (called when moving between steps)         */
+/* ------------------------------------------------------------------ */
+
+/**
+ * Save all data for a specific step to the backend.
+ * Called by the wizard when the user clicks "Next" or "Save Draft".
+ */
+export async function saveStepData(
+  competitionId: string,
+  step: number,
+  formData: RfpFormData,
+): Promise<ApiResponse<void>> {
+  const emptySuccess: ApiResponse<void> = {
+    data: undefined as unknown as void,
+    success: true,
+    message: '',
+    errors: [],
+  }
+
+  if (!competitionId) {
+    return {
+      data: undefined as unknown as void,
+      success: false,
+      message: 'يجب حفظ الكراسة أولاً',
+      errors: ['Competition ID is required'],
+    }
+  }
+
+  try {
+    switch (step) {
+      case 1: {
+        // Step 1: Basic info is handled by auto-save
+        const autoSaveResult = await autoSaveDraft(competitionId, formData)
+        if (!autoSaveResult.success) {
+          return {
+            data: undefined as unknown as void,
+            success: false,
+            message: autoSaveResult.message,
+            errors: autoSaveResult.errors,
+          }
+        }
+        return emptySuccess
+      }
+      case 2: {
+        // Step 2: Save evaluation settings + criteria
+        const settingsResult = await saveEvaluationSettings(competitionId, {
+          technicalWeight: formData.settings.technicalWeight,
+          financialWeight: formData.settings.financialWeight,
+          minimumTechnicalScore: formData.settings.minimumTechnicalScore,
+        })
+        if (!settingsResult.success) {
+          return {
+            data: undefined as unknown as void,
+            success: false,
+            message: settingsResult.message,
+            errors: settingsResult.errors,
+          }
+        }
+        // Save criteria
+        if (formData.settings.evaluationCriteria.length > 0) {
+          const criteriaResult = await saveAllEvaluationCriteria(
+            competitionId,
+            formData.settings.evaluationCriteria,
+          )
+          if (!criteriaResult.success) {
+            return criteriaResult
+          }
+        }
+        // Update wizard step
+        await autoSaveDraft(competitionId, { ...formData, currentStep: 3 })
+        return emptySuccess
+      }
+      case 3: {
+        // Step 3: Save sections
+        if (formData.content.sections.length > 0) {
+          const sectionsResult = await saveAllSections(
+            competitionId,
+            formData.content.sections,
+          )
+          if (!sectionsResult.success) {
+            return sectionsResult
+          }
+        }
+        // Update wizard step
+        await autoSaveDraft(competitionId, { ...formData, currentStep: 4 })
+        return emptySuccess
+      }
+      case 4: {
+        // Step 4: Save BOQ items
+        if (formData.boq.items.length > 0) {
+          const boqResult = await saveAllBoqItems(
+            competitionId,
+            formData.boq.items,
+          )
+          if (!boqResult.success) {
+            return boqResult
+          }
+        }
+        // Update wizard step
+        await autoSaveDraft(competitionId, { ...formData, currentStep: 5 })
+        return emptySuccess
+      }
+      case 5: {
+        // Step 5: Attachments are handled individually via upload
+        // Just update wizard step
+        await autoSaveDraft(competitionId, { ...formData, currentStep: 6 })
+        return emptySuccess
+      }
+      default:
+        return emptySuccess
+    }
+  } catch (error: unknown) {
+    return {
+      data: undefined as unknown as void,
+      success: false,
+      message: 'فشل في حفظ البيانات',
+      errors: [(error as Error).message],
+    }
+  }
 }
