@@ -16,13 +16,67 @@
 | Sprint 7: الاختبار والنشر | ✅ مكتمل | 100% | تم إنجاز TASK-701, TASK-702, TASK-703, TASK-704 |
 | Sprint 8: النشر والتشغيل | ✅ مكتمل | 100% | تم إنجاز TASK-801, TASK-802, TASK-803 |
 | Sprint 9: إصلاحات التشغيل الفعلي | ✅ مكتمل | 100% | تم إنجاز TASK-901 إلى TASK-911. |
-| Sprint 10: التحول الجذري واستكمال المتطلبات | 🔄 قيد التنفيذ | 85% | TASK-1001 Frontend overhaul, TASK-1002 QA, TASK-1003 RFP Wizard fixes, TASK-1004 Templates & AI Assistant, TASK-1005 EXPRO Booklet Templates completed. |
+| Sprint 10: التحول الجذري واستكمال المتطلبات | 🔄 قيد التنفيذ | 90% | TASK-1001 Frontend overhaul, TASK-1002 QA, TASK-1003 RFP Wizard fixes, TASK-1004 Templates & AI Assistant, TASK-1005 EXPRO Booklet Templates, TASK-1006 Approval Workflow Engine completed. |
 
 ---
 
 ## سجل المهام المنجزة (Completed Tasks Log)
 
 *يرجى إضافة أحدث مهمة منجزة في أعلى هذه القائمة.*
+
+### 2026-03-31 - TASK-1006: نظام اعتماد الكراسة ومحرك سير العمل (Booklet Approval Workflow Engine)
+- **الحالة:** ✅ مكتمل
+- **ما تم إنجازه:**
+  - **تصميم نظام اعتماد ديناميكي متكامل:**
+    - تصميم معمارية محرك سير العمل (Workflow Engine) يدعم 3 أنواع مسارات: متسلسل (Sequential)، متوازي (Parallel)، مشروط (Conditional)
+    - التصميم يتكامل مع نظام الصلاحيات الرباعي (4D Permission Matrix)، اللجان، والأدوار
+    - دعم SLA مع آلية تصعيد تلقائية
+  - **بناء كيانات Backend:**
+    - إنشاء `WorkflowDefinition` و `WorkflowStepDefinition` لتعريف مسارات الاعتماد
+    - تحديث `ApprovalWorkflowStep` بربطه مع `WorkflowStepDefinition` ودعم SLA
+    - إنشاء `DefaultWorkflowDefinitionSeeder` لإنشاء مسارات اعتماد افتراضية
+    - إنشاء `ApprovalWorkflowDomainEvents` لأحداث سير العمل
+    - إنشاء EF Configurations لجميع الكيانات المفقودة سابقاً:
+      - `ApprovalWorkflowStepConfiguration`
+      - `CompetitionPermissionMatrixConfiguration`
+      - `CompetitionCommitteeMemberConfiguration`
+      - `PhaseTransitionHistoryConfiguration`
+      - `WorkflowDefinitionConfiguration`
+    - إنشاء Repositories لجميع الكيانات الجديدة
+  - **بناء خدمة التنسيق (ApprovalWorkflowService):**
+    - `InitiateWorkflowAsync`: بدء مسار الاعتماد بناءً على التعريف الديناميكي
+    - `ApproveStepAsync`: اعتماد خطوة مع التحقق من الصلاحيات والانتقال التلقائي
+    - `RejectStepAsync`: رفض خطوة مع إرجاع الكراسة للتعديل
+    - `GetWorkflowStatusAsync`: عرض حالة مسار الاعتماد بالتفصيل
+  - **بناء APIs (ApprovalWorkflowEndpoints):**
+    - `POST /workflow/initiate` - بدء مسار اعتماد جديد
+    - `POST /workflow/approve` - اعتماد خطوة
+    - `POST /workflow/reject` - رفض خطوة
+    - `GET /workflow/status/{competitionId}` - حالة المسار
+    - `GET /workflow/definitions` - قائمة تعريفات المسارات
+    - `POST /workflow/definitions` - إنشاء تعريف مسار جديد
+    - `PUT /workflow/definitions/{id}` - تحديث تعريف مسار
+    - `DELETE /workflow/definitions/{id}` - حذف تعريف مسار
+    - `POST /workflow/definitions/{id}/toggle-status` - تفعيل/تعطيل مسار
+    - `POST /workflow/seed-defaults` - إنشاء المسارات الافتراضية
+  - **بناء واجهات Frontend:**
+    - `WorkflowListView.vue`: قائمة مسارات الاعتماد مع بحث وتصفية وتبديل الحالة
+    - `WorkflowDesignerView.vue`: محرر نموذجي لتعريف مسارات الاعتماد مع إضافة/حذف/ترتيب الخطوات
+    - `workflowService.ts`: خدمة API للواجهة الأمامية
+    - تحديث `BookletEditorView.vue`:
+      - إضافة شريط حالة الكراسة (مسودة، قيد الإعداد، بانتظار الاعتماد، معتمدة)
+      - إضافة زر "تقديم للاعتماد" مع تأكيد
+      - إضافة أزرار اعتماد/رفض للمراجعين
+      - إضافة لوحة مسار الاعتماد (Timeline) مع تتبع مرئي
+      - قفل المحرر عند تقديم الكراسة للاعتماد (Read-only)
+    - إضافة رابط "مسارات الاعتماد" في القائمة الجانبية (الإعدادات)
+    - إضافة ترجمة عربية وإنجليزية كاملة لجميع المفاتيح الجديدة
+  - **تعديلات إضافية:**
+    - تغيير اسم "قوالب المنافسات" إلى "قوالب من منافسات سابقة" في RfpTemplatesView
+- **الملفات المضافة/المعدلة:**
+  - Backend (19 ملف): `WorkflowDefinition.cs`, `WorkflowStepDefinition.cs`, `IWorkflowDefinitionRepository.cs`, `IApprovalWorkflowStepRepository.cs`, `ApprovalWorkflowDomainEvents.cs`, `ApprovalWorkflowStep.cs`, `DefaultWorkflowDefinitionSeeder.cs`, `ApprovalWorkflowService.cs`, `IApprovalWorkflowService.cs`, `ApprovalWorkflowEndpoints.cs`, `ApprovalWorkflowStepConfiguration.cs`, `CompetitionPermissionMatrixConfiguration.cs`, `CompetitionCommitteeMemberConfiguration.cs`, `PhaseTransitionHistoryConfiguration.cs`, `WorkflowDefinitionConfiguration.cs`, `ApprovalWorkflowStepRepository.cs`, `WorkflowDefinitionRepository.cs`, `CompetitionPermissionMatrixRepository.cs`, `CompetitionCommitteeMemberRepository.cs`, `PhaseTransitionHistoryRepository.cs`, `DependencyInjection.cs`, `TenantDbContext.cs`, `Program.cs`
+  - Frontend (7 ملفات): `workflowService.ts`, `WorkflowListView.vue`, `WorkflowDesignerView.vue`, `BookletEditorView.vue`, `RfpTemplatesView.vue`, `navigation.ts`, `ar.json`, `en.json`
+- **النشر:** ✅ تم النشر بنجاح على خادم الإنتاج (187.124.41.141) - جميع الحاويات تعمل بشكل سليم.
 
 ### 2026-03-31 - TASK-1005: نظام قوالب كراسات الشروط والمواصفات مع محرر ذكي (EXPRO Booklet Templates with Smart Editor)
 - **الحالة:** ✅ مكتمل
