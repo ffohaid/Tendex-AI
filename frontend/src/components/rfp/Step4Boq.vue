@@ -25,7 +25,7 @@ const rfpStore = useRfpStore()
 
 const schema = toTypedSchema(boqSchema)
 
-const { errors, validate } = useForm({
+const { errors, validate, setFieldValue } = useForm({
   validationSchema: schema,
   initialValues: { ...rfpStore.formData.boq },
   validateOnMount: false,
@@ -102,6 +102,17 @@ function updateVatPercentage(event: Event) {
 
 defineExpose({
   validate: async () => {
+    /**
+     * CRITICAL FIX: Sync Pinia store BOQ items into VeeValidate before
+     * running validation. BOQ items are managed directly in the Pinia
+     * store, so VeeValidate's internal state becomes stale.
+     */
+    const storeBoq = rfpStore.formData.boq
+    setFieldValue('items', storeBoq.items)
+    setFieldValue('includesVat', storeBoq.includesVat)
+    setFieldValue('vatPercentage', storeBoq.vatPercentage)
+    setFieldValue('totalEstimatedValue', storeBoq.totalEstimatedValue)
+
     const result = await validate()
     return result.valid
   },

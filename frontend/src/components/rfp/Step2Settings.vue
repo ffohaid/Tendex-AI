@@ -4,6 +4,10 @@
  *
  * Configures evaluation method, weights, criteria,
  * guarantee requirements, and inquiry period.
+ *
+ * FIX: Validation now syncs Pinia store criteria into VeeValidate
+ * before running validation, ensuring criteria added/edited via
+ * the store are properly validated.
  */
 import { watch, computed } from 'vue'
 import { useI18n } from 'vue-i18n'
@@ -18,7 +22,7 @@ const rfpStore = useRfpStore()
 
 const schema = toTypedSchema(settingsSchema)
 
-const { errors, validate } = useForm({
+const { errors, validate, setFieldValue } = useForm({
   validationSchema: schema,
   initialValues: {
     ...rfpStore.formData.settings,
@@ -88,6 +92,16 @@ function updateCriterionField(id: string, field: string, value: string | number)
 
 defineExpose({
   validate: async () => {
+    /**
+     * CRITICAL FIX: Sync the Pinia store criteria into VeeValidate
+     * before running validation. Criteria are managed directly in
+     * the Pinia store (addCriterion, removeCriterion, updateCriterion),
+     * so VeeValidate's internal state becomes stale. We must update
+     * VeeValidate's evaluationCriteria field with the current store data.
+     */
+    const storeCriteria = rfpStore.formData.settings.evaluationCriteria
+    setFieldValue('evaluationCriteria', storeCriteria)
+
     const result = await validate()
     return result.valid
   },

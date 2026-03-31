@@ -26,7 +26,7 @@ const rfpStore = useRfpStore()
 
 const schema = toTypedSchema(contentSchema)
 
-const { errors, validate } = useForm({
+const { errors, validate, setFieldValue } = useForm({
   validationSchema: schema,
   initialValues: { ...rfpStore.formData.content },
   validateOnMount: false,
@@ -115,6 +115,14 @@ function toggleEdit(sectionId: string) {
 
 defineExpose({
   validate: async () => {
+    /**
+     * CRITICAL FIX: Sync Pinia store sections into VeeValidate before
+     * running validation. Sections are managed directly in the Pinia
+     * store, so VeeValidate's internal state becomes stale.
+     */
+    const storeSections = rfpStore.formData.content.sections
+    setFieldValue('sections', storeSections)
+
     const result = await validate()
     return result.valid
   },

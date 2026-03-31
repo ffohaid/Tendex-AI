@@ -81,7 +81,7 @@ async function copyFromTemplate(templateId: string): Promise<void> {
   isCopying.value = templateId
   try {
     const result = await httpPost<{ rfpId: string }>(`/v1/rfp/templates/${templateId}/copy`)
-    router.push(`/rfp/edit/${result.rfpId}`)
+    router.push({ name: 'rfp-edit', params: { id: result.rfpId } })
   } catch {
     console.error('Failed to copy template')
   } finally {
@@ -90,7 +90,7 @@ async function copyFromTemplate(templateId: string): Promise<void> {
 }
 
 function createNewRfp(): void {
-  router.push({ name: 'RfpMethodSelection' })
+  router.push({ name: 'rfp-method-selection' })
 }
 
 onMounted(() => {

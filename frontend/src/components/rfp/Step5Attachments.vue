@@ -21,7 +21,7 @@ const rfpStore = useRfpStore()
 
 const schema = toTypedSchema(attachmentsSchema)
 
-const { validate } = useForm({
+const { validate, setFieldValue } = useForm({
   validationSchema: schema,
   initialValues: { ...rfpStore.formData.attachments },
   validateOnMount: false,
@@ -146,6 +146,13 @@ function removeAttachment(id: string) {
 
 defineExpose({
   validate: async () => {
+    /**
+     * CRITICAL FIX: Sync Pinia store attachments into VeeValidate before
+     * running validation. Attachments are managed directly in the Pinia
+     * store, so VeeValidate's internal state becomes stale.
+     */
+    setFieldValue('files', rfpStore.formData.attachments.files)
+
     const result = await validate()
     return result.valid
   },
