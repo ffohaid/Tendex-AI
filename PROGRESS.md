@@ -16,13 +16,46 @@
 | Sprint 7: الاختبار والنشر | ✅ مكتمل | 100% | تم إنجاز TASK-701, TASK-702, TASK-703, TASK-704 |
 | Sprint 8: النشر والتشغيل | ✅ مكتمل | 100% | تم إنجاز TASK-801, TASK-802, TASK-803 |
 | Sprint 9: إصلاحات التشغيل الفعلي | ✅ مكتمل | 100% | تم إنجاز TASK-901 إلى TASK-911. |
-| Sprint 10: التحول الجذري واستكمال المتطلبات | 🔄 قيد التنفيذ | 65% | TASK-1001 Frontend overhaul, TASK-1002 QA, TASK-1003 RFP Wizard fixes completed. |
+| Sprint 10: التحول الجذري واستكمال المتطلبات | 🔄 قيد التنفيذ | 75% | TASK-1001 Frontend overhaul, TASK-1002 QA, TASK-1003 RFP Wizard fixes, TASK-1004 Templates & AI Assistant completed. |
 
 ---
 
 ## سجل المهام المنجزة (Completed Tasks Log)
 
 *يرجى إضافة أحدث مهمة منجزة في أعلى هذه القائمة.*
+
+### 2026-03-31 - TASK-1004: نظام القوالب ومساعد الذكاء الاصطناعي وإصلاحات إضافية (Templates, AI Assistant & Additional Fixes)
+- **الحالة:** ✅ مكتمل
+- **ما تم إنجازه:**
+  - **إصلاح مشكلة تعارض التزامن في حفظ أقسام الكراسة (Sections Concurrency Fix):**
+    - إنشاء نقطة نهاية دفعية `BatchAddRfpSections` لإضافة جميع الأقسام في عملية واحدة.
+    - إنشاء `BatchAddRfpSectionsCommand`, `BatchAddRfpSectionsCommandHandler`, و `BatchAddRfpSectionsCommandValidator`.
+    - تحديث `CompetitionEndpoints.cs` بإضافة مسار `POST /{id}/sections/batch`.
+    - تحديث `rfpService.ts` لاستخدام النقطة الدفعية بدلاً من الإرسال الفردي.
+    - هذا يحل مشكلة فشل الحفظ التلقائي وخطأ "must have at least one section" عند التقديم.
+  - **ترجمة رسائل الأخطاء إلى العربية:**
+    - ترجمة جميع رسائل الأخطاء في كيانات `Competition`, `RfpSection`, و `ApprovalWorkflowStep` من الإنجليزية إلى العربية.
+    - الآن جميع رسائل الأخطاء الموجهة للمستخدم في وحدة الكراسات تظهر بالعربية.
+  - **إنشاء نظام قوالب المنافسات (Competition Templates System):**
+    - إنشاء كيان `CompetitionTemplate` مع كيانات فرعية (`TemplateSectionItem`, `TemplateBoqItem`, `TemplateCriterionItem`).
+    - إنشاء `CompetitionTemplateConfiguration` لإعدادات EF Core.
+    - إنشاء أوامر واستعلامات: `CreateCompetitionTemplate`, `GetCompetitionTemplates`, `CopyFromTemplate`.
+    - إنشاء `CompetitionTemplateEndpoints.cs` مع مسارات API كاملة (GET, POST, POST copy).
+    - إعادة كتابة `RfpTemplatesView.vue` بواجهة كاملة لإدارة القوالب (إنشاء، عرض، بحث، تصفية، استخدام).
+    - إنشاء جداول قاعدة البيانات يدوياً على خادم الإنتاج.
+  - **إنشاء مكون مساعد الذكاء الاصطناعي القابل لإعادة الاستخدام (AiTextHelper):**
+    - إنشاء مكون `AiTextHelper.vue` يمكن إرفاقه بأي حقل نصي لتوليد/تحسين النصوص بالذكاء الاصطناعي.
+    - يدعم أوضاع متعددة: توليد، تحسين، تلخيص، توسيع.
+    - إنشاء نقطة نهاية خلفية `AiTextAssistEndpoints.cs` للتعامل مع طلبات المساعدة النصية.
+    - دمج المكون في `Step1BasicInfo.vue` لحقل وصف المشروع.
+  - **اختبار شامل:**
+    - اختبار السير الكامل لإنشاء كراسة من البداية (6 خطوات) - نجاح تام.
+    - اختبار إنشاء قالب جديد - نجاح.
+    - اختبار إنشاء منافسة من قالب - نجاح.
+    - الحفظ التلقائي يعمل بشكل صحيح بعد إصلاح التزامن.
+- **الملفات المعدلة/المضافة:**
+  - Backend: `BatchAddRfpSectionsCommand.cs`, `BatchAddRfpSectionsCommandHandler.cs`, `BatchAddRfpSectionsCommandValidator.cs`, `CompetitionTemplate.cs`, `CompetitionTemplateConfiguration.cs`, `CreateCompetitionTemplateCommandHandler.cs`, `GetCompetitionTemplatesQueryHandler.cs`, `CopyFromTemplateCommandHandler.cs`, `CompetitionTemplateEndpoints.cs`, `AiTextAssistEndpoints.cs`, `Competition.cs`, `RfpSection.cs`, `ApprovalWorkflowStep.cs`
+  - Frontend: `RfpTemplatesView.vue`, `AiTextHelper.vue`, `Step1BasicInfo.vue`, `rfpService.ts`, `rfp.ts`
 
 ### 2026-03-31 - TASK-1003: إصلاحات شاملة لمعالج إنشاء كراسات الشروط (RFP Creation Wizard Comprehensive Fixes)
 - **الحالة:** ✅ مكتمل
