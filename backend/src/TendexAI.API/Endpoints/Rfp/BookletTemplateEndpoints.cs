@@ -49,7 +49,7 @@ public static class BookletTemplateEndpoints
         [FromQuery] string? search,
         [FromQuery] int page,
         [FromQuery] int pageSize,
-        ITenantDbContext db,
+        [FromServices] ITenantDbContext db,
         HttpContext httpContext)
     {
         if (page < 1) page = 1;
@@ -93,7 +93,7 @@ public static class BookletTemplateEndpoints
 
     private static async Task<IResult> GetBookletTemplateByIdAsync(
         Guid id,
-        ITenantDbContext db)
+        [FromServices] ITenantDbContext db)
     {
         var dbCtx = (TenantDbContext)db;
         var template = await dbCtx.BookletTemplates
@@ -154,7 +154,7 @@ public static class BookletTemplateEndpoints
         [FromForm] string? descriptionEn,
         [FromForm] string category,
         [FromForm] string? sourceReference,
-        ITenantDbContext db,
+        [FromServices] ITenantDbContext db,
         HttpContext httpContext)
     {
         if (file is null || file.Length == 0)
@@ -244,7 +244,7 @@ public static class BookletTemplateEndpoints
     private static async Task<IResult> CreateBookletFromTemplateAsync(
         Guid id,
         [FromBody] CreateBookletFromTemplateRequest request,
-        ITenantDbContext db,
+        [FromServices] ITenantDbContext db,
         HttpContext httpContext)
     {
         var dbCtx = (TenantDbContext)db;
@@ -311,7 +311,7 @@ public static class BookletTemplateEndpoints
 
     private static async Task<IResult> DeleteBookletTemplateAsync(
         Guid id,
-        ITenantDbContext db,
+        [FromServices] ITenantDbContext db,
         HttpContext httpContext)
     {
         var dbCtx = (TenantDbContext)db;
