@@ -82,7 +82,7 @@ public sealed class RfpSection : BaseEntity<Guid>
     public Result UpdateContent(string? contentHtml, string modifiedBy)
     {
         if (IsLocked)
-            return Result.Failure("Cannot update content: section is locked.");
+            return Result.Failure("لا يمكن تحديث المحتوى: القسم مقفل.");
 
         ContentHtml = contentHtml;
         LastModifiedAt = DateTime.UtcNow;
@@ -93,10 +93,10 @@ public sealed class RfpSection : BaseEntity<Guid>
     public Result UpdateTitle(string titleAr, string titleEn, string modifiedBy)
     {
         if (IsLocked)
-            return Result.Failure("Cannot update title: section is locked.");
+            return Result.Failure("لا يمكن تحديث العنوان: القسم مقفل.");
 
         if (IsMandatory && IsFromTemplate)
-            return Result.Failure("Cannot change title of mandatory template sections.");
+            return Result.Failure("لا يمكن تغيير عنوان الأقسام الإلزامية من القالب.");
 
         TitleAr = titleAr;
         TitleEn = titleEn;

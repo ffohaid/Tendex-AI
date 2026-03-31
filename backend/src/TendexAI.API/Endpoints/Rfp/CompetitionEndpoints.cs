@@ -5,6 +5,7 @@ using TendexAI.Application.Features.Rfp.Commands.AddBoqItem;
 using TendexAI.Application.Features.Rfp.Commands.BatchAddBoqItems;
 using TendexAI.Application.Features.Rfp.Commands.AddEvaluationCriterion;
 using TendexAI.Application.Features.Rfp.Commands.AddRfpSection;
+using TendexAI.Application.Features.Rfp.Commands.BatchAddRfpSections;
 using TendexAI.Application.Features.Rfp.Commands.AutoSaveCompetition;
 using TendexAI.Application.Features.Rfp.Commands.ChangeCompetitionStatus;
 using TendexAI.Application.Features.Rfp.Commands.CreateCompetition;
@@ -99,6 +100,12 @@ public static class CompetitionEndpoints
             .WithName("AddRfpSection")
             .WithSummary("Add a new section to the RFP booklet")
             .Produces<RfpSectionDto>(StatusCodes.Status201Created)
+            .Produces<ProblemDetails>(StatusCodes.Status400BadRequest);
+
+        group.MapPost("/{competitionId:guid}/sections/batch", BatchAddSectionsAsync)
+            .WithName("BatchAddRfpSections")
+            .WithSummary("Add multiple sections in a single transaction")
+            .Produces<IReadOnlyList<RfpSectionDto>>(StatusCodes.Status201Created)
             .Produces<ProblemDetails>(StatusCodes.Status400BadRequest);
 
         group.MapPut("/{competitionId:guid}/sections/{sectionId:guid}", UpdateSectionAsync)
@@ -385,6 +392,38 @@ public static class CompetitionEndpoints
             : Results.Problem(result.Error, statusCode: 400);
     }
 
+    private static async Task<IResult> BatchAddSectionsAsync(
+        Guid competitionId,
+        [FromBody] BatchAddRfpSectionsRequest request,
+        ISender mediator,
+        HttpContext httpContext)
+    {
+        var userId = GetCurrentUserId(httpContext);
+
+        var sections = request.Sections.Select(s => new BatchRfpSectionInput(
+            TitleAr: s.TitleAr,
+            TitleEn: s.TitleEn,
+            SectionType: s.SectionType,
+            ContentHtml: s.ContentHtml,
+            ContentPlainText: s.ContentPlainText,
+            IsMandatory: s.IsMandatory,
+            IsFromTemplate: s.IsFromTemplate,
+            DefaultTextColor: s.DefaultTextColor,
+            ParentSectionId: s.ParentSectionId)).ToList();
+
+        var command = new BatchAddRfpSectionsCommand(
+            CompetitionId: competitionId,
+            Sections: sections,
+            ClearExisting: request.ClearExisting,
+            CreatedByUserId: userId.ToString());
+
+        var result = await mediator.Send(command);
+
+        return result.IsSuccess
+            ? Results.Created($"/api/v1/competitions/{competitionId}/sections", result.Value)
+            : Results.Problem(result.Error, statusCode: 400);
+    }
+
     private static async Task<IResult> AddBoqItemAsync(
         Guid competitionId,
         [FromBody] AddBoqItemRequest request,
@@ -566,6 +605,21 @@ public sealed record AddBoqItemRequest(
 public sealed record BatchAddBoqItemsRequest(
     IReadOnlyList<AddBoqItemRequest> Items,
     bool ClearExisting = false);
+
+public sealed record BatchAddRfpSectionsRequest(
+    IReadOnlyList<BatchRfpSectionItemRequest> Sections,
+    bool ClearExisting = false);
+
+public sealed record BatchRfpSectionItemRequest(
+    string TitleAr,
+    string TitleEn,
+    RfpSectionType SectionType,
+    string? ContentHtml,
+    string? ContentPlainText,
+    bool IsMandatory,
+    bool IsFromTemplate,
+    TextColorType DefaultTextColor,
+    Guid? ParentSectionId);
 
 public sealed record AddEvaluationCriterionRequest(
     string NameAr,

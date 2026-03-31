@@ -667,27 +667,25 @@ export async function updateRfpSection(
   )
 }
 
-/** Save all sections (add new ones, update existing) */
+/** Save all sections using batch endpoint (single transaction) */
 export async function saveAllSections(
   competitionId: string,
   sections: RfpSection[],
+  clearExisting: boolean = false,
 ): Promise<ApiResponse<void>> {
   try {
-    for (const section of sections) {
-      // If section has a valid UUID, it's already saved - update it
-      if (section.id && section.id.match(/^[0-9a-f]{8}-/)) {
+    // Separate existing sections (update individually) from new ones (batch add)
+    const existingSections = sections.filter(
+      (s) => s.id && s.id.match(/^[0-9a-f]{8}-/),
+    )
+    const newSections = sections.filter(
+      (s) => !s.id || !s.id.match(/^[0-9a-f]{8}-/),
+    )
+
+    // Update existing sections individually
+    if (!clearExisting) {
+      for (const section of existingSections) {
         const result = await updateRfpSection(competitionId, section.id, section)
-        if (!result.success) {
-          return {
-            data: undefined as unknown as void,
-            success: false,
-            message: result.message,
-            errors: result.errors,
-          }
-        }
-      } else {
-        // New section - add it
-        const result = await addRfpSection(competitionId, section)
         if (!result.success) {
           return {
             data: undefined as unknown as void,
@@ -698,6 +696,43 @@ export async function saveAllSections(
         }
       }
     }
+
+    // Batch add new sections (or all sections if clearExisting)
+    const sectionsToSend = clearExisting ? sections : newSections
+
+    if (sectionsToSend.length > 0) {
+      const batchPayload = {
+        sections: sectionsToSend.map((section) => ({
+          titleAr: section.title,
+          titleEn: section.title,
+          sectionType: 6, // Custom
+          contentHtml: section.contentHtml || section.content || null,
+          contentPlainText: section.content || null,
+          isMandatory: section.isRequired || false,
+          isFromTemplate: false,
+          defaultTextColor: colorCodeToBackend[section.colorCode] ?? 1,
+          parentSectionId: null,
+        })),
+        clearExisting,
+      }
+
+      const result = await apiCall(() =>
+        httpPost<Record<string, unknown>[]>(
+          `${BASE_URL}/${competitionId}/sections/batch`,
+          batchPayload,
+        ),
+      )
+
+      if (!result.success) {
+        return {
+          data: undefined as unknown as void,
+          success: false,
+          message: result.message,
+          errors: result.errors,
+        }
+      }
+    }
+
     return { data: undefined as unknown as void, success: true, message: '', errors: [] }
   } catch (error: unknown) {
     return {

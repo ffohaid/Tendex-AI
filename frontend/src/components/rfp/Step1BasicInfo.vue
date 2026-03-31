@@ -13,9 +13,10 @@ import { toTypedSchema } from '@vee-validate/zod'
 import { basicInfoSchema } from '@/validations/rfp'
 import { useRfpStore } from '@/stores/rfp'
 import FormField from './FormField.vue'
+import AiTextHelper from '@/components/ai/AiTextHelper.vue'
 import { formatCurrency } from '@/utils/numbers'
 
-const { t } = useI18n()
+const { t, locale } = useI18n()
 const rfpStore = useRfpStore()
 
 const schema = toTypedSchema(basicInfoSchema)
@@ -140,6 +141,18 @@ defineExpose({
             :placeholder="t('rfp.placeholders.projectDescription')"
             :aria-invalid="!!errors.projectDescription"
           ></textarea>
+          <div class="mt-2">
+            <AiTextHelper
+              :context="{
+                fieldName: locale === 'ar' ? 'وصف المشروع' : 'Project Description',
+                fieldPurpose: locale === 'ar' ? 'وصف تفصيلي للمشروع المطلوب تنفيذه في كراسة الشروط والمواصفات' : 'Detailed description of the project for the RFP',
+                projectName: projectName || '',
+                competitionType: competitionType || '',
+              }"
+              :current-text="projectDescription || ''"
+              @text-generated="(text) => { projectDescription = text }"
+            />
+          </div>
         </FormField>
       </div>
 

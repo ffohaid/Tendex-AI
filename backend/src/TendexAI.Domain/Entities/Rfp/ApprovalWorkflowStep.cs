@@ -89,7 +89,7 @@ public sealed class ApprovalWorkflowStep : BaseEntity<Guid>
     public Result Approve(string userId, string? comment = null)
     {
         if (Status != ApprovalStepStatus.Pending && Status != ApprovalStepStatus.InProgress)
-            return Result.Failure("This approval step is not in a pending or in-progress state.");
+            return Result.Failure("خطوة الاعتماد ليست في حالة انتظار أو قيد التنفيذ.");
 
         Status = ApprovalStepStatus.Approved;
         CompletedByUserId = userId;
@@ -107,10 +107,10 @@ public sealed class ApprovalWorkflowStep : BaseEntity<Guid>
     public Result Reject(string userId, string reason)
     {
         if (Status != ApprovalStepStatus.Pending && Status != ApprovalStepStatus.InProgress)
-            return Result.Failure("This approval step is not in a pending or in-progress state.");
+            return Result.Failure("خطوة الاعتماد ليست في حالة انتظار أو قيد التنفيذ.");
 
         if (string.IsNullOrWhiteSpace(reason))
-            return Result.Failure("A reason is required for rejection.");
+            return Result.Failure("يجب تقديم سبب للرفض.");
 
         Status = ApprovalStepStatus.Rejected;
         CompletedByUserId = userId;
@@ -128,7 +128,7 @@ public sealed class ApprovalWorkflowStep : BaseEntity<Guid>
     public Result StartReview(string userId)
     {
         if (Status != ApprovalStepStatus.Pending)
-            return Result.Failure("This approval step is not in a pending state.");
+            return Result.Failure("خطوة الاعتماد ليست في حالة انتظار.");
 
         Status = ApprovalStepStatus.InProgress;
         LastModifiedAt = DateTime.UtcNow;

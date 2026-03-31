@@ -176,7 +176,7 @@ public sealed class Competition : AggregateRoot<Guid>
         if (targetStatus is CompetitionStatus.Rejected or CompetitionStatus.Cancelled or CompetitionStatus.Suspended
             && string.IsNullOrWhiteSpace(reason))
         {
-            return Result.Failure("A reason is required for rejection, cancellation, or suspension.");
+            return Result.Failure("يجب تقديم سبب للرفض أو الإلغاء أو التعليق.");
         }
 
         var previousStatus = Status;
@@ -216,10 +216,10 @@ public sealed class Competition : AggregateRoot<Guid>
     public Result Resume(string resumedBy)
     {
         if (Status != CompetitionStatus.Suspended)
-            return Result.Failure("Cannot resume: competition is not suspended.");
+            return Result.Failure("لا يمكن الاستئناف: المنافسة ليست معلّقة.");
 
         if (!SuspendedFromStatus.HasValue)
-            return Result.Failure("Cannot resume: no previous status recorded.");
+            return Result.Failure("لا يمكن الاستئناف: لم يتم تسجيل حالة سابقة.");
 
         var targetStatus = SuspendedFromStatus.Value;
         var previousStatus = Status;
@@ -248,7 +248,7 @@ public sealed class Competition : AggregateRoot<Guid>
     public Result SubmitForApproval(string submittedBy)
     {
         if (_sections.Count == 0)
-            return Result.Failure("Cannot submit for approval: competition must have at least one section.");
+            return Result.Failure("لا يمكن التقديم للاعتماد: يجب أن تحتوي المنافسة على قسم واحد على الأقل.");
 
         return TransitionTo(CompetitionStatus.PendingApproval, submittedBy);
     }
@@ -304,7 +304,7 @@ public sealed class Competition : AggregateRoot<Guid>
         string modifiedBy)
     {
         if (Status != CompetitionStatus.Draft && Status != CompetitionStatus.UnderPreparation)
-            return Result.Failure("Cannot update basic info: competition is not in Draft or UnderPreparation status.");
+            return Result.Failure("لا يمكن تحديث المعلومات الأساسية: المنافسة ليست في حالة مسودة أو قيد الإعداد.");
 
         ProjectNameAr = projectNameAr;
         ProjectNameEn = projectNameEn;
@@ -330,11 +330,11 @@ public sealed class Competition : AggregateRoot<Guid>
         string modifiedBy)
     {
         if (Status != CompetitionStatus.Draft && Status != CompetitionStatus.UnderPreparation)
-            return Result.Failure("Cannot update evaluation settings: competition is not in Draft or UnderPreparation status.");
+            return Result.Failure("لا يمكن تحديث إعدادات التقييم: المنافسة ليست في حالة مسودة أو قيد الإعداد.");
 
         if (technicalWeight.HasValue && financialWeight.HasValue &&
             technicalWeight.Value + financialWeight.Value != 100m)
-            return Result.Failure("Technical and financial weights must sum to 100%.");
+            return Result.Failure("يجب أن يكون مجموع الأوزان الفنية والمالية 100%.");
 
         TechnicalPassingScore = technicalPassingScore;
         TechnicalWeight = technicalWeight;
@@ -363,7 +363,7 @@ public sealed class Competition : AggregateRoot<Guid>
     public Result SoftDelete(string deletedBy)
     {
         if (Status != CompetitionStatus.Draft && Status != CompetitionStatus.Cancelled)
-            return Result.Failure("Cannot delete: only Draft or Cancelled competitions can be deleted.");
+            return Result.Failure("لا يمكن الحذف: يمكن حذف المنافسات في حالة المسودة أو الملغاة فقط.");
 
         IsDeleted = true;
         DeletedAt = DateTime.UtcNow;
@@ -380,7 +380,7 @@ public sealed class Competition : AggregateRoot<Guid>
     public Result AddSection(RfpSection section)
     {
         if (Status != CompetitionStatus.Draft && Status != CompetitionStatus.UnderPreparation)
-            return Result.Failure("Cannot add sections: competition is not in editable status.");
+            return Result.Failure("لا يمكن إضافة أقسام: المنافسة ليست في حالة قابلة للتعديل.");
 
         section.SetSortOrder(_sections.Count + 1);
         _sections.Add(section);
@@ -391,11 +391,11 @@ public sealed class Competition : AggregateRoot<Guid>
     public Result RemoveSection(Guid sectionId)
     {
         if (Status != CompetitionStatus.Draft && Status != CompetitionStatus.UnderPreparation)
-            return Result.Failure("Cannot remove sections: competition is not in editable status.");
+            return Result.Failure("لا يمكن حذف أقسام: المنافسة ليست في حالة قابلة للتعديل.");
 
         var section = _sections.FirstOrDefault(s => s.Id == sectionId);
         if (section is null)
-            return Result.Failure("Section not found.");
+            return Result.Failure("القسم غير موجود.");
 
         _sections.Remove(section);
         ReorderSections();
@@ -410,7 +410,7 @@ public sealed class Competition : AggregateRoot<Guid>
     public Result AddBoqItem(BoqItem item)
     {
         if (Status != CompetitionStatus.Draft && Status != CompetitionStatus.UnderPreparation)
-            return Result.Failure("Cannot add BOQ items: competition is not in editable status.");
+            return Result.Failure("لا يمكن إضافة بنود جدول الكميات: المنافسة ليست في حالة قابلة للتعديل.");
 
         _boqItems.Add(item);
         Version++;
@@ -420,11 +420,11 @@ public sealed class Competition : AggregateRoot<Guid>
     public Result RemoveBoqItem(Guid itemId)
     {
         if (Status != CompetitionStatus.Draft && Status != CompetitionStatus.UnderPreparation)
-            return Result.Failure("Cannot remove BOQ items: competition is not in editable status.");
+            return Result.Failure("لا يمكن حذف بنود جدول الكميات: المنافسة ليست في حالة قابلة للتعديل.");
 
         var item = _boqItems.FirstOrDefault(i => i.Id == itemId);
         if (item is null)
-            return Result.Failure("BOQ item not found.");
+            return Result.Failure("بند جدول الكميات غير موجود.");
 
         _boqItems.Remove(item);
         Version++;
@@ -438,7 +438,7 @@ public sealed class Competition : AggregateRoot<Guid>
     public Result AddEvaluationCriterion(EvaluationCriterion criterion)
     {
         if (Status != CompetitionStatus.Draft && Status != CompetitionStatus.UnderPreparation)
-            return Result.Failure("Cannot add evaluation criteria: competition is not in editable status.");
+            return Result.Failure("لا يمكن إضافة معايير التقييم: المنافسة ليست في حالة قابلة للتعديل.");
 
         _evaluationCriteria.Add(criterion);
         Version++;
@@ -448,11 +448,11 @@ public sealed class Competition : AggregateRoot<Guid>
     public Result RemoveEvaluationCriterion(Guid criterionId)
     {
         if (Status != CompetitionStatus.Draft && Status != CompetitionStatus.UnderPreparation)
-            return Result.Failure("Cannot remove evaluation criteria: competition is not in editable status.");
+            return Result.Failure("لا يمكن حذف معايير التقييم: المنافسة ليست في حالة قابلة للتعديل.");
 
         var criterion = _evaluationCriteria.FirstOrDefault(c => c.Id == criterionId);
         if (criterion is null)
-            return Result.Failure("Evaluation criterion not found.");
+            return Result.Failure("معيار التقييم غير موجود.");
 
         _evaluationCriteria.Remove(criterion);
         Version++;
@@ -466,7 +466,7 @@ public sealed class Competition : AggregateRoot<Guid>
     public Result AddAttachment(RfpAttachment attachment)
     {
         if (Status != CompetitionStatus.Draft && Status != CompetitionStatus.UnderPreparation)
-            return Result.Failure("Cannot add attachments: competition is not in editable status.");
+            return Result.Failure("لا يمكن إضافة مرفقات: المنافسة ليست في حالة قابلة للتعديل.");
 
         _attachments.Add(attachment);
         Version++;
@@ -476,11 +476,11 @@ public sealed class Competition : AggregateRoot<Guid>
     public Result RemoveAttachment(Guid attachmentId)
     {
         if (Status != CompetitionStatus.Draft && Status != CompetitionStatus.UnderPreparation)
-            return Result.Failure("Cannot remove attachments: competition is not in editable status.");
+            return Result.Failure("لا يمكن حذف مرفقات: المنافسة ليست في حالة قابلة للتعديل.");
 
         var attachment = _attachments.FirstOrDefault(a => a.Id == attachmentId);
         if (attachment is null)
-            return Result.Failure("Attachment not found.");
+            return Result.Failure("المرفق غير موجود.");
 
         _attachments.Remove(attachment);
         Version++;

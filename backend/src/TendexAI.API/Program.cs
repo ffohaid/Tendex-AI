@@ -127,6 +127,9 @@ app.MapFeatureFlagEndpoints();
 // Competition (RFP) management endpoints
 app.MapCompetitionEndpoints();
 
+// Competition Template management endpoints
+app.MapCompetitionTemplateEndpoints();
+
 // Committee management endpoints
 app.MapCommitteeEndpoints();
 
@@ -150,6 +153,9 @@ app.MapRagEndpoints();
 
 // AI Specification Drafting & BOQ Generation endpoints (TASK-403)
 app.MapAiSpecificationDraftingEndpoints();
+
+// AI Text Assistant endpoints (general-purpose text generation/improvement)
+app.MapAiTextAssistEndpoints();
 
 // Impersonation endpoints (Super Admin only - TASK-603)
 app.MapImpersonationEndpoints();

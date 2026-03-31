@@ -35,6 +35,10 @@ public sealed class TenantDbContext : DbContext, IUnitOfWork, ITenantDbContext
 
     // ----- RFP (Competition) DbSets -----
     public DbSet<Competition> Competitions => Set<Competition>();
+    public DbSet<CompetitionTemplate> CompetitionTemplates => Set<CompetitionTemplate>();
+    public DbSet<TemplateSectionItem> TemplateSections => Set<TemplateSectionItem>();
+    public DbSet<TemplateBoqItem> TemplateBoqItems => Set<TemplateBoqItem>();
+    public DbSet<TemplateEvaluationCriterion> TemplateEvaluationCriteria => Set<TemplateEvaluationCriterion>();
     public DbSet<RfpSection> RfpSections => Set<RfpSection>();
     public DbSet<BoqItem> BoqItems => Set<BoqItem>();
     public DbSet<EvaluationCriterion> EvaluationCriteria => Set<EvaluationCriterion>();
