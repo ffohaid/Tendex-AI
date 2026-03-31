@@ -9,12 +9,12 @@
  * - Template categories (IT, Construction, Consulting, etc.)
  * - Template preview with section/BOQ/criteria counts
  */
-import { ref, computed, onMounted, watch } from 'vue'
+import { ref, onMounted, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
 import { httpGet, httpPost } from '@/services/http'
 
-const { t, locale } = useI18n()
+const { locale } = useI18n()
 const router = useRouter()
 
 interface RfpTemplate {

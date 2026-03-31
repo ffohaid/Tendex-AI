@@ -39,7 +39,7 @@ const emit = defineEmits<{
   (e: 'text-generated', text: string): void
 }>()
 
-const { t, locale } = useI18n()
+const { locale } = useI18n()
 
 const isGenerating = ref(false)
 const isExpanded = ref(false)
