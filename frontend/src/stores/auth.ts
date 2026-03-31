@@ -102,11 +102,14 @@ export const useAuthStore = defineStore('auth', () => {
 
   function extractErrorMessage(err: unknown): string {
     if (isAxiosError(err)) {
-      const problem = err.response?.data as ApiProblemDetails | undefined
-      if (problem?.detail) return problem.detail
+      // Prioritize translated i18n keys over raw backend messages
       if (err.response?.status === 401) return 'auth.errors.invalidCredentials'
       if (err.response?.status === 429) return 'auth.errors.tooManyAttempts'
+      if (err.response?.status === 403) return 'auth.errors.accountDeactivated'
       if (!err.response) return 'auth.errors.networkError'
+      // Fallback to backend detail only if no i18n key matches
+      const problem = err.response?.data as ApiProblemDetails | undefined
+      if (problem?.detail) return problem.detail
     }
     return 'auth.errors.unexpectedError'
   }

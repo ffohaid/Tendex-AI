@@ -63,7 +63,9 @@
       "unexpectedError": "An unexpected error occurred. Please try again",
       "sessionExpired": "Session expired. Please log in again",
       "invalidMfaCode": "Invalid verification code. Please try again",
-      "invalidResetLink": "Invalid or expired reset link"
+      "invalidResetLink": "Invalid or expired reset link",
+      "accountDeactivated": "Account is deactivated. Please contact your administrator",
+      "accountLocked": "Account is locked due to too many failed attempts. Please try again later"
     },
     "mfa": {
       "title": "Two-Factor Authentication",
