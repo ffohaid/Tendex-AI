@@ -1,3 +1,4 @@
+using System.Globalization;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using TendexAI.Application.Common.Interfaces;
@@ -32,11 +33,11 @@ public sealed class GetCompetitionTemplatesQueryHandler
         // Search by name or tags
         if (!string.IsNullOrWhiteSpace(request.SearchQuery))
         {
-            var search = request.SearchQuery.ToLower();
+            var search = request.SearchQuery.ToLower(CultureInfo.InvariantCulture);
             query = query.Where(t =>
-                t.NameAr.ToLower().Contains(search) ||
-                t.NameEn.ToLower().Contains(search) ||
-                (t.Tags != null && t.Tags.ToLower().Contains(search)));
+                t.NameAr.ToLower(CultureInfo.InvariantCulture).Contains(search) ||
+                t.NameEn.ToLower(CultureInfo.InvariantCulture).Contains(search) ||
+                (t.Tags != null && t.Tags.ToLower(CultureInfo.InvariantCulture).Contains(search)));
         }
 
         var totalCount = await query.CountAsync(cancellationToken);
