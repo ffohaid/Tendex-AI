@@ -144,12 +144,6 @@ export const sidebarNavigation: NavigationItem[] = [
     route: 'Inquiries',
   },
   {
-    key: 'approvals',
-    labelKey: 'nav.approvals',
-    icon: 'pi pi-check-circle',
-    route: 'Approvals',
-  },
-  {
     key: 'reports',
     labelKey: 'nav.reports',
     icon: 'pi pi-chart-line',
