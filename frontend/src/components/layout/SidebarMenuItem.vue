@@ -100,7 +100,7 @@ function navigateToChild(child: NavigationItem): void {
       <!-- Label (hidden when sidebar is collapsed) -->
       <span
         v-if="!isCollapsed"
-        class="flex-1 truncate text-start"
+        class="flex-1 text-start leading-snug"
       >
         {{ t(item.labelKey) }}
       </span>
@@ -176,7 +176,7 @@ function navigateToChild(child: NavigationItem): void {
                   : 'text-secondary-500 group-hover:text-secondary-300',
               ]"
             ></i>
-            <span class="truncate">{{ t(child.labelKey) }}</span>
+            <span class="leading-snug">{{ t(child.labelKey) }}</span>
           </button>
         </li>
       </ul>

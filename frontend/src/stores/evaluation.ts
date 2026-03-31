@@ -102,7 +102,7 @@ export const useEvaluationStore = defineStore('evaluation', () => {
     try {
       competitions.value = await api.fetchCompetitionEvaluations()
     } catch (e: unknown) {
-      error.value = e instanceof Error ? e.message : 'Failed to load competitions'
+      error.value = 'لا توجد منافسات متاحة للتقييم حالياً'
     } finally {
       loading.value = false
     }
@@ -114,7 +114,7 @@ export const useEvaluationStore = defineStore('evaluation', () => {
     try {
       selectedCompetition.value = await api.fetchCompetitionEvaluation(id)
     } catch (e: unknown) {
-      error.value = e instanceof Error ? e.message : 'Failed to load competition'
+      error.value = 'تعذر تحميل بيانات المنافسة'
     } finally {
       loading.value = false
     }
@@ -140,7 +140,7 @@ export const useEvaluationStore = defineStore('evaluation', () => {
       aiEvaluations.value = aiData
       varianceAlerts.value = alertsData
     } catch (e: unknown) {
-      error.value = e instanceof Error ? e.message : 'Failed to load technical data'
+      error.value = 'تعذر تحميل بيانات التقييم الفني'
     } finally {
       loading.value = false
     }
@@ -164,7 +164,7 @@ export const useEvaluationStore = defineStore('evaluation', () => {
       financialOffers.value = offersData
       financialScores.value = scoresData
     } catch (e: unknown) {
-      error.value = e instanceof Error ? e.message : 'Failed to load financial data'
+      error.value = 'تعذر تحميل بيانات التقييم المالي'
     } finally {
       loading.value = false
     }
@@ -184,7 +184,7 @@ export const useEvaluationStore = defineStore('evaluation', () => {
         financialScores.value.push(result)
       }
     } catch (e: unknown) {
-      error.value = e instanceof Error ? e.message : 'Failed to submit score'
+      error.value = 'تعذر حفظ الدرجة'
       throw e
     }
   }
@@ -195,7 +195,7 @@ export const useEvaluationStore = defineStore('evaluation', () => {
       const results = await api.requestAiEvaluation(competitionId, vendorId)
       aiEvaluations.value.push(...results)
     } catch (e: unknown) {
-      error.value = e instanceof Error ? e.message : 'Failed to get AI evaluation'
+      error.value = 'تعذر الحصول على تقييم الذكاء الاصطناعي'
     } finally {
       loading.value = false
     }
@@ -206,7 +206,7 @@ export const useEvaluationStore = defineStore('evaluation', () => {
     try {
       comparisonMatrix.value = await api.fetchComparisonMatrix(competitionId, type)
     } catch (e: unknown) {
-      error.value = e instanceof Error ? e.message : 'Failed to load comparison matrix'
+      error.value = 'تعذر تحميل مصفوفة المقارنة'
     } finally {
       loading.value = false
     }

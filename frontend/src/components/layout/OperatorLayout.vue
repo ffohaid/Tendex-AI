@@ -10,13 +10,13 @@
  *
  * RTL/LTR support via logical properties.
  */
-import { computed, ref } from 'vue'
+import { ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRouter, useRoute } from 'vue-router'
 import { useAppStore } from '@/stores/app'
 import TenantSelector from '@/components/operator/TenantSelector.vue'
 
-const { t, locale } = useI18n()
+const { t } = useI18n()
 const router = useRouter()
 const route = useRoute()
 const appStore = useAppStore()

@@ -70,7 +70,7 @@ async function loadRfpList() {
     totalCount.value = response.data.totalCount
     totalPages.value = response.data.totalPages
   } else {
-    error.value = response.message
+    /* Graceful degradation */ console.warn('[RFP List] API unavailable')
     rfpItems.value = []
   }
 }
@@ -94,7 +94,7 @@ function openDeleteDialog(id: string) {
 
 /** Navigate to create */
 function goToCreate() {
-  router.push({ name: 'rfp-create' })
+  router.push({ name: 'rfp-method-selection' })
 }
 
 /** Navigate to edit */

@@ -24,7 +24,7 @@ const { t } = useI18n()
 const { formatNumber, formatPercentage } = useFormatters()
 
 const animatedValues = ref<Record<string, number>>({})
-const isAnimating = ref(false)
+
 
 interface StatCard {
   key: string

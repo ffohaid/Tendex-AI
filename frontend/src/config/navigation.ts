@@ -3,18 +3,13 @@ import type { NavigationItem } from '@/types/navigation'
 /**
  * Main sidebar navigation items.
  *
- * Each item uses i18n keys for labels, PrimeIcons for icons,
- * and Vue Router route names for navigation targets.
- *
- * The structure supports nested children for sub-menus.
- * Permission keys are included for future RBAC integration.
+ * Reorganized for clarity and to match the reference RFP.AI design:
+ * - Clean, flat structure where possible
+ * - Grouped logically by function
+ * - Operator section separated with role-based visibility
  *
  * IMPORTANT: Route names MUST exactly match the `name` property
  * defined in `@/router/index.ts`. Any mismatch will break navigation.
- *
- * TASK-1001: Added Workflow Designer, Task Center, Knowledge Base,
- * Permissions Matrix, Competition Templates, Notifications, Report Export,
- * and enhanced Operator Portal navigation.
  */
 export const sidebarNavigation: NavigationItem[] = [
   {
@@ -22,13 +17,6 @@ export const sidebarNavigation: NavigationItem[] = [
     labelKey: 'nav.dashboard',
     icon: 'pi pi-home',
     route: 'Dashboard',
-  },
-  /* Unified Task Center (TASK-1001) */
-  {
-    key: 'task-center',
-    labelKey: 'nav.taskCenter',
-    icon: 'pi pi-check-square',
-    route: 'TaskCenter',
   },
   {
     key: 'rfp',
@@ -45,7 +33,7 @@ export const sidebarNavigation: NavigationItem[] = [
         key: 'rfp-create',
         labelKey: 'nav.rfp.create',
         icon: 'pi pi-plus-circle',
-        route: 'rfp-create',
+        route: 'rfp-method-selection',
       },
       {
         key: 'rfp-templates',
@@ -94,37 +82,48 @@ export const sidebarNavigation: NavigationItem[] = [
     ],
   },
   {
-    key: 'approvals',
-    labelKey: 'nav.approvals',
-    icon: 'pi pi-check-circle',
-    route: 'Approvals',
+    key: 'knowledge-base',
+    labelKey: 'nav.knowledgeBase',
+    icon: 'pi pi-book',
+    route: 'KnowledgeBase',
   },
-  /* Workflow Designer (TASK-1001) */
   {
-    key: 'workflow',
-    labelKey: 'nav.workflowDesigner',
-    icon: 'pi pi-sitemap',
+    key: 'ai-assistant',
+    labelKey: 'nav.aiAssistant',
+    icon: 'pi pi-sparkles',
+    route: 'AiAssistant',
+  },
+  {
+    key: 'settings',
+    labelKey: 'nav.settings.title',
+    icon: 'pi pi-cog',
     children: [
       {
-        key: 'workflow-list',
-        labelKey: 'nav.workflowList',
-        icon: 'pi pi-list',
-        route: 'WorkflowList',
+        key: 'settings-organization',
+        labelKey: 'nav.settings.organization',
+        icon: 'pi pi-building',
+        route: 'SettingsOrganization',
       },
       {
-        key: 'workflow-designer',
-        labelKey: 'nav.workflowDesigner',
-        icon: 'pi pi-pencil',
-        route: 'WorkflowDesigner',
+        key: 'settings-users',
+        labelKey: 'nav.settings.users',
+        icon: 'pi pi-user',
+        route: 'SettingsUsers',
+      },
+      {
+        key: 'settings-roles',
+        labelKey: 'nav.settings.roles',
+        icon: 'pi pi-key',
+        route: 'SettingsRoles',
       },
     ],
   },
-  /* Permissions Matrix (TASK-1001) */
+  /* ── Advanced features (accessible from sidebar) ── */
   {
-    key: 'permissions-matrix',
-    labelKey: 'nav.permissionsMatrix',
-    icon: 'pi pi-th-large',
-    route: 'PermissionsMatrix',
+    key: 'task-center',
+    labelKey: 'nav.taskCenter',
+    icon: 'pi pi-check-square',
+    route: 'TaskCenter',
   },
   {
     key: 'inquiries',
@@ -132,12 +131,11 @@ export const sidebarNavigation: NavigationItem[] = [
     icon: 'pi pi-comments',
     route: 'Inquiries',
   },
-  /* Knowledge Base (TASK-1001) */
   {
-    key: 'knowledge-base',
-    labelKey: 'nav.knowledgeBase',
-    icon: 'pi pi-book',
-    route: 'KnowledgeBase',
+    key: 'approvals',
+    labelKey: 'nav.approvals',
+    icon: 'pi pi-check-circle',
+    route: 'Approvals',
   },
   {
     key: 'reports',
@@ -158,19 +156,7 @@ export const sidebarNavigation: NavigationItem[] = [
       },
     ],
   },
-  {
-    key: 'ai-assistant',
-    labelKey: 'nav.aiAssistant',
-    icon: 'pi pi-sparkles',
-    route: 'AiAssistant',
-  },
-  /* Notifications (TASK-1001) */
-  {
-    key: 'notifications',
-    labelKey: 'notifications.title',
-    icon: 'pi pi-bell',
-    route: 'Notifications',
-  },
+  /* ── Operator Portal (SuperAdmin / Operator only) ── */
   {
     key: 'operator',
     labelKey: 'nav.operator.title',
@@ -195,34 +181,29 @@ export const sidebarNavigation: NavigationItem[] = [
         icon: 'pi pi-file',
         route: 'PurchaseOrderList',
       },
-      /* TASK-1001: New operator pages */
       {
         key: 'operator-ai-settings',
         labelKey: 'operator.aiSettings',
         icon: 'pi pi-sparkles',
         route: 'OperatorAiSettings',
-        requiredRoles: ['SuperAdmin', 'Operator'],
       },
       {
         key: 'operator-system-health',
         labelKey: 'operator.systemHealth',
         icon: 'pi pi-server',
         route: 'OperatorSystemHealth',
-        requiredRoles: ['SuperAdmin', 'Operator'],
       },
       {
         key: 'operator-consumption',
         labelKey: 'operator.consumption',
         icon: 'pi pi-chart-bar',
         route: 'OperatorConsumption',
-        requiredRoles: ['SuperAdmin', 'Operator'],
       },
       {
         key: 'operator-subscriptions',
         labelKey: 'operator.subscriptions',
         icon: 'pi pi-credit-card',
         route: 'OperatorSubscriptions',
-        requiredRoles: ['SuperAdmin', 'Operator'],
       },
       {
         key: 'operator-impersonation',
@@ -230,31 +211,6 @@ export const sidebarNavigation: NavigationItem[] = [
         icon: 'pi pi-user-edit',
         route: 'OperatorImpersonation',
         requiredRoles: ['SuperAdmin', 'SupportAdmin'],
-      },
-    ],
-  },
-  {
-    key: 'settings',
-    labelKey: 'nav.settings.title',
-    icon: 'pi pi-cog',
-    children: [
-      {
-        key: 'settings-organization',
-        labelKey: 'nav.settings.organization',
-        icon: 'pi pi-building',
-        route: 'SettingsOrganization',
-      },
-      {
-        key: 'settings-users',
-        labelKey: 'nav.settings.users',
-        icon: 'pi pi-user',
-        route: 'SettingsUsers',
-      },
-      {
-        key: 'settings-roles',
-        labelKey: 'nav.settings.roles',
-        icon: 'pi pi-key',
-        route: 'SettingsRoles',
       },
     ],
   },

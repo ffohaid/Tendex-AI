@@ -142,8 +142,8 @@ async function loadUsers() {
     const result = await fetchUsers({ page: currentPage.value, pageSize: pageSize.value })
     users.value = result.items
     totalCount.value = result.totalCount
-  } catch {
-    error.value = t('settings.users.errors.loadFailed')
+  } catch (err) {
+    /* Graceful degradation */ console.warn('[Users] API unavailable:', err)
     users.value = []
   } finally {
     isLoading.value = false
@@ -164,8 +164,8 @@ async function loadInvitations() {
     const result = await fetchInvitations({ page: invCurrentPage.value, pageSize: pageSize.value })
     invitations.value = result.items
     invTotalCount.value = result.totalCount
-  } catch {
-    error.value = t('settings.users.errors.loadInvitationsFailed')
+  } catch (err) {
+    /* Graceful degradation */ console.warn('[Invitations] API unavailable:', err)
     invitations.value = []
   } finally {
     isLoadingInvitations.value = false

@@ -81,7 +81,7 @@ export const useOperatorDashboardStore = defineStore('operatorDashboard', () => 
     try {
       summary.value = await dashboardService.fetchDashboardSummary()
     } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : 'Failed to load dashboard summary'
+      const message = err instanceof Error ? err.message : 'تعذر تحميل ملخص لوحة التحكم'
       error.value = message
       console.error('[OperatorDashboard] loadSummary error:', err)
     } finally {
@@ -106,7 +106,7 @@ export const useOperatorDashboardStore = defineStore('operatorDashboard', () => 
       tenantUsageTotalCount.value = result.totalCount
       tenantUsageTotalPages.value = result.totalPages
     } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : 'Failed to load tenant usage statistics'
+      const message = err instanceof Error ? err.message : 'تعذر تحميل إحصائيات الاستخدام'
       error.value = message
       console.error('[OperatorDashboard] loadTenantUsage error:', err)
     } finally {
@@ -123,7 +123,7 @@ export const useOperatorDashboardStore = defineStore('operatorDashboard', () => 
     try {
       systemHealth.value = await dashboardService.fetchSystemHealthStatus()
     } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : 'Failed to load system health'
+      const message = err instanceof Error ? err.message : 'تعذر تحميل حالة النظام'
       error.value = message
       console.error('[OperatorDashboard] loadSystemHealth error:', err)
     } finally {
@@ -140,7 +140,7 @@ export const useOperatorDashboardStore = defineStore('operatorDashboard', () => 
     try {
       resourceTrends.value = await dashboardService.fetchResourceConsumptionTrends()
     } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : 'Failed to load resource trends'
+      const message = err instanceof Error ? err.message : 'تعذر تحميل اتجاهات الموارد'
       error.value = message
       console.error('[OperatorDashboard] loadResourceTrends error:', err)
     } finally {

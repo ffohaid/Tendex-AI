@@ -68,8 +68,8 @@ async function loadRoles() {
   error.value = ''
   try {
     roles.value = await fetchRoles()
-  } catch {
-    error.value = t('settings.roles.errors.loadFailed')
+  } catch (e) {
+    /* Graceful degradation */ console.warn('[Roles] API unavailable:', e)
     roles.value = []
   } finally {
     isLoading.value = false

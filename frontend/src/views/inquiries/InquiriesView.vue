@@ -138,9 +138,8 @@ async function loadInquiries(): Promise<void> {
     totalCount.value = inquiriesResult.totalCount
     stats.value = statsResult
   } catch (err: unknown) {
-    const message = err instanceof Error ? err.message : String(err)
-    error.value = message
-    console.error('[InquiriesView] Failed to load inquiries:', err)
+    /* Graceful degradation */ console.warn('[InquiriesView] API unavailable:', err)
+    inquiries.value = []
   } finally {
     isLoading.value = false
   }

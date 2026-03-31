@@ -29,6 +29,12 @@ const routes: RouteRecordRaw[] = [
         meta: { title: 'Tendex AI - RFP List', requiresAuth: true },
       },
       {
+        path: 'rfp/new',
+        name: 'rfp-method-selection',
+        component: () => import('@/views/rfp/RfpMethodSelectionView.vue'),
+        meta: { title: 'Tendex AI - New RFP', requiresAuth: true },
+      },
+      {
         path: 'rfp/create',
         name: 'rfp-create',
         component: () => import('@/views/rfp/RfpCreateView.vue'),

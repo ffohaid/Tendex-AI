@@ -18,7 +18,7 @@ import { ref, reactive, computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { httpPost } from '@/services/http'
 
-const { t } = useI18n()
+useI18n() // i18n available for future use
 
 const emit = defineEmits<{
   (e: 'generated', sections: GeneratedSection[]): void

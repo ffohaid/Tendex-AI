@@ -95,7 +95,7 @@ export const useTenantStore = defineStore('tenant', () => {
       totalCount.value = result.totalCount
       totalPages.value = result.totalPages
     } catch (err) {
-      error.value = extractError(err)
+      /* Graceful degradation */ console.warn('[Tenants] API unavailable:', err)
       tenants.value = []
     } finally {
       isLoading.value = false

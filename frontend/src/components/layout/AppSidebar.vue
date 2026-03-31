@@ -31,7 +31,7 @@ const { toggleExpand, isExpanded } = useSidebarNavigation(filteredNavigation.val
 <template>
   <aside
     class="fixed top-16 bottom-0 z-40 flex flex-col transition-all duration-300"
-    :class="[isCollapsed ? 'w-16' : 'w-64']"
+    :class="[isCollapsed ? 'w-16' : 'w-80']"
     :style="{ insetInlineStart: '0' }"
     style="background: linear-gradient(180deg, #0F172A 0%, #1E293B 100%);"
   >

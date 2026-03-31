@@ -49,7 +49,6 @@ const documents = ref<KBDocument[]>([])
 const searchQuery = ref('')
 const selectedCategory = ref<string>('all')
 const isDragging = ref(false)
-const showUploadDialog = ref(false)
 
 const categories: Category[] = [
   { key: 'all', labelKey: 'taskCenter.filters.all', icon: 'pi-folder', count: 0 },
@@ -256,18 +255,18 @@ onMounted(() => {
         >
           <div v-if="isUploading" class="flex items-center justify-center gap-3">
             <i class="pi pi-spin pi-spinner text-2xl text-primary"></i>
-            <span class="text-sm font-medium text-primary">Uploading...</span>
+            <span class="text-sm font-medium text-primary">{{ t('knowledgeBase.uploading') }}</span>
           </div>
           <div v-else>
             <i class="pi pi-cloud-upload text-3xl text-secondary-300"></i>
             <p class="mt-2 text-sm text-secondary-500">
-              Drag & drop files here or
+              {{ t('knowledgeBase.dragDrop') }}
               <label class="cursor-pointer font-semibold text-primary hover:underline">
-                browse
+                {{ t('knowledgeBase.browse') }}
                 <input type="file" class="hidden" multiple accept=".pdf,.docx,.xlsx,.doc,.xls" @change="handleFileSelect" />
               </label>
             </p>
-            <p class="mt-1 text-xs text-secondary-400">PDF, DOCX, XLSX (max 50MB)</p>
+            <p class="mt-1 text-xs text-secondary-400">{{ t('knowledgeBase.maxSize') }}</p>
           </div>
         </div>
 
@@ -305,7 +304,7 @@ onMounted(() => {
                 <span class="h-1 w-1 rounded-full bg-secondary-300"></span>
                 <span>{{ formatDateTime(doc.uploadedAt) }}</span>
                 <span class="h-1 w-1 rounded-full bg-secondary-300"></span>
-                <span v-if="doc.chunkCount > 0">{{ doc.chunkCount }} chunks</span>
+                <span v-if="doc.chunkCount > 0">{{ doc.chunkCount }} {{ locale === 'ar' ? 'جزء' : 'chunks' }}</span>
               </div>
               <!-- Tags -->
               <div v-if="doc.tags.length > 0" class="mt-2 flex flex-wrap gap-1">
@@ -330,7 +329,7 @@ onMounted(() => {
                 class="mt-2 block text-[10px] font-medium text-primary hover:underline"
                 @click="reindexDocument(doc.id)"
               >
-                Retry
+                {{ t('knowledgeBase.retry') }}
               </button>
             </div>
           </div>

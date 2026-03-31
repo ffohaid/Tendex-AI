@@ -261,7 +261,7 @@ onMounted(() => {
       <table class="table-modern">
         <thead>
           <tr>
-            <th>Notification Type</th>
+            <th>{{ t('notifications.type') }}</th>
             <th class="text-center">{{ t('notifications.inApp') }}</th>
             <th class="text-center">{{ t('notifications.email') }}</th>
           </tr>

@@ -21,7 +21,7 @@
  */
 import { ref, reactive, computed, onMounted, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { httpGet, httpPost, httpPut } from '@/services/http'
+import { httpGet, httpPut } from '@/services/http'
 
 const { t } = useI18n()
 
@@ -62,13 +62,6 @@ interface PermissionEntry {
   granted: boolean
 }
 
-interface PermissionTemplate {
-  id: string
-  name: string
-  description: string
-  permissions: PermissionEntry[]
-}
-
 /* ── State ── */
 const isLoading = ref(false)
 const isSaving = ref(false)
@@ -101,7 +94,7 @@ const permissionActions: PermissionAction[] = [
 const permissionMatrix = reactive<Record<string, Record<string, boolean>>>({})
 
 /* Templates */
-const templates = ref<PermissionTemplate[]>([])
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const showTemplateDialog = ref(false)
 
 /* Active tab for dimension view */
@@ -113,11 +106,7 @@ const currentStageRoles = computed(() => {
   return userRoles.value
 })
 
-const allPermissionsGranted = computed(() => {
-  return Object.values(permissionMatrix).every(actions =>
-    Object.values(actions).every(v => v)
-  )
-})
+
 
 /* ── Methods ── */
 async function loadCompetitions(): Promise<void> {

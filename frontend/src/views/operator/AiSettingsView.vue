@@ -17,7 +17,7 @@ import { ref, reactive, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { httpGet, httpPost, httpPut } from '@/services/http'
 
-const { t } = useI18n()
+const { t, locale } = useI18n()
 
 /* ── Types ── */
 interface AiProvider {
@@ -168,7 +168,7 @@ onMounted(() => {
     <!-- Page Header -->
     <div>
       <h1 class="page-title">{{ t('operatorAi.title') }}</h1>
-      <p class="page-description">Manage AI providers, RAG configuration, and feature flags</p>
+      <p class="page-description">{{ locale === 'ar' ? 'إدارة مزودي الذكاء الاصطناعي وإعدادات RAG ومفاتيح الميزات' : 'Manage AI providers, RAG configuration, and feature flags' }}</p>
     </div>
 
     <!-- AI Providers Section -->
@@ -180,7 +180,7 @@ onMounted(() => {
           </div>
           <div>
             <h2 class="text-lg font-bold text-secondary">{{ t('operatorAi.providers') }}</h2>
-            <p class="text-xs text-tertiary">Configure AI model providers and API keys</p>
+            <p class="text-xs text-tertiary">{{ locale === 'ar' ? 'إعداد مزودي نماذج الذكاء الاصطناعي ومفاتيح API' : 'Configure AI model providers and API keys' }}</p>
           </div>
         </div>
         <button class="btn-ai btn-sm" @click="showAddProvider = true">
@@ -213,11 +213,11 @@ onMounted(() => {
               <span class="badge" :class="provider.isActive ? 'badge-success' : 'badge-secondary'">
                 {{ provider.isActive ? t('operatorAi.active') : t('operatorAi.inactive') }}
               </span>
-              <span v-if="provider.isDefault" class="badge badge-primary">Default</span>
+              <span v-if="provider.isDefault" class="badge badge-primary">{{ locale === 'ar' ? 'افتراضي' : 'Default' }}</span>
             </div>
             <div class="mt-1 flex items-center gap-3 text-xs text-secondary-500">
-              <span>Model: {{ provider.modelName }}</span>
-              <span>Key: {{ provider.apiKeyMasked }}</span>
+              <span>{{ locale === "ar" ? "النموذج" : "Model" }}: {{ provider.modelName }}</span>
+              <span>{{ locale === "ar" ? "المفتاح" : "Key" }}: {{ provider.apiKeyMasked }}</span>
             </div>
           </div>
 
@@ -287,10 +287,10 @@ onMounted(() => {
             </div>
           </div>
           <div class="mt-3 flex justify-end gap-2">
-            <button class="btn-ghost btn-sm" @click="showAddProvider = false">Cancel</button>
+            <button class="btn-ghost btn-sm" @click="showAddProvider = false">{{ locale === 'ar' ? 'إلغاء' : 'Cancel' }}</button>
             <button class="btn-ai btn-sm" :disabled="isSaving" @click="addProvider">
               <i class="pi" :class="isSaving ? 'pi-spin pi-spinner' : 'pi-plus'"></i>
-              Add
+              {{ locale === 'ar' ? 'إضافة' : 'Add' }}
             </button>
           </div>
         </div>
@@ -305,33 +305,33 @@ onMounted(() => {
         </div>
         <div>
           <h2 class="text-lg font-bold text-secondary">{{ t('operatorAi.ragSettings') }}</h2>
-          <p class="text-xs text-tertiary">Configure RAG pipeline and vector database</p>
+          <p class="text-xs text-tertiary">{{ locale === 'ar' ? 'إعداد خط أنابيب RAG وقاعدة بيانات المتجهات' : 'Configure RAG pipeline and vector database' }}</p>
         </div>
       </div>
 
       <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
         <div>
-          <label class="mb-1 block text-xs font-medium text-secondary-600">{{ t('operatorAi.vectorDb') }} Endpoint</label>
+          <label class="mb-1 block text-xs font-medium text-secondary-600">{{ locale === 'ar' ? 'نقطة نهاية قاعدة المتجهات' : 'Vector DB Endpoint' }}</label>
           <input v-model="ragConfig.vectorDbEndpoint" class="input text-sm" placeholder="http://qdrant:6333" />
         </div>
         <div>
-          <label class="mb-1 block text-xs font-medium text-secondary-600">Collection Name</label>
+          <label class="mb-1 block text-xs font-medium text-secondary-600">{{ locale === 'ar' ? 'اسم المجموعة' : 'Collection Name' }}</label>
           <input v-model="ragConfig.vectorDbCollection" class="input text-sm" />
         </div>
         <div>
-          <label class="mb-1 block text-xs font-medium text-secondary-600">Embedding Model</label>
+          <label class="mb-1 block text-xs font-medium text-secondary-600">{{ locale === 'ar' ? 'نموذج التضمين' : 'Embedding Model' }}</label>
           <input v-model="ragConfig.embeddingModel" class="input text-sm" />
         </div>
         <div>
-          <label class="mb-1 block text-xs font-medium text-secondary-600">Chunk Size</label>
+          <label class="mb-1 block text-xs font-medium text-secondary-600">{{ locale === 'ar' ? 'حجم القطعة' : 'Chunk Size' }}</label>
           <input v-model.number="ragConfig.chunkSize" type="number" class="input text-sm" />
         </div>
         <div>
-          <label class="mb-1 block text-xs font-medium text-secondary-600">Chunk Overlap</label>
+          <label class="mb-1 block text-xs font-medium text-secondary-600">{{ locale === 'ar' ? 'تداخل القطع' : 'Chunk Overlap' }}</label>
           <input v-model.number="ragConfig.chunkOverlap" type="number" class="input text-sm" />
         </div>
         <div>
-          <label class="mb-1 block text-xs font-medium text-secondary-600">Max Retrieved Chunks</label>
+          <label class="mb-1 block text-xs font-medium text-secondary-600">{{ locale === 'ar' ? 'أقصى عدد قطع مسترجعة' : 'Max Retrieved Chunks' }}</label>
           <input v-model.number="ragConfig.maxRetrievedChunks" type="number" class="input text-sm" />
         </div>
       </div>
@@ -339,7 +339,7 @@ onMounted(() => {
       <div class="mt-4 flex justify-end">
         <button class="btn-primary btn-sm" :disabled="isSaving" @click="saveRagConfig">
           <i class="pi pi-save"></i>
-          Save RAG Config
+          {{ locale === 'ar' ? 'حفظ إعدادات RAG' : 'Save RAG Config' }}
         </button>
       </div>
     </div>
@@ -352,7 +352,7 @@ onMounted(() => {
         </div>
         <div>
           <h2 class="text-lg font-bold text-secondary">{{ t('operatorAi.featureFlags') }}</h2>
-          <p class="text-xs text-tertiary">Enable or disable AI features per tenant</p>
+          <p class="text-xs text-tertiary">{{ locale === 'ar' ? 'تفعيل أو تعطيل ميزات الذكاء الاصطناعي لكل مستأجر' : 'Enable or disable AI features per tenant' }}</p>
         </div>
       </div>
 

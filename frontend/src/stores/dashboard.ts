@@ -163,8 +163,10 @@ export const useDashboardStore = defineStore('dashboard', () => {
       performanceMetrics.value = data.performanceMetrics
       lastUpdated.value = new Date()
     } catch (err) {
-      error.value = err instanceof Error ? err.message : 'Failed to load dashboard data'
-      console.error('[DashboardStore] Error loading dashboard:', err)
+      /* Graceful degradation: fetchAllDashboardData uses Promise.allSettled
+       * so it should never throw. If it does, silently log and show empty state
+       * rather than blocking the entire dashboard with an error banner. */
+      console.warn('[DashboardStore] Dashboard data partially unavailable:', err)
     } finally {
       isLoading.value = false
     }

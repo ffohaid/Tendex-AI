@@ -1,6 +1,6 @@
 <script setup lang="ts">
 /**
- * RfpTemplatesView - Competition Templates Management (TASK-1001)
+ * RfpTemplatesView - Competition Templates Management
  *
  * Features:
  * - Browse and search competition templates
@@ -8,7 +8,6 @@
  * - Copy competition from template
  * - Template categories (IT, Construction, Consulting, etc.)
  * - Template preview
- * - AI-suggested templates based on project type
  */
 import { ref, computed, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
@@ -40,15 +39,15 @@ const templates = ref<RfpTemplate[]>([])
 const searchQuery = ref('')
 const selectedCategory = ref('all')
 
-const categories = [
-  { key: 'all', label: 'All' },
-  { key: 'it', label: 'Information Technology' },
-  { key: 'construction', label: 'Construction' },
-  { key: 'consulting', label: 'Consulting' },
-  { key: 'maintenance', label: 'Maintenance' },
-  { key: 'supplies', label: 'Supplies & Equipment' },
-  { key: 'services', label: 'General Services' },
-]
+const categories = computed(() => [
+  { key: 'all', labelAr: 'الكل', labelEn: 'All' },
+  { key: 'it', labelAr: 'تقنية المعلومات', labelEn: 'Information Technology' },
+  { key: 'construction', labelAr: 'الإنشاءات', labelEn: 'Construction' },
+  { key: 'consulting', labelAr: 'الاستشارات', labelEn: 'Consulting' },
+  { key: 'maintenance', labelAr: 'الصيانة والتشغيل', labelEn: 'Maintenance' },
+  { key: 'supplies', labelAr: 'التوريدات والمعدات', labelEn: 'Supplies & Equipment' },
+  { key: 'services', labelAr: 'الخدمات العامة', labelEn: 'General Services' },
+])
 
 const filteredTemplates = computed(() => {
   let result = templates.value
@@ -71,8 +70,8 @@ async function loadTemplates(): Promise<void> {
   try {
     const data = await httpGet<{ items: RfpTemplate[] }>('/v1/rfp/templates')
     templates.value = data.items
-  } catch (err) {
-    console.error('Failed to load templates:', err)
+  } catch {
+    console.warn('Templates API not available yet')
   } finally {
     isLoading.value = false
   }
@@ -83,11 +82,15 @@ async function copyFromTemplate(templateId: string): Promise<void> {
   try {
     const result = await httpPost<{ rfpId: string }>(`/v1/rfp/templates/${templateId}/copy`)
     router.push(`/rfp/edit/${result.rfpId}`)
-  } catch (err) {
-    console.error('Failed to copy template:', err)
+  } catch {
+    console.error('Failed to copy template')
   } finally {
     isCopying.value = null
   }
+}
+
+function createNewRfp(): void {
+  router.push({ name: 'RfpMethodSelection' })
 }
 
 onMounted(() => {
@@ -100,12 +103,14 @@ onMounted(() => {
     <!-- Header -->
     <div class="flex items-center justify-between">
       <div>
-        <h1 class="page-title">{{ t('rfp.templates') || 'Competition Templates' }}</h1>
-        <p class="page-description">Browse and use pre-built competition templates</p>
+        <h1 class="page-title">{{ t('rfp.templates') }}</h1>
+        <p class="page-description">
+          {{ locale === 'ar' ? 'تصفح واستخدم قوالب كراسات الشروط الجاهزة' : 'Browse and use pre-built competition templates' }}
+        </p>
       </div>
-      <button class="btn-primary" @click="router.push('/rfp/create')">
+      <button class="btn-primary" @click="createNewRfp">
         <i class="pi pi-plus"></i>
-        {{ t('rfp.createNew') || 'Create from Scratch' }}
+        {{ t('rfp.actions.createNew') }}
       </button>
     </div>
 
@@ -117,7 +122,7 @@ onMounted(() => {
           <input
             v-model="searchQuery"
             type="text"
-            placeholder="Search templates..."
+            :placeholder="locale === 'ar' ? 'البحث في القوالب...' : 'Search templates...'"
             class="input ps-10 text-sm"
           />
         </div>
@@ -131,36 +136,49 @@ onMounted(() => {
               : 'bg-surface-subtle text-secondary-600 hover:bg-secondary-100'"
             @click="selectedCategory = cat.key"
           >
-            {{ cat.label }}
+            {{ locale === 'ar' ? cat.labelAr : cat.labelEn }}
           </button>
         </div>
       </div>
     </div>
 
-    <!-- Templates Grid -->
+    <!-- Loading State -->
     <div v-if="isLoading" class="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
       <div v-for="i in 6" :key="i" class="skeleton-card"></div>
     </div>
 
-    <div v-else-if="filteredTemplates.length === 0" class="empty-state">
-      <div class="empty-state-icon"><i class="pi pi-copy"></i></div>
-      <h3 class="empty-state-title">No templates found</h3>
-      <p class="empty-state-text">Try adjusting your search or category filter</p>
+    <!-- Empty State -->
+    <div v-else-if="filteredTemplates.length === 0" class="card !py-16 text-center">
+      <div class="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-secondary-50">
+        <i class="pi pi-copy text-2xl text-secondary-400"></i>
+      </div>
+      <h3 class="text-lg font-bold text-secondary-700">
+        {{ locale === 'ar' ? 'لا توجد قوالب حالياً' : 'No templates found' }}
+      </h3>
+      <p class="mt-2 text-sm text-secondary-500">
+        {{ locale === 'ar' ? 'سيتم إضافة قوالب جاهزة قريباً. يمكنك إنشاء كراسة شروط جديدة من البداية.' : 'Templates will be added soon. You can create a new RFP from scratch.' }}
+      </p>
+      <button class="btn-primary mx-auto mt-6" @click="createNewRfp">
+        <i class="pi pi-plus"></i>
+        {{ t('rfp.actions.createNew') }}
+      </button>
     </div>
 
+    <!-- Templates Grid -->
     <div v-else class="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
       <div
         v-for="tmpl in filteredTemplates"
         :key="tmpl.id"
         class="card-interactive"
       >
-        <div class="flex items-start justify-between mb-3">
+        <div class="mb-3 flex items-start justify-between">
           <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-primary-50">
             <i class="pi pi-file text-primary"></i>
           </div>
           <div class="flex items-center gap-1">
             <span v-if="tmpl.isOfficial" class="badge badge-success text-[10px]">
-              <i class="pi pi-verified text-[8px]"></i> Official
+              <i class="pi pi-verified text-[8px]"></i>
+              {{ locale === 'ar' ? 'رسمي' : 'Official' }}
             </span>
             <span class="badge badge-info text-[10px]">{{ tmpl.category }}</span>
           </div>
@@ -169,14 +187,23 @@ onMounted(() => {
         <h3 class="text-sm font-bold text-secondary-800">
           {{ locale === 'ar' ? tmpl.nameAr : tmpl.nameEn }}
         </h3>
-        <p class="mt-1 text-xs text-secondary-500 line-clamp-2">
+        <p class="mt-1 line-clamp-2 text-xs text-secondary-500">
           {{ locale === 'ar' ? tmpl.descriptionAr : tmpl.descriptionEn }}
         </p>
 
         <div class="mt-3 flex items-center gap-3 text-[10px] text-secondary-400">
-          <span><i class="pi pi-list me-1"></i>{{ tmpl.sectionCount }} sections</span>
-          <span><i class="pi pi-table me-1"></i>{{ tmpl.boqItemCount }} BOQ items</span>
-          <span><i class="pi pi-copy me-1"></i>Used {{ tmpl.usageCount }} times</span>
+          <span>
+            <i class="pi pi-list me-1"></i>
+            {{ tmpl.sectionCount }} {{ locale === 'ar' ? 'قسم' : 'sections' }}
+          </span>
+          <span>
+            <i class="pi pi-table me-1"></i>
+            {{ tmpl.boqItemCount }} {{ locale === 'ar' ? 'بند' : 'BOQ items' }}
+          </span>
+          <span>
+            <i class="pi pi-copy me-1"></i>
+            {{ locale === 'ar' ? `استُخدم ${tmpl.usageCount} مرة` : `Used ${tmpl.usageCount} times` }}
+          </span>
         </div>
 
         <!-- Tags -->
@@ -197,7 +224,7 @@ onMounted(() => {
           @click="copyFromTemplate(tmpl.id)"
         >
           <i class="pi" :class="isCopying === tmpl.id ? 'pi-spin pi-spinner' : 'pi-copy'"></i>
-          Use This Template
+          {{ locale === 'ar' ? 'استخدام هذا القالب' : 'Use This Template' }}
         </button>
       </div>
     </div>

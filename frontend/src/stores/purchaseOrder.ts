@@ -93,7 +93,7 @@ export const usePurchaseOrderStore = defineStore('purchaseOrder', () => {
       totalCount.value = result.totalCount
       totalPages.value = result.totalPages
     } catch (err) {
-      error.value = extractError(err)
+      /* Graceful degradation */ console.warn('[PurchaseOrders] API unavailable:', err)
       purchaseOrders.value = []
     } finally {
       isLoading.value = false

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 /**
- * SystemHealthView - System Health Dashboard for Operator (TASK-1001)
+ * SystemHealthView - System Health Dashboard for Operator
  *
  * Monitors:
  * - Service status (API, DB, Redis, RabbitMQ, Qdrant, MinIO)
@@ -13,7 +13,7 @@ import { ref, onMounted, onUnmounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { httpGet } from '@/services/http'
 
-const { t } = useI18n()
+const { t, locale } = useI18n()
 
 interface ServiceStatus {
   name: string
@@ -51,6 +51,16 @@ const metrics = ref<SystemMetrics>({
 
 let refreshTimer: ReturnType<typeof setInterval> | null = null
 
+function statusLabel(status: string): string {
+  const labels: Record<string, Record<string, string>> = {
+    healthy: { ar: 'يعمل بشكل طبيعي', en: 'Healthy' },
+    degraded: { ar: 'أداء منخفض', en: 'Degraded' },
+    down: { ar: 'متوقف', en: 'Down' },
+  }
+  const lang = locale.value === 'ar' ? 'ar' : 'en'
+  return labels[status]?.[lang] || status
+}
+
 async function loadHealth(): Promise<void> {
   isLoading.value = true
   try {
@@ -60,8 +70,8 @@ async function loadHealth(): Promise<void> {
     ])
     services.value = servicesData.services
     Object.assign(metrics.value, metricsData)
-  } catch (err) {
-    console.error('Failed to load health data:', err)
+  } catch {
+    console.warn('Health API not available')
   } finally {
     isLoading.value = false
   }
@@ -104,23 +114,23 @@ onUnmounted(() => {
 <template>
   <div class="space-y-6">
     <div>
-      <h1 class="page-title">System Health</h1>
-      <p class="page-description">Real-time monitoring of all system services and resources</p>
+      <h1 class="page-title">{{ t('operator.systemHealth') }}</h1>
+      <p class="page-description">{{ t('operator.systemHealthDesc') }}</p>
     </div>
 
     <!-- Service Status Grid -->
-    <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+    <div v-if="services.length > 0" class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
       <div
         v-for="service in services"
         :key="service.name"
         class="card !p-4"
       >
-        <div class="flex items-center justify-between mb-3">
+        <div class="mb-3 flex items-center justify-between">
           <h3 class="text-sm font-bold text-secondary">{{ service.name }}</h3>
           <div class="flex items-center gap-1.5">
             <span class="h-2.5 w-2.5 rounded-full" :class="[getStatusBg(service.status), service.status === 'healthy' ? 'animate-pulse' : '']"></span>
-            <span class="text-xs font-semibold capitalize" :class="getStatusColor(service.status)">
-              {{ service.status }}
+            <span class="text-xs font-semibold" :class="getStatusColor(service.status)">
+              {{ statusLabel(service.status) }}
             </span>
           </div>
         </div>
@@ -131,16 +141,31 @@ onUnmounted(() => {
       </div>
     </div>
 
+    <!-- Empty state when no services loaded -->
+    <div v-else-if="!isLoading" class="card !py-12 text-center">
+      <div class="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-secondary-50">
+        <i class="pi pi-server text-xl text-secondary-400"></i>
+      </div>
+      <h3 class="text-base font-bold text-secondary-700">
+        {{ locale === 'ar' ? 'لا توجد بيانات صحة النظام' : 'No system health data' }}
+      </h3>
+      <p class="mt-1 text-sm text-secondary-500">
+        {{ locale === 'ar' ? 'سيتم عرض حالة الخدمات عند الاتصال بالخادم' : 'Service status will be shown when connected to the server' }}
+      </p>
+    </div>
+
     <!-- Resource Metrics -->
     <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
       <!-- CPU -->
       <div class="card !p-4">
-        <div class="flex items-center gap-3 mb-3">
+        <div class="mb-3 flex items-center gap-3">
           <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-info-50">
             <i class="pi pi-microchip text-info"></i>
           </div>
           <div>
-            <p class="text-xs text-tertiary">CPU Usage</p>
+            <p class="text-xs text-tertiary">
+              {{ locale === 'ar' ? 'استخدام المعالج' : 'CPU Usage' }}
+            </p>
             <p class="text-xl font-bold text-secondary">{{ metrics.cpuUsagePercent }}%</p>
           </div>
         </div>
@@ -151,12 +176,14 @@ onUnmounted(() => {
 
       <!-- Memory -->
       <div class="card !p-4">
-        <div class="flex items-center gap-3 mb-3">
+        <div class="mb-3 flex items-center gap-3">
           <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-ai-50">
             <i class="pi pi-server text-ai"></i>
           </div>
           <div>
-            <p class="text-xs text-tertiary">Memory</p>
+            <p class="text-xs text-tertiary">
+              {{ locale === 'ar' ? 'الذاكرة' : 'Memory' }}
+            </p>
             <p class="text-xl font-bold text-secondary">
               {{ (metrics.memoryUsageMb / 1024).toFixed(1) }} / {{ (metrics.memoryTotalMb / 1024).toFixed(1) }} GB
             </p>
@@ -165,8 +192,8 @@ onUnmounted(() => {
         <div class="progress-bar">
           <div
             class="progress-bar-fill"
-            :class="getUsageColor((metrics.memoryUsageMb / metrics.memoryTotalMb) * 100)"
-            :style="{ width: `${(metrics.memoryUsageMb / metrics.memoryTotalMb) * 100}%` }"
+            :class="getUsageColor(metrics.memoryTotalMb > 0 ? (metrics.memoryUsageMb / metrics.memoryTotalMb) * 100 : 0)"
+            :style="{ width: `${metrics.memoryTotalMb > 0 ? (metrics.memoryUsageMb / metrics.memoryTotalMb) * 100 : 0}%` }"
           ></div>
         </div>
       </div>
@@ -178,7 +205,9 @@ onUnmounted(() => {
             <i class="pi pi-users text-success"></i>
           </div>
           <div>
-            <p class="text-xs text-tertiary">Active Connections</p>
+            <p class="text-xs text-tertiary">
+              {{ locale === 'ar' ? 'الاتصالات النشطة' : 'Active Connections' }}
+            </p>
             <p class="text-xl font-bold text-secondary">{{ metrics.activeConnections }}</p>
           </div>
         </div>
@@ -191,7 +220,9 @@ onUnmounted(() => {
             <i class="pi pi-exclamation-triangle" :class="metrics.errorRate > 1 ? 'text-danger' : 'text-success'"></i>
           </div>
           <div>
-            <p class="text-xs text-tertiary">Error Rate</p>
+            <p class="text-xs text-tertiary">
+              {{ locale === 'ar' ? 'معدل الأخطاء' : 'Error Rate' }}
+            </p>
             <p class="text-xl font-bold" :class="metrics.errorRate > 1 ? 'text-danger' : 'text-success'">
               {{ metrics.errorRate.toFixed(2) }}%
             </p>

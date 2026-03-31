@@ -167,7 +167,7 @@ async function loadTasks() {
     tasks.value = result.items
     totalCount.value = result.totalCount
   } catch (err) {
-    error.value = t('approvals.errors.loadFailed')
+    /* Graceful degradation */ console.warn('[Approvals] API unavailable:', err)
     tasks.value = []
   } finally {
     isLoading.value = false

@@ -92,14 +92,16 @@ function openEvaluation(id: string) {
       <span class="ms-3 text-sm text-secondary/60">{{ t('common.loading') }}</span>
     </div>
 
-    <!-- Error state -->
-    <div v-else-if="store.error" class="card border-danger/20 bg-danger/5 text-center">
-      <i class="pi pi-exclamation-circle text-3xl text-danger" />
-      <p class="mt-2 text-sm text-danger">{{ store.error }}</p>
+    <!-- Error / Empty state when API unavailable -->
+    <div v-else-if="store.error" class="card py-12 text-center">
+      <i class="pi pi-inbox text-5xl text-secondary/20" />
+      <h3 class="mt-4 text-lg font-semibold text-secondary/70">{{ t('evaluation.noCompetitions') }}</h3>
+      <p class="mt-2 text-sm text-secondary/50">{{ store.error }}</p>
       <button
-        class="mt-3 rounded-lg bg-danger px-4 py-2 text-sm text-white hover:bg-danger/90"
+        class="mt-4 rounded-lg bg-primary px-5 py-2 text-sm font-medium text-white hover:bg-primary/90"
         @click="store.loadCompetitions()"
       >
+        <i class="pi pi-refresh me-2 text-xs" />
         {{ t('evaluation.retry') }}
       </button>
     </div>

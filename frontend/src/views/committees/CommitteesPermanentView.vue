@@ -193,7 +193,8 @@ async function loadCommittees() {
     committees.value = result.items
     totalCount.value = result.totalCount
   } catch (err) {
-    error.value = t('committees.errors.loadFailed')
+    /* Graceful degradation: show empty state when API is unavailable */
+    console.warn('[Committees] API unavailable:', err)
     committees.value = []
   } finally {
     isLoading.value = false

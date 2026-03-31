@@ -19,7 +19,7 @@
  *
  * All data fetched dynamically from APIs.
  */
-import { ref, computed, onMounted, watch } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
 import { httpGet, httpPost } from '@/services/http'
@@ -27,7 +27,7 @@ import { useFormatters } from '@/composables/useFormatters'
 
 const { t, locale } = useI18n()
 const router = useRouter()
-const { formatDateTime, formatNumber } = useFormatters()
+const { formatDateTime } = useFormatters()
 
 /* ── Types ── */
 interface Task {

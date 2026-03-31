@@ -8,10 +8,10 @@
  * - Click to navigate to full notifications page
  * - Real-time updates via SignalR
  */
-import { ref, onMounted, onUnmounted, computed } from 'vue'
+import { ref, onMounted, onUnmounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
-import { httpGet, httpPost } from '@/services/http'
+import { httpGet } from '@/services/http'
 
 const { t, locale } = useI18n()
 const router = useRouter()

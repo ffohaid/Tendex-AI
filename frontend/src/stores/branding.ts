@@ -96,7 +96,7 @@ export const useBrandingStore = defineStore('branding', () => {
       applyBrandingToDocument()
       persistBranding()
     } catch (err) {
-      error.value = 'Failed to load tenant branding'
+      error.value = 'تعذر تحميل إعدادات العلامة التجارية'
       // Apply defaults on error
       resetToDefaults()
     } finally {

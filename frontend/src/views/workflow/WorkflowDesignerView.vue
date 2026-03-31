@@ -13,11 +13,11 @@
  * Uses a custom canvas implementation (no external dependency).
  * All data fetched dynamically from APIs.
  */
-import { ref, reactive, computed, onMounted, watch } from 'vue'
+import { ref, reactive, computed, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRoute, useRouter } from 'vue-router'
 
-const { t } = useI18n()
+const { t, locale } = useI18n()
 const route = useRoute()
 const router = useRouter()
 
@@ -183,7 +183,7 @@ async function saveWorkflow(): Promise<void> {
   }
 }
 
-async function loadWorkflow(id: string): Promise<void> {
+async function loadWorkflow(_id: string): Promise<void> {
   isLoading.value = true
   try {
     /* API call would go here */
@@ -463,9 +463,9 @@ onMounted(() => {
             <div>
               <label class="mb-1 block text-xs font-medium text-secondary-600">{{ t('workflow.nodeProperties.escalation') }}</label>
               <select v-model="selectedNode.config.escalationAction" class="input text-sm">
-                <option value="notify_manager">Notify Manager</option>
-                <option value="auto_approve">Auto Approve</option>
-                <option value="escalate_up">Escalate Up</option>
+                <option value="notify_manager">{{ locale === "ar" ? "إشعار المدير" : "Notify Manager" }}</option>
+                <option value="auto_approve">{{ locale === "ar" ? "موافقة تلقائية" : "Auto Approve" }}</option>
+                <option value="escalate_up">{{ locale === "ar" ? "تصعيد" : "Escalate Up" }}</option>
               </select>
             </div>
 

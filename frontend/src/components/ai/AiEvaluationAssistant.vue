@@ -10,11 +10,11 @@
  * - Arabic-only output
  * - RAG-enhanced with knowledge base regulations
  */
-import { ref, computed } from 'vue'
+import { ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { httpPost } from '@/services/http'
 
-const { t } = useI18n()
+useI18n() // i18n available for future use
 
 const props = defineProps<{
   competitionId: string
@@ -55,14 +55,6 @@ async function analyzeOffers(): Promise<void> {
   }
 }
 
-function getComplianceColor(status: string): string {
-  const colors: Record<string, string> = {
-    compliant: 'text-success',
-    partially_compliant: 'text-warning',
-    non_compliant: 'text-danger',
-  }
-  return colors[status] || 'text-secondary'
-}
 
 function getComplianceBadge(status: string): string {
   const classes: Record<string, string> = {

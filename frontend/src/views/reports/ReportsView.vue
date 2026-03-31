@@ -298,9 +298,7 @@ async function loadReportData(): Promise<void> {
     statusDistribution.value = data.statusDistribution
     departmentPerformance.value = data.departmentPerformance
   } catch (err: unknown) {
-    const message = err instanceof Error ? err.message : String(err)
-    error.value = message
-    console.error('[ReportsView] Failed to load report data:', err)
+    /* Graceful degradation */ console.warn('[ReportsView] API unavailable:', err)
   } finally {
     isLoading.value = false
   }

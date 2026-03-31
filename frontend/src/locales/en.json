@@ -26,7 +26,11 @@
     "notifications": "Notifications",
     "profile": "Profile",
     "help": "Help",
-    "retry": "Retry"
+    "retry": "Retry",
+    "arabic": "Arabic",
+    "select": "Select",
+    "selectAll": "Select All",
+    "selected": "Selected"
   },
   "auth": {
     "login": "Login",
@@ -242,7 +246,13 @@
       "createCompetition": "Create New Competition",
       "viewReports": "View Reports",
       "aiAssistant": "AI Assistant",
-      "manageCommittees": "Manage Committees"
+      "manageCommittees": "Manage Committees",
+      "createCompetitionSub": "Start a new request",
+      "uploadProposal": "Upload Proposal",
+      "uploadProposalSub": "Add vendor response",
+      "aiAssistantSub": "Ask about proposals",
+      "scoring": "Scoring",
+      "scoringSub": "Evaluate proposals"
     },
     "charts": {
       "monthlyCompetitions": "Monthly Competitions",
@@ -259,7 +269,25 @@
     "tabs": {
       "pendingTasks": "Pending Tasks",
       "myCommittees": "My Committees"
-    }
+    },
+    "welcomeBack": "Welcome back!",
+    "createNewRfp": "Create New RFP",
+    "recentRfps": "Recent RFPs",
+    "noRfpsYet": "No RFPs yet",
+    "noRfpsDescription": "Start by creating your first RFP to begin managing proposals and evaluations.",
+    "createFirstRfp": "Create Your First RFP",
+    "aiInsightsDescription": "Create your first RFP to unlock AI-powered proposal analysis and scoring.",
+    "startAiChat": "Start AI Chat",
+    "gettingStarted": {
+      "title": "Getting Started",
+      "step1": "Create an RFP",
+      "step1Desc": "Define your requirements and evaluation criteria",
+      "step2": "Collect Proposals",
+      "step2Desc": "Upload vendor proposals for AI analysis",
+      "step3": "Evaluate & Score",
+      "step3Desc": "Use AI-powered scoring to find the best fit"
+    },
+    "aiInsights": "AI Insights"
   },
   "rfp": {
     "titles": {
@@ -492,7 +520,35 @@
     "createFromTemplate": "Create from Template",
     "copyCompetition": "Copy Competition",
     "semanticEditor": "Smart Editor",
-    "aiGenerate": "AI Generate"
+    "aiGenerate": "AI Generate",
+    "methodSelection": {
+      "title": "Create New Specifications Booklet",
+      "subtitle": "Choose how to create your specifications booklet",
+      "fromTemplate": "From Template",
+      "fromTemplateDesc": "Start with a pre-built template and customize it",
+      "uploadExtract": "Upload & Extract",
+      "uploadExtractDesc": "Upload a document and let AI extract the RFP content",
+      "fromScratch": "From Scratch",
+      "fromScratchDesc": "Create a blank RFP and fill in all details manually",
+      "templateFeature1": "Visual editor with live preview",
+      "templateFeature2": "AI-powered data extraction",
+      "templateFeature3": "Includes your organization branding",
+      "templateFeature4": "Fastest way to create an RFP",
+      "uploadFeature1": "PDF and Word supported",
+      "uploadFeature2": "AI-powered extraction",
+      "uploadFeature3": "Quick import of existing RFPs",
+      "scratchFeature1": "Full control over content",
+      "scratchFeature2": "AI suggestions available",
+      "scratchFeature3": "Best for unique projects",
+      "newBadge": "New",
+      "startWithTemplates": "Start with Template Editor",
+      "backToList": "Back to RFP list",
+      "dropHere": "Click to upload or drag and drop",
+      "maxSize": "up to 20MB",
+      "browseFiles": "Browse Files",
+      "extracting": "Extracting content with AI...",
+      "extractingDesc": "Analyzing document and extracting data automatically"
+    }
   },
   "evaluation": {
     "searchPlaceholder": "Search by name or competition number...",
@@ -1480,7 +1536,12 @@
         "notes": "Notes",
         "logo": "Logo",
         "primaryColor": "Primary Color",
-        "secondaryColor": "Secondary Color"
+        "secondaryColor": "Secondary Color",
+        "sector": "Sector",
+        "organizationSize": "Organization Size",
+        "defaultLanguage": "Default Language",
+        "aiProvider": "Default AI Provider",
+        "description": "Description"
       },
       "placeholders": {
         "nameAr": "Enter organization name in Arabic",
@@ -1494,6 +1555,24 @@
         "loadFailed": "Failed to load organization data",
         "saveFailed": "Failed to save organization data",
         "brandingSaveFailed": "Failed to save branding"
+      },
+      "defaultSettings": "Default Settings",
+      "sectors": {
+        "government": "Government",
+        "semiGovernment": "Semi-Government",
+        "private": "Private",
+        "nonProfit": "Non-Profit"
+      },
+      "sizes": {
+        "small": "Small (1-10)",
+        "medium": "Medium (11-50)",
+        "large": "Large (51-200)",
+        "enterprise": "Enterprise (200+)"
+      },
+      "aiProviders": {
+        "fast": "Fast AI (Default - Fastest)",
+        "balanced": "Balanced AI",
+        "advanced": "Advanced AI (Most Accurate)"
       }
     },
     "users": {
@@ -1795,49 +1874,54 @@
     }
   },
   "workflow": {
-    "title": "Workflow Designer",
+    "title": "Approval Workflows",
+    "description": "Design and manage approval workflows",
     "designer": "Workflow Designer",
+    "designerDesc": "Design a new approval workflow using drag and drop",
     "list": "Workflow List",
-    "create": "Create New Workflow",
-    "edit": "Edit Workflow",
-    "activate": "Activate",
-    "deactivate": "Deactivate",
-    "save": "Save",
-    "saveDraft": "Save as Draft",
-    "preview": "Preview",
-    "delete": "Delete",
+    "listDesc": "View and manage all approval workflows",
+    "createNew": "Create New Workflow",
     "name": "Workflow Name",
-    "nameAr": "Name (Arabic)",
-    "nameEn": "Name (English)",
-    "description": "Design and manage workflow and approval paths",
-    "status": {
-      "draft": "Draft",
-      "published": "Published",
-      "archived": "Archived"
-    },
+    "stages": "Stages",
+    "approvers": "Approvers",
+    "sla": "SLA",
+    "active": "Active",
+    "draft": "Draft",
+    "noWorkflows": "No workflows yet",
+    "noWorkflowsDesc": "Create your first approval workflow to organize approval processes",
+    "addStage": "Add Stage",
+    "stageName": "Stage Name",
+    "stageType": "Stage Type",
+    "approval": "Approval",
+    "review": "Review",
+    "notification": "Notification",
+    "condition": "Condition",
+    "save": "Save Workflow",
+    "publish": "Publish Workflow",
+    "create": "Create Workflow",
+    "edit": "Edit Workflow",
+    "empty": "No workflows yet",
+    "emptyDescription": "Create your first approval workflow to organize approval processes",
+    "saveDraft": "Save as Draft",
+    "nameAr": "Workflow Name (Arabic)",
+    "nameEn": "Workflow Name (English)",
     "nodes": {
       "start": "Start",
       "end": "End",
       "approval": "Approval",
-      "conditional": "Conditional Branch",
-      "parallel": "Parallel Execution"
+      "conditional": "Conditional",
+      "parallel": "Parallel"
     },
     "nodeProperties": {
       "stageName": "Stage Name",
-      "approver": "Approver",
       "approverType": "Approver Type",
-      "user": "User",
       "role": "Role",
+      "user": "User",
       "committee": "Committee",
-      "sla": "SLA Duration",
+      "sla": "SLA",
       "hours": "Hours",
-      "days": "Days",
-      "escalation": "Escalation Action",
-      "actions": "Available Actions",
-      "approve": "Approve",
-      "reject": "Reject",
-      "return": "Return",
-      "suspend": "Suspend"
+      "escalation": "Escalation",
+      "actions": "Actions"
     },
     "toolbar": {
       "addNode": "Add Node",
@@ -1846,162 +1930,124 @@
       "fitView": "Fit View",
       "minimap": "Minimap"
     },
-    "empty": "No approval workflows",
-    "emptyDescription": "Start by creating a new approval workflow to organize your approval processes",
-    "listTitle": "Workflow Templates",
-    "createNew": "Create New Template",
-    "stages": "Stages",
-    "transitions": "Transitions",
-    "conditions": "Conditions",
-    "actions": "Actions",
-    "slaHours": "SLA Hours",
-    "autoEscalation": "Auto Escalation",
-    "parallelApproval": "Parallel Approval",
-    "sequentialApproval": "Sequential Approval",
-    "addStage": "Add Stage",
-    "addTransition": "Add Transition",
-    "saveTemplate": "Save Template",
-    "publishTemplate": "Publish Template",
-    "templateName": "Template Name",
-    "templateDescription": "Template Description",
-    "stageTypes": {
-      "approval": "Approval",
-      "review": "Review",
-      "task": "Task",
-      "notification": "Notification",
-      "condition": "Condition"
-    },
-    "noTemplates": "No workflow templates"
+    "activate": "Active",
+    "deactivate": "Inactive"
   },
   "taskCenter": {
-    "title": "Unified Task Center",
-    "subtitle": "All tasks assigned to you in one place",
+    "title": "Task Center",
+    "description": "All tasks and approvals assigned to you in one place",
+    "pending": "Pending",
+    "inProgress": "In Progress",
+    "completed": "Completed",
+    "overdue": "Overdue",
+    "all": "All",
+    "highPriority": "High Priority",
+    "mediumPriority": "Medium Priority",
+    "lowPriority": "Low Priority",
+    "dueDate": "Due Date",
+    "assignedBy": "Assigned By",
+    "noTasks": "No tasks yet",
+    "noTasksDesc": "Tasks and approvals assigned to you will appear here",
+    "takeAction": "Take Action",
+    "approve": "Approve",
+    "reject": "Reject",
+    "delegate": "Delegate",
+    "subtitle": "All tasks and approvals assigned to you in one place",
+    "empty": "No tasks yet",
+    "emptyDescription": "Tasks and approvals will appear here when assigned to you",
     "filters": {
       "all": "All",
       "approval": "Approvals",
       "evaluation": "Evaluations",
       "inquiry": "Inquiries",
-      "review": "Reviews",
-      "pending": "Pending",
-      "in_progress": "In Progress",
-      "completed": "Completed",
-      "overdue": "Overdue"
-    },
-    "sortBy": {
-      "priority": "Priority",
-      "deadline": "Deadline",
-      "type": "Type",
-      "date": "Date"
-    },
-    "sla": {
-      "remaining": "Remaining",
-      "overdue": "Overdue",
-      "onTime": "On Time",
-      "approaching": "Approaching"
+      "review": "Reviews"
     },
     "actions": {
       "approve": "Approve",
       "reject": "Reject",
-      "return": "Return",
-      "view": "View Details"
+      "view": "View"
     },
-    "empty": "No pending tasks",
-    "emptyDescription": "All tasks assigned to you have been completed",
-    "description": "All tasks and approvals assigned to you",
-    "pendingTasks": "Pending Tasks",
-    "completedTasks": "Completed Tasks",
-    "overdueTasks": "Overdue Tasks",
-    "avgCompletion": "Avg. Completion Time",
-    "priority": {
-      "urgent": "Urgent",
-      "high": "High",
-      "medium": "Medium",
-      "low": "Low"
+    "sla": {
+      "overdue": "Overdue",
+      "onTime": "On Time",
+      "approaching": "Approaching"
     },
-    "noTasks": "No tasks at the moment",
-    "dueDate": "Due Date",
-    "assignedBy": "Assigned By",
-    "takeAction": "Take Action"
+    "sortBy": {
+      "date": "Date",
+      "priority": "Priority",
+      "deadline": "Deadline",
+      "type": "Type"
+    }
   },
   "knowledgeBase": {
     "title": "Knowledge Base",
-    "subtitle": "Reference documents, regulations, and policies",
+    "description": "Manage AI-indexed documents and files",
+    "uploadDoc": "Upload Document",
+    "searchDocs": "Search documents...",
+    "allDocs": "All Documents",
+    "indexed": "Indexed",
+    "pending": "Pending Indexing",
+    "failed": "Indexing Failed",
+    "noDocs": "No documents yet",
+    "noDocsDesc": "Upload your documents to build a smart knowledge base",
+    "fileName": "File Name",
+    "fileSize": "File Size",
+    "uploadDate": "Upload Date",
+    "indexStatus": "Index Status",
+    "chunks": "Chunks",
+    "reindex": "Re-index",
+    "delete": "Delete",
+    "subtitle": "Manage AI-indexed documents and knowledge resources",
     "upload": "Upload Document",
-    "search": "Search Knowledge Base",
+    "search": "Search documents...",
+    "empty": "No documents yet",
+    "emptyDescription": "Upload your documents to build a smart knowledge base that AI can search through",
     "categories": {
       "regulations": "Regulations",
       "templates": "Templates",
-      "circulars": "Circulars & Decisions",
+      "circulars": "Circulars",
       "previousCompetitions": "Previous Competitions",
-      "guides": "User Guides",
-      "all": "All",
-      "guidelines": "Guidelines",
-      "previous": "Previous Competitions"
+      "guides": "Guides"
     },
     "document": {
-      "name": "Document Name",
-      "category": "Category",
-      "uploadDate": "Upload Date",
-      "size": "Size",
-      "status": "Status",
       "indexed": "Indexed",
-      "pending": "Pending Indexing",
-      "failed": "Indexing Failed"
-    },
-    "empty": "No documents in the knowledge base",
-    "emptyDescription": "Start by uploading reference documents to build a comprehensive knowledge base",
-    "description": "Manage AI-indexed documents and regulations",
-    "totalDocuments": "Total Documents",
-    "indexedDocuments": "Indexed Documents",
-    "pendingIndexing": "Pending Indexing",
-    "totalChunks": "Total Chunks",
-    "uploadDocument": "Upload Document",
-    "searchDocuments": "Search Documents",
-    "status": {
-      "indexed": "Indexed",
-      "processing": "Processing",
+      "pending": "Pending",
       "failed": "Failed"
-    }
+    },
+    "dragDrop": "Drag & drop files here or",
+    "browse": "browse",
+    "uploading": "Uploading...",
+    "maxSize": "PDF, DOCX, XLSX (max 50MB)",
+    "retry": "Retry"
   },
   "permissions": {
-    "title": "4D Permissions Matrix",
-    "subtitle": "Multi-dimensional permissions management",
-    "dimensions": {
-      "competition": "Competition",
-      "stage": "Stage",
-      "committeeRole": "Committee Role",
-      "userRole": "User Role",
-      "committee": "Committee/Team",
-      "role": "Role"
-    },
-    "roles": {
-      "systemAdmin": "System Admin",
-      "competitionManager": "Competition Manager",
-      "committeeMember": "Committee Member",
-      "reviewer": "Reviewer",
-      "auditor": "Auditor",
-      "committeeChair": "Committee Chair",
-      "secretary": "Secretary",
-      "observer": "Observer"
-    },
-    "actions": {
-      "view": "View",
-      "create": "Create",
-      "edit": "Edit",
-      "delete": "Delete",
-      "approve": "Approve",
-      "export": "Export",
-      "reject": "Reject"
-    },
+    "title": "Permissions Matrix",
+    "description": "Manage user permissions by role, phase, and committee",
+    "role": "Role",
+    "phase": "Phase",
+    "committee": "Committee",
+    "competition": "Competition",
+    "view": "View",
+    "edit": "Edit",
+    "approve": "Approve",
+    "delete": "Delete",
+    "export": "Export",
+    "saveChanges": "Save Changes",
+    "noChanges": "No changes",
+    "selectRole": "Select Role",
+    "selectPhase": "Select Phase",
+    "subtitle": "Manage user permissions by role, stage, committee, and competition",
     "templates": "Permission Templates",
     "effectivePermissions": "Effective Permissions",
-    "saveTemplate": "Save as Template",
-    "applyTemplate": "Apply Template",
-    "description": "Manage permissions by competition, stage, committee, and role",
-    "saveMatrix": "Save Matrix",
-    "resetToDefault": "Reset to Default",
-    "bulkGrant": "Bulk Grant",
-    "bulkRevoke": "Bulk Revoke"
+    "dimensions": {
+      "userRole": "User Role",
+      "stage": "Stage",
+      "committeeRole": "Committee Role",
+      "competition": "Competition"
+    },
+    "actions": {
+      "view": "View"
+    }
   },
   "operatorAi": {
     "title": "AI Settings",
@@ -2023,33 +2069,83 @@
   },
   "notifications": {
     "title": "Notifications",
+    "description": "Manage notifications and alert preferences",
+    "all": "All",
+    "unread": "Unread",
+    "read": "Read",
     "markAllRead": "Mark All as Read",
     "noNotifications": "No notifications",
-    "newTask": "New Task",
-    "approvalRequired": "Approval Required",
-    "slaEscalation": "SLA Escalation",
-    "newInquiry": "New Inquiry",
-    "competitionUpdate": "Competition Update",
+    "noNotificationsDesc": "New notifications and alerts will appear here",
     "preferences": "Notification Preferences",
-    "inApp": "In-App",
     "email": "Email",
-    "viewAll": "View All",
-    "types": {
-      "task": "New Task",
-      "approval": "Approval Required",
-      "sla_escalation": "SLA Escalation",
-      "inquiry": "New Inquiry",
-      "competition_update": "Competition Update",
-      "system": "System Notification"
-    }
+    "inApp": "In-App",
+    "sms": "SMS",
+    "type": "Notification Type"
   },
   "operator": {
-    "portal": "Operator Portal",
     "aiSettings": "AI Settings",
+    "aiSettingsDesc": "Manage AI provider settings and API keys",
     "systemHealth": "System Health",
+    "systemHealthDesc": "Real-time monitoring of all system services and resources",
     "consumption": "Consumption Monitoring",
+    "consumptionDesc": "Track AI usage and resource consumption across tenants",
     "subscriptions": "Plans & Subscriptions",
-    "tenantManagement": "Tenant Management",
-    "featureFlags": "Feature Flags"
+    "subscriptionsDesc": "Manage tenant subscriptions and plans",
+    "provider": "Provider",
+    "apiKey": "API Key",
+    "endpoint": "Endpoint",
+    "model": "Model",
+    "testConnection": "Test Connection",
+    "saveSettings": "Save Settings",
+    "connectionSuccess": "Connection successful",
+    "connectionFailed": "Connection failed",
+    "features": "Features",
+    "semanticSearch": "Semantic Search",
+    "arabicGeneration": "Arabic Text Generation",
+    "enabled": "Enabled",
+    "disabled": "Disabled",
+    "healthy": "Healthy",
+    "degraded": "Degraded",
+    "down": "Down",
+    "uptime": "Uptime",
+    "responseTime": "Response Time",
+    "requestsPerMin": "Requests/min",
+    "errorRate": "Error Rate",
+    "totalTokens": "Total Tokens",
+    "totalCost": "Total Cost",
+    "activeSubscriptions": "Active Subscriptions",
+    "totalTenants": "Total Tenants",
+    "plan": "Plan",
+    "status": "Status",
+    "expiresAt": "Expires At"
+  },
+  "competition": {
+    "status": {
+      "active": "Active",
+      "pending": "Pending",
+      "completed": "Completed",
+      "draft": "Draft",
+      "cancelled": "Cancelled"
+    }
+  },
+  "reportGenerator": {
+    "title": "Export Reports",
+    "description": "Generate and download formatted reports",
+    "competitionSummary": "Competition Summary",
+    "competitionSummaryDesc": "Overview of all competitions with status and timelines",
+    "compliance": "Compliance Report",
+    "complianceDesc": "Regulatory compliance status and audit trail",
+    "financialAnalysis": "Financial Analysis",
+    "financialAnalysisDesc": "Financial analysis of competitions and offers",
+    "offerComparison": "Offer Comparison",
+    "offerComparisonDesc": "Side-by-side comparison of submitted offers",
+    "generate": "Generate Report",
+    "export": "Export",
+    "pdf": "PDF",
+    "excel": "Excel",
+    "selectType": "Select Report Type",
+    "dateRange": "Date Range",
+    "from": "From",
+    "to": "To"
   }
 }

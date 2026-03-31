@@ -22,7 +22,7 @@ const isCollapsed = computed(() => appStore.sidebarCollapsed)
     <div
       class="flex min-h-screen flex-col pt-16 transition-all duration-300"
       :style="{
-        paddingInlineStart: isCollapsed ? '4rem' : '16rem',
+        paddingInlineStart: isCollapsed ? '4rem' : '20rem',
       }"
     >
       <!-- Page content -->

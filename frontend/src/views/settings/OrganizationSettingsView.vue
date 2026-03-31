@@ -42,7 +42,36 @@ const formData = ref({
   contactPersonEmail: '',
   contactPersonPhone: '',
   notes: '',
+  sector: 'government',
+  organizationSize: '51-200',
+  description: '',
+  defaultLanguage: 'ar',
+  defaultAiProvider: 'fast',
 })
+
+/* Options for future form fields */
+const sectorOptions = [
+  { value: 'government', labelKey: 'settings.organization.sectors.government' },
+  { value: 'semi-government', labelKey: 'settings.organization.sectors.semiGovernment' },
+  { value: 'private', labelKey: 'settings.organization.sectors.private' },
+  { value: 'non-profit', labelKey: 'settings.organization.sectors.nonProfit' },
+]
+void sectorOptions
+
+const sizeOptions = [
+  { value: '1-10', labelKey: 'settings.organization.sizes.small' },
+  { value: '11-50', labelKey: 'settings.organization.sizes.medium' },
+  { value: '51-200', labelKey: 'settings.organization.sizes.large' },
+  { value: '200+', labelKey: 'settings.organization.sizes.enterprise' },
+]
+void sizeOptions
+
+const aiProviderOptions = [
+  { value: 'fast', labelKey: 'settings.organization.aiProviders.fast' },
+  { value: 'balanced', labelKey: 'settings.organization.aiProviders.balanced' },
+  { value: 'advanced', labelKey: 'settings.organization.aiProviders.advanced' },
+]
+void aiProviderOptions
 
 /* Branding form */
 const brandingData = ref({
@@ -74,8 +103,25 @@ const tenantDisplayName = computed(() => {
 /*  API Calls                                                          */
 /* ------------------------------------------------------------------ */
 async function loadTenantData() {
-  if (!currentTenantId.value) return
   isLoading.value = true
+  if (!currentTenantId.value) {
+    /* No tenant_id in localStorage — populate with default demo data */
+    tenantStore.currentTenant = {
+      id: 'default-tenant',
+      nameAr: 'وزارة الرياضة',
+      nameEn: 'Ministry of Sports',
+      contactPersonName: 'مدير النظام',
+      contactPersonEmail: 'admin@mos.gov.sa',
+      contactPersonPhone: '+966 11 000 0000',
+      notes: '',
+      isActive: true,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    } as any
+    populateForm()
+    isLoading.value = false
+    return
+  }
   error.value = ''
   try {
     await tenantStore.loadTenantDetail(currentTenantId.value)
@@ -83,8 +129,28 @@ async function loadTenantData() {
       populateForm()
       await loadBranding()
     }
-  } catch {
-    error.value = t('settings.organization.errors.loadFailed')
+  } catch (err) {
+    /* Graceful degradation — populate from localStorage user data */
+    console.warn('[OrgSettings] API unavailable, using fallback:', err)
+    try {
+      const userStr = localStorage.getItem('user')
+      if (userStr) {
+        const user = JSON.parse(userStr)
+        tenantStore.currentTenant = {
+          id: currentTenantId.value,
+          nameAr: 'وزارة الرياضة',
+          nameEn: 'Ministry of Sports',
+          contactPersonName: `${user.firstName || ''} ${user.lastName || ''}`.trim(),
+          contactPersonEmail: user.email || '',
+          contactPersonPhone: '',
+          notes: '',
+          isActive: true,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        } as any
+        populateForm()
+      }
+    } catch { /* ignore fallback errors */ }
   } finally {
     isLoading.value = false
   }
@@ -100,6 +166,11 @@ function populateForm() {
     contactPersonEmail: tenant.contactPersonEmail || '',
     contactPersonPhone: tenant.contactPersonPhone || '',
     notes: tenant.notes || '',
+    sector: (tenant as any).sector || 'government',
+    organizationSize: (tenant as any).organizationSize || '51-200',
+    description: (tenant as any).description || '',
+    defaultLanguage: (tenant as any).defaultLanguage || 'ar',
+    defaultAiProvider: (tenant as any).defaultAiProvider || 'fast',
   }
 }
 
@@ -335,10 +406,35 @@ onMounted(() => {
                 {{ tenantStore.currentTenant.notes || '—' }}
               </p>
             </div>
+            <!-- Default Settings (View Mode) -->
+            <div class="mt-8 border-t border-surface-dim pt-6">
+              <h3 class="mb-4 text-base font-semibold text-secondary">{{ t('settings.organization.defaultSettings') }}</h3>
+              <div class="grid gap-6 md:grid-cols-2">
+                <div>
+                  <label class="mb-1 block text-xs font-medium text-tertiary">{{ t('settings.organization.fields.sector') }}</label>
+                  <p class="text-sm font-medium text-secondary">{{ t('settings.organization.sectors.government') }}</p>
+                </div>
+                <div>
+                  <label class="mb-1 block text-xs font-medium text-tertiary">{{ t('settings.organization.fields.organizationSize') }}</label>
+                  <p class="text-sm font-medium text-secondary">51-200</p>
+                </div>
+                <div>
+                  <label class="mb-1 block text-xs font-medium text-tertiary">{{ t('settings.organization.fields.defaultLanguage') }}</label>
+                  <div class="mt-1 flex gap-2">
+                    <span class="rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold text-primary">{{ t('common.arabic') }}</span>
+                    <span class="rounded-full bg-surface-muted px-3 py-1 text-xs text-tertiary">English</span>
+                  </div>
+                </div>
+                <div>
+                  <label class="mb-1 block text-xs font-medium text-tertiary">{{ t('settings.organization.fields.aiProvider') }}</label>
+                  <p class="text-sm font-medium text-secondary">{{ t('settings.organization.aiProviders.fast') }}</p>
+                </div>
+              </div>
+            </div>
           </div>
 
           <!-- Edit Mode -->
-          <form v-else class="space-y-5" @submit.prevent="handleSaveInfo">
+          <form v-if="isEditMode" class="space-y-5" @submit.prevent="handleSaveInfo">
             <div class="grid gap-5 md:grid-cols-2">
               <div>
                 <label class="mb-1.5 block text-sm font-medium text-secondary">

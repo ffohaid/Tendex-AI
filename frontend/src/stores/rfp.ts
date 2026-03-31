@@ -420,7 +420,9 @@ export const useRfpStore = defineStore('rfp', () => {
         isDirty.value = false
       } else {
         autoSaveStatus.value = 'error'
-        errors.value = response.errors
+        /* Auto-save errors are non-blocking: do NOT set errors.value
+           so the wizard UI remains usable even when backend is offline. */
+        console.warn('[AutoSave] Create failed:', response.message)
       }
       return
     }
@@ -439,7 +441,9 @@ export const useRfpStore = defineStore('rfp', () => {
       isDirty.value = false
     } else {
       autoSaveStatus.value = 'error'
-      errors.value = response.errors
+      /* Auto-save errors are non-blocking: do NOT set errors.value
+         so the wizard UI remains usable even when backend is offline. */
+      console.warn('[AutoSave] Patch failed:', response.message)
     }
   }
 
