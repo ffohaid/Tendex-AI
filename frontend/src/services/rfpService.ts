@@ -735,28 +735,54 @@ export async function addBoqItem(
   )
 }
 
-/** Save all BOQ items (add new ones) */
+/** Save all BOQ items using batch endpoint (single transaction) */
 export async function saveAllBoqItems(
   competitionId: string,
   items: BoqItem[],
+  clearExisting: boolean = false,
 ): Promise<ApiResponse<void>> {
   try {
-    for (let i = 0; i < items.length; i++) {
-      const item = items[i]
-      // Skip items that already have a valid UUID (already saved)
-      if (item.id && item.id.match(/^[0-9a-f]{8}-/)) {
-        continue
-      }
-      const result = await addBoqItem(competitionId, item, i)
-      if (!result.success) {
-        return {
-          data: undefined as unknown as void,
-          success: false,
-          message: result.message,
-          errors: result.errors,
-        }
+    // Filter out items that are already saved (have valid UUID)
+    const newItems = items.filter(
+      (item) => !item.id || !item.id.match(/^[0-9a-f]{8}-/),
+    )
+
+    // If clearExisting is true, send all items (even saved ones) for re-creation
+    const itemsToSend = clearExisting ? items : newItems
+
+    if (itemsToSend.length === 0) {
+      return { data: undefined as unknown as void, success: true, message: '', errors: [] }
+    }
+
+    const batchPayload = {
+      items: itemsToSend.map((item, index) => ({
+        itemNumber: String(index + 1),
+        descriptionAr: item.description,
+        descriptionEn: item.description,
+        unit: unitOfMeasureToBackend[item.unit] ?? 0,
+        quantity: item.quantity,
+        estimatedUnitPrice: item.estimatedPrice || null,
+        category: item.category || null,
+      })),
+      clearExisting,
+    }
+
+    const result = await apiCall(() =>
+      httpPost<Record<string, unknown>[]>(
+        `${BASE_URL}/${competitionId}/boq-items/batch`,
+        batchPayload,
+      ),
+    )
+
+    if (!result.success) {
+      return {
+        data: undefined as unknown as void,
+        success: false,
+        message: result.message,
+        errors: result.errors,
       }
     }
+
     return { data: undefined as unknown as void, success: true, message: '', errors: [] }
   } catch (error: unknown) {
     return {

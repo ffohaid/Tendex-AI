@@ -2,6 +2,7 @@ using System.Security.Claims;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
 using TendexAI.Application.Features.Rfp.Commands.AddBoqItem;
+using TendexAI.Application.Features.Rfp.Commands.BatchAddBoqItems;
 using TendexAI.Application.Features.Rfp.Commands.AddEvaluationCriterion;
 using TendexAI.Application.Features.Rfp.Commands.AddRfpSection;
 using TendexAI.Application.Features.Rfp.Commands.AutoSaveCompetition;
@@ -112,6 +113,12 @@ public static class CompetitionEndpoints
             .WithName("AddBoqItem")
             .WithSummary("Add a new BOQ item to the competition")
             .Produces<BoqItemDto>(StatusCodes.Status201Created)
+            .Produces<ProblemDetails>(StatusCodes.Status400BadRequest);
+
+        group.MapPost("/{competitionId:guid}/boq-items/batch", BatchAddBoqItemsAsync)
+            .WithName("BatchAddBoqItems")
+            .WithSummary("Add multiple BOQ items in a single transaction")
+            .Produces<IReadOnlyList<BoqItemDto>>(StatusCodes.Status201Created)
             .Produces<ProblemDetails>(StatusCodes.Status400BadRequest);
 
         // ----- Evaluation Criteria -----
@@ -404,6 +411,36 @@ public static class CompetitionEndpoints
             : Results.Problem(result.Error, statusCode: 400);
     }
 
+    private static async Task<IResult> BatchAddBoqItemsAsync(
+        Guid competitionId,
+        [FromBody] BatchAddBoqItemsRequest request,
+        ISender mediator,
+        HttpContext httpContext)
+    {
+        var userId = GetCurrentUserId(httpContext);
+
+        var items = request.Items.Select(i => new BatchBoqItemInput(
+            ItemNumber: i.ItemNumber,
+            DescriptionAr: i.DescriptionAr,
+            DescriptionEn: i.DescriptionEn,
+            Unit: i.Unit,
+            Quantity: i.Quantity,
+            EstimatedUnitPrice: i.EstimatedUnitPrice,
+            Category: i.Category)).ToList();
+
+        var command = new BatchAddBoqItemsCommand(
+            CompetitionId: competitionId,
+            Items: items,
+            ClearExisting: request.ClearExisting,
+            CreatedByUserId: userId.ToString());
+
+        var result = await mediator.Send(command);
+
+        return result.IsSuccess
+            ? Results.Created($"/api/v1/competitions/{competitionId}/boq-items", result.Value)
+            : Results.Problem(result.Error, statusCode: 400);
+    }
+
     private static async Task<IResult> AddEvaluationCriterionAsync(
         Guid competitionId,
         [FromBody] AddEvaluationCriterionRequest request,
@@ -525,6 +562,10 @@ public sealed record AddBoqItemRequest(
     decimal Quantity,
     decimal? EstimatedUnitPrice,
     string? Category);
+
+public sealed record BatchAddBoqItemsRequest(
+    IReadOnlyList<AddBoqItemRequest> Items,
+    bool ClearExisting = false);
 
 public sealed record AddEvaluationCriterionRequest(
     string NameAr,
