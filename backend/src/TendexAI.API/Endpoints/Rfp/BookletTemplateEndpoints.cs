@@ -1,6 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using TendexAI.Application.Common.Interfaces;
 using TendexAI.Domain.Entities.Rfp;
 using TendexAI.Infrastructure.Services;
 using TendexAI.Infrastructure.Persistence;
@@ -49,13 +48,11 @@ public static class BookletTemplateEndpoints
         [FromQuery] string? search,
         [FromQuery] int page,
         [FromQuery] int pageSize,
-        [FromServices] ITenantDbContext db,
+        [FromServices] TenantDbContext dbCtx,
         HttpContext httpContext)
     {
         if (page < 1) page = 1;
         if (pageSize < 1) pageSize = 20;
-
-        var dbCtx = (TenantDbContext)db;
         var query = dbCtx.BookletTemplates
             .Where(t => t.IsActive)
             .AsNoTracking();
@@ -93,9 +90,8 @@ public static class BookletTemplateEndpoints
 
     private static async Task<IResult> GetBookletTemplateByIdAsync(
         Guid id,
-        [FromServices] ITenantDbContext db)
+        [FromServices] TenantDbContext dbCtx)
     {
-        var dbCtx = (TenantDbContext)db;
         var template = await dbCtx.BookletTemplates
             .Include(t => t.Sections)
                 .ThenInclude(s => s.Blocks)
@@ -154,7 +150,7 @@ public static class BookletTemplateEndpoints
         [FromForm] string? descriptionEn,
         [FromForm] string category,
         [FromForm] string? sourceReference,
-        [FromServices] ITenantDbContext db,
+        [FromServices] TenantDbContext dbCtx,
         HttpContext httpContext)
     {
         if (file is null || file.Length == 0)
@@ -165,8 +161,6 @@ public static class BookletTemplateEndpoints
 
         var userId = GetCurrentUserId(httpContext);
         var tenantId = GetTenantId(httpContext);
-
-        var dbCtx = (TenantDbContext)db;
 
         // Parse the DOCX file
         TemplateParseResult parseResult;
@@ -244,10 +238,9 @@ public static class BookletTemplateEndpoints
     private static async Task<IResult> CreateBookletFromTemplateAsync(
         Guid id,
         [FromBody] CreateBookletFromTemplateRequest request,
-        [FromServices] ITenantDbContext db,
+        [FromServices] TenantDbContext dbCtx,
         HttpContext httpContext)
     {
-        var dbCtx = (TenantDbContext)db;
         var template = await dbCtx.BookletTemplates
             .Include(t => t.Sections)
                 .ThenInclude(s => s.Blocks)
@@ -311,10 +304,9 @@ public static class BookletTemplateEndpoints
 
     private static async Task<IResult> DeleteBookletTemplateAsync(
         Guid id,
-        [FromServices] ITenantDbContext db,
+        [FromServices] TenantDbContext dbCtx,
         HttpContext httpContext)
     {
-        var dbCtx = (TenantDbContext)db;
         var template = await dbCtx.BookletTemplates.FindAsync(id);
         if (template is null)
             return Results.NotFound(new { error = "القالب غير موجود" });
