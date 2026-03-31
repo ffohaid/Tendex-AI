@@ -232,7 +232,7 @@ async function generateWithAi(action: string) {
   aiResult.value = ''
 
   try {
-    const response = await httpPost<{ result: string }>('/v1/ai/text/assist', {
+    const response = await httpPost<{ isSuccess: boolean; generatedText: string; errorMessage?: string }>('/v1/ai/text/assist', {
       action,
       currentText: block.editedContent,
       fieldName: getActiveSectionTitle(),
@@ -246,7 +246,11 @@ async function generateWithAi(action: string) {
       customPrompt: action === 'custom' ? aiPrompt.value : undefined,
       language: 'ar'
     })
-    aiResult.value = response.result
+    if (response.isSuccess && response.generatedText) {
+      aiResult.value = response.generatedText
+    } else {
+      aiError.value = response.errorMessage || (locale.value === 'ar' ? 'فشل في توليد المحتوى' : 'Failed to generate content')
+    }
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : String(err)
     aiError.value = locale.value === 'ar'
