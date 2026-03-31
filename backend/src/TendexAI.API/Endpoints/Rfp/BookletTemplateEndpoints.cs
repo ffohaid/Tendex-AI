@@ -40,6 +40,14 @@ public static class BookletTemplateEndpoints
             .WithName("DeleteBookletTemplate")
             .WithSummary("Deactivate a booklet template");
 
+        group.MapGet("/competition/{competitionId:guid}/blocks", GetBookletBlocksByCompetitionAsync)
+            .WithName("GetBookletBlocksByCompetition")
+            .WithSummary("Get booklet template blocks with color types for a competition created from a template");
+
+        group.MapPut("/competition/{competitionId:guid}/blocks", SaveBookletBlocksAsync)
+            .WithName("SaveBookletBlocks")
+            .WithSummary("Save edited booklet blocks for a competition");
+
         return app;
     }
 
@@ -318,6 +326,140 @@ public static class BookletTemplateEndpoints
         return Results.Ok(new { success = true });
     }
 
+    /// <summary>
+    /// Returns the original template blocks with color types for a competition
+    /// that was created from a booklet template. The frontend editor uses this
+    /// to display blocks with proper EXPRO color coding.
+    /// </summary>
+    private static async Task<IResult> GetBookletBlocksByCompetitionAsync(
+        Guid competitionId,
+        [FromServices] TenantDbContext dbCtx)
+    {
+        // Find the competition and its source template
+        var competition = await dbCtx.Competitions
+            .AsNoTracking()
+            .FirstOrDefaultAsync(c => c.Id == competitionId);
+
+        if (competition is null)
+            return Results.NotFound(new { error = "المنافسة غير موجودة" });
+
+        if (competition.SourceTemplateId is null)
+            return Results.BadRequest(new { error = "هذه المنافسة لم تُنشأ من قالب كراسة" });
+
+        // Load the template with sections and blocks
+        var template = await dbCtx.BookletTemplates
+            .Include(t => t.Sections)
+                .ThenInclude(s => s.Blocks)
+            .AsNoTracking()
+            .FirstOrDefaultAsync(t => t.Id == competition.SourceTemplateId);
+
+        if (template is null)
+            return Results.NotFound(new { error = "القالب المصدر غير موجود" });
+
+        // Also load the competition sections to get any user edits
+        var competitionSections = await dbCtx.Set<RfpSection>()
+            .Where(s => s.CompetitionId == competitionId)
+            .AsNoTracking()
+            .OrderBy(s => s.SortOrder)
+            .ToListAsync();
+
+        // Build the response: template blocks grouped by section,
+        // with user edits overlaid from competition sections
+        var result = new BookletEditorDataDto
+        {
+            CompetitionId = competitionId,
+            TemplateId = template.Id,
+            TemplateNameAr = template.NameAr,
+            ProjectNameAr = competition.ProjectNameAr,
+            ProjectNameEn = competition.ProjectNameEn,
+            Sections = template.Sections
+                .OrderBy(s => s.SortOrder)
+                .Select((ts, idx) => {
+                    // Try to match with competition section by sort order
+                    var compSection = competitionSections.Count > idx
+                        ? competitionSections[idx]
+                        : null;
+
+                    return new BookletEditorSectionDto
+                    {
+                        Id = ts.Id,
+                        CompetitionSectionId = compSection?.Id,
+                        TitleAr = ts.TitleAr,
+                        SortOrder = ts.SortOrder,
+                        IsMainSection = ts.IsMainSection,
+                        Blocks = ts.Blocks
+                            .OrderBy(b => b.SortOrder)
+                            .Select(b => new BookletEditorBlockDto
+                            {
+                                Id = b.Id,
+                                SortOrder = b.SortOrder,
+                                OriginalContent = b.ContentAr,
+                                ContentHtml = b.ContentHtml ?? "",
+                                ColorType = b.ColorType.ToString().ToLowerInvariant(),
+                                IsHeading = b.IsHeading,
+                                HasBracketPlaceholders = b.HasBracketPlaceholders,
+                                IsEditable = b.IsEditable
+                            })
+                            .ToList()
+                    };
+                })
+                .ToList()
+        };
+
+        return Results.Ok(result);
+    }
+
+    /// <summary>
+    /// Saves edited block content back to the competition sections.
+    /// Merges all block content per section into the section's ContentHtml.
+    /// </summary>
+    private static async Task<IResult> SaveBookletBlocksAsync(
+        Guid competitionId,
+        [FromBody] SaveBookletBlocksRequest request,
+        [FromServices] TenantDbContext dbCtx,
+        HttpContext httpContext)
+    {
+        var competition = await dbCtx.Competitions
+            .Include(c => c.Sections)
+            .FirstOrDefaultAsync(c => c.Id == competitionId);
+
+        if (competition is null)
+            return Results.NotFound(new { error = "المنافسة غير موجودة" });
+
+        var userId = GetCurrentUserId(httpContext);
+        var sections = competition.Sections.OrderBy(s => s.SortOrder).ToList();
+
+        // Update each section's content from the edited blocks
+        foreach (var editedSection in request.Sections)
+        {
+            var section = sections.FirstOrDefault(s => s.Id == editedSection.CompetitionSectionId);
+            if (section is null) continue;
+
+            // Build HTML from the edited blocks
+            var htmlParts = editedSection.Blocks
+                .OrderBy(b => b.SortOrder)
+                .Select(b => {
+                    var colorClass = b.ColorType switch
+                    {
+                        "fixed" => "expro-fixed",
+                        "editable" => "expro-editable",
+                        "example" => "expro-example",
+                        "guidance" => "expro-guidance",
+                        _ => "expro-fixed"
+                    };
+                    var tag = b.IsHeading ? "h3" : "p";
+                    var encoded = System.Net.WebUtility.HtmlEncode(b.EditedContent);
+                    return $"<{tag} dir=\"rtl\"><span class=\"{colorClass}\" data-color-type=\"{b.ColorType}\">{encoded}</span></{tag}>";
+                });
+
+            section.UpdateContent(string.Join("\n", htmlParts), userId);
+        }
+
+        await dbCtx.SaveChangesAsync();
+
+        return Results.Ok(new { success = true, message = "تم حفظ التعديلات بنجاح" });
+    }
+
     // ═══════════════════════════════════════════════════════════
     //  Helpers
     // ═══════════════════════════════════════════════════════════
@@ -470,3 +612,59 @@ public sealed record CreateBookletFromTemplateRequest(
     string ProjectNameAr,
     string? ProjectNameEn,
     string? DescriptionAr);
+
+// ═══════════════════════════════════════════════════════════
+//  Booklet Editor DTOs
+// ═══════════════════════════════════════════════════════════
+
+public sealed record BookletEditorDataDto
+{
+    public Guid CompetitionId { get; init; }
+    public Guid TemplateId { get; init; }
+    public string TemplateNameAr { get; init; } = "";
+    public string ProjectNameAr { get; init; } = "";
+    public string ProjectNameEn { get; init; } = "";
+    public List<BookletEditorSectionDto> Sections { get; init; } = [];
+}
+
+public sealed record BookletEditorSectionDto
+{
+    public Guid Id { get; init; }
+    public Guid? CompetitionSectionId { get; init; }
+    public string TitleAr { get; init; } = "";
+    public int SortOrder { get; init; }
+    public bool IsMainSection { get; init; }
+    public List<BookletEditorBlockDto> Blocks { get; init; } = [];
+}
+
+public sealed record BookletEditorBlockDto
+{
+    public Guid Id { get; init; }
+    public int SortOrder { get; init; }
+    public string OriginalContent { get; init; } = "";
+    public string ContentHtml { get; init; } = "";
+    public string ColorType { get; init; } = "fixed";
+    public bool IsHeading { get; init; }
+    public bool HasBracketPlaceholders { get; init; }
+    public bool IsEditable { get; init; }
+}
+
+public sealed record SaveBookletBlocksRequest
+{
+    public List<SaveBookletSectionDto> Sections { get; init; } = [];
+}
+
+public sealed record SaveBookletSectionDto
+{
+    public Guid CompetitionSectionId { get; init; }
+    public List<SaveBookletBlockDto> Blocks { get; init; } = [];
+}
+
+public sealed record SaveBookletBlockDto
+{
+    public Guid BlockId { get; init; }
+    public int SortOrder { get; init; }
+    public string EditedContent { get; init; } = "";
+    public string ColorType { get; init; } = "fixed";
+    public bool IsHeading { get; init; }
+}
