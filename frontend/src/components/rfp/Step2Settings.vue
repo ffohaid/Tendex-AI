@@ -26,9 +26,7 @@ const { errors, validate, setFieldValue } = useForm({
   validationSchema: schema,
   initialValues: {
     ...rfpStore.formData.settings,
-    evaluationCriteria: rfpStore.formData.settings.evaluationCriteria.length
-      ? rfpStore.formData.settings.evaluationCriteria
-      : [{ id: String(Date.now()), name: '', weight: 100, description: '', order: 0 }],
+    evaluationCriteria: rfpStore.formData.settings.evaluationCriteria || [],
   },
   validateOnMount: false,
 })

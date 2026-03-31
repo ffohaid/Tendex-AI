@@ -122,7 +122,7 @@ export const settingsSchema = z.object({
 
   evaluationCriteria: z
     .array(evaluationCriterionSchema)
-    .min(1, 'يجب إضافة معيار تقييم واحد على الأقل'),
+    .default([]),
 }).refine(
   (data) => data.technicalWeight + data.financialWeight === 100,
   {
