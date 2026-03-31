@@ -2569,3 +2569,25 @@
 - **ملاحظات للوكيل التالي:** [أي معلومات هامة يجب أن يعرفها الوكيل الذي سيكمل بعدك]
 ```
 ثم قم بتحديث "نسبة الإنجاز" في جدول "حالة السبرنتات" إذا لزم الأمر.
+
+### Login Fix (Sprint 11 - March 31, 2026)
+
+**Issues Found & Fixed:**
+
+1. **Password Hash Mismatch (CRITICAL):**
+   - The bcrypt hash stored in the database for `admin@netaq.pro` did not match the password `Netaq@1234598760`
+   - Generated a new bcrypt hash and updated both `tenant_a86f3588` and `master_platform` databases
+   - Reset `AccessFailedCount` to 0 and cleared `LockoutEnd`
+
+2. **Error Messages in English Instead of Arabic:**
+   - The `extractErrorMessage()` function in `auth.ts` was returning the raw backend error message (`problem.detail`) before checking HTTP status codes
+   - Reordered the logic to prioritize i18n translation keys (e.g., `auth.errors.invalidCredentials`) over raw backend messages
+   - Added new i18n keys: `accountDeactivated`, `accountLocked` in both Arabic and English locales
+
+**Verification:**
+- Login with correct credentials: SUCCESS (redirects to dashboard)
+- Login with wrong password: Shows Arabic error "البريد الإلكتروني أو كلمة المرور غير صحيحة"
+- API endpoint test via curl: Returns valid JWT access token
+
+**Commits:**
+- `49b2089` - fix: prioritize i18n error keys over raw backend messages in login flow
