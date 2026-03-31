@@ -1,3 +1,4 @@
+using System.Text.RegularExpressions;
 using TendexAI.Application.Common.Interfaces.AI;
 
 namespace TendexAI.API.Endpoints.AI;
@@ -54,7 +55,7 @@ public static class AiTextAssistEndpoints
             {
                 IsSuccess = false,
                 GeneratedText = "",
-                ErrorMessage = response.ErrorMessage ?? "فشل في توليد النص"
+                ErrorMessage = response.ErrorMessage ?? "\u0641\u0634\u0644 \u0641\u064a \u062a\u0648\u0644\u064a\u062f \u0627\u0644\u0646\u0635"
             });
         })
         .WithName("AiTextAssist")
@@ -64,84 +65,105 @@ public static class AiTextAssistEndpoints
 
     private static string BuildSystemPrompt(AiTextAssistRequest request)
     {
-        return """
-            أنت مساعد ذكاء اصطناعي متخصص في كتابة محتوى كراسات الشروط والمواصفات الحكومية السعودية.
-            
-            قواعد صارمة:
-            1. اكتب باللغة العربية الفصحى الرسمية فقط
-            2. استخدم المصطلحات الحكومية والقانونية المعتمدة في المملكة العربية السعودية
-            3. التزم بأسلوب الكتابة الرسمية للمنافسات والمشتريات الحكومية
-            4. لا تستخدم أي كلمات أو مصطلحات باللغة الإنجليزية
-            5. كن دقيقاً ومهنياً وشاملاً
-            6. أعد النص العادي فقط بدون أي وسوم HTML أو Markdown
-            7. استخدم الأرقام الإنجليزية (1, 2, 3) وليس العربية
-            
-            السياق:
-            - اسم الحقل: """ + (request.FieldName ?? "") + """
-            - الغرض من الحقل: """ + (request.FieldPurpose ?? "") + """
-            - اسم المشروع: """ + (request.ProjectName ?? "") + """
-            - نوع المنافسة: """ + (request.CompetitionType ?? "") + """
-            """;
+        var fieldName = request.FieldName ?? "";
+        var fieldPurpose = request.FieldPurpose ?? "";
+        var projectName = request.ProjectName ?? "";
+        var competitionType = request.CompetitionType ?? "";
+
+        return string.Join("\n", new[]
+        {
+            "\u0623\u0646\u062a \u0645\u0633\u0627\u0639\u062f \u0630\u0643\u0627\u0621 \u0627\u0635\u0637\u0646\u0627\u0639\u064a \u0645\u062a\u062e\u0635\u0635 \u0641\u064a \u0643\u062a\u0627\u0628\u0629 \u0645\u062d\u062a\u0648\u0649 \u0643\u0631\u0627\u0633\u0627\u062a \u0627\u0644\u0634\u0631\u0648\u0637 \u0648\u0627\u0644\u0645\u0648\u0627\u0635\u0641\u0627\u062a \u0627\u0644\u062d\u0643\u0648\u0645\u064a\u0629 \u0627\u0644\u0633\u0639\u0648\u062f\u064a\u0629.",
+            "",
+            "\u0642\u0648\u0627\u0639\u062f \u0635\u0627\u0631\u0645\u0629:",
+            "1. \u0627\u0643\u062a\u0628 \u0628\u0627\u0644\u0644\u063a\u0629 \u0627\u0644\u0639\u0631\u0628\u064a\u0629 \u0627\u0644\u0641\u0635\u062d\u0649 \u0627\u0644\u0631\u0633\u0645\u064a\u0629 \u0641\u0642\u0637",
+            "2. \u0627\u0633\u062a\u062e\u062f\u0645 \u0627\u0644\u0645\u0635\u0637\u0644\u062d\u0627\u062a \u0627\u0644\u062d\u0643\u0648\u0645\u064a\u0629 \u0648\u0627\u0644\u0642\u0627\u0646\u0648\u0646\u064a\u0629 \u0627\u0644\u0645\u0639\u062a\u0645\u062f\u0629 \u0641\u064a \u0627\u0644\u0645\u0645\u0644\u0643\u0629 \u0627\u0644\u0639\u0631\u0628\u064a\u0629 \u0627\u0644\u0633\u0639\u0648\u062f\u064a\u0629",
+            "3. \u0627\u0644\u062a\u0632\u0645 \u0628\u0623\u0633\u0644\u0648\u0628 \u0627\u0644\u0643\u062a\u0627\u0628\u0629 \u0627\u0644\u0631\u0633\u0645\u064a\u0629 \u0644\u0644\u0645\u0646\u0627\u0641\u0633\u0627\u062a \u0648\u0627\u0644\u0645\u0634\u062a\u0631\u064a\u0627\u062a \u0627\u0644\u062d\u0643\u0648\u0645\u064a\u0629",
+            "4. \u0644\u0627 \u062a\u0633\u062a\u062e\u062f\u0645 \u0623\u064a \u0643\u0644\u0645\u0627\u062a \u0623\u0648 \u0645\u0635\u0637\u0644\u062d\u0627\u062a \u0628\u0627\u0644\u0644\u063a\u0629 \u0627\u0644\u0625\u0646\u062c\u0644\u064a\u0632\u064a\u0629",
+            "5. \u0643\u0646 \u062f\u0642\u064a\u0642\u0627\u064b \u0648\u0645\u0647\u0646\u064a\u0627\u064b \u0648\u0634\u0627\u0645\u0644\u0627\u064b",
+            "6. \u0623\u0639\u062f \u0627\u0644\u0646\u0635 \u0627\u0644\u0639\u0627\u062f\u064a \u0641\u0642\u0637 \u0628\u062f\u0648\u0646 \u0623\u064a \u0648\u0633\u0648\u0645 HTML \u0623\u0648 Markdown",
+            "7. \u0627\u0633\u062a\u062e\u062f\u0645 \u0627\u0644\u0623\u0631\u0642\u0627\u0645 \u0627\u0644\u0625\u0646\u062c\u0644\u064a\u0632\u064a\u0629 (1, 2, 3) \u0648\u0644\u064a\u0633 \u0627\u0644\u0639\u0631\u0628\u064a\u0629",
+            "",
+            "\u0627\u0644\u0633\u064a\u0627\u0642:",
+            $"- \u0627\u0633\u0645 \u0627\u0644\u062d\u0642\u0644: {fieldName}",
+            $"- \u0627\u0644\u063a\u0631\u0636 \u0645\u0646 \u0627\u0644\u062d\u0642\u0644: {fieldPurpose}",
+            $"- \u0627\u0633\u0645 \u0627\u0644\u0645\u0634\u0631\u0648\u0639: {projectName}",
+            $"- \u0646\u0648\u0639 \u0627\u0644\u0645\u0646\u0627\u0641\u0633\u0629: {competitionType}"
+        });
     }
 
     private static string BuildUserPrompt(AiTextAssistRequest request)
     {
-        return request.Action?.ToLowerInvariant() switch
+        var action = request.Action?.ToLowerInvariant() ?? "generate";
+        var fieldName = request.FieldName ?? "";
+        var projectName = request.ProjectName ?? "";
+        var projectDescription = request.ProjectDescription ?? "";
+        var currentText = request.CurrentText ?? "";
+        var customPrompt = request.CustomPrompt ?? "";
+        var additionalContext = request.AdditionalContext ?? "";
+
+        return action switch
         {
-            "generate" => $"""
-                قم بكتابة محتوى احترافي ومفصل لحقل "{request.FieldName}" في كراسة الشروط والمواصفات.
-                اسم المشروع: {request.ProjectName}
-                وصف المشروع: {request.ProjectDescription}
-                {(string.IsNullOrEmpty(request.AdditionalContext) ? "" : $"سياق إضافي: {request.AdditionalContext}")}
-                {(string.IsNullOrEmpty(request.CustomPrompt) ? "" : $"تعليمات إضافية: {request.CustomPrompt}")}
-                """,
+            "generate" => string.Join("\n", new[]
+            {
+                $"\u0642\u0645 \u0628\u0643\u062a\u0627\u0628\u0629 \u0645\u062d\u062a\u0648\u0649 \u0627\u062d\u062a\u0631\u0627\u0641\u064a \u0648\u0645\u0641\u0635\u0644 \u0644\u062d\u0642\u0644 \"{fieldName}\" \u0641\u064a \u0643\u0631\u0627\u0633\u0629 \u0627\u0644\u0634\u0631\u0648\u0637 \u0648\u0627\u0644\u0645\u0648\u0627\u0635\u0641\u0627\u062a.",
+                $"\u0627\u0633\u0645 \u0627\u0644\u0645\u0634\u0631\u0648\u0639: {projectName}",
+                $"\u0648\u0635\u0641 \u0627\u0644\u0645\u0634\u0631\u0648\u0639: {projectDescription}",
+                string.IsNullOrEmpty(additionalContext) ? "" : $"\u0633\u064a\u0627\u0642 \u0625\u0636\u0627\u0641\u064a: {additionalContext}",
+                string.IsNullOrEmpty(customPrompt) ? "" : $"\u062a\u0639\u0644\u064a\u0645\u0627\u062a \u0625\u0636\u0627\u0641\u064a\u0629: {customPrompt}"
+            }),
 
-            "improve" => $"""
-                قم بتحسين النص التالي مع الحفاظ على المعنى الأساسي وتعزيز الجودة والمهنية:
-                
-                النص الحالي:
-                {request.CurrentText}
-                
-                {(string.IsNullOrEmpty(request.CustomPrompt) ? "" : $"تعليمات إضافية: {request.CustomPrompt}")}
-                """,
+            "improve" => string.Join("\n", new[]
+            {
+                "\u0642\u0645 \u0628\u062a\u062d\u0633\u064a\u0646 \u0627\u0644\u0646\u0635 \u0627\u0644\u062a\u0627\u0644\u064a \u0645\u0639 \u0627\u0644\u062d\u0641\u0627\u0638 \u0639\u0644\u0649 \u0627\u0644\u0645\u0639\u0646\u0649 \u0627\u0644\u0623\u0633\u0627\u0633\u064a \u0648\u062a\u0639\u0632\u064a\u0632 \u0627\u0644\u062c\u0648\u062f\u0629 \u0648\u0627\u0644\u0645\u0647\u0646\u064a\u0629:",
+                "",
+                $"\u0627\u0644\u0646\u0635 \u0627\u0644\u062d\u0627\u0644\u064a:",
+                currentText,
+                "",
+                string.IsNullOrEmpty(customPrompt) ? "" : $"\u062a\u0639\u0644\u064a\u0645\u0627\u062a \u0625\u0636\u0627\u0641\u064a\u0629: {customPrompt}"
+            }),
 
-            "expand" => $"""
-                قم بتوسيع النص التالي وإضافة تفاصيل أكثر مع الحفاظ على السياق والمعنى:
-                
-                النص الحالي:
-                {request.CurrentText}
-                
-                {(string.IsNullOrEmpty(request.CustomPrompt) ? "" : $"تعليمات إضافية: {request.CustomPrompt}")}
-                """,
+            "expand" => string.Join("\n", new[]
+            {
+                "\u0642\u0645 \u0628\u062a\u0648\u0633\u064a\u0639 \u0627\u0644\u0646\u0635 \u0627\u0644\u062a\u0627\u0644\u064a \u0648\u0625\u0636\u0627\u0641\u0629 \u062a\u0641\u0627\u0635\u064a\u0644 \u0623\u0643\u062b\u0631 \u0645\u0639 \u0627\u0644\u062d\u0641\u0627\u0638 \u0639\u0644\u0649 \u0627\u0644\u0633\u064a\u0627\u0642 \u0648\u0627\u0644\u0645\u0639\u0646\u0649:",
+                "",
+                $"\u0627\u0644\u0646\u0635 \u0627\u0644\u062d\u0627\u0644\u064a:",
+                currentText,
+                "",
+                string.IsNullOrEmpty(customPrompt) ? "" : $"\u062a\u0639\u0644\u064a\u0645\u0627\u062a \u0625\u0636\u0627\u0641\u064a\u0629: {customPrompt}"
+            }),
 
-            "summarize" => $"""
-                قم بتلخيص النص التالي مع الحفاظ على النقاط الرئيسية والمعلومات المهمة:
-                
-                النص الحالي:
-                {request.CurrentText}
-                """,
+            "summarize" => string.Join("\n", new[]
+            {
+                "\u0642\u0645 \u0628\u062a\u0644\u062e\u064a\u0635 \u0627\u0644\u0646\u0635 \u0627\u0644\u062a\u0627\u0644\u064a \u0645\u0639 \u0627\u0644\u062d\u0641\u0627\u0638 \u0639\u0644\u0649 \u0627\u0644\u0646\u0642\u0627\u0637 \u0627\u0644\u0631\u0626\u064a\u0633\u064a\u0629 \u0648\u0627\u0644\u0645\u0639\u0644\u0648\u0645\u0627\u062a \u0627\u0644\u0645\u0647\u0645\u0629:",
+                "",
+                $"\u0627\u0644\u0646\u0635 \u0627\u0644\u062d\u0627\u0644\u064a:",
+                currentText
+            }),
 
-            "formalize" => $"""
-                قم بإعادة صياغة النص التالي بلغة رسمية حكومية سعودية مع الحفاظ على المعنى:
-                
-                النص الحالي:
-                {request.CurrentText}
-                """,
+            "formalize" => string.Join("\n", new[]
+            {
+                "\u0642\u0645 \u0628\u0625\u0639\u0627\u062f\u0629 \u0635\u064a\u0627\u063a\u0629 \u0627\u0644\u0646\u0635 \u0627\u0644\u062a\u0627\u0644\u064a \u0628\u0644\u063a\u0629 \u0631\u0633\u0645\u064a\u0629 \u062d\u0643\u0648\u0645\u064a\u0629 \u0633\u0639\u0648\u062f\u064a\u0629 \u0645\u0639 \u0627\u0644\u062d\u0641\u0627\u0638 \u0639\u0644\u0649 \u0627\u0644\u0645\u0639\u0646\u0649:",
+                "",
+                $"\u0627\u0644\u0646\u0635 \u0627\u0644\u062d\u0627\u0644\u064a:",
+                currentText
+            }),
 
-            "custom" => $"""
-                {request.CustomPrompt}
-                
-                {(string.IsNullOrEmpty(request.CurrentText) ? "" : $"النص الحالي:\n{request.CurrentText}")}
-                
-                اسم المشروع: {request.ProjectName}
-                اسم الحقل: {request.FieldName}
-                """,
+            "custom" => string.Join("\n", new[]
+            {
+                customPrompt,
+                "",
+                string.IsNullOrEmpty(currentText) ? "" : $"\u0627\u0644\u0646\u0635 \u0627\u0644\u062d\u0627\u0644\u064a:\n{currentText}",
+                "",
+                $"\u0627\u0633\u0645 \u0627\u0644\u0645\u0634\u0631\u0648\u0639: {projectName}",
+                $"\u0627\u0633\u0645 \u0627\u0644\u062d\u0642\u0644: {fieldName}"
+            }),
 
-            _ => $"""
-                قم بكتابة محتوى مناسب لحقل "{request.FieldName}".
-                {(string.IsNullOrEmpty(request.CurrentText) ? "" : $"النص الحالي: {request.CurrentText}")}
-                {(string.IsNullOrEmpty(request.CustomPrompt) ? "" : $"تعليمات: {request.CustomPrompt}")}
-                """
+            _ => string.Join("\n", new[]
+            {
+                $"\u0642\u0645 \u0628\u0643\u062a\u0627\u0628\u0629 \u0645\u062d\u062a\u0648\u0649 \u0645\u0646\u0627\u0633\u0628 \u0644\u062d\u0642\u0644 \"{fieldName}\".",
+                string.IsNullOrEmpty(currentText) ? "" : $"\u0627\u0644\u0646\u0635 \u0627\u0644\u062d\u0627\u0644\u064a: {currentText}",
+                string.IsNullOrEmpty(customPrompt) ? "" : $"\u062a\u0639\u0644\u064a\u0645\u0627\u062a: {customPrompt}"
+            })
         };
     }
 
@@ -153,11 +175,11 @@ public static class AiTextAssistEndpoints
         if (string.IsNullOrWhiteSpace(text)) return text;
 
         // Remove markdown bold/italic
-        text = System.Text.RegularExpressions.Regex.Replace(text, @"\*{1,3}([^*]+)\*{1,3}", "$1");
+        text = Regex.Replace(text, @"\*{1,3}([^*]+)\*{1,3}", "$1");
         // Remove markdown headers
-        text = System.Text.RegularExpressions.Regex.Replace(text, @"^#{1,6}\s*", "", System.Text.RegularExpressions.RegexOptions.Multiline);
+        text = Regex.Replace(text, @"^#{1,6}\s*", "", RegexOptions.Multiline);
         // Remove HTML tags
-        text = System.Text.RegularExpressions.Regex.Replace(text, @"<[^>]+>", "");
+        text = Regex.Replace(text, @"<[^>]+>", "");
 
         return text.Trim();
     }
