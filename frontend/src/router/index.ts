@@ -272,6 +272,19 @@ const routes: RouteRecordRaw[] = [
         component: () => import('@/views/rfp/RfpTemplatesView.vue'),
         meta: { title: 'Tendex AI - Competition Templates', requiresAuth: true },
       },
+      /* Booklet Templates (EXPRO Official Templates) */
+      {
+        path: 'rfp/booklet-templates',
+        name: 'BookletTemplates',
+        component: () => import('@/views/rfp/BookletTemplatesView.vue'),
+        meta: { title: 'Tendex AI - Booklet Templates', requiresAuth: true },
+      },
+      {
+        path: 'rfp/booklet-editor/:id',
+        name: 'BookletEditor',
+        component: () => import('@/views/rfp/BookletEditorView.vue'),
+        meta: { title: 'Tendex AI - Booklet Editor', requiresAuth: true },
+      },
       /* Notifications */
       {
         path: 'notifications',

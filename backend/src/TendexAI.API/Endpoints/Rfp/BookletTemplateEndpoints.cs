@@ -1,0 +1,480 @@
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+using TendexAI.Application.Common.Interfaces;
+using TendexAI.Domain.Entities.Rfp;
+using TendexAI.Infrastructure.Services;
+using TendexAI.Infrastructure.Persistence;
+
+namespace TendexAI.API.Endpoints.Rfp;
+
+/// <summary>
+/// Endpoints for managing EXPRO official booklet templates.
+/// Supports uploading DOCX templates, parsing with color coding,
+/// and creating editable booklet instances from templates.
+/// </summary>
+public static class BookletTemplateEndpoints
+{
+    public static WebApplication MapBookletTemplateEndpoints(this WebApplication app)
+    {
+        var group = app.MapGroup("/api/v1/booklet-templates")
+            .WithTags("Booklet Templates")
+            .RequireAuthorization();
+
+        group.MapGet("/", GetBookletTemplatesAsync)
+            .WithName("GetBookletTemplates")
+            .WithSummary("Get list of booklet templates");
+
+        group.MapGet("/{id:guid}", GetBookletTemplateByIdAsync)
+            .WithName("GetBookletTemplateById")
+            .WithSummary("Get a booklet template with all sections and blocks");
+
+        group.MapPost("/upload", UploadBookletTemplateAsync)
+            .WithName("UploadBookletTemplate")
+            .WithSummary("Upload and parse a DOCX booklet template")
+            .DisableAntiforgery();
+
+        group.MapPost("/{id:guid}/create-booklet", CreateBookletFromTemplateAsync)
+            .WithName("CreateBookletFromTemplate")
+            .WithSummary("Create an editable booklet instance from a template");
+
+        group.MapDelete("/{id:guid}", DeleteBookletTemplateAsync)
+            .WithName("DeleteBookletTemplate")
+            .WithSummary("Deactivate a booklet template");
+
+        return app;
+    }
+
+    private static async Task<IResult> GetBookletTemplatesAsync(
+        [FromQuery] string? category,
+        [FromQuery] string? search,
+        [FromQuery] int page,
+        [FromQuery] int pageSize,
+        ITenantDbContext db,
+        HttpContext httpContext)
+    {
+        if (page < 1) page = 1;
+        if (pageSize < 1) pageSize = 20;
+
+        var dbCtx = (TenantDbContext)db;
+        var query = dbCtx.BookletTemplates
+            .Where(t => t.IsActive)
+            .AsNoTracking();
+
+        if (!string.IsNullOrWhiteSpace(category))
+            query = query.Where(t => t.Category == category);
+
+        if (!string.IsNullOrWhiteSpace(search))
+            query = query.Where(t => t.NameAr.Contains(search) || t.NameEn.Contains(search));
+
+        var totalCount = await query.CountAsync();
+        var items = await query
+            .OrderByDescending(t => t.CreatedAt)
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .Select(t => new BookletTemplateListItemDto
+            {
+                Id = t.Id,
+                NameAr = t.NameAr,
+                NameEn = t.NameEn,
+                DescriptionAr = t.DescriptionAr,
+                DescriptionEn = t.DescriptionEn,
+                Category = t.Category,
+                SourceReference = t.SourceReference,
+                OriginalFileName = t.OriginalFileName,
+                SectionCount = t.Sections.Count,
+                UsageCount = t.UsageCount,
+                IsActive = t.IsActive,
+                CreatedAt = t.CreatedAt
+            })
+            .ToListAsync();
+
+        return Results.Ok(new { items, totalCount });
+    }
+
+    private static async Task<IResult> GetBookletTemplateByIdAsync(
+        Guid id,
+        ITenantDbContext db)
+    {
+        var dbCtx = (TenantDbContext)db;
+        var template = await dbCtx.BookletTemplates
+            .Include(t => t.Sections)
+                .ThenInclude(s => s.Blocks)
+            .AsNoTracking()
+            .FirstOrDefaultAsync(t => t.Id == id);
+
+        if (template is null)
+            return Results.NotFound(new { error = "القالب غير موجود" });
+
+        var dto = new BookletTemplateDetailDto
+        {
+            Id = template.Id,
+            NameAr = template.NameAr,
+            NameEn = template.NameEn,
+            DescriptionAr = template.DescriptionAr,
+            DescriptionEn = template.DescriptionEn,
+            Category = template.Category,
+            SourceReference = template.SourceReference,
+            OriginalFileName = template.OriginalFileName,
+            UsageCount = template.UsageCount,
+            CreatedAt = template.CreatedAt,
+            Sections = template.Sections
+                .OrderBy(s => s.SortOrder)
+                .Select(s => new BookletTemplateSectionDto
+                {
+                    Id = s.Id,
+                    TitleAr = s.TitleAr,
+                    SortOrder = s.SortOrder,
+                    IsMainSection = s.IsMainSection,
+                    Blocks = s.Blocks
+                        .OrderBy(b => b.SortOrder)
+                        .Select(b => new BookletTemplateBlockDto
+                        {
+                            Id = b.Id,
+                            SortOrder = b.SortOrder,
+                            ContentAr = b.ContentAr,
+                            ContentHtml = b.ContentHtml,
+                            ColorType = b.ColorType.ToString().ToLowerInvariant(),
+                            IsHeading = b.IsHeading,
+                            HasBracketPlaceholders = b.HasBracketPlaceholders,
+                            IsEditable = b.IsEditable
+                        })
+                        .ToList()
+                })
+                .ToList()
+        };
+
+        return Results.Ok(dto);
+    }
+
+    private static async Task<IResult> UploadBookletTemplateAsync(
+        IFormFile file,
+        [FromForm] string nameAr,
+        [FromForm] string nameEn,
+        [FromForm] string? descriptionAr,
+        [FromForm] string? descriptionEn,
+        [FromForm] string category,
+        [FromForm] string? sourceReference,
+        ITenantDbContext db,
+        HttpContext httpContext)
+    {
+        if (file is null || file.Length == 0)
+            return Results.BadRequest(new { error = "يرجى رفع ملف DOCX" });
+
+        if (!file.FileName.EndsWith(".docx", StringComparison.OrdinalIgnoreCase))
+            return Results.BadRequest(new { error = "يجب أن يكون الملف بصيغة DOCX" });
+
+        var userId = GetCurrentUserId(httpContext);
+        var tenantId = GetTenantId(httpContext);
+
+        var dbCtx = (TenantDbContext)db;
+
+        // Parse the DOCX file
+        TemplateParseResult parseResult;
+
+        using (var stream = file.OpenReadStream())
+        {
+            parseResult = DocxTemplateParser.Parse(stream);
+        }
+
+        // Create the template entity
+        var template = BookletTemplate.Create(
+            tenantId,
+            nameAr,
+            nameEn,
+            descriptionAr,
+            descriptionEn,
+            category,
+            sourceReference,
+            userId,
+            file.FileName);
+
+        // Map parsed sections to domain entities
+        foreach (var parsedSection in parseResult.Sections)
+        {
+            var section = BookletTemplateSection.Create(
+                template.Id,
+                parsedSection.Title,
+                parsedSection.SortOrder,
+                parsedSection.IsMainSection);
+
+            foreach (var parsedBlock in parsedSection.Blocks)
+            {
+                var colorType = parsedBlock.ColorType switch
+                {
+                    ExprocColorType.Black => BookletBlockColorType.Fixed,
+                    ExprocColorType.Green => BookletBlockColorType.Editable,
+                    ExprocColorType.Red => BookletBlockColorType.Example,
+                    ExprocColorType.Blue => BookletBlockColorType.Guidance,
+                    _ => BookletBlockColorType.Fixed
+                };
+
+                var isEditable = colorType is BookletBlockColorType.Editable
+                    or BookletBlockColorType.Example;
+
+                // Build HTML with color spans
+                var html = BuildColoredHtml(parsedBlock);
+
+                var block = BookletTemplateBlock.Create(
+                    section.Id,
+                    parsedBlock.Order,
+                    parsedBlock.Text,
+                    html,
+                    colorType,
+                    parsedBlock.IsHeading,
+                    parsedBlock.HasBracketPlaceholders,
+                    isEditable);
+
+                section.AddBlock(block);
+            }
+
+            template.AddSection(section);
+        }
+
+        dbCtx.BookletTemplates.Add(template);
+        await dbCtx.SaveChangesAsync();
+
+        return Results.Created($"/api/v1/booklet-templates/{template.Id}", new
+        {
+            id = template.Id,
+            sectionCount = parseResult.Sections.Count,
+            totalBlocks = parseResult.Sections.Sum(s => s.Blocks.Count)
+        });
+    }
+
+    private static async Task<IResult> CreateBookletFromTemplateAsync(
+        Guid id,
+        [FromBody] CreateBookletFromTemplateRequest request,
+        ITenantDbContext db,
+        HttpContext httpContext)
+    {
+        var dbCtx = (TenantDbContext)db;
+        var template = await dbCtx.BookletTemplates
+            .Include(t => t.Sections)
+                .ThenInclude(s => s.Blocks)
+            .FirstOrDefaultAsync(t => t.Id == id && t.IsActive);
+
+        if (template is null)
+            return Results.NotFound(new { error = "القالب غير موجود" });
+
+        var userId = GetCurrentUserId(httpContext);
+        var tenantId = GetTenantId(httpContext);
+
+        // Create a new competition from the template
+        var competition = Competition.Create(
+            tenantId: tenantId,
+            projectNameAr: request.ProjectNameAr,
+            projectNameEn: request.ProjectNameEn ?? request.ProjectNameAr,
+            competitionType: TendexAI.Domain.Enums.CompetitionType.PublicTender,
+            creationMethod: TendexAI.Domain.Enums.RfpCreationMethod.FromTemplate,
+            createdByUserId: userId,
+            description: request.DescriptionAr,
+            sourceTemplateId: template.Id);
+
+        // Copy sections from template as RFP sections
+        foreach (var templateSection in template.Sections.OrderBy(s => s.SortOrder))
+        {
+            // Build combined content HTML from all blocks
+            var contentHtml = BuildSectionContentHtml(templateSection);
+            var plainText = string.Join("\n", templateSection.Blocks
+                .OrderBy(b => b.SortOrder)
+                .Select(b => b.ContentAr));
+
+            // Determine section editability
+            var hasEditableBlocks = templateSection.Blocks.Any(b => b.IsEditable);
+            var allFixed = templateSection.Blocks.All(b => b.ColorType == BookletBlockColorType.Fixed);
+
+            competition.AddSection(RfpSection.Create(
+                competitionId: competition.Id,
+                titleAr: templateSection.TitleAr,
+                titleEn: templateSection.TitleAr, // Will be translated later
+                sectionType: TendexAI.Domain.Enums.RfpSectionType.Custom,
+                contentHtml: contentHtml,
+                isMandatory: true,
+                isFromTemplate: true,
+                defaultTextColor: allFixed
+                    ? TendexAI.Domain.Enums.TextColorType.Mandatory
+                    : TendexAI.Domain.Enums.TextColorType.Editable,
+                createdBy: userId));
+        }
+
+        template.IncrementUsageCount();
+
+        dbCtx.Competitions.Add(competition);
+        await dbCtx.SaveChangesAsync();
+
+        return Results.Created($"/api/v1/competitions/{competition.Id}", new
+        {
+            rfpId = competition.Id,
+            sectionCount = competition.Sections.Count
+        });
+    }
+
+    private static async Task<IResult> DeleteBookletTemplateAsync(
+        Guid id,
+        ITenantDbContext db,
+        HttpContext httpContext)
+    {
+        var dbCtx = (TenantDbContext)db;
+        var template = await dbCtx.BookletTemplates.FindAsync(id);
+        if (template is null)
+            return Results.NotFound(new { error = "القالب غير موجود" });
+
+        var userId = GetCurrentUserId(httpContext);
+        template.Deactivate(userId);
+        await dbCtx.SaveChangesAsync();
+
+        return Results.Ok(new { success = true });
+    }
+
+    // ═══════════════════════════════════════════════════════════
+    //  Helpers
+    // ═══════════════════════════════════════════════════════════
+
+    private static string BuildColoredHtml(ParsedBlock block)
+    {
+        if (block.Segments.Count == 0)
+            return $"<p>{System.Net.WebUtility.HtmlEncode(block.Text)}</p>";
+
+        var tag = block.IsHeading ? "h3" : "p";
+        var parts = block.Segments.Select(seg =>
+        {
+            var cssClass = seg.ColorType switch
+            {
+                ExprocColorType.Black => "expro-fixed",
+                ExprocColorType.Green => "expro-editable",
+                ExprocColorType.Red => "expro-example",
+                ExprocColorType.Blue => "expro-guidance",
+                _ => "expro-fixed"
+            };
+
+            var text = System.Net.WebUtility.HtmlEncode(seg.Text);
+            if (seg.IsBold) text = $"<strong>{text}</strong>";
+
+            return $"<span class=\"{cssClass}\" data-color-type=\"{seg.ColorType.ToString().ToLowerInvariant()}\">{text}</span>";
+        });
+
+        return $"<{tag} dir=\"rtl\">{string.Join("", parts)}</{tag}>";
+    }
+
+    private static string BuildSectionContentHtml(BookletTemplateSection section)
+    {
+        var blocks = section.Blocks.OrderBy(b => b.SortOrder).ToList();
+        var htmlParts = new List<string>();
+
+        foreach (var block in blocks)
+        {
+            if (!string.IsNullOrWhiteSpace(block.ContentHtml))
+            {
+                htmlParts.Add(block.ContentHtml);
+            }
+            else
+            {
+                var html = BuildColoredHtml(new ParsedBlock
+                {
+                    Text = block.ContentAr,
+                    IsHeading = block.IsHeading,
+                    ColorType = block.ColorType switch
+                    {
+                        BookletBlockColorType.Fixed => ExprocColorType.Black,
+                        BookletBlockColorType.Editable => ExprocColorType.Green,
+                        BookletBlockColorType.Example => ExprocColorType.Red,
+                        BookletBlockColorType.Guidance => ExprocColorType.Blue,
+                        _ => ExprocColorType.Black
+                    },
+                    Segments = [new TextSegment
+                    {
+                        Text = block.ContentAr,
+                        ColorType = block.ColorType switch
+                        {
+                            BookletBlockColorType.Fixed => ExprocColorType.Black,
+                            BookletBlockColorType.Editable => ExprocColorType.Green,
+                            BookletBlockColorType.Example => ExprocColorType.Red,
+                            BookletBlockColorType.Guidance => ExprocColorType.Blue,
+                            _ => ExprocColorType.Black
+                        },
+                        IsBold = block.IsHeading
+                    }]
+                });
+                htmlParts.Add(html);
+            }
+        }
+
+        return string.Join("\n", htmlParts);
+    }
+
+    private static Guid GetTenantId(HttpContext httpContext)
+    {
+        var tenantClaim = httpContext.User.FindFirst("tenant_id")?.Value;
+        return Guid.TryParse(tenantClaim, out var tenantId)
+            ? tenantId
+            : Guid.Parse("a1b2c3d4-e5f6-7890-abcd-ef1234567890");
+    }
+
+    private static string GetCurrentUserId(HttpContext httpContext)
+    {
+        return httpContext.User.FindFirst("sub")?.Value
+            ?? httpContext.User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value
+            ?? "system";
+    }
+}
+
+// ═══════════════════════════════════════════════════════════
+//  DTOs
+// ═══════════════════════════════════════════════════════════
+
+public sealed record BookletTemplateListItemDto
+{
+    public Guid Id { get; init; }
+    public string NameAr { get; init; } = "";
+    public string NameEn { get; init; } = "";
+    public string? DescriptionAr { get; init; }
+    public string? DescriptionEn { get; init; }
+    public string Category { get; init; } = "";
+    public string? SourceReference { get; init; }
+    public string? OriginalFileName { get; init; }
+    public int SectionCount { get; init; }
+    public int UsageCount { get; init; }
+    public bool IsActive { get; init; }
+    public DateTime CreatedAt { get; init; }
+}
+
+public sealed record BookletTemplateDetailDto
+{
+    public Guid Id { get; init; }
+    public string NameAr { get; init; } = "";
+    public string NameEn { get; init; } = "";
+    public string? DescriptionAr { get; init; }
+    public string? DescriptionEn { get; init; }
+    public string Category { get; init; } = "";
+    public string? SourceReference { get; init; }
+    public string? OriginalFileName { get; init; }
+    public int UsageCount { get; init; }
+    public DateTime CreatedAt { get; init; }
+    public List<BookletTemplateSectionDto> Sections { get; init; } = [];
+}
+
+public sealed record BookletTemplateSectionDto
+{
+    public Guid Id { get; init; }
+    public string TitleAr { get; init; } = "";
+    public int SortOrder { get; init; }
+    public bool IsMainSection { get; init; }
+    public List<BookletTemplateBlockDto> Blocks { get; init; } = [];
+}
+
+public sealed record BookletTemplateBlockDto
+{
+    public Guid Id { get; init; }
+    public int SortOrder { get; init; }
+    public string ContentAr { get; init; } = "";
+    public string? ContentHtml { get; init; }
+    public string ColorType { get; init; } = "fixed";
+    public bool IsHeading { get; init; }
+    public bool HasBracketPlaceholders { get; init; }
+    public bool IsEditable { get; init; }
+}
+
+public sealed record CreateBookletFromTemplateRequest(
+    string ProjectNameAr,
+    string? ProjectNameEn,
+    string? DescriptionAr);

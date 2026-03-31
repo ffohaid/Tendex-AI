@@ -178,4 +178,7 @@ app.MapReportEndpoints();
 // Inquiry endpoints (Specification booklet inquiries - TASK-904)
 app.MapInquiryEndpoints();
 
+// Booklet Template endpoints (EXPRO official templates with color-coded editor)
+app.MapBookletTemplateEndpoints();
+
 app.Run();

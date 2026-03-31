@@ -161,6 +161,7 @@
     "workflowList": "قوالب سير العمل",
     "permissionsMatrix": "مصفوفة الصلاحيات",
     "rfpTemplates": "قوالب المنافسات",
+    "bookletTemplates": "قوالب كراسات الشروط",
     "reportGenerator": "تصدير التقارير",
     "aiSettings": "إعدادات الذكاء الاصطناعي",
     "systemHealth": "صحة النظام",

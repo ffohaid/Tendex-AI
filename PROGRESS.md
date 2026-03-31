@@ -16,13 +16,61 @@
 | Sprint 7: الاختبار والنشر | ✅ مكتمل | 100% | تم إنجاز TASK-701, TASK-702, TASK-703, TASK-704 |
 | Sprint 8: النشر والتشغيل | ✅ مكتمل | 100% | تم إنجاز TASK-801, TASK-802, TASK-803 |
 | Sprint 9: إصلاحات التشغيل الفعلي | ✅ مكتمل | 100% | تم إنجاز TASK-901 إلى TASK-911. |
-| Sprint 10: التحول الجذري واستكمال المتطلبات | 🔄 قيد التنفيذ | 75% | TASK-1001 Frontend overhaul, TASK-1002 QA, TASK-1003 RFP Wizard fixes, TASK-1004 Templates & AI Assistant completed. |
+| Sprint 10: التحول الجذري واستكمال المتطلبات | 🔄 قيد التنفيذ | 85% | TASK-1001 Frontend overhaul, TASK-1002 QA, TASK-1003 RFP Wizard fixes, TASK-1004 Templates & AI Assistant, TASK-1005 EXPRO Booklet Templates completed. |
 
 ---
 
 ## سجل المهام المنجزة (Completed Tasks Log)
 
 *يرجى إضافة أحدث مهمة منجزة في أعلى هذه القائمة.*
+
+### 2026-03-31 - TASK-1005: نظام قوالب كراسات الشروط والمواصفات مع محرر ذكي (EXPRO Booklet Templates with Smart Editor)
+- **الحالة:** ✅ مكتمل
+- **ما تم إنجازه:**
+  - **تحليل نموذج كراسة الشروط والمواصفات (تقنية المعلومات) من هيئة كفاءة الإنفاق (EXPRO):**
+    - تحليل كامل لنظام الألوان الرباعي: أسود (ثابت)، أخضر (قابل للتعديل)، أحمر (أمثلة)، أزرق (إرشادات)
+    - استخراج بنية الأقسام (12 قسم رئيسي) مع الأقسام الفرعية والجداول
+    - تحديد الحقول القابلة للملء (Bracket Placeholders) مثل [اسم المشروع]
+  - **بناء نظام Backend لتحليل ملفات DOCX:**
+    - إنشاء `DocxTemplateParser.cs` لتحليل ملفات DOCX واستخراج المحتوى مع الألوان
+    - إنشاء كيانات Domain: `BookletTemplate`, `BookletTemplateSection`, `BookletTemplateBlock`
+    - إنشاء `BookletTemplateConfiguration.cs` لإعدادات EF Core
+    - إنشاء `BookletTemplateEndpoints.cs` مع 5 نقاط نهاية API:
+      - `GET /v1/booklet-templates` - قائمة القوالب مع بحث وتصفية
+      - `GET /v1/booklet-templates/{id}` - تفاصيل القالب مع الأقسام والكتل
+      - `POST /v1/booklet-templates/upload` - رفع وتحليل ملف DOCX
+      - `POST /v1/booklet-templates/{id}/create-booklet` - إنشاء كراسة من القالب
+      - `DELETE /v1/booklet-templates/{id}` - حذف القالب
+  - **بناء واجهة إدارة القوالب (BookletTemplatesView.vue):**
+    - شبكة عرض القوالب مع بحث وتصفية حسب التصنيف
+    - دليل نظام الألوان المرئي (EXPRO Color Coding Guide)
+    - نافذة رفع قالب DOCX مع تحليل تلقائي
+    - نافذة إنشاء كراسة من القالب
+    - دعم 7 تصنيفات: تقنية المعلومات، الإنشاءات، الاستشارات، الصيانة، التوريدات، الخدمات
+  - **بناء المحرر الذكي (BookletEditorView.vue):**
+    - محرر نصوص مع نظام ألوان EXPRO الرباعي
+    - شريط جانبي للتنقل بين الأقسام مع شريط تقدم
+    - كتل محتوى ملونة: ثابتة (رمادي)، قابلة للتعديل (أخضر)، أمثلة (أحمر)، إرشادات (أزرق)
+    - حماية النصوص الثابتة (لا يمكن تعديلها)
+    - كشف الحقول القابلة للملء [Bracket Placeholders]
+    - زر إخفاء/إظهار الإرشادات
+    - لوحة مساعد الذكاء الاصطناعي الجانبية مع:
+      - إجراءات سريعة: توليد، تحسين، توسيع، صياغة رسمية
+      - تعليمات مخصصة
+      - معاينة النتيجة وتطبيقها أو تجاهلها
+    - زر استعادة المحتوى الأصلي لكل كتلة
+    - حفظ التعديلات
+  - **تحديث التنقل والترجمة:**
+    - إضافة مسارات جديدة: `/rfp/booklet-templates` و `/rfp/booklet-editor/:id`
+    - إضافة رابط في القائمة الجانبية
+    - إضافة ترجمة عربية وإنجليزية
+  - **إصلاح مشكلة استخدام القوالب السابقة:**
+    - إصلاح التنقل في `RfpTemplatesView.vue` من `RfpCreate` إلى `rfp-edit`
+    - إصلاح استخدام `params.id` بدلاً من `query.id`
+- **الملفات المضافة/المعدلة:**
+  - Backend: `DocxTemplateParser.cs`, `BookletTemplate.cs`, `BookletTemplateConfiguration.cs`, `BookletTemplateEndpoints.cs`, `TenantDbContext.cs`, `Program.cs`
+  - Frontend: `BookletTemplatesView.vue`, `BookletEditorView.vue`, `navigation.ts`, `router/index.ts`, `ar.json`, `en.json`
+- **النشر:** 🔄 جاري النشر على خادم الإنتاج
 
 ### 2026-03-31 - TASK-1004: نظام القوالب ومساعد الذكاء الاصطناعي وإصلاحات إضافية (Templates, AI Assistant & Additional Fixes)
 - **الحالة:** ✅ مكتمل

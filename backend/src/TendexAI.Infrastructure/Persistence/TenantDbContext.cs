@@ -78,6 +78,11 @@ public sealed class TenantDbContext : DbContext, IUnitOfWork, ITenantDbContext
     public DbSet<VideoIntegrityAnalysis> VideoIntegrityAnalyses => Set<VideoIntegrityAnalysis>();
     public DbSet<VideoAnalysisFlag> VideoAnalysisFlags => Set<VideoAnalysisFlag>();
 
+    // ----- Booklet Template DbSets (EXPRO Official Templates) -----
+    public DbSet<BookletTemplate> BookletTemplates => Set<BookletTemplate>();
+    public DbSet<BookletTemplateSection> BookletTemplateSections => Set<BookletTemplateSection>();
+    public DbSet<BookletTemplateBlock> BookletTemplateBlocks => Set<BookletTemplateBlock>();
+
     /// <summary>
     /// Gets a DbSet for the specified entity type.
     /// Implements <see cref="ITenantDbContext.GetDbSet{TEntity}"/>.

@@ -41,6 +41,12 @@ export const sidebarNavigation: NavigationItem[] = [
         icon: 'pi pi-copy',
         route: 'RfpTemplates',
       },
+      {
+        key: 'booklet-templates',
+        labelKey: 'nav.bookletTemplates',
+        icon: 'pi pi-file-word',
+        route: 'BookletTemplates',
+      },
     ],
   },
   {
