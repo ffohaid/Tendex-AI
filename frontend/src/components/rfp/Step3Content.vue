@@ -74,8 +74,8 @@ function handleAiStructure(sections: BookletSection[]) {
 }
 
 /** Handle AI-generated content for a section */
-function handleAiContent(sectionId: string, content: string) {
-  rfpStore.updateSection(sectionId, { content })
+function handleAiContent(sectionId: string, content: string, contentHtml?: string) {
+  rfpStore.updateSection(sectionId, { content, ...(contentHtml ? { contentHtml } : {}) })
 }
 
 /** Add a new empty section */
@@ -298,8 +298,8 @@ defineExpose({
                   :section-title="section.title"
                   :section-type="section.colorCode === 'black' ? 'mandatory' : 'editable'"
                   :current-content="section.content || ''"
-                  @content-generated="(content) => handleAiContent(section.id, content)"
-                  @content-refined="(content) => handleAiContent(section.id, content)"
+                  @content-generated="(content, html) => handleAiContent(section.id, content, html)"
+                  @content-refined="(content, html) => handleAiContent(section.id, content, html)"
                 />
               </div>
 

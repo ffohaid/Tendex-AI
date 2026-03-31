@@ -42,7 +42,7 @@ const evaluationMethodLabel = computed(() => {
 
 /** Completed sections count */
 const completedSections = computed(
-  () => rfpStore.formData.content.sections.filter((s) => s.isCompleted).length,
+  () => rfpStore.formData.content.sections.filter((s) => s.isCompleted || (s.content && s.content.trim().length > 0)).length,
 )
 
 /** BOQ subtotal */
@@ -248,10 +248,10 @@ function handleSubmit() {
             class="flex items-center gap-2 text-sm"
           >
             <i
-              :class="section.isCompleted ? 'pi pi-check-circle text-success' : 'pi pi-circle text-tertiary'"
+              :class="(section.isCompleted || (section.content && section.content.trim().length > 0)) ? 'pi pi-check-circle text-success' : 'pi pi-circle text-tertiary'"
               class="text-xs"
             ></i>
-            <span :class="section.isCompleted ? 'text-secondary' : 'text-tertiary'">
+            <span :class="(section.isCompleted || (section.content && section.content.trim().length > 0)) ? 'text-secondary' : 'text-tertiary'">
               {{ section.title || t('rfp.labels.untitledSection') }}
             </span>
           </div>

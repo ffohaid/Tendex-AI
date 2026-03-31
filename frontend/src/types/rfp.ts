@@ -60,6 +60,7 @@ export interface RfpSection {
   id: string
   title: string
   content: string
+  contentHtml: string
   order: number
   isRequired: boolean
   colorCode: TextColorCode

@@ -29,8 +29,8 @@ const props = defineProps<{
 }>()
 
 const emit = defineEmits<{
-  (e: 'content-generated', content: string): void
-  (e: 'content-refined', content: string): void
+  (e: 'content-generated', content: string, contentHtml: string): void
+  (e: 'content-refined', content: string, contentHtml: string): void
 }>()
 
 const { t } = useI18n()
@@ -95,7 +95,7 @@ async function handleGenerate() {
     if (result.isSuccess && result.draft) {
       lastResult.value = result
       citations.value = result.draft.citations || []
-      emit('content-generated', result.draft.contentHtml)
+      emit('content-generated', result.draft.contentPlainText || stripHtml(result.draft.contentHtml), result.draft.contentHtml)
     } else {
       error.value = result.errorMessage || t('ai.errors.generationFailed')
     }
@@ -124,7 +124,7 @@ async function handleRefine() {
 
     if (result.isSuccess && result.draft) {
       citations.value = result.draft.citations || []
-      emit('content-refined', result.draft.contentHtml)
+      emit('content-refined', result.draft.contentPlainText || stripHtml(result.draft.contentHtml), result.draft.contentHtml)
       refineFeedback.value = ''
       showRefineInput.value = false
     } else {
@@ -135,6 +135,23 @@ async function handleRefine() {
   } finally {
     isRefining.value = false
   }
+}
+
+/** Strip HTML tags as fallback if contentPlainText is empty */
+function stripHtml(html: string): string {
+  if (!html) return ''
+  return html
+    .replace(/<br\s*\/?>/gi, '\n')
+    .replace(/<\/p>/gi, '\n\n')
+    .replace(/<\/li>/gi, '\n')
+    .replace(/<\/h[1-6]>/gi, '\n\n')
+    .replace(/<[^>]+>/g, '')
+    .replace(/&nbsp;/g, ' ')
+    .replace(/&amp;/g, '&')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/\n{3,}/g, '\n\n')
+    .trim()
 }
 
 function togglePanel() {

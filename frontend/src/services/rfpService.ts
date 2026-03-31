@@ -29,6 +29,26 @@ import type {
 const BASE_URL = '/v1/competitions'
 
 /* ------------------------------------------------------------------ */
+/*  Helper: Strip HTML tags for plain text display                     */
+/* ------------------------------------------------------------------ */
+
+function stripHtmlTags(html: string): string {
+  if (!html) return ''
+  return html
+    .replace(/<br\s*\/?>/gi, '\n')
+    .replace(/<\/p>/gi, '\n\n')
+    .replace(/<\/li>/gi, '\n')
+    .replace(/<\/h[1-6]>/gi, '\n\n')
+    .replace(/<[^>]+>/g, '')
+    .replace(/&nbsp;/g, ' ')
+    .replace(/&amp;/g, '&')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/\n{3,}/g, '\n\n')
+    .trim()
+}
+
+/* ------------------------------------------------------------------ */
 /*  Mapping: Frontend CompetitionType string → Backend enum int        */
 /* ------------------------------------------------------------------ */
 
@@ -263,15 +283,20 @@ function mapFromBackendResponse(dto: Record<string, unknown>): RfpFormData {
   // Map sections from backend
   const sections: RfpSection[] = ((dto.sections as unknown[]) || []).map((s: unknown) => {
     const sec = s as Record<string, unknown>
+    const htmlContent = (sec.contentHtml as string) || ''
+    const plainContent = (sec.contentPlainText as string) || ''
+    // Use plain text for textarea display; fall back to stripped HTML
+    const displayContent = plainContent || stripHtmlTags(htmlContent)
     return {
       id: String(sec.id || ''),
       title: (sec.titleAr as string) || (sec.titleEn as string) || '',
-      content: (sec.contentHtml as string) || '',
+      content: displayContent,
+      contentHtml: htmlContent,
       order: (sec.sortOrder as number) || 0,
       isRequired: (sec.isMandatory as boolean) || false,
       colorCode: backendColorToFrontend[(sec.defaultTextColor as number) ?? 1] || 'green',
       assignedTo: (sec.assignedToUserId as string) || null,
-      isCompleted: !!(sec.contentHtml as string),
+      isCompleted: !!(htmlContent || plainContent),
     }
   })
 
@@ -612,7 +637,8 @@ export async function addRfpSection(
         titleAr: section.title,
         titleEn: section.title,
         sectionType: 6, // Custom
-        contentHtml: section.content || null,
+        contentHtml: section.contentHtml || section.content || null,
+        contentPlainText: section.content || null,
         isMandatory: section.isRequired || false,
         isFromTemplate: false,
         defaultTextColor: colorCodeToBackend[section.colorCode] ?? 1,
@@ -634,7 +660,8 @@ export async function updateRfpSection(
       {
         titleAr: section.title || null,
         titleEn: section.title || null,
-        contentHtml: section.content || null,
+        contentHtml: section.contentHtml || section.content || null,
+        contentPlainText: section.content || null,
       },
     ),
   )

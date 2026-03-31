@@ -248,6 +248,7 @@ export const useRfpStore = defineStore('rfp', () => {
       id: generateId(),
       title: section?.title || '',
       content: section?.content || '',
+      contentHtml: section?.contentHtml || '',
       order: formData.value.content.sections.length,
       isRequired: section?.isRequired || false,
       colorCode: section?.colorCode || 'green',
