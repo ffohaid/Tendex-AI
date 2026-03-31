@@ -43,6 +43,12 @@ httpClient.interceptors.request.use(
       config.headers['X-Tenant-Id'] = tenantId
     }
 
+    // When sending FormData, remove Content-Type so the browser
+    // sets the correct multipart/form-data with boundary automatically
+    if (config.data instanceof FormData && config.headers) {
+      delete config.headers['Content-Type']
+    }
+
     return config
   },
   (error: AxiosError) => Promise.reject(error),
