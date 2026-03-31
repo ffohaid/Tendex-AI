@@ -11,14 +11,14 @@ namespace TendexAI.Application.Features.Rfp.Commands.CopyFromTemplate;
 public sealed class CopyFromTemplateCommandHandler
     : IRequestHandler<CopyFromTemplateCommand, Result>
 {
-    private readonly ITenantDbContext _db;
+    private readonly ITenantDbContextFactory _dbFactory;
     private readonly ILogger<CopyFromTemplateCommandHandler> _logger;
 
     public CopyFromTemplateCommandHandler(
-        ITenantDbContext db,
+        ITenantDbContextFactory dbFactory,
         ILogger<CopyFromTemplateCommandHandler> logger)
     {
-        _db = db;
+        _dbFactory = dbFactory;
         _logger = logger;
     }
 
@@ -26,7 +26,9 @@ public sealed class CopyFromTemplateCommandHandler
         CopyFromTemplateCommand request,
         CancellationToken cancellationToken)
     {
-        var template = await _db.GetDbSet<CompetitionTemplate>()
+        var db = _dbFactory.CreateDbContext();
+
+        var template = await db.GetDbSet<CompetitionTemplate>()
             .Include(t => t.Sections.OrderBy(s => s.SortOrder))
             .Include(t => t.BoqItems)
             .Include(t => t.EvaluationCriteria)
@@ -100,8 +102,8 @@ public sealed class CopyFromTemplateCommandHandler
         // Increment template usage count
         template.IncrementUsageCount();
 
-        _db.GetDbSet<Competition>().Add(competition);
-        await _db.SaveChangesAsync(cancellationToken);
+        db.GetDbSet<Competition>().Add(competition);
+        await db.SaveChangesAsync(cancellationToken);
 
         _logger.LogInformation(
             "Competition {CompetitionId} created from template {TemplateId} by {UserId}",

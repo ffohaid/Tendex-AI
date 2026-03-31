@@ -9,18 +9,20 @@ namespace TendexAI.Application.Features.Rfp.Queries.GetCompetitionTemplates;
 public sealed class GetCompetitionTemplatesQueryHandler
     : IRequestHandler<GetCompetitionTemplatesQuery, Result<CompetitionTemplateListDto>>
 {
-    private readonly ITenantDbContext _db;
+    private readonly ITenantDbContextFactory _dbFactory;
 
-    public GetCompetitionTemplatesQueryHandler(ITenantDbContext db)
+    public GetCompetitionTemplatesQueryHandler(ITenantDbContextFactory dbFactory)
     {
-        _db = db;
+        _dbFactory = dbFactory;
     }
 
     public async Task<Result<CompetitionTemplateListDto>> Handle(
         GetCompetitionTemplatesQuery request,
         CancellationToken cancellationToken)
     {
-        var query = _db.GetDbSet<CompetitionTemplate>()
+        var db = _dbFactory.CreateDbContext();
+
+        var query = db.GetDbSet<CompetitionTemplate>()
             .Where(t => t.TenantId == request.TenantId && t.IsActive);
 
         // Filter by category

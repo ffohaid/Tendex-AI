@@ -10,14 +10,14 @@ namespace TendexAI.Application.Features.Rfp.Commands.CreateCompetitionTemplate;
 public sealed class CreateCompetitionTemplateCommandHandler
     : IRequestHandler<CreateCompetitionTemplateCommand, Result>
 {
-    private readonly ITenantDbContext _db;
+    private readonly ITenantDbContextFactory _dbFactory;
     private readonly ILogger<CreateCompetitionTemplateCommandHandler> _logger;
 
     public CreateCompetitionTemplateCommandHandler(
-        ITenantDbContext db,
+        ITenantDbContextFactory dbFactory,
         ILogger<CreateCompetitionTemplateCommandHandler> logger)
     {
-        _db = db;
+        _dbFactory = dbFactory;
         _logger = logger;
     }
 
@@ -25,15 +25,18 @@ public sealed class CreateCompetitionTemplateCommandHandler
         CreateCompetitionTemplateCommand request,
         CancellationToken cancellationToken)
     {
+        var db = _dbFactory.CreateDbContext();
+
         CompetitionTemplate template;
 
         if (request.SourceCompetitionId.HasValue)
         {
             // Create from existing competition
-            var competition = await _db.GetDbSet<Competition>()
+            var competition = await db.GetDbSet<Competition>()
                 .Include(c => c.Sections)
                 .Include(c => c.BoqItems)
                 .Include(c => c.EvaluationCriteria)
+                .AsNoTracking()
                 .FirstOrDefaultAsync(c => c.Id == request.SourceCompetitionId.Value, cancellationToken);
 
             if (competition is null)
@@ -64,8 +67,8 @@ public sealed class CreateCompetitionTemplateCommandHandler
                 request.IsOfficial);
         }
 
-        _db.GetDbSet<CompetitionTemplate>().Add(template);
-        await _db.SaveChangesAsync(cancellationToken);
+        db.GetDbSet<CompetitionTemplate>().Add(template);
+        await db.SaveChangesAsync(cancellationToken);
 
         _logger.LogInformation(
             "Competition template {TemplateId} created by {UserId} for tenant {TenantId}",
