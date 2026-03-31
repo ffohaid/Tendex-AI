@@ -16,13 +16,53 @@
 | Sprint 7: الاختبار والنشر | ✅ مكتمل | 100% | تم إنجاز TASK-701, TASK-702, TASK-703, TASK-704 |
 | Sprint 8: النشر والتشغيل | ✅ مكتمل | 100% | تم إنجاز TASK-801, TASK-802, TASK-803 |
 | Sprint 9: إصلاحات التشغيل الفعلي | ✅ مكتمل | 100% | تم إنجاز TASK-901 إلى TASK-911. |
-| Sprint 10: التحول الجذري واستكمال المتطلبات | 🔄 قيد التنفيذ | 60% | TASK-1001 Frontend overhaul completed. Backend APIs pending. |
+| Sprint 10: التحول الجذري واستكمال المتطلبات | 🔄 قيد التنفيذ | 65% | TASK-1001 Frontend overhaul, TASK-1002 QA, TASK-1003 RFP Wizard fixes completed. |
 
 ---
 
 ## سجل المهام المنجزة (Completed Tasks Log)
 
 *يرجى إضافة أحدث مهمة منجزة في أعلى هذه القائمة.*
+
+### 2026-03-31 - TASK-1003: إصلاحات شاملة لمعالج إنشاء كراسات الشروط (RFP Creation Wizard Comprehensive Fixes)
+- **الحالة:** ✅ مكتمل
+- **ما تم إنجازه:**
+  - **إصلاح مشكلة تعارض التزامن في حفظ جدول الكميات (BOQ Concurrency Fix):**
+    - إنشاء نقطة نهاية دفعية جديدة `BatchAddBoqItems` لإضافة جميع بنود جدول الكميات في عملية واحدة بدلاً من إرسالها فردياً.
+    - إنشاء `BatchAddBoqItemsCommand`, `BatchAddBoqItemsCommandHandler`, و `BatchAddBoqItemsCommandValidator` في طبقة Application.
+    - تحديث `CompetitionEndpoints.cs` بإضافة مسار `POST /{id}/boq-items/batch`.
+    - تحديث `rfpService.ts` في الواجهة الأمامية لاستخدام النقطة الدفعية الجديدة.
+    - هذا يحل مشكلة `DbUpdateConcurrencyException` التي كانت تحدث عند إضافة بنود متعددة بالتتابع السريع بسبب `Version` concurrency token.
+  - **إصلاح مشكلة تحليل JSON في توليد جدول الكميات بالذكاء الاصطناعي (JSON Parsing Fix):**
+    - إضافة `JsonNumberHandling.AllowReadingFromString` في `AiBoqGenerationService.cs` لحل خطأ "The JSON value could not be converted to System.Decimal".
+    - تطبيق نفس الإصلاح على `AiOfferAnalysisService.cs` و `AiSpecificationDraftingService.cs` للاتساق.
+    - الآن يمكن للنظام تحليل القيم الرقمية سواء أرسلها الذكاء الاصطناعي كأرقام أو كنصوص.
+  - **إصلاح التنقل من الخطوة 2 إلى الخطوة 3 (Step 2 Navigation Fix):**
+    - إصلاح `rfp.ts` (validation schema) لجعل `evaluationCriteria` اختيارية بحد أدنى 0 بدلاً من 1.
+    - إصلاح `Step2Settings.vue` لعدم تهيئة معيار تقييم فارغ افتراضياً كان يسبب فشل التحقق.
+    - الآن يمكن التنقل من الخطوة 2 إلى 3 بدون إضافة معايير تقييم إلزامية.
+  - **إصلاح مفتاح تشفير الذكاء الاصطناعي (AI Encryption Key Fix):**
+    - اكتشاف أن متغير البيئة `Security__AiEncryptionKey` لم يكن يصل إلى حاوية Docker.
+    - إعادة إنشاء الحاوية بالإعدادات الصحيحة لضمان تحميل مفتاح التشفير.
+  - **اختبار شامل من البداية للنهاية (End-to-End Testing):**
+    - اختبار جميع الخطوات الست لإنشاء كراسة شروط جديدة.
+    - التحقق من عمل توليد هيكل الكراسة بالذكاء الاصطناعي (9 أقسام).
+    - التحقق من عمل توليد جدول الكميات بالذكاء الاصطناعي (6 بنود).
+    - التحقق من عرض محتوى الذكاء الاصطناعي كنص عادي بدون وسوم HTML.
+    - التحقق من عداد الأقسام في صفحة المراجعة (9 أقسام - 9 مكتمل).
+    - التحقق من عمل الحفظ التلقائي.
+- **الملفات المعدلة/الجديدة:**
+  - `backend/src/TendexAI.Application/Features/Rfp/Commands/BatchAddBoqItems/BatchAddBoqItemsCommand.cs` (جديد)
+  - `backend/src/TendexAI.Application/Features/Rfp/Commands/BatchAddBoqItems/BatchAddBoqItemsCommandHandler.cs` (جديد)
+  - `backend/src/TendexAI.Application/Features/Rfp/Commands/BatchAddBoqItems/BatchAddBoqItemsCommandValidator.cs` (جديد)
+  - `backend/src/TendexAI.API/Endpoints/Rfp/CompetitionEndpoints.cs` (معدل)
+  - `backend/src/TendexAI.Infrastructure/AI/AiBoqGenerationService.cs` (معدل)
+  - `backend/src/TendexAI.Infrastructure/AI/AiOfferAnalysisService.cs` (معدل)
+  - `backend/src/TendexAI.Infrastructure/AI/AiSpecificationDraftingService.cs` (معدل)
+  - `frontend/src/services/rfpService.ts` (معدل)
+  - `frontend/src/validations/rfp.ts` (معدل)
+  - `frontend/src/components/rfp/Step2Settings.vue` (معدل)
+- **النشر:** ✅ تم النشر بنجاح على خادم الإنتاج (187.124.41.141) - Backend و Frontend.
 
 ### 2026-03-31 - TASK-1002: الاختبار النهائي الشامل وإصلاحات الجودة (Final QA & Quality Fixes)
 - **الحالة:** ✅ مكتمل
