@@ -55,6 +55,7 @@ export interface AiOfferAnalysis {
 }
 
 export interface AiOfferSummaryItem {
+  analysisId: string
   supplierOfferId: string
   blindCode: string
   overallComplianceScore: number

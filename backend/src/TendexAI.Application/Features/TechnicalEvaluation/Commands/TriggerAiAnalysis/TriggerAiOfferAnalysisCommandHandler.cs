@@ -240,6 +240,7 @@ public sealed class TriggerAiOfferAnalysisCommandHandler
                     await _analysisRepository.SaveChangesAsync(cancellationToken);
 
                     offerSummaries.Add(new AiOfferAnalysisSummaryItemDto(
+                        aiAnalysis.Id,
                         offer.Id,
                         offer.BlindCode,
                         analysisResult.Value.OverallComplianceScore,
@@ -261,6 +262,7 @@ public sealed class TriggerAiOfferAnalysisCommandHandler
                 {
                     failedCount++;
                     offerSummaries.Add(new AiOfferAnalysisSummaryItemDto(
+                        Guid.Empty,
                         offer.Id,
                         offer.BlindCode,
                         0,
@@ -281,6 +283,7 @@ public sealed class TriggerAiOfferAnalysisCommandHandler
                     offer.BlindCode);
 
                 offerSummaries.Add(new AiOfferAnalysisSummaryItemDto(
+                    Guid.Empty,
                     offer.Id,
                     offer.BlindCode,
                     0,

@@ -45,6 +45,7 @@ public sealed class GetAiAnalysisSummaryQueryHandler
         {
             var criterionAnalyses = a.CriterionAnalyses;
             return new AiOfferAnalysisSummaryItemDto(
+                a.Id,
                 a.SupplierOfferId,
                 a.BlindCode,
                 a.OverallComplianceScore,

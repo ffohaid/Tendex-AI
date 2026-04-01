@@ -66,6 +66,7 @@ public sealed record AiAnalysisSummaryDto(
 /// Brief summary of a single offer's AI analysis.
 /// </summary>
 public sealed record AiOfferAnalysisSummaryItemDto(
+    Guid AnalysisId,
     Guid SupplierOfferId,
     string BlindCode,
     decimal OverallComplianceScore,

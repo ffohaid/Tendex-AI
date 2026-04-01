@@ -851,8 +851,8 @@ const isCompleted = computed(() => {
               v-for="offerSummary in aiSummary.offerSummaries"
               :key="offerSummary.supplierOfferId"
               class="cursor-pointer rounded-lg border border-gray-200 bg-white p-4 transition-all hover:border-purple-300 hover:shadow-md"
-              :class="selectedAiOfferId === offerSummary.supplierOfferId ? 'border-purple-500 ring-2 ring-purple-200' : ''"
-              @click="loadAiOfferDetail(offerSummary.supplierOfferId)"
+              :class="selectedAiOfferId === offerSummary.analysisId ? 'border-purple-500 ring-2 ring-purple-200' : ''"
+              @click="loadAiOfferDetail(offerSummary.analysisId)"
             >
               <div class="flex items-center justify-between">
                 <div class="flex items-center gap-2">
