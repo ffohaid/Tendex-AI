@@ -7,7 +7,7 @@
  *
  * All data is fetched dynamically — no mock/hardcoded arrays allowed.
  */
-import { httpGet, httpPost, httpPut } from '@/services/http'
+import { httpGet, httpPost, httpPut, httpDelete } from '@/services/http'
 
 /* ------------------------------------------------------------------ */
 /*  Types                                                              */
@@ -139,6 +139,7 @@ export interface UpdateWorkflowDefinitionRequest {
   descriptionAr?: string | null
   descriptionEn?: string | null
   isActive?: boolean | null
+  steps?: CreateWorkflowStepRequest[] | null
 }
 
 /* ------------------------------------------------------------------ */
@@ -248,7 +249,7 @@ export async function createWorkflowDefinition(
 }
 
 /**
- * Update an existing workflow definition.
+ * Update an existing workflow definition (including steps if provided).
  */
 export async function updateWorkflowDefinition(
   id: string,
@@ -258,6 +259,15 @@ export async function updateWorkflowDefinition(
     `${DEFINITION_BASE}/${id}`,
     request,
   )
+}
+
+/**
+ * Delete (deactivate) a workflow definition.
+ */
+export async function deleteWorkflowDefinition(
+  id: string,
+): Promise<{ message: string }> {
+  return httpDelete<{ message: string }>(`${DEFINITION_BASE}/${id}`)
 }
 
 /**

@@ -139,6 +139,15 @@ public sealed class WorkflowDefinition : BaseEntity<Guid>
         return Result.Success();
     }
 
+    /// <summary>
+    /// Removes all step definitions from this workflow (used for full replacement updates).
+    /// </summary>
+    public void ClearSteps()
+    {
+        _steps.Clear();
+        LastModifiedAt = DateTime.UtcNow;
+    }
+
     // ═════════════════════════════════════════════════════════════
     //  Lifecycle Management
     // ═════════════════════════════════════════════════════════════

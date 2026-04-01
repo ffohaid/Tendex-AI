@@ -23,7 +23,20 @@ public interface IApprovalWorkflowService
         CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// Approves a specific step in the approval workflow.
+    /// Approves a specific step in the approval workflow with role authorization.
+    /// Validates that the user has the required system role and committee role.
+    /// </summary>
+    Task<Result<ApprovalActionResult>> ApproveStepAsync(
+        Guid stepId,
+        string userId,
+        SystemRole userSystemRole,
+        CommitteeRole userCommitteeRole,
+        string? comment,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Approves a specific step in the approval workflow (backward-compatible).
+    /// Does not enforce role authorization — any authenticated user can approve.
     /// </summary>
     Task<Result<ApprovalActionResult>> ApproveStepAsync(
         Guid stepId,

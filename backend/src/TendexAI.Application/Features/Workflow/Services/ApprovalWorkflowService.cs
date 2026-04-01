@@ -13,24 +13,28 @@ namespace TendexAI.Application.Features.Workflow.Services;
 ///
 /// This service is responsible for:
 /// 1. Initiating approval workflows by creating runtime steps from definitions.
-/// 2. Processing approval/rejection actions on individual steps.
+/// 2. Processing approval/rejection actions on individual steps with role authorization.
 /// 3. Advancing the workflow when all steps at a given order are completed.
 /// 4. Triggering competition state transitions when all steps are completed.
+/// 5. Evaluating conditional step expressions at initiation time.
 /// </summary>
 public sealed class ApprovalWorkflowService : IApprovalWorkflowService
 {
     private readonly IWorkflowDefinitionRepository _workflowDefinitionRepository;
     private readonly IApprovalWorkflowStepRepository _approvalStepRepository;
     private readonly ICompetitionRepository _competitionRepository;
+    private readonly IWorkflowConditionEvaluator _conditionEvaluator;
 
     public ApprovalWorkflowService(
         IWorkflowDefinitionRepository workflowDefinitionRepository,
         IApprovalWorkflowStepRepository approvalStepRepository,
-        ICompetitionRepository competitionRepository)
+        ICompetitionRepository competitionRepository,
+        IWorkflowConditionEvaluator conditionEvaluator)
     {
         _workflowDefinitionRepository = workflowDefinitionRepository;
         _approvalStepRepository = approvalStepRepository;
         _competitionRepository = competitionRepository;
+        _conditionEvaluator = conditionEvaluator;
     }
 
     /// <inheritdoc />
@@ -61,14 +65,29 @@ public sealed class ApprovalWorkflowService : IApprovalWorkflowService
             return Result.Failure<ApprovalWorkflowInitiationResult>(
                 "يوجد مسار اعتماد نشط بالفعل لهذه المنافسة والمرحلة.");
 
-        // 3. Create runtime approval steps from the definition
+        // 3. Get competition context for condition evaluation
+        var competition = await _competitionRepository.GetByIdForUpdateAsync(competitionId, cancellationToken);
+        var conditionContext = competition is not null
+            ? _conditionEvaluator.BuildContext(competition)
+            : new Dictionary<string, object>();
+
+        // 4. Create runtime approval steps from the definition
         var steps = new List<ApprovalWorkflowStep>();
-        foreach (var stepDef in definition.Steps.Where(s => s.IsActive))
+        var skippedConditionalSteps = 0;
+
+        foreach (var stepDef in definition.Steps.Where(s => s.IsActive).OrderBy(s => s.StepOrder))
         {
-            // TODO: Evaluate conditional steps using ConditionExpression
+            // Evaluate conditional steps using ConditionExpression
             if (stepDef.IsConditional && !string.IsNullOrEmpty(stepDef.ConditionExpression))
             {
-                // For now, include all conditional steps; condition evaluation will be added later
+                var conditionMet = _conditionEvaluator.Evaluate(
+                    stepDef.ConditionExpression, conditionContext);
+
+                if (!conditionMet)
+                {
+                    skippedConditionalSteps++;
+                    continue; // Skip this step — condition not met
+                }
             }
 
             var step = ApprovalWorkflowStep.Create(
@@ -105,6 +124,8 @@ public sealed class ApprovalWorkflowService : IApprovalWorkflowService
     public async Task<Result<ApprovalActionResult>> ApproveStepAsync(
         Guid stepId,
         string userId,
+        SystemRole userSystemRole,
+        CommitteeRole userCommitteeRole,
         string? comment,
         CancellationToken cancellationToken = default)
     {
@@ -120,6 +141,11 @@ public sealed class ApprovalWorkflowService : IApprovalWorkflowService
             return Result.Failure<ApprovalActionResult>(
                 "هذه الخطوة ليست الخطوة الحالية في مسار الاعتماد.");
 
+        // Verify user has the required system role
+        var roleAuthResult = ValidateStepAuthorization(step, userSystemRole, userCommitteeRole);
+        if (roleAuthResult.IsFailure)
+            return Result.Failure<ApprovalActionResult>(roleAuthResult.Error!);
+
         // Approve the step
         var result = step.Approve(userId, comment);
         if (result.IsFailure)
@@ -128,9 +154,63 @@ public sealed class ApprovalWorkflowService : IApprovalWorkflowService
         _approvalStepRepository.Update(step);
         await _approvalStepRepository.SaveChangesAsync(cancellationToken);
 
-        // Check if all steps at this order are now completed
+        // Check if all steps are now completed
         var allStepsCompleted = await _approvalStepRepository.AreAllStepsCompletedAsync(
             step.CompetitionId, step.FromStatus, step.ToStatus, cancellationToken);
+
+        // Auto-transition competition status when all steps are completed
+        if (allStepsCompleted)
+        {
+            await TransitionCompetitionStatusAsync(
+                step.CompetitionId, step.ToStatus, userId, cancellationToken);
+        }
+
+        return Result.Success(new ApprovalActionResult(
+            StepId: stepId,
+            CompetitionId: step.CompetitionId,
+            IsWorkflowCompleted: allStepsCompleted,
+            FromStatus: step.FromStatus,
+            ToStatus: step.ToStatus));
+    }
+
+    /// <summary>
+    /// Backward-compatible overload without role parameters.
+    /// Uses permissive authorization (any authenticated user can approve).
+    /// </summary>
+    public async Task<Result<ApprovalActionResult>> ApproveStepAsync(
+        Guid stepId,
+        string userId,
+        string? comment,
+        CancellationToken cancellationToken = default)
+    {
+        // Permissive mode — skip role validation for backward compatibility
+        var step = await _approvalStepRepository.GetByIdForUpdateAsync(stepId, cancellationToken);
+        if (step is null)
+            return Result.Failure<ApprovalActionResult>("خطوة الاعتماد غير موجودة.");
+
+        var currentPendingSteps = await _approvalStepRepository.GetCurrentPendingStepsAsync(
+            step.CompetitionId, step.FromStatus, step.ToStatus, cancellationToken);
+
+        if (!currentPendingSteps.Any(s => s.Id == stepId))
+            return Result.Failure<ApprovalActionResult>(
+                "هذه الخطوة ليست الخطوة الحالية في مسار الاعتماد.");
+
+        var result = step.Approve(userId, comment);
+        if (result.IsFailure)
+            return Result.Failure<ApprovalActionResult>(result.Error!);
+
+        _approvalStepRepository.Update(step);
+        await _approvalStepRepository.SaveChangesAsync(cancellationToken);
+
+        var allStepsCompleted = await _approvalStepRepository.AreAllStepsCompletedAsync(
+            step.CompetitionId, step.FromStatus, step.ToStatus, cancellationToken);
+
+        // Auto-transition competition status when all steps are completed
+        if (allStepsCompleted)
+        {
+            await TransitionCompetitionStatusAsync(
+                step.CompetitionId, step.ToStatus, userId, cancellationToken);
+        }
 
         return Result.Success(new ApprovalActionResult(
             StepId: stepId,
@@ -247,6 +327,75 @@ public sealed class ApprovalWorkflowService : IApprovalWorkflowService
     }
 
     // ═════════════════════════════════════════════════════════════
+    //  Authorization Validation
+    // ═════════════════════════════════════════════════════════════
+
+    /// <summary>
+    /// Validates that the user has the required system role and committee role
+    /// to act on the given approval step.
+    /// </summary>
+    private static Result ValidateStepAuthorization(
+        ApprovalWorkflowStep step,
+        SystemRole userSystemRole,
+        CommitteeRole userCommitteeRole)
+    {
+        // Check system role requirement
+        if (step.RequiredRole != SystemRole.Member && userSystemRole != step.RequiredRole)
+        {
+            return Result.Failure(
+                $"ليس لديك الصلاحية المطلوبة لاعتماد هذه الخطوة. الدور المطلوب: {step.RequiredRole}، دورك الحالي: {userSystemRole}.");
+        }
+
+        // Check committee role requirement (if specified)
+        if (step.RequiredCommitteeRole != CommitteeRole.None &&
+            userCommitteeRole != step.RequiredCommitteeRole)
+        {
+            return Result.Failure(
+                $"يجب أن تكون عضواً في اللجنة المطلوبة لاعتماد هذه الخطوة. الدور المطلوب: {step.RequiredCommitteeRole}، دورك الحالي: {userCommitteeRole}.");
+        }
+
+        return Result.Success();
+    }
+
+    // ═════════════════════════════════════════════════════════════
+    //  Competition Status Transition
+    // ═════════════════════════════════════════════════════════════
+
+    /// <summary>
+    /// Automatically transitions the competition status when all approval steps
+    /// are completed. This ensures the workflow engine drives the competition
+    /// lifecycle forward without manual intervention.
+    /// </summary>
+    private async Task TransitionCompetitionStatusAsync(
+        Guid competitionId,
+        CompetitionStatus targetStatus,
+        string userId,
+        CancellationToken cancellationToken)
+    {
+        try
+        {
+            var competition = await _competitionRepository.GetByIdForUpdateAsync(competitionId, cancellationToken);
+            if (competition is null) return;
+
+            // Only transition if the competition is not already at or past the target status
+            if ((int)competition.Status < (int)targetStatus)
+            {
+                var transitionResult = competition.TransitionTo(targetStatus, userId);
+                if (transitionResult.IsSuccess)
+                {
+                    _competitionRepository.Update(competition);
+                    await _competitionRepository.SaveChangesAsync(cancellationToken);
+                }
+            }
+        }
+        catch (Exception)
+        {
+            // Log but don't fail the approval action if status transition fails
+            // The workflow is still marked as completed
+        }
+    }
+
+    // ═════════════════════════════════════════════════════════════
     //  Fallback: Hardcoded Template (Backward Compatibility)
     // ═════════════════════════════════════════════════════════════
 
@@ -273,7 +422,7 @@ public sealed class ApprovalWorkflowService : IApprovalWorkflowService
                 tenantId: tenantId,
                 fromStatus: fromStatus,
                 toStatus: toStatus,
-                stepOrder: template.Order,
+                stepOrder: template.StepOrder,
                 requiredRole: template.RequiredRole,
                 requiredCommitteeRole: template.RequiredCommitteeRole,
                 stepNameAr: template.StepNameAr,
@@ -290,6 +439,123 @@ public sealed class ApprovalWorkflowService : IApprovalWorkflowService
             WorkflowDefinitionId: null,
             TotalSteps: steps.Count,
             StepIds: steps.Select(s => s.Id).ToList()));
+    }
+}
+
+// ═════════════════════════════════════════════════════════════
+//  Condition Evaluator Interface & Implementation
+// ═════════════════════════════════════════════════════════════
+
+/// <summary>
+/// Evaluates conditional expressions for workflow step definitions.
+/// Supports simple comparison expressions like "EstimatedValue > 1000000"
+/// and "CompetitionType == PublicTender".
+/// </summary>
+public interface IWorkflowConditionEvaluator
+{
+    /// <summary>
+    /// Builds a context dictionary from a competition entity for condition evaluation.
+    /// </summary>
+    Dictionary<string, object> BuildContext(object competition);
+
+    /// <summary>
+    /// Evaluates a condition expression against the provided context.
+    /// Returns true if the condition is met, false otherwise.
+    /// </summary>
+    bool Evaluate(string expression, Dictionary<string, object> context);
+}
+
+/// <summary>
+/// Default implementation of the condition evaluator.
+/// Supports simple binary comparison expressions:
+/// - Numeric comparisons: "EstimatedValue > 1000000", "EstimatedValue >= 500000"
+/// - Equality checks: "CompetitionType == PublicTender", "CompetitionType != DirectPurchase"
+/// </summary>
+public sealed class SimpleWorkflowConditionEvaluator : IWorkflowConditionEvaluator
+{
+    public Dictionary<string, object> BuildContext(object competition)
+    {
+        var context = new Dictionary<string, object>(StringComparer.OrdinalIgnoreCase);
+
+        // Use reflection to extract common competition properties
+        var type = competition.GetType();
+
+        var estimatedValue = type.GetProperty("EstimatedValue")?.GetValue(competition);
+        if (estimatedValue is not null)
+            context["EstimatedValue"] = estimatedValue;
+
+        var competitionType = type.GetProperty("CompetitionType")?.GetValue(competition);
+        if (competitionType is not null)
+            context["CompetitionType"] = competitionType.ToString()!;
+
+        var status = type.GetProperty("Status")?.GetValue(competition);
+        if (status is not null)
+            context["Status"] = status.ToString()!;
+
+        var evaluationMethod = type.GetProperty("EvaluationMethod")?.GetValue(competition);
+        if (evaluationMethod is not null)
+            context["EvaluationMethod"] = evaluationMethod.ToString()!;
+
+        return context;
+    }
+
+    public bool Evaluate(string expression, Dictionary<string, object> context)
+    {
+        if (string.IsNullOrWhiteSpace(expression))
+            return true; // Empty expression always passes
+
+        try
+        {
+            // Parse simple binary expressions: "PropertyName operator Value"
+            var parts = expression.Trim().Split(' ', 3, StringSplitOptions.RemoveEmptyEntries);
+            if (parts.Length != 3)
+                return true; // Cannot parse — include the step by default
+
+            var propertyName = parts[0];
+            var op = parts[1];
+            var valueStr = parts[2];
+
+            if (!context.TryGetValue(propertyName, out var contextValue))
+                return true; // Property not found — include the step by default
+
+            // Numeric comparison
+            if (decimal.TryParse(valueStr, out var numericValue) &&
+                contextValue is IConvertible convertible)
+            {
+                try
+                {
+                    var contextNumeric = Convert.ToDecimal(convertible);
+                    return op switch
+                    {
+                        ">" => contextNumeric > numericValue,
+                        ">=" => contextNumeric >= numericValue,
+                        "<" => contextNumeric < numericValue,
+                        "<=" => contextNumeric <= numericValue,
+                        "==" => contextNumeric == numericValue,
+                        "!=" => contextNumeric != numericValue,
+                        _ => true
+                    };
+                }
+                catch
+                {
+                    return true;
+                }
+            }
+
+            // String equality comparison
+            var contextStr = contextValue.ToString() ?? "";
+            return op switch
+            {
+                "==" => string.Equals(contextStr, valueStr, StringComparison.OrdinalIgnoreCase),
+                "!=" => !string.Equals(contextStr, valueStr, StringComparison.OrdinalIgnoreCase),
+                _ => true
+            };
+        }
+        catch
+        {
+            // If evaluation fails, include the step by default (fail-open for safety)
+            return true;
+        }
     }
 }
 

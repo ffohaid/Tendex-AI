@@ -3,11 +3,11 @@
  * WorkflowListView — Approval Workflow Definitions Management
  *
  * Displays all configured approval workflow definitions for the current tenant.
- * Connects to the new /api/v1/workflow-definitions backend.
+ * Improved with clearer cards, better status display, and step summaries.
  *
  * Features:
  * - List workflow definitions with status badges
- * - View steps count and transition info
+ * - View steps count, transition info, and role summaries
  * - Create / Edit / Activate / Deactivate workflows
  * - Seed default workflows
  * - Search and filter by status
@@ -20,6 +20,7 @@ import {
   getWorkflowDefinitions,
   seedDefaultWorkflows,
   updateWorkflowDefinition,
+  deleteWorkflowDefinition,
   type WorkflowDefinitionDto,
 } from '@/services/workflowService'
 
@@ -36,6 +37,8 @@ const statusFilter = ref<string>('all')
 const isSeeding = ref(false)
 const seedError = ref('')
 const seedSuccess = ref('')
+const showDeleteConfirm = ref(false)
+const deleteTargetId = ref('')
 
 /* ------------------------------------------------------------------ */
 /*  Computed                                                           */
@@ -57,6 +60,11 @@ const filteredWorkflows = computed(() => {
   return result
 })
 
+const workflowStats = computed(() => ({
+  total: workflows.value.length,
+  active: workflows.value.filter(w => w.isActive).length,
+  inactive: workflows.value.filter(w => !w.isActive).length,
+}))
 
 /* ------------------------------------------------------------------ */
 /*  Helpers                                                            */
@@ -84,6 +92,28 @@ const statusMap: Record<number, { ar: string; en: string }> = {
   92: { ar: 'معلقة', en: 'Suspended' },
 }
 
+const systemRoleMap: Record<number, { ar: string; en: string }> = {
+  1: { ar: 'صاحب الصلاحية', en: 'Authority Owner' },
+  2: { ar: 'مشرف النظام', en: 'System Admin' },
+  3: { ar: 'ممثل القطاع', en: 'Sector Rep' },
+  4: { ar: 'المراقب المالي', en: 'Financial Controller' },
+  5: { ar: 'عضو', en: 'Member' },
+  6: { ar: 'مشاهد', en: 'Viewer' },
+}
+
+const committeeRoleMap: Record<number, { ar: string; en: string }> = {
+  0: { ar: '', en: '' },
+  1: { ar: 'رئيس لجنة الإعداد', en: 'Prep. Chair' },
+  2: { ar: 'عضو لجنة الإعداد', en: 'Prep. Member' },
+  3: { ar: 'رئيس لجنة الفحص الفني', en: 'Tech. Chair' },
+  4: { ar: 'عضو لجنة الفحص الفني', en: 'Tech. Member' },
+  5: { ar: 'رئيس لجنة الفحص المالي', en: 'Fin. Chair' },
+  6: { ar: 'عضو لجنة الفحص المالي', en: 'Fin. Member' },
+  7: { ar: 'رئيس لجنة الاستفسارات', en: 'Inquiry Chair' },
+  8: { ar: 'عضو لجنة الاستفسارات', en: 'Inquiry Member' },
+  9: { ar: 'سكرتير اللجنة', en: 'Secretary' },
+}
+
 function getTransitionLabel(from: number, to: number): string {
   const fromLabel = statusMap[from]
   const toLabel = statusMap[to]
@@ -97,10 +127,12 @@ function getStatusBadge(isActive: boolean) {
     ? {
         label: locale.value === 'ar' ? 'نشط' : 'Active',
         class: 'bg-green-50 text-green-700 border-green-200',
+        icon: 'pi-check-circle',
       }
     : {
         label: locale.value === 'ar' ? 'غير نشط' : 'Inactive',
         class: 'bg-gray-50 text-gray-500 border-gray-200',
+        icon: 'pi-minus-circle',
       }
 }
 
@@ -111,6 +143,32 @@ function getWorkflowName(wf: WorkflowDefinitionDto): string {
 function getWorkflowDescription(wf: WorkflowDefinitionDto): string {
   const desc = locale.value === 'ar' ? wf.descriptionAr : wf.descriptionEn
   return desc || ''
+}
+
+function getStepSummary(wf: WorkflowDefinitionDto): string {
+  if (wf.steps.length === 0) return locale.value === 'ar' ? 'لا توجد خطوات' : 'No steps'
+  const isAr = locale.value === 'ar'
+  const roles = wf.steps.map(s => {
+    const sysRole = systemRoleMap[s.requiredSystemRole]
+    const comRole = committeeRoleMap[s.requiredCommitteeRole]
+    let label = isAr ? (sysRole?.ar || '') : (sysRole?.en || '')
+    if (s.requiredCommitteeRole > 0 && comRole) {
+      label += isAr ? ` (${comRole.ar})` : ` (${comRole.en})`
+    }
+    return label
+  })
+  return roles.join(isAr ? ' ← ' : ' → ')
+}
+
+function getTotalSlaHours(wf: WorkflowDefinitionDto): number {
+  return wf.steps.reduce((sum, s) => sum + (s.slaHours || 0), 0)
+}
+
+function formatSla(hours: number): string {
+  if (hours === 0) return locale.value === 'ar' ? 'غير محدد' : 'N/A'
+  if (hours < 24) return locale.value === 'ar' ? `${hours} ساعة` : `${hours}h`
+  const days = Math.floor(hours / 24)
+  return locale.value === 'ar' ? `${days} يوم` : `${days}d`
 }
 
 /* ------------------------------------------------------------------ */
@@ -173,6 +231,25 @@ function createWorkflow(): void {
   router.push('/workflow/designer')
 }
 
+function confirmDelete(id: string, event: Event): void {
+  event.stopPropagation()
+  deleteTargetId.value = id
+  showDeleteConfirm.value = true
+}
+
+async function handleDelete(): Promise<void> {
+  if (!deleteTargetId.value) return
+  try {
+    await deleteWorkflowDefinition(deleteTargetId.value)
+    await loadWorkflows()
+  } catch (err) {
+    console.error('Failed to delete workflow:', err)
+  } finally {
+    showDeleteConfirm.value = false
+    deleteTargetId.value = ''
+  }
+}
+
 /* ------------------------------------------------------------------ */
 /*  Lifecycle                                                          */
 /* ------------------------------------------------------------------ */
@@ -211,6 +288,22 @@ onMounted(() => {
           <i class="pi pi-plus text-xs"></i>
           {{ t('workflow.create') }}
         </button>
+      </div>
+    </div>
+
+    <!-- Stats Summary -->
+    <div v-if="workflows.length > 0" class="grid grid-cols-3 gap-3">
+      <div class="rounded-xl border border-secondary-100 bg-white p-4 text-center">
+        <p class="text-2xl font-bold text-secondary-800">{{ workflowStats.total }}</p>
+        <p class="text-xs text-secondary-500">{{ locale === 'ar' ? 'إجمالي المسارات' : 'Total Workflows' }}</p>
+      </div>
+      <div class="rounded-xl border border-green-100 bg-green-50/50 p-4 text-center">
+        <p class="text-2xl font-bold text-green-700">{{ workflowStats.active }}</p>
+        <p class="text-xs text-green-600">{{ locale === 'ar' ? 'مسارات نشطة' : 'Active' }}</p>
+      </div>
+      <div class="rounded-xl border border-gray-100 bg-gray-50/50 p-4 text-center">
+        <p class="text-2xl font-bold text-gray-500">{{ workflowStats.inactive }}</p>
+        <p class="text-xs text-gray-400">{{ locale === 'ar' ? 'غير نشطة' : 'Inactive' }}</p>
       </div>
     </div>
 
@@ -273,7 +366,7 @@ onMounted(() => {
 
     <!-- Loading State -->
     <div v-if="isLoading" class="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
-      <div v-for="i in 6" :key="i" class="h-48 animate-pulse rounded-xl border border-secondary-100 bg-secondary-50"></div>
+      <div v-for="i in 6" :key="i" class="h-56 animate-pulse rounded-xl border border-secondary-100 bg-secondary-50"></div>
     </div>
 
     <!-- Empty State -->
@@ -315,65 +408,129 @@ onMounted(() => {
       <div
         v-for="wf in filteredWorkflows"
         :key="wf.id"
-        class="group cursor-pointer rounded-xl border border-secondary-100 bg-white p-5 shadow-sm transition-all hover:border-primary/30 hover:shadow-md"
+        class="group cursor-pointer rounded-xl border border-secondary-100 bg-white shadow-sm transition-all hover:border-primary/30 hover:shadow-md"
         @click="editWorkflow(wf.id)"
       >
-        <!-- Header -->
-        <div class="mb-3 flex items-start justify-between">
+        <!-- Card Header -->
+        <div class="flex items-start justify-between p-5 pb-3">
           <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10">
             <i class="pi pi-sitemap text-lg text-primary"></i>
           </div>
           <span
-            class="inline-flex items-center rounded-md border px-2 py-0.5 text-xs font-medium"
+            class="inline-flex items-center gap-1 rounded-md border px-2 py-0.5 text-xs font-medium"
             :class="getStatusBadge(wf.isActive).class"
           >
+            <i class="pi text-[9px]" :class="getStatusBadge(wf.isActive).icon"></i>
             {{ getStatusBadge(wf.isActive).label }}
           </span>
         </div>
 
-        <!-- Name & Description -->
-        <h3 class="text-sm font-bold text-secondary-800 group-hover:text-primary">
-          {{ getWorkflowName(wf) }}
-        </h3>
-        <p v-if="getWorkflowDescription(wf)" class="mt-1 line-clamp-2 text-xs text-secondary-500">
-          {{ getWorkflowDescription(wf) }}
-        </p>
+        <!-- Card Body -->
+        <div class="px-5 pb-3">
+          <!-- Name & Description -->
+          <h3 class="text-sm font-bold text-secondary-800 group-hover:text-primary">
+            {{ getWorkflowName(wf) }}
+          </h3>
+          <p v-if="getWorkflowDescription(wf)" class="mt-1 line-clamp-2 text-xs text-secondary-500">
+            {{ getWorkflowDescription(wf) }}
+          </p>
 
-        <!-- Transition Info -->
-        <div class="mt-3 rounded-lg bg-secondary-50 px-3 py-2">
-          <div class="flex items-center gap-2 text-xs text-secondary-600">
+          <!-- Transition Flow -->
+          <div class="mt-3 flex items-center gap-2 rounded-lg bg-secondary-50 px-3 py-2">
             <i class="pi pi-arrow-right-arrow-left text-[10px] text-primary"></i>
-            <span>{{ getTransitionLabel(wf.transitionFrom, wf.transitionTo) }}</span>
+            <span class="text-xs font-medium text-secondary-600">{{ getTransitionLabel(wf.transitionFrom, wf.transitionTo) }}</span>
+          </div>
+
+          <!-- Steps Summary -->
+          <div class="mt-2 rounded-lg bg-blue-50/50 px-3 py-2">
+            <p class="text-[10px] font-semibold text-blue-700">
+              <i class="pi pi-users me-1 text-[9px]"></i>
+              {{ locale === 'ar' ? 'مسار الاعتماد:' : 'Approval path:' }}
+            </p>
+            <p class="mt-0.5 text-[10px] text-blue-600">{{ getStepSummary(wf) }}</p>
           </div>
         </div>
 
-        <!-- Footer -->
-        <div class="mt-3 flex items-center justify-between border-t border-secondary-50 pt-3">
+        <!-- Card Footer -->
+        <div class="flex items-center justify-between border-t border-secondary-50 px-5 py-3">
           <div class="flex items-center gap-3 text-[10px] text-secondary-400">
-            <span>
-              <i class="pi pi-list me-1"></i>
+            <span class="flex items-center gap-1">
+              <i class="pi pi-list text-[9px]"></i>
               {{ wf.steps.length }} {{ locale === 'ar' ? 'خطوة' : 'steps' }}
             </span>
-            <span>
-              <i class="pi pi-tag me-1"></i>
+            <span class="flex items-center gap-1">
+              <i class="pi pi-clock text-[9px]"></i>
+              {{ formatSla(getTotalSlaHours(wf)) }}
+            </span>
+            <span class="flex items-center gap-1">
+              <i class="pi pi-tag text-[9px]"></i>
               v{{ wf.version }}
             </span>
           </div>
 
-          <!-- Toggle Active -->
-          <button
-            class="rounded-lg px-2 py-1 text-[10px] font-medium transition-colors"
-            :class="
-              wf.isActive
-                ? 'text-red-500 hover:bg-red-50'
-                : 'text-green-600 hover:bg-green-50'
-            "
-            @click.stop="toggleWorkflowStatus(wf)"
-          >
-            {{ wf.isActive ? (locale === 'ar' ? 'تعطيل' : 'Deactivate') : (locale === 'ar' ? 'تفعيل' : 'Activate') }}
-          </button>
+          <div class="flex items-center gap-2">
+            <!-- Toggle Active -->
+            <button
+              class="rounded-lg px-2 py-1 text-[10px] font-medium transition-colors"
+              :class="
+                wf.isActive
+                  ? 'text-amber-600 hover:bg-amber-50'
+                  : 'text-green-600 hover:bg-green-50'
+              "
+              @click.stop="toggleWorkflowStatus(wf)"
+            >
+              {{ wf.isActive ? (locale === 'ar' ? 'تعطيل' : 'Deactivate') : (locale === 'ar' ? 'تفعيل' : 'Activate') }}
+            </button>
+            <!-- Delete -->
+            <button
+              class="rounded-lg px-2 py-1 text-[10px] font-medium text-red-500 transition-colors hover:bg-red-50"
+              @click.stop="confirmDelete(wf.id, $event)"
+            >
+              <i class="pi pi-trash text-[9px]"></i>
+            </button>
+          </div>
         </div>
       </div>
     </div>
+    <!-- Delete Confirmation Modal -->
+    <Teleport to="body">
+      <div
+        v-if="showDeleteConfirm"
+        class="fixed inset-0 z-50 flex items-center justify-center bg-black/40"
+        @click.self="showDeleteConfirm = false"
+      >
+        <div class="w-full max-w-sm rounded-xl bg-white p-6 shadow-xl">
+          <div class="mb-4 flex items-center gap-3">
+            <div class="flex h-10 w-10 items-center justify-center rounded-full bg-red-100">
+              <i class="pi pi-exclamation-triangle text-lg text-red-600"></i>
+            </div>
+            <div>
+              <h3 class="text-sm font-bold text-secondary-800">
+                {{ locale === 'ar' ? 'تأكيد الحذف' : 'Confirm Delete' }}
+              </h3>
+              <p class="text-xs text-secondary-500">
+                {{ locale === 'ar'
+                  ? 'هل أنت متأكد من حذف هذا المسار؟ سيتم تعطيله بشكل دائم.'
+                  : 'Are you sure you want to delete this workflow? It will be permanently deactivated.' }}
+              </p>
+            </div>
+          </div>
+          <div class="flex justify-end gap-3">
+            <button
+              class="rounded-lg border border-secondary-200 px-4 py-2 text-xs font-medium text-secondary-600 hover:bg-secondary-50"
+              @click="showDeleteConfirm = false"
+            >
+              {{ locale === 'ar' ? 'إلغاء' : 'Cancel' }}
+            </button>
+            <button
+              class="rounded-lg bg-red-600 px-4 py-2 text-xs font-medium text-white hover:bg-red-700"
+              @click="handleDelete"
+            >
+              {{ locale === 'ar' ? 'حذف' : 'Delete' }}
+            </button>
+          </div>
+        </div>
+      </div>
+    </Teleport>
   </div>
 </template>

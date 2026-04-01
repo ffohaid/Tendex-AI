@@ -10,7 +10,7 @@ namespace TendexAI.API.Endpoints.Workflow;
 /// 1. Initiating approval workflows for competition phase transitions
 /// 2. Approving/rejecting individual workflow steps
 /// 3. Querying workflow status and step details
-/// 4. Managing workflow definitions (admin)
+/// 4. Managing workflow definitions (admin) — full CRUD including steps
 /// </summary>
 public static class ApprovalWorkflowEndpoints
 {
@@ -68,7 +68,11 @@ public static class ApprovalWorkflowEndpoints
 
         definitionGroup.MapPut("/{id:guid}", UpdateWorkflowDefinitionAsync)
             .WithName("UpdateWorkflowDefinition")
-            .WithSummary("Update an existing workflow definition");
+            .WithSummary("Update an existing workflow definition including its steps");
+
+        definitionGroup.MapDelete("/{id:guid}", DeleteWorkflowDefinitionAsync)
+            .WithName("DeleteWorkflowDefinition")
+            .WithSummary("Delete a workflow definition (soft-delete by deactivation)");
 
         definitionGroup.MapPost("/seed-defaults", SeedDefaultWorkflowsAsync)
             .WithName("SeedDefaultWorkflows")
@@ -171,7 +175,6 @@ public static class ApprovalWorkflowEndpoints
         CancellationToken cancellationToken)
     {
         // Get all transitions for this competition
-        // For now, return the booklet approval workflow status
         var bookletSubmitStatus = await workflowService.GetWorkflowStatusAsync(
             competitionId,
             CompetitionStatus.UnderPreparation,
@@ -317,6 +320,7 @@ public static class ApprovalWorkflowEndpoints
         if (definition is null)
             return Results.NotFound("مسار الاعتماد غير موجود.");
 
+        // Update basic info
         definition.UpdateInfo(
             nameAr: request.NameAr,
             nameEn: request.NameEn,
@@ -324,6 +328,7 @@ public static class ApprovalWorkflowEndpoints
             descriptionEn: request.DescriptionEn,
             updatedBy: userId);
 
+        // Update active status
         if (request.IsActive.HasValue)
         {
             if (request.IsActive.Value)
@@ -332,10 +337,51 @@ public static class ApprovalWorkflowEndpoints
                 definition.Deactivate(userId);
         }
 
+        // Update steps if provided — full replacement strategy
+        if (request.Steps is not null)
+        {
+            // Remove all existing steps
+            definition.ClearSteps();
+
+            // Add new steps
+            foreach (var stepReq in request.Steps.OrderBy(s => s.StepOrder))
+            {
+                definition.AddStep(
+                    stepOrder: stepReq.StepOrder,
+                    requiredSystemRole: stepReq.RequiredSystemRole,
+                    requiredCommitteeRole: stepReq.RequiredCommitteeRole,
+                    stepNameAr: stepReq.StepNameAr,
+                    stepNameEn: stepReq.StepNameEn,
+                    slaHours: stepReq.SlaHours,
+                    isConditional: stepReq.IsConditional,
+                    conditionExpression: stepReq.ConditionExpression);
+            }
+        }
+
         repository.Update(definition);
         await repository.SaveChangesAsync(cancellationToken);
 
         return Results.Ok(new { id = definition.Id, version = definition.Version });
+    }
+
+    private static async Task<IResult> DeleteWorkflowDefinitionAsync(
+        Guid id,
+        [FromServices] Domain.Entities.Workflow.IWorkflowDefinitionRepository repository,
+        HttpContext httpContext,
+        CancellationToken cancellationToken)
+    {
+        var userId = httpContext.User.FindFirst("sub")?.Value ?? "system";
+
+        var definition = await repository.GetByIdWithStepsForUpdateAsync(id, cancellationToken);
+        if (definition is null)
+            return Results.NotFound("مسار الاعتماد غير موجود.");
+
+        // Soft-delete by deactivation
+        definition.Deactivate(userId);
+        repository.Update(definition);
+        await repository.SaveChangesAsync(cancellationToken);
+
+        return Results.Ok(new { message = "تم تعطيل مسار الاعتماد بنجاح." });
     }
 
     private static async Task<IResult> SeedDefaultWorkflowsAsync(
@@ -408,7 +454,8 @@ public sealed record UpdateWorkflowDefinitionRequest(
     string NameEn,
     string? DescriptionAr,
     string? DescriptionEn,
-    bool? IsActive);
+    bool? IsActive,
+    List<CreateWorkflowStepRequest>? Steps);
 
 public sealed record WorkflowDefinitionDto(
     Guid Id,

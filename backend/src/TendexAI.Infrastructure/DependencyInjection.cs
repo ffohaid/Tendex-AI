@@ -212,6 +212,7 @@ public static class DependencyInjection
         services.AddScoped<IPhaseTransitionHistoryRepository, PhaseTransitionHistoryRepository>();
 
         // ----- Approval Workflow Service -----
+        services.AddSingleton<IWorkflowConditionEvaluator, SimpleWorkflowConditionEvaluator>();
         services.AddScoped<IApprovalWorkflowService, ApprovalWorkflowService>();
 
         // ----- Security Services -----
