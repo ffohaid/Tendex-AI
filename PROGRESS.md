@@ -2847,3 +2847,21 @@
 
 **Commits:**
 - `49b2089` - fix: prioritize i18n error keys over raw backend messages in login flow
+
+### 2026-04-01 - Bug Fixes: Status Transition & Attachment Validation
+- **الحالة:** ✅ مكتمل
+- **ما تم إنجازه:**
+  - **إصلاح خطأ انتقال الحالة عند التقديم للاعتماد:**
+    - **السبب الجذري (Backend):** `ChangeCompetitionStatusCommandHandler` كان يدعم فقط 4 حالات (PendingApproval, Approved, Rejected, Cancelled) ولا يدعم UnderPreparation
+    - آلة الحالة تتطلب: Draft(0) → UnderPreparation(1) → PendingApproval(2)
+    - **الإصلاح (Backend):** إضافة UnderPreparation, Draft, Suspended إلى switch statement، مع fallback عام عبر `TransitionTo`
+    - **الإصلاح (Frontend):** تحديث `submitRfpForApproval()` في `rfpService.ts` للتحقق من الحالة الحالية والانتقال عبر خطوتين تلقائياً
+  - **تخفيف شروط التحقق في صفحة المراجعة:**
+    - جدول الكميات والمرفقات أصبحت اختيارية (لا تمنع التقديم)
+    - إعدادات المنافسة تتطلب فقط طريقة التقييم (المعايير اختيارية)
+- **الملفات المعدلة:**
+  - `backend/src/TendexAI.Application/Features/Rfp/Commands/ChangeCompetitionStatus/ChangeCompetitionStatusCommandHandler.cs`
+  - `frontend/src/services/rfpService.ts`
+  - `frontend/src/components/rfp/Step6Review.vue`
+- **النشر:** ✅ تم النشر بنجاح - الانتقال من Draft إلى PendingApproval يعمل بشكل صحيح
+- **Commit:** `9b10d9b` - fix: resolve status transition and review validation bugs
