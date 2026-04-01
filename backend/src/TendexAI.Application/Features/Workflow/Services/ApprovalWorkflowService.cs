@@ -422,7 +422,7 @@ public sealed class ApprovalWorkflowService : IApprovalWorkflowService
                 tenantId: tenantId,
                 fromStatus: fromStatus,
                 toStatus: toStatus,
-                stepOrder: template.StepOrder,
+                stepOrder: template.Order,
                 requiredRole: template.RequiredRole,
                 requiredCommitteeRole: template.RequiredCommitteeRole,
                 stepNameAr: template.StepNameAr,
@@ -524,7 +524,7 @@ public sealed class SimpleWorkflowConditionEvaluator : IWorkflowConditionEvaluat
             {
                 try
                 {
-                    var contextNumeric = Convert.ToDecimal(convertible);
+                    var contextNumeric = Convert.ToDecimal(convertible, System.Globalization.CultureInfo.InvariantCulture);
                     return op switch
                     {
                         ">" => contextNumeric > numericValue,
