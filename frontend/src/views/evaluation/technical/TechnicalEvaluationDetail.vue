@@ -51,9 +51,12 @@ const reviewNotes = ref('')
 /* Minutes state */
 const minutesContent = ref('')
 const minutesGenerating = ref(false)
+const minutesId = ref<string | null>(null)
+const minutesError = ref('')
+const minutesData = ref<any>(null)
 
-function copyToClipboard(text: string) {
-  navigator.clipboard.writeText(text)
+function printMinutes() {
+  window.print()
 }
 
 onMounted(async () => {
@@ -281,65 +284,256 @@ function getHeatmapCellColor(pct: number): string {
   return 'bg-gray-50 text-gray-400'
 }
 
-/* Generate minutes */
+/* Generate minutes - builds a professional HTML-formatted minutes document */
 async function generateMinutes() {
   minutesGenerating.value = true
+  minutesError.value = ''
   try {
-    const lines: string[] = []
-    lines.push('محضر اجتماع لجنة فحص العروض الفنية')
-    lines.push('═'.repeat(50))
-    lines.push('')
-    lines.push(`المنافسة: ${store.selectedCompetition?.projectName || competitionId.value}`)
-    lines.push(`التاريخ: ${new Date().toLocaleDateString('ar-SA')}`)
-    lines.push(`حالة التقييم: ${store.technicalEvaluation?.status === 1 ? 'قيد التنفيذ' : store.technicalEvaluation?.status === 2 ? 'مكتمل' : 'معلق'}`)
-    lines.push(`عدد العروض: ${store.blindOffers.length}`)
-    lines.push(`عدد المعايير: ${store.criteria.length}`)
-    lines.push('')
-    lines.push('نتائج التقييم الفني:')
-    lines.push('─'.repeat(40))
-    
-    store.blindOffers.forEach(offer => {
-      const total = offerTotals.value[offer.offerId] ?? 0
-      const passingScore = store.technicalEvaluation?.minimumPassingScore ?? 60
-      const result = total >= passingScore ? 'ناجح ✓' : 'غير ناجح ✗'
-      lines.push(`  ${offer.blindCode}: ${total}% - ${result}`)
+    // Try to call backend API first
+    try {
+      const { generateMinutes: genApi, fetchMinutesList } = await import('@/services/evaluationApi')
+      // Check if minutes already exist
+      const list = await fetchMinutesList(competitionId.value)
+      const techMinutes = list?.find((m: any) => m.minutesType === 1)
+      if (techMinutes) {
+        minutesId.value = techMinutes.id
+        minutesData.value = techMinutes
+      } else {
+        // Generate new minutes via API
+        const result = await genApi(competitionId.value, 1) // 1 = TechnicalEvaluation
+        minutesId.value = result.id
+        minutesData.value = result
+      }
+    } catch (apiErr: any) {
+      console.warn('Backend minutes API unavailable, using local generation:', apiErr)
+    }
+
+    // Build professional HTML minutes from local data
+    const passingScore = store.technicalEvaluation?.minimumPassingScore ?? 60
+    const hijriDate = new Date().toLocaleDateString('ar-SA-u-ca-islamic-umalqura', { year: 'numeric', month: 'long', day: 'numeric' })
+    const gregorianDate = new Date().toLocaleDateString('ar-SA', { year: 'numeric', month: 'long', day: 'numeric' })
+    const competitionName = store.selectedCompetition?.projectName || competitionId.value
+
+    // Sort offers by total score descending
+    const sortedOffers = [...store.blindOffers].sort((a, b) => {
+      return (offerTotals.value[b.offerId] ?? 0) - (offerTotals.value[a.offerId] ?? 0)
     })
-    
-    lines.push('')
-    lines.push('تفاصيل الدرجات حسب المعيار:')
-    lines.push('─'.repeat(40))
-    
+
+    const passedCount = sortedOffers.filter(o => (offerTotals.value[o.offerId] ?? 0) >= passingScore).length
+    const failedCount = sortedOffers.length - passedCount
+
+    // Build criteria scores table rows
+    let criteriaRows = ''
     store.criteria.forEach(criterion => {
-      lines.push(`\n  ${criterion.name} (الوزن: ${criterion.weight}%):`)
-      store.blindOffers.forEach(offer => {
+      criteriaRows += `<tr class="border-b border-gray-200">`
+      criteriaRows += `<td class="px-3 py-2 text-sm font-medium text-gray-900">${criterion.name}</td>`
+      criteriaRows += `<td class="px-3 py-2 text-center text-sm text-gray-600">${criterion.weight}%</td>`
+      sortedOffers.forEach(offer => {
         const score = store.technicalScores.find(
           s => s.supplierOfferId === offer.offerId && s.evaluationCriterionId === criterion.id
         )
-        lines.push(`    ${offer.blindCode}: ${score?.score ?? '-'} / ${score?.maxScore ?? 100}`)
+        const pct = score ? Math.round((score.score / score.maxScore) * 100) : 0
+        const colorClass = pct >= 80 ? 'text-green-700 bg-green-50' : pct >= 60 ? 'text-yellow-700 bg-yellow-50' : 'text-red-700 bg-red-50'
+        criteriaRows += `<td class="px-3 py-2 text-center text-sm ${colorClass} font-semibold">${score?.score ?? '-'} / ${score?.maxScore ?? 100}</td>`
       })
+      criteriaRows += `</tr>`
     })
-    
+
+    // Build results table rows
+    let resultsRows = ''
+    let rank = 1
+    sortedOffers.forEach(offer => {
+      const total = offerTotals.value[offer.offerId] ?? 0
+      const passed = total >= passingScore
+      const statusClass = passed ? 'text-green-700 bg-green-50' : 'text-red-700 bg-red-50'
+      const statusText = passed ? 'مؤهل فنياً' : 'غير مؤهل'
+      resultsRows += `<tr class="border-b border-gray-200">`
+      resultsRows += `<td class="px-3 py-2 text-center text-sm font-bold text-gray-900">${rank}</td>`
+      resultsRows += `<td class="px-3 py-2 text-sm font-medium text-gray-900">${offer.blindCode}</td>`
+      resultsRows += `<td class="px-3 py-2 text-center text-sm font-bold text-blue-700">${total}%</td>`
+      resultsRows += `<td class="px-3 py-2 text-center text-sm font-semibold ${statusClass}">${statusText}</td>`
+      resultsRows += `</tr>`
+      rank++
+    })
+
+    // Build variance alerts
+    let varianceHtml = ''
     if (store.varianceAlerts.length > 0) {
-      lines.push('')
-      lines.push('تنبيهات التباين:')
-      lines.push('─'.repeat(40))
+      varianceHtml = `
+        <div class="mt-6">
+          <h3 class="text-base font-bold text-gray-900 mb-3 border-b-2 border-orange-300 pb-2">سادساً: تنبيهات التباين بين التقييم البشري والذكاء الاصطناعي</h3>
+          <div class="space-y-2">`
       store.varianceAlerts.forEach(alert => {
-        lines.push(`  ⚠ ${alert.criterionNameAr} - ${alert.offerBlindCode}`)
-        if (alert.hasEvaluatorVariance) lines.push(`    تباين بين المقيمين: ${alert.evaluatorSpread}%`)
-        if (alert.hasHumanAiVariance) lines.push(`    تباين بين المقيم والذكاء الاصطناعي: ${alert.humanAiDifference}%`)
+        varianceHtml += `
+            <div class="flex items-start gap-2 rounded-lg bg-orange-50 p-3 border border-orange-200">
+              <span class="text-orange-500 mt-0.5">⚠</span>
+              <div>
+                <p class="text-sm font-medium text-gray-900">${alert.criterionNameAr} - ${alert.offerBlindCode}</p>
+                ${alert.hasHumanAiVariance ? `<p class="text-xs text-orange-700">فرق بين التقييم البشري والذكاء الاصطناعي: ${alert.humanAiDifference}%</p>` : ''}
+                ${alert.hasEvaluatorVariance ? `<p class="text-xs text-orange-700">تباين بين المقيمين: ${alert.evaluatorSpread}%</p>` : ''}
+              </div>
+            </div>`
       })
+      varianceHtml += `
+          </div>
+        </div>`
     }
-    
-    lines.push('')
-    lines.push('═'.repeat(50))
-    lines.push('توقيعات أعضاء اللجنة:')
+
+    // Build committee signatures
+    let signaturesHtml = ''
     if (store.committee) {
       store.committee.members.forEach(m => {
-        lines.push(`  ${m.name} (${m.role === 'chair' ? 'رئيس اللجنة' : m.role === 'secretary' ? 'أمين السر' : 'عضو'}): ________________`)
+        const roleText = m.role === 'chair' ? 'رئيس اللجنة' : m.role === 'secretary' ? 'أمين السر' : 'عضو'
+        signaturesHtml += `
+          <div class="flex items-center justify-between border-b border-gray-200 py-3">
+            <div>
+              <p class="text-sm font-semibold text-gray-900">${m.name}</p>
+              <p class="text-xs text-gray-500">${roleText}</p>
+            </div>
+            <div class="w-40 border-b-2 border-dotted border-gray-400 text-center text-xs text-gray-400">التوقيع</div>
+          </div>`
       })
     }
-    
-    minutesContent.value = lines.join('\n')
+
+    // AI recommendation
+    let aiRecommendation = ''
+    if (aiSummary.value && aiSummary.value.completedAnalyses > 0) {
+      const bestOffer = sortedOffers[0]
+      aiRecommendation = `
+        <div class="mt-6">
+          <h3 class="text-base font-bold text-gray-900 mb-3 border-b-2 border-purple-300 pb-2">سابعاً: ملاحظات الذكاء الاصطناعي</h3>
+          <div class="rounded-lg bg-purple-50 p-4 border border-purple-200">
+            <p class="text-sm text-gray-800 leading-relaxed">
+              تم تحليل جميع العروض المقدمة باستخدام الذكاء الاصطناعي. أظهر التحليل أن العرض <strong>${bestOffer?.blindCode}</strong>
+              حصل على أعلى تقييم مرجح بنسبة <strong>${offerTotals.value[bestOffer?.offerId] ?? 0}%</strong>.
+              ${store.varianceAlerts.length > 0 ? `تم رصد ${store.varianceAlerts.length} تنبيه تباين بين التقييم البشري وتقييم الذكاء الاصطناعي تستدعي مراجعة اللجنة.` : 'لم يتم رصد تباينات جوهرية بين التقييم البشري وتقييم الذكاء الاصطناعي.'}
+            </p>
+          </div>
+        </div>`
+    }
+
+    minutesContent.value = `
+      <div class="max-w-4xl mx-auto">
+        <!-- Header -->
+        <div class="text-center mb-8 pb-4 border-b-4 border-blue-600">
+          <h1 class="text-xl font-bold text-blue-900 mb-2">محضر اجتماع لجنة فحص العروض الفنية</h1>
+          <p class="text-sm text-gray-600">${competitionName}</p>
+        </div>
+
+        <!-- Metadata -->
+        <div class="grid grid-cols-2 gap-4 mb-6 rounded-lg bg-gray-50 p-4 border border-gray-200">
+          <div class="text-sm"><span class="font-semibold text-gray-700">رقم المنافسة:</span> <span class="text-gray-900">${competitionId.value.substring(0, 8)}</span></div>
+          <div class="text-sm"><span class="font-semibold text-gray-700">التاريخ الهجري:</span> <span class="text-gray-900">${hijriDate}</span></div>
+          <div class="text-sm"><span class="font-semibold text-gray-700">عدد العروض المقدمة:</span> <span class="text-gray-900">${store.blindOffers.length}</span></div>
+          <div class="text-sm"><span class="font-semibold text-gray-700">التاريخ الميلادي:</span> <span class="text-gray-900">${gregorianDate}</span></div>
+          <div class="text-sm"><span class="font-semibold text-gray-700">عدد المعايير:</span> <span class="text-gray-900">${store.criteria.length}</span></div>
+          <div class="text-sm"><span class="font-semibold text-gray-700">درجة النجاح:</span> <span class="text-gray-900">${passingScore}%</span></div>
+          <div class="text-sm"><span class="font-semibold text-gray-700">العروض المؤهلة:</span> <span class="text-green-700 font-bold">${passedCount}</span></div>
+          <div class="text-sm"><span class="font-semibold text-gray-700">العروض غير المؤهلة:</span> <span class="text-red-700 font-bold">${failedCount}</span></div>
+        </div>
+
+        <!-- Introduction -->
+        <div class="mb-6">
+          <h3 class="text-base font-bold text-gray-900 mb-3 border-b-2 border-blue-300 pb-2">أولاً: مقدمة</h3>
+          <p class="text-sm text-gray-800 leading-relaxed">
+            بناءً على قرار تشكيل لجنة فحص العروض، وبعد استلام العروض الفنية المقدمة من المتنافسين على مشروع
+            <strong>"${competitionName}"</strong>، اجتمعت اللجنة لفحص وتقييم العروض الفنية المقدمة وفقاً لمعايير التقييم
+            المعتمدة في كراسة الشروط والمواصفات، وذلك بتطبيق أسلوب التقييم الأعمى لضمان الحيادية والشفافية.
+          </p>
+        </div>
+
+        <!-- Evaluation Criteria -->
+        <div class="mb-6">
+          <h3 class="text-base font-bold text-gray-900 mb-3 border-b-2 border-blue-300 pb-2">ثانياً: معايير التقييم المعتمدة</h3>
+          <table class="w-full border-collapse border border-gray-300 text-sm">
+            <thead>
+              <tr class="bg-blue-50">
+                <th class="border border-gray-300 px-3 py-2 text-start font-semibold text-blue-900">المعيار</th>
+                <th class="border border-gray-300 px-3 py-2 text-center font-semibold text-blue-900">الوزن</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${store.criteria.map(c => `<tr class="border-b border-gray-200"><td class="border border-gray-300 px-3 py-2">${c.name}</td><td class="border border-gray-300 px-3 py-2 text-center font-semibold">${c.weight}%</td></tr>`).join('')}
+              <tr class="bg-gray-100 font-bold"><td class="border border-gray-300 px-3 py-2">الإجمالي</td><td class="border border-gray-300 px-3 py-2 text-center">100%</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Detailed Scores -->
+        <div class="mb-6">
+          <h3 class="text-base font-bold text-gray-900 mb-3 border-b-2 border-blue-300 pb-2">ثالثاً: تفاصيل الدرجات حسب المعيار</h3>
+          <div class="overflow-x-auto">
+            <table class="w-full border-collapse border border-gray-300 text-sm">
+              <thead>
+                <tr class="bg-blue-50">
+                  <th class="border border-gray-300 px-3 py-2 text-start font-semibold text-blue-900">المعيار</th>
+                  <th class="border border-gray-300 px-3 py-2 text-center font-semibold text-blue-900">الوزن</th>
+                  ${sortedOffers.map(o => `<th class="border border-gray-300 px-3 py-2 text-center font-semibold text-blue-900">${o.blindCode}</th>`).join('')}
+                </tr>
+              </thead>
+              <tbody>
+                ${criteriaRows}
+                <tr class="bg-gray-100 font-bold">
+                  <td class="border border-gray-300 px-3 py-2">المجموع المرجح</td>
+                  <td class="border border-gray-300 px-3 py-2 text-center">100%</td>
+                  ${sortedOffers.map(o => {
+                    const t = offerTotals.value[o.offerId] ?? 0
+                    const c = t >= 80 ? 'text-green-700' : t >= 60 ? 'text-yellow-700' : 'text-red-700'
+                    return `<td class="border border-gray-300 px-3 py-2 text-center ${c}">${t}%</td>`
+                  }).join('')}
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Results Summary -->
+        <div class="mb-6">
+          <h3 class="text-base font-bold text-gray-900 mb-3 border-b-2 border-blue-300 pb-2">رابعاً: نتائج التقييم الفني</h3>
+          <table class="w-full border-collapse border border-gray-300 text-sm">
+            <thead>
+              <tr class="bg-blue-50">
+                <th class="border border-gray-300 px-3 py-2 text-center font-semibold text-blue-900">الترتيب</th>
+                <th class="border border-gray-300 px-3 py-2 text-start font-semibold text-blue-900">رمز العرض</th>
+                <th class="border border-gray-300 px-3 py-2 text-center font-semibold text-blue-900">الدرجة المرجحة</th>
+                <th class="border border-gray-300 px-3 py-2 text-center font-semibold text-blue-900">النتيجة</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${resultsRows}
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Recommendation -->
+        <div class="mb-6">
+          <h3 class="text-base font-bold text-gray-900 mb-3 border-b-2 border-green-300 pb-2">خامساً: توصية اللجنة</h3>
+          <div class="rounded-lg bg-green-50 p-4 border border-green-200">
+            <p class="text-sm text-gray-800 leading-relaxed">
+              ${passedCount > 0
+                ? `بعد فحص وتقييم جميع العروض الفنية المقدمة، توصي اللجنة بتأهيل <strong>${passedCount}</strong> عرض/عروض فنياً من أصل <strong>${store.blindOffers.length}</strong> عرض مقدم، والانتقال إلى مرحلة فتح المظاريف المالية للعروض المؤهلة فنياً.`
+                : 'لم يتأهل أي عرض فنياً وفقاً للحد الأدنى المطلوب. توصي اللجنة بإعادة طرح المنافسة.'}
+            </p>
+          </div>
+        </div>
+
+        ${varianceHtml}
+        ${aiRecommendation}
+
+        <!-- Signatures -->
+        <div class="mt-8">
+          <h3 class="text-base font-bold text-gray-900 mb-4 border-b-2 border-gray-400 pb-2">${aiRecommendation ? 'ثامناً' : varianceHtml ? 'سابعاً' : 'سادساً'}: توقيعات أعضاء اللجنة</h3>
+          ${signaturesHtml || '<p class="text-sm text-gray-500">لم يتم تحديد أعضاء اللجنة بعد.</p>'}
+        </div>
+
+        <!-- Footer -->
+        <div class="mt-8 pt-4 border-t-2 border-gray-300 text-center">
+          <p class="text-xs text-gray-400">تم إنشاء هذا المحضر آلياً بواسطة منصة Tendex AI بتاريخ ${gregorianDate}</p>
+          <p class="text-xs text-gray-400">هذا المحضر سري ولا يجوز تداوله خارج نطاق اللجنة المختصة</p>
+        </div>
+      </div>`
+  } catch (err: any) {
+    minutesError.value = err?.message || 'حدث خطأ أثناء توليد المحضر'
   } finally {
     minutesGenerating.value = false
   }
@@ -1139,20 +1333,24 @@ const isCompleted = computed(() => {
               </button>
               <button
                 v-if="minutesContent"
-                @click="copyToClipboard(minutesContent)"
+                @click="printMinutes"
                 class="rounded-lg border border-gray-300 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
               >
-                <i class="pi pi-copy me-1" /> {{ isRtl ? 'نسخ' : 'Copy' }}
+                <i class="pi pi-print me-1" /> {{ isRtl ? 'طباعة' : 'Print' }}
               </button>
             </div>
           </div>
-          <div v-if="minutesGenerating" class="flex items-center justify-center py-8">
-            <i class="pi pi-spinner pi-spin text-2xl text-blue-600" />
-            <span class="ms-3 text-sm text-gray-500">{{ isRtl ? 'جارٍ توليد المحضر...' : 'Generating minutes...' }}</span>
+          <div v-if="minutesError" class="mb-4 rounded-lg bg-red-50 p-3 text-sm text-red-700 border border-red-200">
+            <i class="pi pi-exclamation-triangle me-1" /> {{ minutesError }}
           </div>
-          <pre v-else-if="minutesContent" class="whitespace-pre-wrap rounded-lg bg-gray-50 p-4 text-sm leading-relaxed text-gray-800 font-sans">{{ minutesContent }}</pre>
-          <div v-else class="py-8 text-center text-sm text-gray-500">
-            {{ isRtl ? 'لا يوجد محضر بعد. سيتم توليده تلقائياً.' : 'No minutes yet. Will be generated automatically.' }}
+          <div v-if="minutesGenerating" class="flex flex-col items-center justify-center py-12">
+            <i class="pi pi-spinner pi-spin text-3xl text-blue-600" />
+            <span class="mt-3 text-sm text-gray-500">{{ isRtl ? 'جارٍ توليد المحضر...' : 'Generating minutes...' }}</span>
+          </div>
+          <div v-else-if="minutesContent" class="rounded-lg border border-gray-200 bg-white p-6 print:p-0 print:border-0" dir="rtl" v-html="minutesContent"></div>
+          <div v-else class="py-12 text-center text-sm text-gray-500">
+            <i class="pi pi-file-edit text-4xl text-gray-300 mb-3" />
+            <p>{{ isRtl ? 'لا يوجد محضر بعد. سيتم توليده تلقائياً.' : 'No minutes yet. Will be generated automatically.' }}</p>
           </div>
         </div>
       </div>

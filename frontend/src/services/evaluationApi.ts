@@ -451,6 +451,18 @@ export function fetchComparisonMatrix(competitionId: string, type: string): Prom
   return fetchAiComparisonMatrix(competitionId)
 }
 
+export function generateMinutes(competitionId: string, minutesType: number): Promise<EvaluationMinutes> {
+  return httpPost<EvaluationMinutes>(`${COMPETITIONS_BASE}/${competitionId}/minutes/generate`, { minutesType })
+}
+
+export function fetchMinutesList(competitionId: string): Promise<any[]> {
+  return httpGet<any[]>(`${COMPETITIONS_BASE}/${competitionId}/minutes`)
+}
+
+export function fetchMinutesById(competitionId: string, minutesId: string): Promise<EvaluationMinutes> {
+  return httpGet<EvaluationMinutes>(`${COMPETITIONS_BASE}/${competitionId}/minutes/${minutesId}`)
+}
+
 export function fetchMinutes(competitionId: string, type: string): Promise<EvaluationMinutes> {
   return httpGet<EvaluationMinutes>(`${COMPETITIONS_BASE}/${competitionId}/minutes?type=${type}`)
 }
