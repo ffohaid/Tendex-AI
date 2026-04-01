@@ -30,6 +30,7 @@ import {
   createRfpFromExtraction,
   saveAllSections,
   saveAllBoqItems,
+  addRfpSection,
 } from '@/services/rfpService'
 
 const { t } = useI18n()
@@ -314,7 +315,15 @@ async function createFromExtraction(): Promise<void> {
         isCompleted: true,
       }))
 
-      await saveAllSections(competitionId, sectionsMapped, true)
+      // clearExisting = false because the competition was just created (no existing sections)
+      const sectionsResult = await saveAllSections(competitionId, sectionsMapped, false)
+      if (!sectionsResult.success) {
+        console.warn('Failed to save sections via batch, trying individually...')
+        // Fallback: add sections one by one
+        for (const section of sectionsMapped) {
+          await addRfpSection(competitionId, section)
+        }
+      }
     }
 
     // 3. Save extracted BOQ items
@@ -331,7 +340,8 @@ async function createFromExtraction(): Promise<void> {
         order: b.sortOrder,
       }))
 
-      await saveAllBoqItems(competitionId, boqMapped, true)
+      // clearExisting = false because the competition was just created (no existing BOQ items)
+      await saveAllBoqItems(competitionId, boqMapped, false)
     }
 
     // 4. Pre-fill the store and navigate to editor

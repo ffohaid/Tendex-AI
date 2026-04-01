@@ -1,3 +1,4 @@
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using TendexAI.Application.Common.Messaging;
 using TendexAI.Application.Features.Rfp.Dtos;
@@ -9,12 +10,13 @@ namespace TendexAI.Application.Features.Rfp.Commands.BatchAddRfpSections;
 
 /// <summary>
 /// Handles adding multiple RFP sections to a competition in a single transaction.
-/// This avoids the concurrency conflict (DbUpdateConcurrencyException) that occurs
-/// when adding sections one-by-one, since the Competition.Version is an EF concurrency token.
+/// Includes retry logic for DbUpdateConcurrencyException caused by the
+/// Competition.Version concurrency token.
 /// </summary>
 public sealed class BatchAddRfpSectionsCommandHandler
     : ICommandHandler<BatchAddRfpSectionsCommand, IReadOnlyList<RfpSectionDto>>
 {
+    private const int MaxRetries = 3;
     private readonly ICompetitionRepository _repository;
     private readonly ILogger<BatchAddRfpSectionsCommandHandler> _logger;
 
@@ -27,6 +29,39 @@ public sealed class BatchAddRfpSectionsCommandHandler
     }
 
     public async Task<Result<IReadOnlyList<RfpSectionDto>>> Handle(
+        BatchAddRfpSectionsCommand request,
+        CancellationToken cancellationToken)
+    {
+        for (int attempt = 1; attempt <= MaxRetries; attempt++)
+        {
+            try
+            {
+                return await ExecuteAsync(request, cancellationToken);
+            }
+            catch (DbUpdateConcurrencyException ex)
+            {
+                _logger.LogWarning(
+                    "Concurrency conflict on attempt {Attempt}/{MaxRetries} for competition {CompetitionId}: {Message}",
+                    attempt, MaxRetries, request.CompetitionId, ex.Message);
+
+                if (attempt == MaxRetries)
+                {
+                    _logger.LogError(ex,
+                        "Failed to add sections after {MaxRetries} retries for competition {CompetitionId}",
+                        MaxRetries, request.CompetitionId);
+                    return Result.Failure<IReadOnlyList<RfpSectionDto>>(
+                        "فشل في حفظ الأقسام بسبب تعارض في البيانات. يرجى المحاولة مرة أخرى.");
+                }
+
+                // Small delay before retry
+                await Task.Delay(200 * attempt, cancellationToken);
+            }
+        }
+
+        return Result.Failure<IReadOnlyList<RfpSectionDto>>("حدث خطأ غير متوقع.");
+    }
+
+    private async Task<Result<IReadOnlyList<RfpSectionDto>>> ExecuteAsync(
         BatchAddRfpSectionsCommand request,
         CancellationToken cancellationToken)
     {
