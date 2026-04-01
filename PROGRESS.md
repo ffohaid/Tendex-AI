@@ -24,6 +24,43 @@
 
 *يرجى إضافة أحدث مهمة منجزة في أعلى هذه القائمة.*
 
+### 2026-04-01 - TASK-1008: إصلاح مشكلة DbUpdateConcurrencyException في حفظ الأقسام المستخرجة (Fix Concurrency Issue in Upload & Extract Flow)
+- **الحالة:** ✅ مكتمل
+- **ما تم إنجازه:**
+  - **تشخيص المشكلة الجذرية:**
+    - تحليل مشكلة `DbUpdateConcurrencyException` التي تمنع حفظ الأقسام المستخرجة من ملفات PDF عند إنشاء كراسة شروط جديدة عبر خيار "رفع واستخراج"
+    - المشكلة كانت في أن الـ `Version` property في كيان `Competition` مُعرّف كـ concurrency token في EF Core، وعند إضافة الأقسام عبر الـ aggregate root (`competition.AddSection()`), كان الـ `Version++` يتسبب في تعارض بين الطلبات المتوازية
+    - حتى بعد إزالة `Version++` من `AddSection()`, كان EF Core يكتشف تغييرات في الـ navigation property ويحاول تحديث الـ Competition row مع concurrency check
+  - **الحل الجذري - Direct DB Insertion:**
+    - إضافة methods جديدة في `ICompetitionRepository`: `AddSectionsDirectAsync()` و `AddSectionDirectAsync()`
+    - تنفيذ الـ methods في `CompetitionRepository` باستخدام `_context.RfpSections.AddRangeAsync()` مباشرة بدون تحميل الـ Competition entity
+    - هذا يتجنب الـ concurrency check تماماً لأن الأقسام تُضاف مباشرة في جدول `rfp.Sections` بدون المرور بالـ aggregate root
+  - **تعديل BatchAddRfpSectionsCommandHandler:**
+    - إعادة كتابة الـ handler ليستخدم `AddSectionsDirectAsync()` بدلاً من `competition.AddSection()`
+    - إضافة logging تفصيلي لتتبع عملية الحفظ
+    - إضافة التحقق من وجود المنافسة وقابليتها للتعديل
+  - **تعديل AddRfpSectionCommandHandler:**
+    - إعادة كتابة الـ handler ليستخدم `AddSectionDirectAsync()` بدلاً من `competition.AddSection()`
+    - إضافة retry logic مع 3 محاولات كاحتياط
+  - **إزالة Version++ من عمليات CRUD على الأقسام:**
+    - إزالة `Version++` من `AddSection()`, `RemoveSection()`, `AddBoqItem()`, `RemoveBoqItem()`, `AddEvaluationCriterion()`, `RemoveEvaluationCriterion()`, `AddAttachment()`, `RemoveAttachment()` في `Competition.cs`
+    - الإبقاء على `Version++` فقط في عمليات تغيير الحالة (state transitions) التي تحتاج فعلاً لحماية التزامن
+  - **إصلاح مشكلة مفتاح التشفير:**
+    - إضافة `Security__AiEncryptionKey` (AES-256) إلى `docker-compose.prod.yml`
+    - تحديث إعدادات مزود الذكاء الاصطناعي في قاعدة البيانات (جدول `AiConfigurations`) لاستخدام المفتاح الجديد
+  - **اختبار شامل على الإنتاج:**
+    - اختبار رفع ملف PDF (كراسة شروط خدمات) - نجاح ✅
+    - اختبار استخراج النص من المستند - نجاح ✅
+    - اختبار تحليل المحتوى بالذكاء الاصطناعي (13 قسم بنسبة ثقة 90%) - نجاح ✅
+    - اختبار إنشاء كراسة الشروط وحفظ الأقسام في DB - نجاح ✅
+    - اختبار عرض الأقسام في صفحة تعديل الكراسة (محتوى الكراسة) - نجاح ✅
+    - اختبار تعديل محتوى الأقسام - نجاح ✅
+    - التحقق من قاعدة البيانات: 13 قسم محفوظ بنجاح ✅
+- **الملفات المعدلة:**
+  - Backend: `Competition.cs`, `ICompetitionRepository.cs`, `CompetitionRepository.cs`, `BatchAddRfpSectionsCommandHandler.cs`, `AddRfpSectionCommandHandler.cs`
+  - Infrastructure: `docker-compose.prod.yml` (إضافة مفتاح التشفير)
+- **النشر:** ✅ تم النشر بنجاح على خادم الإنتاج (187.124.41.141)
+
 ### 2026-04-01 - TASK-1007: مراجعة وتحسين نظام مسارات الاعتماد (Workflow Approval System Review & Enhancement)
 - **الحالة:** ✅ مكتمل
 - **ما تم إنجازه:**
