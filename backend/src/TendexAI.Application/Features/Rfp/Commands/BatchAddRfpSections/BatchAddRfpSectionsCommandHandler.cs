@@ -10,13 +10,15 @@ namespace TendexAI.Application.Features.Rfp.Commands.BatchAddRfpSections;
 
 /// <summary>
 /// Handles adding multiple RFP sections to a competition in a single transaction.
-/// Includes retry logic for DbUpdateConcurrencyException caused by the
-/// Competition.Version concurrency token.
+/// Uses "client wins" concurrency resolution to handle Version conflicts:
+/// - Clears the change tracker before each retry
+/// - Reloads the competition fresh from DB with current Version
+/// - All sections are added in a single SaveChanges call
 /// </summary>
 public sealed class BatchAddRfpSectionsCommandHandler
     : ICommandHandler<BatchAddRfpSectionsCommand, IReadOnlyList<RfpSectionDto>>
 {
-    private const int MaxRetries = 3;
+    private const int MaxRetries = 5;
     private readonly ICompetitionRepository _repository;
     private readonly ILogger<BatchAddRfpSectionsCommandHandler> _logger;
 
@@ -36,6 +38,10 @@ public sealed class BatchAddRfpSectionsCommandHandler
         {
             try
             {
+                // CRITICAL: Clear change tracker before EVERY attempt (including first)
+                // This ensures we always get a fresh entity with the current DB Version
+                _repository.ClearChangeTracker();
+                
                 return await ExecuteAsync(request, cancellationToken);
             }
             catch (DbUpdateConcurrencyException ex)
@@ -53,11 +59,9 @@ public sealed class BatchAddRfpSectionsCommandHandler
                         "فشل في حفظ الأقسام بسبب تعارض في البيانات. يرجى المحاولة مرة أخرى.");
                 }
 
-                // Clear the change tracker to discard stale entities and concurrency tokens
-                _repository.ClearChangeTracker();
-
-                // Small delay before retry
-                await Task.Delay(200 * attempt, cancellationToken);
+                // Exponential backoff delay before retry
+                var delay = 100 * (int)Math.Pow(2, attempt - 1); // 100ms, 200ms, 400ms, 800ms, 1600ms
+                await Task.Delay(delay, cancellationToken);
             }
         }
 
@@ -68,11 +72,16 @@ public sealed class BatchAddRfpSectionsCommandHandler
         BatchAddRfpSectionsCommand request,
         CancellationToken cancellationToken)
     {
+        // Load competition fresh from DB (change tracker was cleared before this call)
         var competition = await _repository.GetByIdWithDetailsForUpdateAsync(
             request.CompetitionId, cancellationToken);
 
         if (competition is null)
             return Result.Failure<IReadOnlyList<RfpSectionDto>>("لم يتم العثور على المنافسة.");
+
+        _logger.LogDebug(
+            "Loaded competition {CompetitionId} with Version={Version}, Sections={SectionCount}",
+            competition.Id, competition.Version, competition.Sections.Count);
 
         // If ClearExisting is true, remove all existing sections first
         if (request.ClearExisting)
@@ -118,12 +127,12 @@ public sealed class BatchAddRfpSectionsCommandHandler
             addedSections.Add(section);
         }
 
-        // Single SaveChanges call for all sections — avoids concurrency conflicts
+        // Single SaveChanges call for all sections
         await _repository.SaveChangesAsync(cancellationToken);
 
         _logger.LogInformation(
-            "Successfully added {Count} sections to competition {CompetitionId}",
-            addedSections.Count, request.CompetitionId);
+            "Successfully added {Count} sections to competition {CompetitionId} (new Version={Version})",
+            addedSections.Count, request.CompetitionId, competition.Version);
 
         var dtos = addedSections
             .Select(CompetitionMapper.ToSectionDto)
