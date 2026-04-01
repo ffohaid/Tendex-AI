@@ -366,9 +366,35 @@ export function fetchCommittees(competitionId: string): Promise<Committee[]> {
  * Criteria (from competition detail)
  * ══════════════════════════════════════════════ */
 
-export function fetchCriteria(competitionId: string): Promise<EvaluationCriterion[]> {
-  // Criteria are part of the competition detail - extract from there
-  return httpGet<EvaluationCriterion[]>(`${COMPETITIONS_BASE}/${competitionId}/criteria`)
+export async function fetchCriteria(competitionId: string): Promise<EvaluationCriterion[]> {
+  // Fetch criteria from the dedicated endpoint and map backend DTO to frontend shape
+  interface BackendCriterionDto {
+    id: string
+    competitionId: string
+    parentCriterionId: string | null
+    nameAr: string
+    nameEn: string
+    descriptionAr: string | null
+    descriptionEn: string | null
+    weightPercentage: number
+    minimumPassingScore: number | null
+    maxScore: number
+    sortOrder: number
+    isActive: boolean
+  }
+  const dtos = await httpGet<BackendCriterionDto[]>(`${COMPETITIONS_BASE}/${competitionId}/criteria`)
+  return (dtos || []).map(dto => ({
+    id: dto.id,
+    name: dto.nameAr || dto.nameEn || '',
+    nameAr: dto.nameAr,
+    nameEn: dto.nameEn,
+    description: dto.descriptionAr || dto.descriptionEn || '',
+    weight: dto.weightPercentage,
+    minimumScore: dto.minimumPassingScore ?? 0,
+    parentId: dto.parentCriterionId,
+    subCriteria: [],
+    order: dto.sortOrder,
+  }))
 }
 
 /* ══════════════════════════════════════════════

@@ -130,6 +130,12 @@ public static class CompetitionEndpoints
 
         // ----- Evaluation Criteria -----
 
+        group.MapGet("/{competitionId:guid}/criteria", GetEvaluationCriteriaAsync)
+            .WithName("GetEvaluationCriteria")
+            .WithSummary("Get all evaluation criteria for a competition")
+            .Produces<IReadOnlyList<EvaluationCriterionDto>>(StatusCodes.Status200OK)
+            .Produces<ProblemDetails>(StatusCodes.Status404NotFound);
+
         group.MapPost("/{competitionId:guid}/evaluation-criteria", AddEvaluationCriterionAsync)
             .WithName("AddEvaluationCriterion")
             .WithSummary("Add a new evaluation criterion to the competition")
@@ -504,6 +510,17 @@ public static class CompetitionEndpoints
         return result.IsSuccess
             ? Results.Created($"/api/v1/competitions/{competitionId}/evaluation-criteria/{result.Value!.Id}", result.Value)
             : Results.Problem(result.Error, statusCode: 400);
+    }
+
+    private static async Task<IResult> GetEvaluationCriteriaAsync(
+        Guid competitionId,
+        ISender mediator)
+    {
+        var result = await mediator.Send(new GetCompetitionByIdQuery(competitionId));
+        if (!result.IsSuccess)
+            return Results.Problem(result.Error, statusCode: 404);
+
+        return Results.Ok(result.Value!.EvaluationCriteria);
     }
 
     private static Task<IResult> GetCompetitionStatusesAsync()
