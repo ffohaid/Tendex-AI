@@ -24,6 +24,25 @@
 
 *يرجى إضافة أحدث مهمة منجزة في أعلى هذه القائمة.*
 
+### 2026-04-02 - Fix Login, Error Translation, Status Mapping & Financial Evaluation Integration
+- **الحالة:** ✅ مكتمل
+- **ما تم إنجازه:**
+  - **إصلاح تسجيل الدخول:** تحديث bcrypt hash لكلمة مرور المشرف في قاعدة البيانات
+  - **ترجمة رسائل الخطأ:** إضافة ترجمة عربية لرسائل الخطأ القادمة من الباك إند في صفحة التقييم الفني
+  - **إصلاح تعيين الحالات الرقمية:** تعديل `evaluationApi.ts` لدعم القيم الرقمية للحالات من الباك إند (مثل 10=FinancialAnalysis) بدلاً من القيم النصية فقط
+  - **تقدم حالة المنافسة:** تعديل `ApproveFinancialReportCommandHandler` لتقدم حالة المنافسة إلى `FinancialAnalysisCompleted` عند اعتماد التقييم المالي
+  - **إصلاح صفحة التقييم المالي:** الصفحة كانت فارغة بسبب عدم تطابق الحالات - تم إصلاح الفلترة لتعمل مع جميع أنواع الحالات
+- **الملفات المعدلة:**
+  - `frontend/src/services/evaluationApi.ts` (معدل - إصلاح تعيين الحالات الرقمية)
+  - `frontend/src/views/evaluation/technical/TechnicalEvaluationList.vue` (معدل - ترجمة رسائل الخطأ)
+  - `backend/src/TendexAI.Application/Features/FinancialEvaluation/Commands/ApproveFinancialReport/ApproveFinancialReportCommandHandler.cs` (معدل - تقدم حالة المنافسة)
+- **نتائج الاختبار المباشر:**
+  - ✅ تسجيل الدخول يعمل بنجاح
+  - ✅ صفحة التقييم المالي تعرض المنافسة بشكل صحيح مع جميع التبويبات
+  - ✅ صفحة التقييم الشامل والترسية تعرض البيانات بشكل كامل
+  - ✅ لا توجد رسائل خطأ بالإنجليزية في الواجهة العربية
+  - ✅ التكامل بين جميع أقسام التقييم يعمل بشكل مثالي
+
 ### 2026-04-01 - Financial Evaluation, Comprehensive Final Evaluation & Award Recommendation
 - **الحالة:** ✅ مكتمل
 - **ما تم إنجازه:**
