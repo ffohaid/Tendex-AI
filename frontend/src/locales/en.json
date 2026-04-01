@@ -121,6 +121,7 @@
     },
     "evaluation": {
       "title": "Evaluation",
+      "offers": "Supplier Offers",
       "technical": "Technical Evaluation",
       "financial": "Financial Evaluation"
     },

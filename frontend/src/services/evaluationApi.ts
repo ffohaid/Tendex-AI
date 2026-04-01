@@ -4,41 +4,41 @@
  * All data MUST be fetched from backend APIs.
  * NO mock/hardcoded data in Vue components.
  *
- * Uses the centralized httpClient (Axios) for automatic auth token
- * and tenant ID injection.
- *
- * Backend endpoints:
- * - Technical: /api/v1/competitions/{competitionId}/technical-evaluation
- * - Financial: /api/v1/competitions/{competitionId}/financial-evaluation
- * - AI Analysis: /api/v1/competitions/{competitionId}/technical-evaluation/ai-analysis
- * - Minutes: /api/v1/competitions/{competitionId}/minutes
- * - Award: /api/v1/competitions/{competitionId}/award
+ * Aligned with actual backend endpoints:
+ * - SupplierOffers: /api/v1/competitions/{id}/supplier-offers
+ * - Technical: /api/v1/competitions/{id}/technical-evaluation
+ * - Financial: /api/v1/competitions/{id}/financial-evaluation
+ * - AI Analysis: /api/v1/competitions/{id}/technical-evaluation/ai-analysis
  */
-import { httpGet, httpPost, httpPut } from '@/services/http'
+import { httpGet, httpPost, httpPut, httpDelete } from '@/services/http'
 import type {
   Committee,
   CompetitionEvaluation,
-  ComparisonMatrix,
+  SupplierOffer,
+  TechnicalEvaluationDetail,
+  BlindOfferSummary,
   TechnicalScore,
-  FinancialScore,
-  FinancialOffer,
-  AiEvaluation,
-  EvaluationCriterion,
-  Vendor,
-  EvaluationMinutes,
+  TechnicalHeatmap,
+  OfferEvaluationResult,
   VarianceAlert,
+  FinancialEvaluationDetail,
+  FinancialOfferItem,
+  FinancialComparisonMatrix,
+  ArithmeticVerificationResult,
+  FinancialScore,
+  EvaluationCriterion,
+  AiEvaluation,
+  ComparisonMatrix,
+  EvaluationMinutes,
+  Vendor,
 } from '@/types/evaluation'
 
 const COMPETITIONS_BASE = '/v1/competitions'
 
-/* ──────────────────────────────────────────────
- * Competition Evaluations
- * ────────────────────────────────────────────── */
+/* ══════════════════════════════════════════════
+ * Competition Evaluations List
+ * ══════════════════════════════════════════════ */
 
-/**
- * Backend CompetitionListItemDto shape (from /api/v1/competitions).
- * We map this to the frontend CompetitionEvaluation interface.
- */
 interface BackendCompetitionItem {
   id: string
   referenceNumber: string
@@ -57,35 +57,28 @@ interface BackendCompetitionItem {
   createdBy: string | null
 }
 
-/**
- * Maps a backend competition status to an evaluation stage.
- */
 function mapStatusToStage(status: string): 'technical' | 'financial' | 'completed' {
   switch (status) {
     case 'TechnicalEvaluation':
-    case 'Draft':
-    case 'Published':
-    case 'ReceivingOffers':
       return 'technical'
     case 'FinancialEvaluation':
       return 'financial'
     case 'Completed':
     case 'Awarded':
-    case 'Cancelled':
       return 'completed'
     default:
       return 'technical'
   }
 }
 
-/**
- * Maps a backend competition status to a technical evaluation status.
- */
 function mapToEvalStatus(status: string): 'pending' | 'in_progress' | 'completed' | 'approved' {
   switch (status) {
     case 'Draft':
+    case 'UnderPreparation':
+    case 'PendingApproval':
     case 'Published':
     case 'ReceivingOffers':
+    case 'OffersClosed':
       return 'pending'
     case 'TechnicalEvaluation':
       return 'in_progress'
@@ -99,7 +92,6 @@ function mapToEvalStatus(status: string): 'pending' | 'in_progress' | 'completed
 }
 
 export async function fetchCompetitionEvaluations(): Promise<CompetitionEvaluation[]> {
-  // Backend returns CompetitionListItemDto from /api/v1/competitions
   const response = await httpGet<{ items: BackendCompetitionItem[]; totalCount: number }>(
     `${COMPETITIONS_BASE}?page=1&pageSize=100`
   )
@@ -111,7 +103,6 @@ export async function fetchCompetitionEvaluations(): Promise<CompetitionEvaluati
     items = response as unknown as BackendCompetitionItem[]
   }
 
-  // Map backend DTO to frontend CompetitionEvaluation interface
   return items.map((item): CompetitionEvaluation => {
     const stage = mapStatusToStage(item.status)
     const techStatus = mapToEvalStatus(item.status)
@@ -142,96 +133,297 @@ export function fetchCompetitionEvaluation(id: string): Promise<CompetitionEvalu
   return httpGet<CompetitionEvaluation>(`${COMPETITIONS_BASE}/${id}`)
 }
 
-/* ──────────────────────────────────────────────
+/* ══════════════════════════════════════════════
+ * Supplier Offers CRUD
+ * ══════════════════════════════════════════════ */
+
+export function fetchSupplierOffers(competitionId: string): Promise<SupplierOffer[]> {
+  return httpGet<SupplierOffer[]>(`${COMPETITIONS_BASE}/${competitionId}/offers`)
+}
+
+export function createSupplierOffer(competitionId: string, data: {
+  supplierName: string
+  supplierIdentifier: string
+  offerReferenceNumber: string
+  submissionDate: string
+}): Promise<SupplierOffer> {
+  return httpPost<SupplierOffer>(`${COMPETITIONS_BASE}/${competitionId}/offers`, data)
+}
+
+export function deleteSupplierOffer(competitionId: string, offerId: string): Promise<void> {
+  return httpDelete<void>(`${COMPETITIONS_BASE}/${competitionId}/offers/${offerId}`)
+}
+
+/* ══════════════════════════════════════════════
+ * Technical Evaluation
+ * ══════════════════════════════════════════════ */
+
+export function startTechnicalEvaluation(competitionId: string, committeeId: string): Promise<TechnicalEvaluationDetail> {
+  return httpPost<TechnicalEvaluationDetail>(
+    `${COMPETITIONS_BASE}/${competitionId}/technical-evaluation/start`,
+    { committeeId }
+  )
+}
+
+export function fetchTechnicalEvaluationDetails(competitionId: string): Promise<TechnicalEvaluationDetail> {
+  return httpGet<TechnicalEvaluationDetail>(
+    `${COMPETITIONS_BASE}/${competitionId}/technical-evaluation`
+  )
+}
+
+export function fetchBlindOffers(competitionId: string): Promise<BlindOfferSummary[]> {
+  return httpGet<BlindOfferSummary[]>(
+    `${COMPETITIONS_BASE}/${competitionId}/technical-evaluation/offers`
+  )
+}
+
+export function submitTechnicalScore(competitionId: string, data: {
+  evaluationId: string
+  supplierOfferId: string
+  evaluationCriterionId: string
+  score: number
+  notes?: string
+}): Promise<TechnicalScore> {
+  return httpPost<TechnicalScore>(
+    `${COMPETITIONS_BASE}/${competitionId}/technical-evaluation/scores`,
+    data
+  )
+}
+
+export function completeTechnicalScoring(competitionId: string, evaluationId: string): Promise<void> {
+  return httpPost<void>(
+    `${COMPETITIONS_BASE}/${competitionId}/technical-evaluation/complete-scoring`,
+    { evaluationId }
+  )
+}
+
+export function approveTechnicalReport(competitionId: string, evaluationId: string): Promise<void> {
+  return httpPost<void>(
+    `${COMPETITIONS_BASE}/${competitionId}/technical-evaluation/approve`,
+    { evaluationId }
+  )
+}
+
+export function rejectTechnicalReport(competitionId: string, evaluationId: string, reason: string): Promise<void> {
+  return httpPost<void>(
+    `${COMPETITIONS_BASE}/${competitionId}/technical-evaluation/reject`,
+    { evaluationId, reason }
+  )
+}
+
+export function fetchTechnicalResults(competitionId: string): Promise<OfferEvaluationResult[]> {
+  return httpGet<OfferEvaluationResult[]>(
+    `${COMPETITIONS_BASE}/${competitionId}/technical-evaluation/results`
+  )
+}
+
+export function fetchTechnicalHeatmap(competitionId: string): Promise<TechnicalHeatmap> {
+  return httpGet<TechnicalHeatmap>(
+    `${COMPETITIONS_BASE}/${competitionId}/technical-evaluation/heatmap`
+  )
+}
+
+export function fetchVarianceAlerts(competitionId: string): Promise<VarianceAlert[]> {
+  return httpGet<VarianceAlert[]>(
+    `${COMPETITIONS_BASE}/${competitionId}/technical-evaluation/variance-alerts`
+  )
+}
+
+export function openFinancialEnvelopes(competitionId: string): Promise<void> {
+  return httpPost<void>(
+    `${COMPETITIONS_BASE}/${competitionId}/technical-evaluation/open-financial-envelopes`
+  )
+}
+
+/* ══════════════════════════════════════════════
+ * Financial Evaluation
+ * ══════════════════════════════════════════════ */
+
+export function startFinancialEvaluation(competitionId: string, committeeId: string): Promise<FinancialEvaluationDetail> {
+  return httpPost<FinancialEvaluationDetail>(
+    `${COMPETITIONS_BASE}/${competitionId}/financial-evaluation/start`,
+    { committeeId }
+  )
+}
+
+export function fetchFinancialEvaluationDetails(competitionId: string): Promise<FinancialEvaluationDetail> {
+  return httpGet<FinancialEvaluationDetail>(
+    `${COMPETITIONS_BASE}/${competitionId}/financial-evaluation`
+  )
+}
+
+export function submitFinancialOfferItems(competitionId: string, supplierOfferId: string, items: {
+  boqItemId: string
+  unitPrice: number
+  quantity: number
+  supplierSubmittedTotal?: number
+}[]): Promise<FinancialOfferItem[]> {
+  return httpPost<FinancialOfferItem[]>(
+    `${COMPETITIONS_BASE}/${competitionId}/financial-evaluation/offers/${supplierOfferId}/items`,
+    { items }
+  )
+}
+
+export function fetchFinancialOfferItems(competitionId: string, supplierOfferId: string): Promise<FinancialOfferItem[]> {
+  return httpGet<FinancialOfferItem[]>(
+    `${COMPETITIONS_BASE}/${competitionId}/financial-evaluation/offers/${supplierOfferId}/items`
+  )
+}
+
+export function verifyArithmetic(competitionId: string, supplierOfferId: string): Promise<ArithmeticVerificationResult> {
+  return httpPost<ArithmeticVerificationResult>(
+    `${COMPETITIONS_BASE}/${competitionId}/financial-evaluation/offers/${supplierOfferId}/verify-arithmetic`
+  )
+}
+
+export function submitFinancialScore(competitionId: string, supplierOfferId: string, data: {
+  score: number
+  maxScore: number
+  notes?: string
+}): Promise<FinancialScore> {
+  return httpPost<FinancialScore>(
+    `${COMPETITIONS_BASE}/${competitionId}/financial-evaluation/offers/${supplierOfferId}/scores`,
+    data
+  )
+}
+
+export function completeFinancialScoring(competitionId: string): Promise<void> {
+  return httpPost<void>(
+    `${COMPETITIONS_BASE}/${competitionId}/financial-evaluation/complete-scoring`
+  )
+}
+
+export function fetchFinancialComparisonMatrix(competitionId: string): Promise<FinancialComparisonMatrix> {
+  return httpGet<FinancialComparisonMatrix>(
+    `${COMPETITIONS_BASE}/${competitionId}/financial-evaluation/comparison-matrix`
+  )
+}
+
+export function approveFinancialReport(competitionId: string): Promise<void> {
+  return httpPost<void>(
+    `${COMPETITIONS_BASE}/${competitionId}/financial-evaluation/approve`
+  )
+}
+
+export function rejectFinancialReport(competitionId: string, reason: string): Promise<void> {
+  return httpPost<void>(
+    `${COMPETITIONS_BASE}/${competitionId}/financial-evaluation/reject`,
+    { reason }
+  )
+}
+
+/* ══════════════════════════════════════════════
+ * AI Offer Analysis
+ * ══════════════════════════════════════════════ */
+
+export function triggerAiAnalysis(competitionId: string): Promise<{ analysisIds: string[] }> {
+  return httpPost<{ analysisIds: string[] }>(
+    `${COMPETITIONS_BASE}/${competitionId}/technical-evaluation/ai-analysis/trigger`
+  )
+}
+
+export function fetchAiAnalysisSummary(competitionId: string): Promise<AiEvaluation[]> {
+  return httpGet<AiEvaluation[]>(
+    `${COMPETITIONS_BASE}/${competitionId}/technical-evaluation/ai-analysis/summary`
+  )
+}
+
+export function fetchAiOfferAnalysis(competitionId: string, analysisId: string): Promise<AiEvaluation> {
+  return httpGet<AiEvaluation>(
+    `${COMPETITIONS_BASE}/${competitionId}/technical-evaluation/ai-analysis/${analysisId}`
+  )
+}
+
+export function fetchAiComparisonMatrix(competitionId: string): Promise<ComparisonMatrix> {
+  return httpGet<ComparisonMatrix>(
+    `${COMPETITIONS_BASE}/${competitionId}/technical-evaluation/ai-analysis/comparison-matrix`
+  )
+}
+
+export function reviewAiAnalysis(competitionId: string, analysisId: string, data: {
+  approved: boolean
+  notes?: string
+}): Promise<void> {
+  return httpPost<void>(
+    `${COMPETITIONS_BASE}/${competitionId}/technical-evaluation/ai-analysis/${analysisId}/review`,
+    data
+  )
+}
+
+/* ══════════════════════════════════════════════
  * Committees
- * ────────────────────────────────────────────── */
+ * ══════════════════════════════════════════════ */
 
 export function fetchCommittee(competitionId: string, type: string): Promise<Committee> {
   return httpGet<Committee>(`/v1/committees?competitionId=${competitionId}&type=${type}`)
 }
 
-/* ──────────────────────────────────────────────
- * Criteria
- * ────────────────────────────────────────────── */
-
-export function fetchCriteria(competitionId: string, type: string): Promise<EvaluationCriterion[]> {
-  const evalType = type === 'technical' ? 'technical-evaluation' : 'financial-evaluation'
-  return httpGet<EvaluationCriterion[]>(`${COMPETITIONS_BASE}/${competitionId}/${evalType}/criteria`)
+export function fetchCommittees(competitionId: string): Promise<Committee[]> {
+  return httpGet<Committee[]>(`/v1/committees?competitionId=${competitionId}`)
 }
 
-/* ──────────────────────────────────────────────
- * Vendors
- * ────────────────────────────────────────────── */
+/* ══════════════════════════════════════════════
+ * Criteria (from competition detail)
+ * ══════════════════════════════════════════════ */
 
-export function fetchVendors(competitionId: string, type: string): Promise<Vendor[]> {
-  const evalType = type === 'technical' ? 'technical-evaluation' : 'financial-evaluation'
-  return httpGet<Vendor[]>(`${COMPETITIONS_BASE}/${competitionId}/${evalType}/vendors`)
+export function fetchCriteria(competitionId: string): Promise<EvaluationCriterion[]> {
+  // Criteria are part of the competition detail - extract from there
+  return httpGet<EvaluationCriterion[]>(`${COMPETITIONS_BASE}/${competitionId}/criteria`)
 }
 
-/* ──────────────────────────────────────────────
- * Technical Scores
- * ────────────────────────────────────────────── */
+/* ══════════════════════════════════════════════
+ * Legacy compatibility functions
+ * ══════════════════════════════════════════════ */
+
+export function fetchVendors(competitionId: string, _type: string): Promise<Vendor[]> {
+  // Map to blind offers for backward compatibility
+  return fetchBlindOffers(competitionId).then(offers =>
+    offers.map(o => ({
+      id: o.offerId,
+      code: o.blindCode,
+      realName: o.supplierName ?? undefined,
+      offerId: o.offerId,
+      technicalScore: o.technicalTotalScore ?? undefined,
+      technicalStatus: o.technicalResult === 1 ? 'passed' as const
+        : o.technicalResult === 2 ? 'failed' as const
+        : 'under_review' as const,
+    }))
+  )
+}
 
 export function fetchTechnicalScores(competitionId: string): Promise<TechnicalScore[]> {
   return httpGet<TechnicalScore[]>(`${COMPETITIONS_BASE}/${competitionId}/technical-evaluation/scores`)
-}
-
-export function submitTechnicalScore(competitionId: string, score: Partial<TechnicalScore>): Promise<TechnicalScore> {
-  return httpPost<TechnicalScore>(`${COMPETITIONS_BASE}/${competitionId}/technical-evaluation/scores`, score)
 }
 
 export function saveTechnicalScores(competitionId: string, scores: Partial<TechnicalScore>[]): Promise<void> {
   return httpPut<void>(`${COMPETITIONS_BASE}/${competitionId}/technical-evaluation/scores/batch`, { scores })
 }
 
-/* ──────────────────────────────────────────────
- * Financial Evaluation
- * ────────────────────────────────────────────── */
-
-export function fetchFinancialOffers(competitionId: string): Promise<FinancialOffer[]> {
-  return httpGet<FinancialOffer[]>(`${COMPETITIONS_BASE}/${competitionId}/financial-evaluation/offers`)
+export function fetchFinancialOffers(competitionId: string): Promise<SupplierOffer[]> {
+  return fetchSupplierOffers(competitionId)
 }
 
 export function fetchFinancialScores(competitionId: string): Promise<FinancialScore[]> {
   return httpGet<FinancialScore[]>(`${COMPETITIONS_BASE}/${competitionId}/financial-evaluation/scores`)
 }
 
-export function submitFinancialScore(competitionId: string, score: Partial<FinancialScore>): Promise<FinancialScore> {
-  return httpPost<FinancialScore>(`${COMPETITIONS_BASE}/${competitionId}/financial-evaluation/scores`, score)
-}
-
-export function saveFinancialScores(competitionId: string, scores: Partial<FinancialScore>[]): Promise<void> {
-  return httpPut<void>(`${COMPETITIONS_BASE}/${competitionId}/financial-evaluation/scores/batch`, { scores })
-}
-
-/* ──────────────────────────────────────────────
- * AI Evaluation
- * ────────────────────────────────────────────── */
-
 export function requestAiEvaluation(competitionId: string, vendorId: string): Promise<AiEvaluation[]> {
-  return httpPost<AiEvaluation[]>(`${COMPETITIONS_BASE}/${competitionId}/technical-evaluation/ai-analysis/evaluate`, { vendorId })
+  return httpPost<AiEvaluation[]>(
+    `${COMPETITIONS_BASE}/${competitionId}/technical-evaluation/ai-analysis/trigger`,
+    { vendorId }
+  )
 }
 
 export function fetchAiEvaluations(competitionId: string): Promise<AiEvaluation[]> {
-  return httpGet<AiEvaluation[]>(`${COMPETITIONS_BASE}/${competitionId}/technical-evaluation/ai-analysis`)
+  return fetchAiAnalysisSummary(competitionId)
 }
-
-export function fetchVarianceAlerts(competitionId: string): Promise<VarianceAlert[]> {
-  return httpGet<VarianceAlert[]>(`${COMPETITIONS_BASE}/${competitionId}/technical-evaluation/ai-analysis/variance-alerts`)
-}
-
-/* ──────────────────────────────────────────────
- * Comparison Matrix
- * ────────────────────────────────────────────── */
 
 export function fetchComparisonMatrix(competitionId: string, type: string): Promise<ComparisonMatrix> {
-  const evalType = type === 'technical' ? 'technical-evaluation' : 'financial-evaluation'
-  return httpGet<ComparisonMatrix>(`${COMPETITIONS_BASE}/${competitionId}/${evalType}/comparison`)
+  if (type === 'financial') {
+    return fetchFinancialComparisonMatrix(competitionId) as unknown as Promise<ComparisonMatrix>
+  }
+  return fetchAiComparisonMatrix(competitionId)
 }
-
-/* ──────────────────────────────────────────────
- * Minutes
- * ────────────────────────────────────────────── */
 
 export function fetchMinutes(competitionId: string, type: string): Promise<EvaluationMinutes> {
   return httpGet<EvaluationMinutes>(`${COMPETITIONS_BASE}/${competitionId}/minutes?type=${type}`)

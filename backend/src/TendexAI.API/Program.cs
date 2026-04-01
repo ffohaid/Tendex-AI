@@ -134,8 +134,14 @@ app.MapCompetitionTemplateEndpoints();
 // Committee management endpoints
 app.MapCommitteeEndpoints();
 
+// Supplier Offer management endpoints
+app.MapSupplierOfferEndpoints();
+
 // Technical Evaluation endpoints
 app.MapTechnicalEvaluationEndpoints();
+
+// Financial Evaluation endpoints
+app.MapFinancialEvaluationEndpoints();
 
 // AI Offer Analysis endpoints (AI-powered technical offer analysis & recommendations)
 app.MapAiOfferAnalysisEndpoints();

@@ -60,6 +60,20 @@ const routes: RouteRecordRaw[] = [
         component: () => import('@/views/committees/CommitteesTemporaryView.vue'),
         meta: { title: 'Tendex AI - Temporary Committees', requiresAuth: true },
       },
+      /* Supplier Offers Management */
+      {
+        path: 'evaluation/offers',
+        name: 'SupplierOffers',
+        component: () => import('@/views/evaluation/offers/SupplierOffersView.vue'),
+        meta: { title: 'Tendex AI - Supplier Offers', requiresAuth: true },
+      },
+      {
+        path: 'evaluation/offers/:competitionId',
+        name: 'SupplierOffersDetail',
+        component: () => import('@/views/evaluation/offers/SupplierOffersDetailView.vue'),
+        meta: { title: 'Tendex AI - Supplier Offers Detail', requiresAuth: true },
+        props: true,
+      },
       /* Evaluation routes (TASK-505) */
       {
         path: 'evaluation/technical',

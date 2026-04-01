@@ -74,6 +74,12 @@ export const sidebarNavigation: NavigationItem[] = [
     icon: 'pi pi-chart-bar',
     children: [
       {
+        key: 'evaluation-offers',
+        labelKey: 'nav.evaluation.offers',
+        icon: 'pi pi-file-edit',
+        route: 'SupplierOffers',
+      },
+      {
         key: 'evaluation-technical',
         labelKey: 'nav.evaluation.technical',
         icon: 'pi pi-cog',

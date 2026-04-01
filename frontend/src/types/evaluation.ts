@@ -1,13 +1,56 @@
 /**
  * Evaluation system type definitions.
+ * Aligned with backend DTOs from TendexAI.Application.Features.
  * Covers technical and financial evaluation workflows,
- * committee management, and AI-assisted scoring.
+ * committee management, supplier offers, and AI-assisted scoring.
  */
 
 /* ──────────────────────────────────────────────
- * Enums
+ * Enums (matching backend enums)
  * ────────────────────────────────────────────── */
 
+export const TechnicalEvaluationStatus = {
+  Pending: 0,
+  InProgress: 1,
+  AllScoresSubmitted: 2,
+  PendingApproval: 3,
+  Approved: 4,
+  Rejected: 5,
+} as const
+export type TechnicalEvaluationStatus = (typeof TechnicalEvaluationStatus)[keyof typeof TechnicalEvaluationStatus]
+
+export const FinancialEvaluationStatus = {
+  Pending: 0,
+  InProgress: 1,
+  AllScoresSubmitted: 2,
+  PendingApproval: 3,
+  Approved: 4,
+  Rejected: 5,
+} as const
+export type FinancialEvaluationStatus = (typeof FinancialEvaluationStatus)[keyof typeof FinancialEvaluationStatus]
+
+export const OfferTechnicalResult = {
+  Pending: 0,
+  Passed: 1,
+  Failed: 2,
+} as const
+export type OfferTechnicalResult = (typeof OfferTechnicalResult)[keyof typeof OfferTechnicalResult]
+
+export const PriceDeviationLevel = {
+  WithinRange: 1,
+  ModerateDeviation: 2,
+  SignificantDeviation: 3,
+} as const
+export type PriceDeviationLevel = (typeof PriceDeviationLevel)[keyof typeof PriceDeviationLevel]
+
+export const HeatmapColor = {
+  Excellent: 'excellent',
+  Average: 'average',
+  Weak: 'weak',
+} as const
+export type HeatmapColor = (typeof HeatmapColor)[keyof typeof HeatmapColor]
+
+// Legacy compatibility
 export const EvaluationStatus = {
   Pending: 'pending',
   InProgress: 'in_progress',
@@ -30,27 +73,291 @@ export const OfferStatus = {
 } as const
 export type OfferStatus = (typeof OfferStatus)[keyof typeof OfferStatus]
 
-export const HeatmapColor = {
-  Excellent: 'excellent',  // >= 80%
-  Average: 'average',      // 60-79%
-  Weak: 'weak',            // < 60%
-} as const
-export type HeatmapColor = (typeof HeatmapColor)[keyof typeof HeatmapColor]
+/* ──────────────────────────────────────────────
+ * Supplier Offer (from backend SupplierOfferDto)
+ * ────────────────────────────────────────────── */
+
+export interface SupplierOffer {
+  id: string
+  competitionId: string
+  supplierName: string
+  supplierIdentifier: string
+  offerReferenceNumber: string
+  submissionDate: string
+  blindCode: string
+  technicalResult: OfferTechnicalResult
+  technicalTotalScore: number | null
+  isFinancialEnvelopeOpen: boolean
+  financialEnvelopeOpenedAt: string | null
+  createdAt: string
+}
 
 /* ──────────────────────────────────────────────
- * Core Entities
+ * Technical Evaluation Detail (from backend TechnicalEvaluationDetailDto)
+ * ────────────────────────────────────────────── */
+
+export interface TechnicalEvaluationDetail {
+  id: string
+  competitionId: string
+  committeeId: string
+  status: TechnicalEvaluationStatus
+  minimumPassingScore: number
+  isBlindEvaluationActive: boolean
+  startedAt: string | null
+  completedAt: string | null
+  approvedAt: string | null
+  approvedBy: string | null
+  rejectionReason: string | null
+  createdAt: string
+}
+
+/* ──────────────────────────────────────────────
+ * Blind Offer Summary (from backend BlindOfferSummaryDto)
+ * ────────────────────────────────────────────── */
+
+export interface BlindOfferSummary {
+  offerId: string
+  blindCode: string
+  supplierName: string | null
+  technicalTotalScore: number | null
+  technicalResult: OfferTechnicalResult
+  isFinancialEnvelopeOpen: boolean
+}
+
+/* ──────────────────────────────────────────────
+ * Technical Score (from backend TechnicalScoreDto)
+ * ────────────────────────────────────────────── */
+
+export interface TechnicalScore {
+  id: string
+  supplierOfferId: string
+  offerBlindCode: string
+  evaluationCriterionId: string
+  criterionNameAr: string
+  criterionNameEn: string
+  evaluatorUserId: string
+  score: number
+  maxScore: number
+  scorePercentage: number
+  notes: string | null
+  createdAt: string
+}
+
+/* ──────────────────────────────────────────────
+ * AI Technical Score (from backend AiTechnicalScoreDto)
+ * ────────────────────────────────────────────── */
+
+export interface AiTechnicalScore {
+  id: string
+  supplierOfferId: string
+  offerBlindCode: string
+  evaluationCriterionId: string
+  criterionNameAr: string
+  criterionNameEn: string
+  suggestedScore: number
+  maxScore: number
+  scorePercentage: number
+  justification: string
+  referenceCitations: string | null
+}
+
+/* ──────────────────────────────────────────────
+ * Variance Alert (from backend VarianceAlertDto)
+ * ────────────────────────────────────────────── */
+
+export interface VarianceAlert {
+  criterionId: string
+  criterionNameAr: string
+  criterionNameEn: string
+  offerId: string
+  offerBlindCode: string
+  hasEvaluatorVariance: boolean
+  hasHumanAiVariance: boolean
+  evaluatorSpread: number | null
+  humanAiDifference: number | null
+}
+
+/* ──────────────────────────────────────────────
+ * Heatmap (from backend TechnicalHeatmapDto)
+ * ────────────────────────────────────────────── */
+
+export interface CriterionHeader {
+  id: string
+  nameAr: string
+  nameEn: string
+  weightPercentage: number
+  minimumPassingScore: number | null
+}
+
+export interface HeatmapCell {
+  offerBlindCode: string
+  offerId: string
+  criterionId: string
+  criterionNameAr: string
+  criterionNameEn: string
+  averageScorePercentage: number
+  color: string
+}
+
+export interface TechnicalHeatmap {
+  competitionId: string
+  evaluationId: string
+  offerBlindCodes: string[]
+  criteria: CriterionHeader[]
+  cells: HeatmapCell[]
+}
+
+/* ──────────────────────────────────────────────
+ * Evaluation Results (from backend OfferEvaluationResultDto)
+ * ────────────────────────────────────────────── */
+
+export interface CriterionScoreSummary {
+  criterionId: string
+  criterionNameAr: string
+  criterionNameEn: string
+  weightPercentage: number
+  averageScore: number
+  averagePercentage: number
+  aiSuggestedScore: number | null
+  aiPercentage: number | null
+  hasVariance: boolean
+  evaluatorScores: EvaluatorScore[]
+}
+
+export interface EvaluatorScore {
+  evaluatorUserId: string
+  score: number
+  maxScore: number
+  percentage: number
+  notes: string | null
+}
+
+export interface OfferEvaluationResult {
+  offerId: string
+  blindCode: string
+  supplierName: string | null
+  weightedTotalScore: number
+  result: OfferTechnicalResult
+  rank: number
+  criterionScores: CriterionScoreSummary[]
+}
+
+/* ──────────────────────────────────────────────
+ * Financial Evaluation (from backend FinancialEvaluationDtos)
+ * ────────────────────────────────────────────── */
+
+export interface FinancialEvaluationDetail {
+  id: string
+  competitionId: string
+  committeeId: string
+  status: FinancialEvaluationStatus
+  startedAt: string | null
+  completedAt: string | null
+  approvedAt: string | null
+  approvedBy: string | null
+  rejectionReason: string | null
+  createdAt: string
+}
+
+export interface FinancialOfferItem {
+  id: string
+  supplierOfferId: string
+  supplierBlindCode: string
+  boqItemId: string
+  boqItemNumber: string
+  boqDescriptionAr: string
+  unitPrice: number
+  quantity: number
+  totalPrice: number
+  isArithmeticallyVerified: boolean
+  hasArithmeticError: boolean
+  supplierSubmittedTotal: number | null
+  deviationPercentage: number | null
+  deviationLevel: PriceDeviationLevel | null
+}
+
+export interface FinancialComparisonMatrix {
+  competitionId: string
+  rows: FinancialComparisonRow[]
+  supplierTotals: SupplierTotalSummary[]
+  estimatedTotalCost: number
+}
+
+export interface FinancialComparisonRow {
+  boqItemId: string
+  itemNumber: string
+  descriptionAr: string
+  unit: string
+  quantity: number
+  estimatedUnitPrice: number | null
+  estimatedTotalPrice: number | null
+  supplierPrices: SupplierPriceCell[]
+}
+
+export interface SupplierPriceCell {
+  offerId: string
+  blindCode: string
+  supplierName: string | null
+  unitPrice: number
+  totalPrice: number
+  deviationPercentage: number
+  deviationLevel: PriceDeviationLevel
+  hasArithmeticError: boolean
+}
+
+export interface SupplierTotalSummary {
+  offerId: string
+  blindCode: string
+  supplierName: string | null
+  totalAmount: number
+  deviationPercentage: number
+  deviationLevel: PriceDeviationLevel
+  financialRank: number
+}
+
+export interface ArithmeticVerificationResult {
+  supplierOfferId: string
+  supplierBlindCode: string
+  totalItems: number
+  errorCount: number
+  hasErrors: boolean
+  errors: ArithmeticError[]
+}
+
+export interface ArithmeticError {
+  boqItemId: string
+  itemNumber: string
+  calculatedTotal: number
+  supplierSubmittedTotal: number | null
+  difference: number
+}
+
+export interface FinancialScore {
+  id: string
+  supplierOfferId: string
+  supplierBlindCode: string
+  evaluatorUserId: string
+  score: number
+  maxScore: number
+  scorePercentage: number
+  notes: string | null
+  createdAt: string
+}
+
+/* ──────────────────────────────────────────────
+ * Committee (from backend CommitteeDto)
  * ────────────────────────────────────────────── */
 
 export interface Committee {
   id: string
   name: string
-  type: EvaluationType
+  type: string
   competitionId: string
-  competitionName: string
+  competitionName?: string
   members: CommitteeMember[]
-  status: EvaluationStatus
+  status: string
   createdAt: string
-  updatedAt: string
+  updatedAt?: string
 }
 
 export interface CommitteeMember {
@@ -61,9 +368,15 @@ export interface CommitteeMember {
   hasSubmittedScores: boolean
 }
 
+/* ──────────────────────────────────────────────
+ * Evaluation Criterion (from competition detail)
+ * ────────────────────────────────────────────── */
+
 export interface EvaluationCriterion {
   id: string
   name: string
+  nameAr?: string
+  nameEn?: string
   description: string
   weight: number
   minimumScore: number
@@ -72,10 +385,14 @@ export interface EvaluationCriterion {
   order: number
 }
 
+/* ──────────────────────────────────────────────
+ * Vendor (legacy compatibility)
+ * ────────────────────────────────────────────── */
+
 export interface Vendor {
   id: string
-  code: string         // Random anonymous code (e.g., "Vendor A")
-  realName?: string    // Only revealed after minutes approval
+  code: string
+  realName?: string
   offerId: string
   technicalScore?: number
   financialScore?: number
@@ -84,19 +401,29 @@ export interface Vendor {
 }
 
 /* ──────────────────────────────────────────────
- * Technical Evaluation
+ * Competition Summary (for evaluation list)
  * ────────────────────────────────────────────── */
 
-export interface TechnicalScore {
+export interface CompetitionEvaluation {
   id: string
-  criterionId: string
-  vendorId: string
-  memberId: string
-  score: number
-  maxScore: number
-  notes: string
-  submittedAt: string
+  competitionNumber: string
+  competitionName: string
+  projectName: string
+  stage: 'technical' | 'financial' | 'completed'
+  technicalStatus: EvaluationStatus
+  financialStatus: EvaluationStatus
+  vendorCount: number
+  passedVendorCount: number
+  estimatedBudget: number
+  deadlineGregorian: string
+  deadlineHijri: string
+  assignedCommittee: string
+  progress: number
 }
+
+/* ──────────────────────────────────────────────
+ * AI Evaluation (legacy compatibility)
+ * ────────────────────────────────────────────── */
 
 export interface AiEvaluation {
   id: string
@@ -110,69 +437,9 @@ export interface AiEvaluation {
   createdAt: string
 }
 
-export interface VarianceAlert {
-  criterionId: string
-  criterionName: string
-  vendorId: string
-  vendorCode: string
-  humanScore: number
-  aiScore: number
-  variancePercent: number
-}
-
 /* ──────────────────────────────────────────────
- * Financial Evaluation
+ * Comparison Matrix (legacy compatibility)
  * ────────────────────────────────────────────── */
-
-export interface FinancialOffer {
-  id: string
-  vendorId: string
-  vendorCode: string
-  items: FinancialItem[]
-  totalAmount: number
-  arithmeticValid: boolean
-  rank?: number
-  deviationFromEstimate?: number
-}
-
-export interface FinancialItem {
-  id: string
-  itemName: string
-  unit: string
-  quantity: number
-  unitPrice: number
-  totalPrice: number
-  boqPrice?: number // Price from BOQ for comparison
-}
-
-export interface FinancialScore {
-  id: string
-  criterionId: string
-  vendorId: string
-  memberId: string
-  score: number
-  maxScore: number
-  notes: string
-  submittedAt: string
-}
-
-/* ──────────────────────────────────────────────
- * Heatmap / Comparison Matrix
- * ────────────────────────────────────────────── */
-
-export interface HeatmapCell {
-  vendorId: string
-  vendorCode: string
-  criterionId: string
-  criterionName: string
-  score: number
-  maxScore: number
-  percentage: number
-  color: HeatmapColor
-  notes: string
-  aiScore?: number
-  aiJustification?: string
-}
 
 export interface ComparisonMatrix {
   type: EvaluationType
@@ -206,27 +473,6 @@ export interface MinutesSignature {
   role: string
   signed: boolean
   signedAt?: string
-}
-
-/* ──────────────────────────────────────────────
- * Competition Summary (for evaluation list)
- * ────────────────────────────────────────────── */
-
-export interface CompetitionEvaluation {
-  id: string
-  competitionNumber: string
-  competitionName: string
-  projectName: string
-  stage: 'technical' | 'financial' | 'completed'
-  technicalStatus: EvaluationStatus
-  financialStatus: EvaluationStatus
-  vendorCount: number
-  passedVendorCount: number
-  estimatedBudget: number
-  deadlineGregorian: string
-  deadlineHijri: string
-  assignedCommittee: string
-  progress: number
 }
 
 /* ──────────────────────────────────────────────

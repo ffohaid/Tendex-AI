@@ -142,7 +142,7 @@ function getConfidenceBg(confidence: number): string {
         <div class="space-y-2">
           <div
             v-for="alert in visibleAlerts"
-            :key="`${alert.criterionId}-${alert.vendorId}`"
+            :key="`${alert.criterionId}-${alert.offerId}`"
             class="flex items-center gap-3 rounded-lg border border-warning/20 bg-warning/5 p-3"
           >
             <div class="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-warning/10">
@@ -150,13 +150,13 @@ function getConfidenceBg(confidence: number): string {
             </div>
             <div class="flex-1 min-w-0">
               <p class="text-xs font-medium text-secondary">
-                {{ alert.vendorCode }} — {{ alert.criterionName }}
+                {{ alert.offerBlindCode }} — {{ alert.criterionNameAr }}
               </p>
               <div class="mt-1 flex items-center gap-3 text-xs text-secondary/60">
-                <span>{{ t('evaluation.ai.humanScore') }}: <strong>{{ alert.humanScore }}</strong></span>
-                <span>{{ t('evaluation.ai.aiScore') }}: <strong>{{ alert.aiScore }}</strong></span>
+                <span>{{ t('evaluation.ai.humanScore') }}: <strong>{{ alert.evaluatorSpread?.toFixed(1) }}</strong></span>
+                <span>{{ t('evaluation.ai.aiScore') }}: <strong>{{ alert.humanAiDifference?.toFixed(1) }}</strong></span>
                 <span class="font-bold text-warning">
-                  {{ t('evaluation.ai.variancePercent', { percent: alert.variancePercent.toFixed(0) }) }}
+                  {{ alert.hasHumanAiVariance ? t('evaluation.ai.variancePercent', { percent: (alert.humanAiDifference || 0).toFixed(0) }) : '' }}
                 </span>
               </div>
             </div>

@@ -30,6 +30,7 @@ using TendexAI.Infrastructure.AI;
 using TendexAI.Application.Features.VideoAnalysis;
 using TendexAI.Infrastructure.AI.Rag;
 using TendexAI.Infrastructure.Storage.MinIO;
+using TendexAI.Domain.StateMachine;
 
 namespace TendexAI.Infrastructure;
 
@@ -239,6 +240,13 @@ public static class DependencyInjection
 
         // ----- AI BOQ Generation Service (TASK-403) -----
         services.AddScoped<Application.Common.Interfaces.AI.IAiBoqGenerationService, AI.AiBoqGenerationService>();
+
+        // ----- Competition Permission Service -----
+        services.AddScoped<ICompetitionPermissionService, Application.Features.Rfp.Services.CompetitionPermissionService>();
+        services.AddScoped<IUserSystemRoleProvider, UserSystemRoleProvider>();
+
+        // ----- Cross-Tenant User Search Service -----
+        services.AddScoped<ICrossTenantUserSearchService, CrossTenantUserSearchService>();
 
         // ----- Tenant Database Provisioning -----
         services.AddScoped<ITenantDatabaseProvisioner, TenantDatabaseProvisioner>();

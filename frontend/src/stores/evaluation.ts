@@ -5,21 +5,24 @@
  */
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
-import {
-  HeatmapColor,
-} from '@/types/evaluation'
 import type {
   CompetitionEvaluation,
   Committee,
   EvaluationCriterion,
-  Vendor,
+  SupplierOffer,
+  TechnicalEvaluationDetail,
+  BlindOfferSummary,
   TechnicalScore,
-  FinancialScore,
-  FinancialOffer,
-  AiEvaluation,
+  AiTechnicalScore,
   VarianceAlert,
-  ComparisonMatrix,
-  HeatmapCell,
+  TechnicalHeatmap,
+  OfferEvaluationResult,
+  FinancialEvaluationDetail,
+  FinancialOfferItem,
+  FinancialComparisonMatrix,
+  ArithmeticVerificationResult,
+  FinancialScore,
+  AiEvaluation,
 } from '@/types/evaluation'
 import * as api from '@/services/evaluationApi'
 
@@ -29,70 +32,44 @@ export const useEvaluationStore = defineStore('evaluation', () => {
   const selectedCompetition = ref<CompetitionEvaluation | null>(null)
   const committee = ref<Committee | null>(null)
   const criteria = ref<EvaluationCriterion[]>([])
-  const vendors = ref<Vendor[]>([])
+  const supplierOffers = ref<SupplierOffer[]>([])
+
+  // Technical
+  const technicalEvaluation = ref<TechnicalEvaluationDetail | null>(null)
+  const blindOffers = ref<BlindOfferSummary[]>([])
   const technicalScores = ref<TechnicalScore[]>([])
-  const financialScores = ref<FinancialScore[]>([])
-  const financialOffers = ref<FinancialOffer[]>([])
-  const aiEvaluations = ref<AiEvaluation[]>([])
+  const aiTechnicalScores = ref<AiTechnicalScore[]>([])
   const varianceAlerts = ref<VarianceAlert[]>([])
-  const comparisonMatrix = ref<ComparisonMatrix | null>(null)
+  const technicalHeatmap = ref<TechnicalHeatmap | null>(null)
+  const technicalResults = ref<OfferEvaluationResult[]>([])
+
+  // Financial
+  const financialEvaluation = ref<FinancialEvaluationDetail | null>(null)
+  const financialOfferItems = ref<Map<string, FinancialOfferItem[]>>(new Map())
+  const financialScores = ref<FinancialScore[]>([])
+  const financialComparisonMatrix = ref<FinancialComparisonMatrix | null>(null)
+  const arithmeticResults = ref<Map<string, ArithmeticVerificationResult>>(new Map())
+
+  // AI
+  const aiEvaluations = ref<AiEvaluation[]>([])
+
+  // UI
   const loading = ref(false)
   const error = ref<string | null>(null)
-  const autoSaveTimer = ref<ReturnType<typeof setInterval> | null>(null)
 
   /* ── Getters ───────────────────────────────── */
   const totalCriteriaWeight = computed(() =>
     criteria.value.reduce((sum, c) => sum + c.weight, 0)
   )
 
-  const passedVendors = computed(() =>
-    vendors.value.filter(v => v.technicalStatus === 'passed')
+  const passedOffers = computed(() =>
+    blindOffers.value.filter(o => o.technicalResult === 1)
   )
 
   const pendingScoresCount = computed(() => {
-    const totalNeeded = criteria.value.length * vendors.value.length
+    const totalNeeded = criteria.value.length * blindOffers.value.length
     return totalNeeded - technicalScores.value.length
   })
-
-  /* ── Heatmap Helpers ───────────────────────── */
-  function getHeatmapColor(percentage: number): HeatmapColor {
-    if (percentage >= 80) return HeatmapColor.Excellent
-    if (percentage >= 60) return HeatmapColor.Average
-    return HeatmapColor.Weak
-  }
-
-  function buildHeatmapCells(): HeatmapCell[][] {
-    return criteria.value.map(criterion => {
-      return vendors.value.map(vendor => {
-        const scores = technicalScores.value.filter(
-          s => s.criterionId === criterion.id && s.vendorId === vendor.id
-        )
-        const avgScore = scores.length > 0
-          ? scores.reduce((sum, s) => sum + s.score, 0) / scores.length
-          : 0
-        const maxScore = scores.length > 0 ? scores[0].maxScore : 100
-        const percentage = maxScore > 0 ? (avgScore / maxScore) * 100 : 0
-
-        const aiEval = aiEvaluations.value.find(
-          a => a.criterionId === criterion.id && a.vendorId === vendor.id
-        )
-
-        return {
-          vendorId: vendor.id,
-          vendorCode: vendor.code,
-          criterionId: criterion.id,
-          criterionName: criterion.name,
-          score: avgScore,
-          maxScore,
-          percentage,
-          color: getHeatmapColor(percentage),
-          notes: scores.map(s => s.notes).filter(Boolean).join(' | '),
-          aiScore: aiEval?.suggestedScore,
-          aiJustification: aiEval?.justification,
-        } satisfies HeatmapCell
-      })
-    })
-  }
 
   /* ── Actions ───────────────────────────────── */
 
@@ -101,7 +78,7 @@ export const useEvaluationStore = defineStore('evaluation', () => {
     error.value = null
     try {
       competitions.value = await api.fetchCompetitionEvaluations()
-    } catch (e: unknown) {
+    } catch {
       error.value = 'لا توجد منافسات متاحة للتقييم حالياً'
     } finally {
       loading.value = false
@@ -113,8 +90,20 @@ export const useEvaluationStore = defineStore('evaluation', () => {
     error.value = null
     try {
       selectedCompetition.value = await api.fetchCompetitionEvaluation(id)
-    } catch (e: unknown) {
+    } catch {
       error.value = 'تعذر تحميل بيانات المنافسة'
+    } finally {
+      loading.value = false
+    }
+  }
+
+  async function loadSupplierOffers(competitionId: string) {
+    loading.value = true
+    error.value = null
+    try {
+      supplierOffers.value = await api.fetchSupplierOffers(competitionId)
+    } catch {
+      supplierOffers.value = []
     } finally {
       loading.value = false
     }
@@ -124,22 +113,45 @@ export const useEvaluationStore = defineStore('evaluation', () => {
     loading.value = true
     error.value = null
     try {
-      const [committeeData, criteriaData, vendorsData, scoresData, aiData, alertsData] =
-        await Promise.all([
-          api.fetchCommittee(competitionId, 'technical'),
-          api.fetchCriteria(competitionId, 'technical'),
-          api.fetchVendors(competitionId, 'technical'),
-          api.fetchTechnicalScores(competitionId),
-          api.fetchAiEvaluations(competitionId),
-          api.fetchVarianceAlerts(competitionId),
-        ])
-      committee.value = committeeData
-      criteria.value = criteriaData
-      vendors.value = vendorsData
-      technicalScores.value = scoresData
-      aiEvaluations.value = aiData
-      varianceAlerts.value = alertsData
-    } catch (e: unknown) {
+      const results = await Promise.allSettled([
+        api.fetchTechnicalEvaluationDetails(competitionId),
+        api.fetchBlindOffers(competitionId),
+        api.fetchCriteria(competitionId),
+        api.fetchCommittees(competitionId),
+        api.fetchTechnicalScores(competitionId),
+        api.fetchVarianceAlerts(competitionId),
+        api.fetchTechnicalHeatmap(competitionId),
+        api.fetchTechnicalResults(competitionId),
+      ])
+
+      if (results[0].status === 'fulfilled') {
+        technicalEvaluation.value = results[0].value as TechnicalEvaluationDetail
+      }
+      if (results[1].status === 'fulfilled') {
+        blindOffers.value = Array.isArray(results[1].value) ? results[1].value as BlindOfferSummary[] : []
+      }
+      if (results[2].status === 'fulfilled') {
+        criteria.value = Array.isArray(results[2].value) ? results[2].value as EvaluationCriterion[] : []
+      }
+      if (results[3].status === 'fulfilled') {
+        const committees = results[3].value as Committee[]
+        if (Array.isArray(committees) && committees.length > 0) {
+          committee.value = committees[0]
+        }
+      }
+      if (results[4].status === 'fulfilled') {
+        technicalScores.value = Array.isArray(results[4].value) ? results[4].value as TechnicalScore[] : []
+      }
+      if (results[5].status === 'fulfilled') {
+        varianceAlerts.value = Array.isArray(results[5].value) ? results[5].value as VarianceAlert[] : []
+      }
+      if (results[6].status === 'fulfilled') {
+        technicalHeatmap.value = results[6].value as TechnicalHeatmap
+      }
+      if (results[7].status === 'fulfilled') {
+        technicalResults.value = Array.isArray(results[7].value) ? results[7].value as OfferEvaluationResult[] : []
+      }
+    } catch {
       error.value = 'تعذر تحميل بيانات التقييم الفني'
     } finally {
       loading.value = false
@@ -150,109 +162,209 @@ export const useEvaluationStore = defineStore('evaluation', () => {
     loading.value = true
     error.value = null
     try {
-      const [committeeData, criteriaData, vendorsData, offersData, scoresData] =
-        await Promise.all([
-          api.fetchCommittee(competitionId, 'financial'),
-          api.fetchCriteria(competitionId, 'financial'),
-          api.fetchVendors(competitionId, 'financial'),
-          api.fetchFinancialOffers(competitionId),
-          api.fetchFinancialScores(competitionId),
-        ])
-      committee.value = committeeData
-      criteria.value = criteriaData
-      vendors.value = vendorsData
-      financialOffers.value = offersData
-      financialScores.value = scoresData
-    } catch (e: unknown) {
+      const results = await Promise.allSettled([
+        api.fetchFinancialEvaluationDetails(competitionId),
+        api.fetchBlindOffers(competitionId),
+        api.fetchSupplierOffers(competitionId),
+        api.fetchCommittees(competitionId),
+        api.fetchCriteria(competitionId),
+        api.fetchFinancialScores(competitionId),
+        api.fetchFinancialComparisonMatrix(competitionId),
+      ])
+
+      if (results[0].status === 'fulfilled') {
+        financialEvaluation.value = results[0].value as FinancialEvaluationDetail
+      }
+      if (results[1].status === 'fulfilled') {
+        blindOffers.value = Array.isArray(results[1].value) ? results[1].value as BlindOfferSummary[] : []
+      }
+      if (results[2].status === 'fulfilled') {
+        supplierOffers.value = Array.isArray(results[2].value) ? results[2].value as SupplierOffer[] : []
+      }
+      if (results[3].status === 'fulfilled') {
+        const committees = results[3].value as Committee[]
+        if (Array.isArray(committees) && committees.length > 0) {
+          committee.value = committees[0]
+        }
+      }
+      if (results[4].status === 'fulfilled') {
+        criteria.value = Array.isArray(results[4].value) ? results[4].value as EvaluationCriterion[] : []
+      }
+      if (results[5].status === 'fulfilled') {
+        financialScores.value = Array.isArray(results[5].value) ? results[5].value as FinancialScore[] : []
+      }
+      if (results[6].status === 'fulfilled') {
+        financialComparisonMatrix.value = results[6].value as FinancialComparisonMatrix
+      }
+    } catch {
       error.value = 'تعذر تحميل بيانات التقييم المالي'
     } finally {
       loading.value = false
     }
   }
 
-  async function submitScore(
+  async function submitTechScore(
     competitionId: string,
-    type: 'technical' | 'financial',
-    score: Partial<TechnicalScore | FinancialScore>
+    supplierOfferId: string,
+    criterionId: string,
+    score: number,
+    notes?: string
   ) {
     try {
-      if (type === 'technical') {
-        const result = await api.submitTechnicalScore(competitionId, score)
-        technicalScores.value.push(result)
+      const result = await api.submitTechnicalScore(competitionId, {
+        evaluationId: technicalEvaluation.value?.id ?? '',
+        supplierOfferId,
+        evaluationCriterionId: criterionId,
+        score,
+        notes,
+      })
+      const idx = technicalScores.value.findIndex(
+        s => s.supplierOfferId === supplierOfferId && s.evaluationCriterionId === criterionId
+      )
+      if (idx >= 0) {
+        technicalScores.value[idx] = result
       } else {
-        const result = await api.submitFinancialScore(competitionId, score as Partial<FinancialScore>)
+        technicalScores.value.push(result)
+      }
+      return result
+    } catch {
+      error.value = 'تعذر حفظ الدرجة'
+      throw new Error('تعذر حفظ الدرجة')
+    }
+  }
+
+  async function submitFinScore(
+    competitionId: string,
+    supplierOfferId: string,
+    score: number,
+    maxScore: number,
+    notes?: string
+  ) {
+    try {
+      const result = await api.submitFinancialScore(competitionId, supplierOfferId, {
+        score,
+        maxScore,
+        notes,
+      })
+      const idx = financialScores.value.findIndex(s => s.supplierOfferId === supplierOfferId)
+      if (idx >= 0) {
+        financialScores.value[idx] = result
+      } else {
         financialScores.value.push(result)
       }
-    } catch (e: unknown) {
-      error.value = 'تعذر حفظ الدرجة'
-      throw e
+      return result
+    } catch {
+      error.value = 'تعذر حفظ الدرجة المالية'
+      throw new Error('تعذر حفظ الدرجة المالية')
     }
   }
 
-  async function requestAiAnalysis(competitionId: string, vendorId: string) {
+  async function loadFinancialOfferItems(competitionId: string, supplierOfferId: string) {
+    try {
+      const items = await api.fetchFinancialOfferItems(competitionId, supplierOfferId)
+      financialOfferItems.value.set(supplierOfferId, items)
+      return items
+    } catch {
+      return []
+    }
+  }
+
+  async function verifyArithmetic(competitionId: string, supplierOfferId: string) {
+    try {
+      const result = await api.verifyArithmetic(competitionId, supplierOfferId)
+      arithmeticResults.value.set(supplierOfferId, result)
+      return result
+    } catch {
+      error.value = 'تعذر التحقق الحسابي'
+      throw new Error('تعذر التحقق الحسابي')
+    }
+  }
+
+  async function triggerAiAnalysis(competitionId: string) {
     loading.value = true
     try {
-      const results = await api.requestAiEvaluation(competitionId, vendorId)
-      aiEvaluations.value.push(...results)
-    } catch (e: unknown) {
-      error.value = 'تعذر الحصول على تقييم الذكاء الاصطناعي'
+      await api.triggerAiAnalysis(competitionId)
+      const results = await api.fetchAiAnalysisSummary(competitionId)
+      aiEvaluations.value = Array.isArray(results) ? results : []
+    } catch {
+      error.value = 'تعذر تشغيل تحليل الذكاء الاصطناعي'
     } finally {
       loading.value = false
     }
   }
 
-  async function loadComparisonMatrix(competitionId: string, type: string) {
-    loading.value = true
+  async function loadTechnicalHeatmap(competitionId: string) {
     try {
-      comparisonMatrix.value = await api.fetchComparisonMatrix(competitionId, type)
-    } catch (e: unknown) {
-      error.value = 'تعذر تحميل مصفوفة المقارنة'
-    } finally {
-      loading.value = false
+      technicalHeatmap.value = await api.fetchTechnicalHeatmap(competitionId)
+    } catch {
+      // Heatmap may not be available yet
     }
   }
 
-  /* ── Auto-save ─────────────────────────────── */
-
-  function startAutoSave(competitionId: string, type: 'technical' | 'financial') {
-    stopAutoSave()
-    autoSaveTimer.value = setInterval(async () => {
-      try {
-        if (type === 'technical' && technicalScores.value.length > 0) {
-          await api.saveTechnicalScores(competitionId, technicalScores.value)
-        } else if (type === 'financial' && financialScores.value.length > 0) {
-          await api.saveFinancialScores(competitionId, financialScores.value)
-        }
-      } catch {
-        // Silent fail for auto-save; user can manually save
-      }
-    }, 30000) // 30 seconds
-  }
-
-  function stopAutoSave() {
-    if (autoSaveTimer.value) {
-      clearInterval(autoSaveTimer.value)
-      autoSaveTimer.value = null
+  async function loadTechnicalResults(competitionId: string) {
+    try {
+      technicalResults.value = await api.fetchTechnicalResults(competitionId)
+    } catch {
+      technicalResults.value = []
     }
   }
 
   /* ── Reset ─────────────────────────────────── */
 
   function $reset() {
-    stopAutoSave()
     competitions.value = []
     selectedCompetition.value = null
     committee.value = null
     criteria.value = []
-    vendors.value = []
+    supplierOffers.value = []
+    technicalEvaluation.value = null
+    blindOffers.value = []
     technicalScores.value = []
-    financialScores.value = []
-    financialOffers.value = []
-    aiEvaluations.value = []
+    aiTechnicalScores.value = []
     varianceAlerts.value = []
-    comparisonMatrix.value = null
+    technicalHeatmap.value = null
+    technicalResults.value = []
+    financialEvaluation.value = null
+    financialOfferItems.value = new Map()
+    financialScores.value = []
+    financialComparisonMatrix.value = null
+    arithmeticResults.value = new Map()
+    aiEvaluations.value = []
     loading.value = false
     error.value = null
+  }
+
+  /* ── Start Evaluation Actions ── */
+  async function startTechnicalEvaluation(competitionId: string, committeeId?: string) {
+    loading.value = true
+    error.value = null
+    try {
+      const result = await api.startTechnicalEvaluation(competitionId, committeeId || '')
+      technicalEvaluation.value = result
+      await loadCompetitions()
+      return result
+    } catch (e: any) {
+      error.value = e?.response?.data?.message || e.message
+      throw e
+    } finally {
+      loading.value = false
+    }
+  }
+
+  async function startFinancialEvaluation(competitionId: string, committeeId?: string) {
+    loading.value = true
+    error.value = null
+    try {
+      const result = await api.startFinancialEvaluation(competitionId, committeeId || '')
+      financialEvaluation.value = result
+      await loadCompetitions()
+      return result
+    } catch (e: any) {
+      error.value = e?.response?.data?.message || e.message
+      throw e
+    } finally {
+      loading.value = false
+    }
   }
 
   return {
@@ -261,33 +373,43 @@ export const useEvaluationStore = defineStore('evaluation', () => {
     selectedCompetition,
     committee,
     criteria,
-    vendors,
+    supplierOffers,
+    technicalEvaluation,
+    blindOffers,
     technicalScores,
-    financialScores,
-    financialOffers,
-    aiEvaluations,
+    aiTechnicalScores,
     varianceAlerts,
-    comparisonMatrix,
+    technicalHeatmap,
+    technicalResults,
+    financialEvaluation,
+    financialOfferItems,
+    financialScores,
+    financialComparisonMatrix,
+    arithmeticResults,
+    aiEvaluations,
     loading,
     error,
 
     /* Getters */
     totalCriteriaWeight,
-    passedVendors,
+    passedOffers,
     pendingScoresCount,
 
     /* Actions */
     loadCompetitions,
     selectCompetition,
+    loadSupplierOffers,
     loadTechnicalData,
     loadFinancialData,
-    submitScore,
-    requestAiAnalysis,
-    loadComparisonMatrix,
-    buildHeatmapCells,
-    getHeatmapColor,
-    startAutoSave,
-    stopAutoSave,
+    submitTechScore,
+    submitFinScore,
+    loadFinancialOfferItems,
+    verifyArithmetic,
+    triggerAiAnalysis,
+    loadTechnicalHeatmap,
+    loadTechnicalResults,
+    startTechnicalEvaluation,
+    startFinancialEvaluation,
     $reset,
   }
 })

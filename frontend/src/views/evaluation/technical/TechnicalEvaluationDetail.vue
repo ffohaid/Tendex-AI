@@ -3,53 +3,74 @@
  * TechnicalEvaluationDetail - Main technical evaluation workspace.
  * Implements blind evaluation with AI-assisted dual scoring.
  * Vendors are shown with anonymous codes only.
- * Now includes dedicated AI analysis tab.
+ * Includes dedicated AI analysis tab, heatmap matrix, and minutes.
  */
-import { onMounted, onUnmounted, ref, computed } from 'vue'
+import { onMounted, ref, computed, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { useEvaluationStore } from '@/stores/evaluation'
-import EvaluationHeader from '@/components/evaluation/EvaluationHeader.vue'
-import CriteriaPanel from '@/components/evaluation/CriteriaPanel.vue'
-import VendorScoreCard from '@/components/evaluation/VendorScoreCard.vue'
-import AiEvaluationPanel from '@/components/evaluation/AiEvaluationPanel.vue'
-import AiComparisonMatrix from '@/components/evaluation/AiComparisonMatrix.vue'
 import type { EvaluationCriterion } from '@/types/evaluation'
+import {
+  triggerAiAnalysis as triggerAi,
+  getAiAnalysisSummary,
+  getAiOfferAnalysis,
+  getAiComparisonMatrix,
+  reviewAiAnalysis,
+  type AiAnalysisSummary,
+  type AiOfferAnalysis,
+  type AiComparisonMatrix,
+} from '@/services/aiEvaluationService'
 
-const { t } = useI18n()
+const { locale } = useI18n()
 const route = useRoute()
 const router = useRouter()
 const store = useEvaluationStore()
+const isRtl = computed(() => locale.value === 'ar')
 
 const competitionId = computed(() => route.params.id as string)
 const selectedCriterion = ref<EvaluationCriterion | null>(null)
 const activeTab = ref<'scoring' | 'ai-analysis' | 'matrix' | 'minutes'>('scoring')
 const savingStatus = ref<'idle' | 'saving' | 'saved' | 'error'>('idle')
+const showSubmitDialog = ref(false)
+const submitting = ref(false)
+const submitError = ref('')
+const startingEvaluation = ref(false)
 
-/* Local score map: vendorId -> { score, notes } */
+/* Local score map: offerId -> { score, notes } */
 const localScores = ref<Record<string, { score: number; notes: string }>>({})
 
+/* AI Analysis state */
+const aiSummary = ref<AiAnalysisSummary | null>(null)
+const aiOfferDetails = ref<Record<string, AiOfferAnalysis>>({})
+const aiCompMatrix = ref<AiComparisonMatrix | null>(null)
+const aiLoading = ref(false)
+const aiError = ref('')
+const selectedAiOfferId = ref<string | null>(null)
+const reviewNotes = ref('')
+
+/* Minutes state */
+const minutesContent = ref('')
+const minutesGenerating = ref(false)
+
+function copyToClipboard(text: string) {
+  navigator.clipboard.writeText(text)
+}
+
 onMounted(async () => {
-  await store.selectCompetition(competitionId.value)
   await store.loadTechnicalData(competitionId.value)
   if (store.criteria.length > 0) {
     selectedCriterion.value = store.criteria[0]
   }
-  store.startAutoSave(competitionId.value, 'technical')
   initializeLocalScores()
 })
 
-onUnmounted(() => {
-  store.stopAutoSave()
-})
-
 function initializeLocalScores() {
-  store.vendors.forEach(vendor => {
+  store.blindOffers.forEach(offer => {
     if (selectedCriterion.value) {
       const existing = store.technicalScores.find(
-        s => s.vendorId === vendor.id && s.criterionId === selectedCriterion.value!.id
+        s => s.supplierOfferId === offer.offerId && s.evaluationCriterionId === selectedCriterion.value!.id
       )
-      localScores.value[vendor.id] = {
+      localScores.value[offer.offerId] = {
         score: existing?.score ?? 0,
         notes: existing?.notes ?? '',
       }
@@ -62,112 +83,441 @@ function onCriterionSelect(criterion: EvaluationCriterion) {
   initializeLocalScores()
 }
 
-function updateScore(vendorId: string, score: number) {
-  if (!localScores.value[vendorId]) {
-    localScores.value[vendorId] = { score: 0, notes: '' }
+function updateScore(offerId: string, score: number) {
+  if (!localScores.value[offerId]) {
+    localScores.value[offerId] = { score: 0, notes: '' }
   }
-  localScores.value[vendorId].score = score
+  localScores.value[offerId].score = Math.max(0, Math.min(100, score))
 }
 
-function updateNotes(vendorId: string, notes: string) {
-  if (!localScores.value[vendorId]) {
-    localScores.value[vendorId] = { score: 0, notes: '' }
+function updateNotes(offerId: string, notes: string) {
+  if (!localScores.value[offerId]) {
+    localScores.value[offerId] = { score: 0, notes: '' }
   }
-  localScores.value[vendorId].notes = notes
+  localScores.value[offerId].notes = notes
 }
 
-function getAiEvaluation(vendorId: string) {
-  if (!selectedCriterion.value) return undefined
-  return store.aiEvaluations.find(
-    a => a.vendorId === vendorId && a.criterionId === selectedCriterion.value!.id
-  )
+function getScoreColor(score: number): string {
+  if (score >= 80) return 'text-green-600'
+  if (score >= 60) return 'text-yellow-600'
+  return 'text-red-600'
 }
 
-function getVariancePercent(vendorId: string): number | undefined {
+function getScoreBgColor(score: number): string {
+  if (score >= 80) return 'bg-green-50 border-green-200'
+  if (score >= 60) return 'bg-yellow-50 border-yellow-200'
+  return 'bg-red-50 border-red-200'
+}
+
+function getAiScore(offerId: string) {
   if (!selectedCriterion.value) return undefined
-  const alert = store.varianceAlerts.find(
-    a => a.vendorId === vendorId && a.criterionId === selectedCriterion.value!.id
+  return store.aiTechnicalScores.find(
+    a => a.supplierOfferId === offerId && a.evaluationCriterionId === selectedCriterion.value!.id
   )
-  return alert?.variancePercent
 }
 
 async function saveScores() {
   if (!selectedCriterion.value) return
   savingStatus.value = 'saving'
   try {
-    const scores = Object.entries(localScores.value).map(([vendorId, data]) => ({
-      criterionId: selectedCriterion.value!.id,
-      vendorId,
-      score: data.score,
-      maxScore: 100,
-      notes: data.notes,
-    }))
-    for (const score of scores) {
-      await store.submitScore(competitionId.value, 'technical', score)
+    for (const [offerId, data] of Object.entries(localScores.value)) {
+      await store.submitTechScore(
+        competitionId.value,
+        offerId,
+        selectedCriterion.value!.id,
+        data.score,
+        data.notes || undefined
+      )
     }
     savingStatus.value = 'saved'
     setTimeout(() => { savingStatus.value = 'idle' }, 2000)
   } catch {
     savingStatus.value = 'error'
+    setTimeout(() => { savingStatus.value = 'idle' }, 3000)
   }
 }
 
-async function requestAiHelp(vendorId: string) {
-  await store.requestAiAnalysis(competitionId.value, vendorId)
+/* Start evaluation */
+async function startEvaluation() {
+  startingEvaluation.value = true
+  try {
+    const { startTechnicalEvaluation } = await import('@/services/evaluationApi')
+    await startTechnicalEvaluation(competitionId.value, '')
+    await store.loadTechnicalData(competitionId.value)
+  } catch (e: any) {
+    store.error = e?.message || 'تعذر بدء التقييم الفني'
+  } finally {
+    startingEvaluation.value = false
+  }
 }
 
-function goToComparison() {
-  router.push({
-    name: 'TechnicalComparison',
-    params: { id: competitionId.value },
-  })
+/* AI Analysis functions */
+async function runAiAnalysis() {
+  aiLoading.value = true
+  aiError.value = ''
+  try {
+    const evalId = store.technicalEvaluation?.id ?? ''
+    aiSummary.value = await triggerAi(competitionId.value, evalId)
+    // Also load comparison matrix
+    try {
+      aiCompMatrix.value = await getAiComparisonMatrix(competitionId.value, evalId)
+    } catch { /* matrix may not be ready */ }
+  } catch (e: any) {
+    aiError.value = e?.message || 'حدث خطأ أثناء تشغيل تحليل الذكاء الاصطناعي'
+  } finally {
+    aiLoading.value = false
+  }
+}
+
+async function loadAiSummary() {
+  try {
+    const evalId = store.technicalEvaluation?.id ?? ''
+    aiSummary.value = await getAiAnalysisSummary(competitionId.value, evalId)
+  } catch {
+    // Summary not available yet
+  }
+}
+
+async function loadAiOfferDetail(analysisId: string) {
+  selectedAiOfferId.value = analysisId
+  if (aiOfferDetails.value[analysisId]) return
+  try {
+    const detail = await getAiOfferAnalysis(competitionId.value, analysisId)
+    aiOfferDetails.value[analysisId] = detail
+  } catch {
+    aiError.value = 'تعذر تحميل تفاصيل تحليل العرض'
+  }
+}
+
+async function submitAiReview(analysisId: string) {
+  try {
+    const updated = await reviewAiAnalysis(competitionId.value, analysisId, reviewNotes.value)
+    aiOfferDetails.value[analysisId] = updated
+    reviewNotes.value = ''
+    // Refresh summary
+    await loadAiSummary()
+  } catch {
+    aiError.value = 'تعذر حفظ المراجعة'
+  }
 }
 
 const completedCriteria = computed(() => {
-  if (!store.criteria.length || !store.vendors.length) return 0
+  if (!store.criteria.length || !store.blindOffers.length) return 0
   const criteriaWithScores = new Set(
-    store.technicalScores.map(s => s.criterionId)
+    store.technicalScores.map(s => s.evaluationCriterionId)
   )
   return criteriaWithScores.size
+})
+
+const overallProgress = computed(() => {
+  if (!store.criteria.length || !store.blindOffers.length) return 0
+  const total = store.criteria.length * store.blindOffers.length
+  return total > 0 ? Math.round((store.technicalScores.length / total) * 100) : 0
+})
+
+/* Offer total scores (weighted) */
+const offerTotals = computed(() => {
+  const totals: Record<string, number> = {}
+  store.blindOffers.forEach(offer => {
+    const scores = store.technicalScores.filter(s => s.supplierOfferId === offer.offerId)
+    const totalWeight = store.criteria.reduce((sum, c) => sum + c.weight, 0)
+    let weightedScore = 0
+    store.criteria.forEach(criterion => {
+      const score = scores.find(s => s.evaluationCriterionId === criterion.id)
+      if (score && totalWeight > 0) {
+        weightedScore += (score.score / score.maxScore) * (criterion.weight / totalWeight) * 100
+      }
+    })
+    totals[offer.offerId] = Math.round(weightedScore * 10) / 10
+  })
+  return totals
+})
+
+/* Heatmap data from store */
+const heatmapData = computed(() => {
+  if (store.technicalHeatmap) return store.technicalHeatmap
+  // Fallback: build from local data
+  return {
+    competitionId: competitionId.value,
+    evaluationId: store.technicalEvaluation?.id ?? '',
+    offerBlindCodes: store.blindOffers.map(o => o.blindCode),
+    criteria: store.criteria.map(c => ({
+      id: c.id,
+      nameAr: c.nameAr || c.name,
+      nameEn: c.nameEn || c.name,
+      weightPercentage: c.weight,
+      minimumPassingScore: c.minimumScore || null,
+    })),
+    cells: store.criteria.flatMap(criterion =>
+      store.blindOffers.map(offer => {
+        const score = store.technicalScores.find(
+          s => s.supplierOfferId === offer.offerId && s.evaluationCriterionId === criterion.id
+        )
+        const pct = score ? (score.score / score.maxScore) * 100 : 0
+        return {
+          offerBlindCode: offer.blindCode,
+          offerId: offer.offerId,
+          criterionId: criterion.id,
+          criterionNameAr: criterion.nameAr || criterion.name,
+          criterionNameEn: criterion.nameEn || criterion.name,
+          averageScorePercentage: pct,
+          color: pct >= 80 ? 'excellent' : pct >= 60 ? 'average' : 'weak',
+        }
+      })
+    ),
+  }
+})
+
+function getHeatmapCell(blindCode: string, criterionId: string) {
+  return heatmapData.value.cells.find(
+    c => c.offerBlindCode === blindCode && c.criterionId === criterionId
+  )
+}
+
+function getHeatmapCellColor(pct: number): string {
+  if (pct >= 80) return 'bg-green-100 text-green-800'
+  if (pct >= 60) return 'bg-yellow-100 text-yellow-800'
+  if (pct > 0) return 'bg-red-100 text-red-800'
+  return 'bg-gray-50 text-gray-400'
+}
+
+/* Generate minutes */
+async function generateMinutes() {
+  minutesGenerating.value = true
+  try {
+    const lines: string[] = []
+    lines.push('محضر اجتماع لجنة فحص العروض الفنية')
+    lines.push('═'.repeat(50))
+    lines.push('')
+    lines.push(`المنافسة: ${store.selectedCompetition?.projectName || competitionId.value}`)
+    lines.push(`التاريخ: ${new Date().toLocaleDateString('ar-SA')}`)
+    lines.push(`حالة التقييم: ${store.technicalEvaluation?.status === 1 ? 'قيد التنفيذ' : store.technicalEvaluation?.status === 2 ? 'مكتمل' : 'معلق'}`)
+    lines.push(`عدد العروض: ${store.blindOffers.length}`)
+    lines.push(`عدد المعايير: ${store.criteria.length}`)
+    lines.push('')
+    lines.push('نتائج التقييم الفني:')
+    lines.push('─'.repeat(40))
+    
+    store.blindOffers.forEach(offer => {
+      const total = offerTotals.value[offer.offerId] ?? 0
+      const passingScore = store.technicalEvaluation?.minimumPassingScore ?? 60
+      const result = total >= passingScore ? 'ناجح ✓' : 'غير ناجح ✗'
+      lines.push(`  ${offer.blindCode}: ${total}% - ${result}`)
+    })
+    
+    lines.push('')
+    lines.push('تفاصيل الدرجات حسب المعيار:')
+    lines.push('─'.repeat(40))
+    
+    store.criteria.forEach(criterion => {
+      lines.push(`\n  ${criterion.name} (الوزن: ${criterion.weight}%):`)
+      store.blindOffers.forEach(offer => {
+        const score = store.technicalScores.find(
+          s => s.supplierOfferId === offer.offerId && s.evaluationCriterionId === criterion.id
+        )
+        lines.push(`    ${offer.blindCode}: ${score?.score ?? '-'} / ${score?.maxScore ?? 100}`)
+      })
+    })
+    
+    if (store.varianceAlerts.length > 0) {
+      lines.push('')
+      lines.push('تنبيهات التباين:')
+      lines.push('─'.repeat(40))
+      store.varianceAlerts.forEach(alert => {
+        lines.push(`  ⚠ ${alert.criterionNameAr} - ${alert.offerBlindCode}`)
+        if (alert.hasEvaluatorVariance) lines.push(`    تباين بين المقيمين: ${alert.evaluatorSpread}%`)
+        if (alert.hasHumanAiVariance) lines.push(`    تباين بين المقيم والذكاء الاصطناعي: ${alert.humanAiDifference}%`)
+      })
+    }
+    
+    lines.push('')
+    lines.push('═'.repeat(50))
+    lines.push('توقيعات أعضاء اللجنة:')
+    if (store.committee) {
+      store.committee.members.forEach(m => {
+        lines.push(`  ${m.name} (${m.role === 'chair' ? 'رئيس اللجنة' : m.role === 'secretary' ? 'أمين السر' : 'عضو'}): ________________`)
+      })
+    }
+    
+    minutesContent.value = lines.join('\n')
+  } finally {
+    minutesGenerating.value = false
+  }
+}
+
+/* Submit evaluation */
+async function submitEvaluation() {
+  submitting.value = true
+  submitError.value = ''
+  try {
+    const { completeTechnicalScoring } = await import('@/services/evaluationApi')
+    const evalId = store.technicalEvaluation?.id ?? ''
+    await completeTechnicalScoring(competitionId.value, evalId)
+    showSubmitDialog.value = false
+    router.push({ name: 'EvaluationTechnical' })
+  } catch (e: any) {
+    submitError.value = e?.message || 'حدث خطأ أثناء تقديم التقييم'
+  } finally {
+    submitting.value = false
+  }
+}
+
+/* Watch for tab changes to load AI data */
+watch(activeTab, async (tab) => {
+  if (tab === 'ai-analysis' && !aiSummary.value) {
+    await loadAiSummary()
+  }
+  if (tab === 'matrix') {
+    await store.loadTechnicalHeatmap(competitionId.value)
+  }
+  if (tab === 'minutes' && !minutesContent.value) {
+    await generateMinutes()
+  }
+})
+
+/* Evaluation not started state */
+const needsStart = computed(() => {
+  return !store.technicalEvaluation || store.technicalEvaluation.status === 0
+})
+
+const isCompleted = computed(() => {
+  return store.technicalEvaluation && (store.technicalEvaluation.status >= 2)
 })
 </script>
 
 <template>
-  <div class="space-y-6">
+  <div class="space-y-6" :dir="isRtl ? 'rtl' : 'ltr'">
     <!-- Back button -->
     <button
-      class="flex items-center gap-2 text-sm text-secondary/60 transition-colors hover:text-primary"
+      class="flex items-center gap-2 text-sm text-gray-500 transition-colors hover:text-blue-600"
       @click="router.push({ name: 'EvaluationTechnical' })"
     >
-      <i class="pi pi-arrow-right rtl:pi-arrow-left" />
-      {{ t('common.back') }}
+      <i :class="isRtl ? 'pi pi-arrow-right' : 'pi pi-arrow-left'" />
+      {{ isRtl ? 'العودة للقائمة' : 'Back to List' }}
     </button>
 
     <!-- Loading -->
-    <div v-if="store.loading && !store.selectedCompetition" class="flex items-center justify-center py-12">
-      <i class="pi pi-spinner pi-spin text-2xl text-primary" />
+    <div v-if="store.loading && !store.blindOffers.length" class="flex items-center justify-center py-12">
+      <i class="pi pi-spinner pi-spin text-2xl text-blue-600" />
+      <span class="ms-3 text-sm text-gray-500">{{ isRtl ? 'جارٍ تحميل بيانات التقييم...' : 'Loading evaluation data...' }}</span>
     </div>
 
-    <template v-else-if="store.selectedCompetition">
-      <!-- Header -->
-      <EvaluationHeader
-        :competition="store.selectedCompetition"
-        :committee="store.committee"
-        evaluation-type="technical"
-      />
+    <!-- Evaluation not started - need to start first -->
+    <div v-else-if="needsStart" class="rounded-lg border border-gray-200 bg-white py-12 text-center">
+      <i class="pi pi-play-circle text-5xl text-blue-500" />
+      <h3 class="mt-4 text-lg font-semibold text-gray-700">{{ isRtl ? 'التقييم الفني لم يبدأ بعد' : 'Technical evaluation has not started yet' }}</h3>
+      <p class="mt-2 text-sm text-gray-500">{{ isRtl ? 'يجب بدء التقييم الفني أولاً لتتمكن من تقييم العروض' : 'You need to start the technical evaluation first' }}</p>
+      <div class="mt-6 flex justify-center gap-3">
+        <button
+          @click="startEvaluation"
+          :disabled="startingEvaluation"
+          class="rounded-lg bg-blue-600 px-6 py-3 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50"
+        >
+          <i class="pi me-2" :class="startingEvaluation ? 'pi-spinner pi-spin' : 'pi-play'" />
+          {{ isRtl ? 'بدء التقييم الفني' : 'Start Technical Evaluation' }}
+        </button>
+        <button
+          @click="router.push({ name: 'EvaluationTechnical' })"
+          class="rounded-lg border border-gray-300 px-6 py-3 text-sm text-gray-700 hover:bg-gray-50"
+        >
+          {{ isRtl ? 'العودة' : 'Go Back' }}
+        </button>
+      </div>
+    </div>
+
+    <!-- No offers state -->
+    <div v-else-if="!store.loading && store.blindOffers.length === 0 && store.criteria.length === 0" class="rounded-lg border border-gray-200 bg-white py-12 text-center">
+      <i class="pi pi-exclamation-triangle text-4xl text-yellow-500" />
+      <h3 class="mt-4 text-lg font-semibold text-gray-700">{{ isRtl ? 'لا توجد بيانات للتقييم' : 'No evaluation data available' }}</h3>
+      <p class="mt-2 text-sm text-gray-500">{{ isRtl ? 'تأكد من وجود عروض موردين ومعايير تقييم مرتبطة بهذه المنافسة' : 'Make sure there are supplier offers and evaluation criteria for this competition' }}</p>
+      <div class="mt-4 flex justify-center gap-3">
+        <button
+          @click="router.push({ name: 'SupplierOffers' })"
+          class="rounded-lg bg-blue-600 px-4 py-2 text-sm text-white hover:bg-blue-700"
+        >
+          <i class="pi pi-plus me-1" /> {{ isRtl ? 'إدارة العروض' : 'Manage Offers' }}
+        </button>
+        <button
+          @click="store.loadTechnicalData(competitionId)"
+          class="rounded-lg border border-gray-300 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+        >
+          <i class="pi pi-refresh me-1" /> {{ isRtl ? 'إعادة المحاولة' : 'Retry' }}
+        </button>
+      </div>
+    </div>
+
+    <template v-else>
+      <!-- Header Card -->
+      <div class="rounded-lg border border-gray-200 bg-white p-5">
+        <div class="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+          <div class="flex-1">
+            <div class="mb-2 flex items-center gap-3">
+              <h1 class="text-xl font-bold text-gray-900">
+                <i class="pi pi-check-square me-2 text-blue-600" />
+                {{ isRtl ? 'التقييم الفني' : 'Technical Evaluation' }}
+              </h1>
+              <span class="rounded-full bg-blue-100 px-3 py-1 text-xs font-medium text-blue-800">
+                {{ isRtl ? 'تقييم أعمى' : 'Blind Evaluation' }}
+              </span>
+              <span v-if="isCompleted" class="rounded-full bg-green-100 px-3 py-1 text-xs font-medium text-green-800">
+                {{ isRtl ? 'مكتمل' : 'Completed' }}
+              </span>
+            </div>
+            <p class="text-sm text-gray-500">
+              {{ store.selectedCompetition?.projectName || store.technicalEvaluation?.competitionId || competitionId }}
+            </p>
+            <div v-if="store.committee" class="mt-1 text-xs text-gray-400">
+              <i class="pi pi-users me-1" />
+              {{ isRtl ? 'اللجنة:' : 'Committee:' }} {{ store.committee.name }}
+              ({{ store.committee.members.length }} {{ isRtl ? 'أعضاء' : 'members' }})
+            </div>
+          </div>
+          <div class="flex items-center gap-4">
+            <div class="text-center">
+              <div class="text-2xl font-bold text-blue-600">{{ store.blindOffers.length }}</div>
+              <div class="text-xs text-gray-400">{{ isRtl ? 'عروض' : 'Offers' }}</div>
+            </div>
+            <div class="text-center">
+              <div class="text-2xl font-bold text-green-600">{{ store.criteria.length }}</div>
+              <div class="text-xs text-gray-400">{{ isRtl ? 'معايير' : 'Criteria' }}</div>
+            </div>
+            <div class="text-center">
+              <div class="text-2xl font-bold" :class="overallProgress >= 100 ? 'text-green-600' : 'text-yellow-600'">{{ overallProgress }}%</div>
+              <div class="text-xs text-gray-400">{{ isRtl ? 'الإنجاز' : 'Progress' }}</div>
+            </div>
+          </div>
+        </div>
+        <!-- Progress bar -->
+        <div class="mt-4">
+          <div class="h-2 w-full overflow-hidden rounded-full bg-gray-100">
+            <div
+              class="h-full rounded-full transition-all duration-500"
+              :class="overallProgress >= 100 ? 'bg-green-500' : 'bg-blue-600'"
+              :style="{ width: `${overallProgress}%` }"
+            />
+          </div>
+        </div>
+        <!-- Variance alerts banner -->
+        <div v-if="store.varianceAlerts.length > 0" class="mt-3 rounded-lg border border-orange-200 bg-orange-50 p-3">
+          <div class="flex items-center gap-2 text-sm font-medium text-orange-700">
+            <i class="pi pi-exclamation-triangle" />
+            {{ isRtl ? `يوجد ${store.varianceAlerts.length} تنبيه تباين يحتاج مراجعة` : `${store.varianceAlerts.length} variance alerts need review` }}
+          </div>
+        </div>
+      </div>
 
       <!-- Tab navigation -->
-      <div class="flex gap-1 rounded-xl border border-surface-dim bg-surface-muted p-1">
+      <div class="flex gap-1 rounded-xl border border-gray-200 bg-gray-50 p-1">
         <button
           v-for="tab in (['scoring', 'ai-analysis', 'matrix', 'minutes'] as const)"
           :key="tab"
-          class="flex-1 rounded-lg px-4 py-2 text-sm font-medium transition-all"
+          class="flex-1 rounded-lg px-4 py-2.5 text-sm font-medium transition-all"
           :class="[
             activeTab === tab
               ? tab === 'ai-analysis'
-                ? 'bg-gradient-to-l from-ai-600 to-ai-500 text-white shadow-sm'
-                : 'bg-white text-primary shadow-sm'
-              : 'text-secondary/60 hover:text-secondary',
+                ? 'bg-gradient-to-l from-purple-600 to-purple-500 text-white shadow-sm'
+                : 'bg-white text-blue-600 shadow-sm'
+              : 'text-gray-500 hover:text-gray-700',
           ]"
           @click="activeTab = tab"
         >
@@ -180,37 +530,117 @@ const completedCriteria = computed(() => {
               'pi-file-edit': tab === 'minutes',
             }"
           />
-          {{ tab === 'ai-analysis' ? t('ai.title') : t(`evaluation.tabs.${tab}`) }}
+          {{
+            tab === 'scoring' ? (isRtl ? 'التقييم' : 'Scoring') :
+            tab === 'ai-analysis' ? (isRtl ? 'تحليل الذكاء الاصطناعي' : 'AI Analysis') :
+            tab === 'matrix' ? (isRtl ? 'المصفوفة الحرارية' : 'Heatmap') :
+            (isRtl ? 'المحضر' : 'Minutes')
+          }}
         </button>
       </div>
 
-      <!-- Scoring tab -->
+      <!-- ═══════════════════════════════════════════════ -->
+      <!-- SCORING TAB -->
+      <!-- ═══════════════════════════════════════════════ -->
       <div v-if="activeTab === 'scoring'" class="grid grid-cols-1 gap-6 xl:grid-cols-12">
         <!-- Criteria sidebar -->
         <div class="xl:col-span-4">
-          <CriteriaPanel
-            :criteria="store.criteria"
-            :total-weight="store.totalCriteriaWeight"
-            @select-criterion="onCriterionSelect"
-          />
+          <div class="rounded-lg border border-gray-200 bg-white p-4">
+            <h3 class="mb-3 text-sm font-bold text-gray-900">
+              <i class="pi pi-list me-1 text-blue-600" />
+              {{ isRtl ? 'معايير التقييم' : 'Evaluation Criteria' }}
+            </h3>
+            <div class="space-y-2">
+              <button
+                v-for="criterion in store.criteria"
+                :key="criterion.id"
+                class="w-full rounded-lg border p-3 text-start transition-all"
+                :class="selectedCriterion?.id === criterion.id
+                  ? 'border-blue-500 bg-blue-50'
+                  : 'border-gray-200 hover:border-blue-300 hover:bg-gray-50'"
+                @click="onCriterionSelect(criterion)"
+              >
+                <div class="flex items-center justify-between">
+                  <span class="text-sm font-medium text-gray-900">{{ criterion.name }}</span>
+                  <span class="rounded-full bg-blue-100 px-2 py-0.5 text-xs font-bold text-blue-700">{{ criterion.weight }}%</span>
+                </div>
+                <p v-if="criterion.description" class="mt-1 text-xs text-gray-500 line-clamp-2">{{ criterion.description }}</p>
+                <!-- Score completion indicator -->
+                <div class="mt-2 flex gap-1">
+                  <span
+                    v-for="offer in store.blindOffers"
+                    :key="offer.offerId"
+                    class="h-1.5 flex-1 rounded-full"
+                    :class="store.technicalScores.some(s => s.supplierOfferId === offer.offerId && s.evaluationCriterionId === criterion.id)
+                      ? 'bg-green-400' : 'bg-gray-200'"
+                  />
+                </div>
+              </button>
+            </div>
 
-          <!-- Progress summary -->
-          <div class="card mt-4">
-            <h3 class="mb-2 text-sm font-semibold text-secondary">
-              {{ t('evaluation.scoringProgress') }}
+            <!-- Total weight -->
+            <div class="mt-3 flex items-center justify-between rounded-lg bg-gray-50 p-3">
+              <span class="text-xs text-gray-500">{{ isRtl ? 'إجمالي الأوزان' : 'Total Weight' }}</span>
+              <span class="text-sm font-bold" :class="store.totalCriteriaWeight === 100 ? 'text-green-600' : 'text-red-600'">
+                {{ store.totalCriteriaWeight }}%
+              </span>
+            </div>
+          </div>
+
+          <!-- Scoring progress -->
+          <div class="mt-4 rounded-lg border border-gray-200 bg-white p-4">
+            <h3 class="mb-2 text-sm font-bold text-gray-900">
+              {{ isRtl ? 'تقدم التقييم' : 'Scoring Progress' }}
             </h3>
             <div class="flex items-center gap-3">
               <div class="flex-1">
-                <div class="h-2 w-full overflow-hidden rounded-full bg-surface-muted">
+                <div class="h-2 w-full overflow-hidden rounded-full bg-gray-100">
                   <div
-                    class="h-full rounded-full bg-primary transition-all"
+                    class="h-full rounded-full bg-blue-600 transition-all"
                     :style="{ width: `${(completedCriteria / Math.max(store.criteria.length, 1)) * 100}%` }"
                   />
                 </div>
               </div>
-              <span class="text-sm font-medium text-secondary">
+              <span class="text-sm font-medium text-gray-700">
                 {{ completedCriteria }} / {{ store.criteria.length }}
               </span>
+            </div>
+          </div>
+
+          <!-- Offer summary -->
+          <div class="mt-4 rounded-lg border border-gray-200 bg-white p-4">
+            <h3 class="mb-3 text-sm font-bold text-gray-900">
+              {{ isRtl ? 'ملخص الدرجات' : 'Score Summary' }}
+            </h3>
+            <div class="space-y-2">
+              <div
+                v-for="offer in store.blindOffers"
+                :key="offer.offerId"
+                class="flex items-center justify-between rounded-lg border border-gray-100 p-2"
+              >
+                <div class="flex items-center gap-2">
+                  <div class="flex h-6 w-6 items-center justify-center rounded-full bg-gray-800 text-[10px] font-bold text-white">
+                    {{ offer.blindCode?.slice(-2) || '??' }}
+                  </div>
+                  <span class="text-sm font-medium text-gray-700">{{ offer.blindCode }}</span>
+                </div>
+                <div class="flex items-center gap-2">
+                  <span class="text-sm font-bold" :class="getScoreColor(offerTotals[offer.offerId] ?? 0)">
+                    {{ offerTotals[offer.offerId] ?? 0 }}%
+                  </span>
+                  <span
+                    class="rounded px-1.5 py-0.5 text-[10px] font-medium"
+                    :class="(offerTotals[offer.offerId] ?? 0) >= (store.technicalEvaluation?.minimumPassingScore ?? 60)
+                      ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'"
+                  >
+                    {{ (offerTotals[offer.offerId] ?? 0) >= (store.technicalEvaluation?.minimumPassingScore ?? 60)
+                      ? (isRtl ? 'ناجح' : 'Pass') : (isRtl ? 'غير ناجح' : 'Fail') }}
+                  </span>
+                </div>
+              </div>
+            </div>
+            <div class="mt-3 rounded-lg bg-gray-50 p-2 text-center text-xs text-gray-500">
+              {{ isRtl ? `درجة النجاح: ${store.technicalEvaluation?.minimumPassingScore ?? 60}%` : `Passing score: ${store.technicalEvaluation?.minimumPassingScore ?? 60}%` }}
             </div>
           </div>
         </div>
@@ -219,158 +649,540 @@ const completedCriteria = computed(() => {
         <div class="xl:col-span-8">
           <div v-if="selectedCriterion" class="space-y-4">
             <!-- Selected criterion header -->
-            <div class="card border-primary/20 bg-primary/5">
+            <div class="rounded-lg border border-blue-200 bg-blue-50 p-4">
               <div class="flex items-center justify-between">
                 <div>
-                  <h2 class="text-lg font-bold text-secondary">{{ selectedCriterion.name }}</h2>
-                  <p v-if="selectedCriterion.description" class="mt-1 text-sm text-secondary/60">
+                  <h2 class="text-lg font-bold text-gray-900">{{ selectedCriterion.name }}</h2>
+                  <p v-if="selectedCriterion.description" class="mt-1 text-sm text-gray-600">
                     {{ selectedCriterion.description }}
                   </p>
                 </div>
                 <div class="flex items-center gap-3">
-                  <span class="badge badge-primary">{{ selectedCriterion.weight }}%</span>
-                  <span v-if="selectedCriterion.minimumScore" class="text-xs text-secondary/50">
-                    {{ t('evaluation.criteria.minimumScore') }}: {{ selectedCriterion.minimumScore }}
-                  </span>
+                  <span class="rounded-full bg-blue-600 px-3 py-1 text-sm font-bold text-white">{{ selectedCriterion.weight }}%</span>
                 </div>
               </div>
             </div>
 
-            <!-- Vendor score cards (blind evaluation) -->
+            <!-- Offer score cards (blind evaluation) -->
             <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
-              <VendorScoreCard
-                v-for="vendor in store.vendors"
-                :key="vendor.id"
-                :vendor="vendor"
-                :criterion="selectedCriterion"
-                :score="localScores[vendor.id]?.score ?? 0"
-                :notes="localScores[vendor.id]?.notes ?? ''"
-                :max-score="100"
-                :ai-evaluation="getAiEvaluation(vendor.id)"
-                :show-variance-alert="true"
-                :variance-percent="getVariancePercent(vendor.id)"
-                @update:score="updateScore(vendor.id, $event)"
-                @update:notes="updateNotes(vendor.id, $event)"
-              />
+              <div
+                v-for="offer in store.blindOffers"
+                :key="offer.offerId"
+                class="rounded-lg border p-4 transition-all"
+                :class="getScoreBgColor(localScores[offer.offerId]?.score ?? 0)"
+              >
+                <!-- Offer header (blind code) -->
+                <div class="mb-3 flex items-center justify-between">
+                  <div class="flex items-center gap-2">
+                    <div class="flex h-8 w-8 items-center justify-center rounded-full bg-gray-800 text-xs font-bold text-white">
+                      {{ offer.blindCode?.slice(-2) || '??' }}
+                    </div>
+                    <span class="text-sm font-bold text-gray-900">{{ offer.blindCode }}</span>
+                  </div>
+                  <span class="text-lg font-bold" :class="getScoreColor(localScores[offer.offerId]?.score ?? 0)">
+                    {{ localScores[offer.offerId]?.score ?? 0 }} / 100
+                  </span>
+                </div>
+
+                <!-- Score slider -->
+                <div class="mb-3">
+                  <input
+                    type="range"
+                    min="0"
+                    max="100"
+                    :value="localScores[offer.offerId]?.score ?? 0"
+                    @input="updateScore(offer.offerId, Number(($event.target as HTMLInputElement).value))"
+                    class="w-full accent-blue-600"
+                  />
+                  <div class="mt-1 flex justify-between text-xs text-gray-400">
+                    <span>0</span>
+                    <span>25</span>
+                    <span>50</span>
+                    <span>75</span>
+                    <span>100</span>
+                  </div>
+                </div>
+
+                <!-- Direct score input -->
+                <div class="mb-3">
+                  <input
+                    type="number"
+                    min="0"
+                    max="100"
+                    :value="localScores[offer.offerId]?.score ?? 0"
+                    @input="updateScore(offer.offerId, Number(($event.target as HTMLInputElement).value))"
+                    class="w-full rounded-lg border border-gray-300 px-3 py-2 text-center text-sm font-bold focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                    :placeholder="isRtl ? 'الدرجة' : 'Score'"
+                  />
+                </div>
+
+                <!-- AI suggestion -->
+                <div v-if="getAiScore(offer.offerId)" class="mb-3 rounded-lg border border-purple-200 bg-purple-50 p-3">
+                  <div class="flex items-center gap-2 text-xs font-medium text-purple-700">
+                    <i class="pi pi-sparkles" />
+                    {{ isRtl ? 'اقتراح الذكاء الاصطناعي' : 'AI Suggestion' }}
+                  </div>
+                  <div class="mt-1 text-lg font-bold text-purple-700">
+                    {{ getAiScore(offer.offerId)?.suggestedScore }} / {{ getAiScore(offer.offerId)?.maxScore }}
+                  </div>
+                  <p v-if="getAiScore(offer.offerId)?.justification" class="mt-1 text-xs text-purple-600 line-clamp-3">
+                    {{ getAiScore(offer.offerId)?.justification }}
+                  </p>
+                  <button
+                    @click="updateScore(offer.offerId, getAiScore(offer.offerId)?.suggestedScore ?? 0)"
+                    class="mt-2 rounded bg-purple-600 px-3 py-1 text-xs font-medium text-white hover:bg-purple-700"
+                  >
+                    {{ isRtl ? 'تطبيق الاقتراح' : 'Apply Suggestion' }}
+                  </button>
+                </div>
+
+                <!-- Notes -->
+                <textarea
+                  :value="localScores[offer.offerId]?.notes ?? ''"
+                  @input="updateNotes(offer.offerId, ($event.target as HTMLTextAreaElement).value)"
+                  :placeholder="isRtl ? 'ملاحظات التقييم...' : 'Evaluation notes...'"
+                  rows="2"
+                  class="w-full rounded-lg border border-gray-300 px-3 py-2 text-xs focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                />
+              </div>
             </div>
 
             <!-- Action buttons -->
-            <div class="flex items-center justify-between">
+            <div class="flex items-center justify-between rounded-lg border border-gray-200 bg-white p-4">
               <div class="flex items-center gap-2">
-                <button
-                  v-for="vendor in store.vendors"
-                  :key="`ai-${vendor.id}`"
-                  class="flex items-center gap-1.5 rounded-lg border border-ai-300 bg-ai-50 px-3 py-2 text-xs font-medium text-ai-600 transition-colors hover:bg-ai-100"
-                  @click="requestAiHelp(vendor.id)"
-                >
-                  <i class="pi pi-sparkles" />
-                  {{ t('evaluation.ai.analyze') }} {{ vendor.code }}
-                </button>
+                <span v-if="savingStatus === 'saving'" class="flex items-center gap-1 text-sm text-blue-600">
+                  <i class="pi pi-spinner pi-spin" /> {{ isRtl ? 'جارٍ الحفظ...' : 'Saving...' }}
+                </span>
+                <span v-else-if="savingStatus === 'saved'" class="flex items-center gap-1 text-sm text-green-600">
+                  <i class="pi pi-check" /> {{ isRtl ? 'تم الحفظ' : 'Saved' }}
+                </span>
+                <span v-else-if="savingStatus === 'error'" class="flex items-center gap-1 text-sm text-red-600">
+                  <i class="pi pi-times" /> {{ isRtl ? 'خطأ في الحفظ' : 'Save error' }}
+                </span>
               </div>
-
-              <div class="flex items-center gap-3">
-                <!-- Save status -->
-                <span v-if="savingStatus === 'saving'" class="text-xs text-secondary/50">
-                  <i class="pi pi-spinner pi-spin me-1" />
-                  {{ t('evaluation.saving') }}
-                </span>
-                <span v-else-if="savingStatus === 'saved'" class="text-xs text-success">
-                  <i class="pi pi-check me-1" />
-                  {{ t('evaluation.saved') }}
-                </span>
-
+              <div class="flex gap-3">
                 <button
-                  class="rounded-lg bg-primary px-6 py-2.5 text-sm font-medium text-white transition-colors hover:bg-primary-dark"
                   @click="saveScores"
+                  :disabled="savingStatus === 'saving'"
+                  class="rounded-lg bg-blue-600 px-5 py-2.5 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50"
                 >
-                  <i class="pi pi-save me-1.5" />
-                  {{ t('evaluation.saveScores') }}
+                  <i class="pi pi-save me-1" /> {{ isRtl ? 'حفظ الدرجات' : 'Save Scores' }}
+                </button>
+                <button
+                  v-if="overallProgress >= 100"
+                  @click="showSubmitDialog = true"
+                  class="rounded-lg bg-green-600 px-5 py-2.5 text-sm font-medium text-white hover:bg-green-700"
+                >
+                  <i class="pi pi-send me-1" /> {{ isRtl ? 'تقديم التقييم' : 'Submit Evaluation' }}
                 </button>
               </div>
             </div>
           </div>
+        </div>
+      </div>
 
-          <!-- No criterion selected -->
-          <div v-else class="card text-center">
-            <i class="pi pi-arrow-right rtl:pi-arrow-left text-3xl text-secondary/20" />
-            <p class="mt-3 text-sm text-secondary/60">{{ t('evaluation.selectCriterion') }}</p>
+      <!-- ═══════════════════════════════════════════════ -->
+      <!-- AI ANALYSIS TAB -->
+      <!-- ═══════════════════════════════════════════════ -->
+      <div v-else-if="activeTab === 'ai-analysis'" class="space-y-6">
+        <!-- AI Header -->
+        <div class="rounded-lg border border-purple-200 bg-gradient-to-l from-purple-50 to-indigo-50 p-5">
+          <div class="flex items-center justify-between">
+            <div>
+              <h2 class="text-lg font-bold text-purple-900">
+                <i class="pi pi-sparkles me-2" />
+                {{ isRtl ? 'تحليل العروض بالذكاء الاصطناعي' : 'AI Offer Analysis' }}
+              </h2>
+              <p class="mt-1 text-sm text-purple-700">
+                {{ isRtl ? 'تحليل شامل لجميع العروض مقابل معايير التقييم ومتطلبات الكراسة' : 'Comprehensive analysis of all offers against evaluation criteria and booklet requirements' }}
+              </p>
+            </div>
+            <button
+              @click="runAiAnalysis"
+              :disabled="aiLoading"
+              class="rounded-lg bg-purple-600 px-5 py-2.5 text-sm font-medium text-white hover:bg-purple-700 disabled:opacity-50"
+            >
+              <i class="pi me-1" :class="aiLoading ? 'pi-spinner pi-spin' : 'pi-bolt'" />
+              {{ aiLoading ? (isRtl ? 'جارٍ التحليل...' : 'Analyzing...') : (isRtl ? 'تشغيل التحليل' : 'Run Analysis') }}
+            </button>
+          </div>
+          <div class="mt-3 rounded-lg bg-white/50 p-3 text-xs text-purple-600">
+            <i class="pi pi-info-circle me-1" />
+            {{ isRtl ? 'نتائج الذكاء الاصطناعي استشارية فقط ولا تحل محل تقييم اللجنة. يجب مراجعة كل تحليل واعتماده من قبل عضو اللجنة.' : 'AI results are advisory only and do not replace committee evaluation. Each analysis must be reviewed and approved by a committee member.' }}
+          </div>
+        </div>
+
+        <!-- AI Error -->
+        <div v-if="aiError" class="rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-700">
+          <i class="pi pi-exclamation-triangle me-1" /> {{ aiError }}
+        </div>
+
+        <!-- AI Summary -->
+        <div v-if="aiSummary" class="space-y-4">
+          <!-- Summary stats -->
+          <div class="grid grid-cols-2 gap-4 md:grid-cols-5">
+            <div class="rounded-lg border border-gray-200 bg-white p-4 text-center">
+              <div class="text-2xl font-bold text-blue-600">{{ aiSummary.totalOffers }}</div>
+              <div class="text-xs text-gray-500">{{ isRtl ? 'إجمالي العروض' : 'Total Offers' }}</div>
+            </div>
+            <div class="rounded-lg border border-gray-200 bg-white p-4 text-center">
+              <div class="text-2xl font-bold text-green-600">{{ aiSummary.completedAnalyses }}</div>
+              <div class="text-xs text-gray-500">{{ isRtl ? 'تحليلات مكتملة' : 'Completed' }}</div>
+            </div>
+            <div class="rounded-lg border border-gray-200 bg-white p-4 text-center">
+              <div class="text-2xl font-bold text-red-600">{{ aiSummary.failedAnalyses }}</div>
+              <div class="text-xs text-gray-500">{{ isRtl ? 'تحليلات فاشلة' : 'Failed' }}</div>
+            </div>
+            <div class="rounded-lg border border-gray-200 bg-white p-4 text-center">
+              <div class="text-2xl font-bold text-orange-600">{{ aiSummary.pendingReviews }}</div>
+              <div class="text-xs text-gray-500">{{ isRtl ? 'بانتظار المراجعة' : 'Pending Review' }}</div>
+            </div>
+            <div class="rounded-lg border border-gray-200 bg-white p-4 text-center">
+              <div class="text-2xl font-bold text-purple-600">
+                {{ aiSummary.offerSummaries.filter(o => o.isHumanReviewed).length }}
+              </div>
+              <div class="text-xs text-gray-500">{{ isRtl ? 'تمت المراجعة' : 'Reviewed' }}</div>
+            </div>
+          </div>
+
+          <!-- Offer analysis cards -->
+          <div class="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
+            <div
+              v-for="offerSummary in aiSummary.offerSummaries"
+              :key="offerSummary.supplierOfferId"
+              class="cursor-pointer rounded-lg border border-gray-200 bg-white p-4 transition-all hover:border-purple-300 hover:shadow-md"
+              :class="selectedAiOfferId === offerSummary.supplierOfferId ? 'border-purple-500 ring-2 ring-purple-200' : ''"
+              @click="loadAiOfferDetail(offerSummary.supplierOfferId)"
+            >
+              <div class="flex items-center justify-between">
+                <div class="flex items-center gap-2">
+                  <div class="flex h-8 w-8 items-center justify-center rounded-full bg-purple-100 text-xs font-bold text-purple-700">
+                    {{ offerSummary.blindCode?.slice(-2) || '??' }}
+                  </div>
+                  <span class="text-sm font-bold text-gray-900">{{ offerSummary.blindCode }}</span>
+                </div>
+                <span
+                  class="rounded-full px-2 py-0.5 text-xs font-medium"
+                  :class="offerSummary.isHumanReviewed ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'"
+                >
+                  {{ offerSummary.isHumanReviewed ? (isRtl ? 'تمت المراجعة' : 'Reviewed') : (isRtl ? 'بانتظار المراجعة' : 'Pending') }}
+                </span>
+              </div>
+              <div class="mt-3">
+                <div class="text-2xl font-bold" :class="getScoreColor(offerSummary.overallComplianceScore)">
+                  {{ offerSummary.overallComplianceScore }}%
+                </div>
+                <div class="mt-2 flex gap-1 text-xs">
+                  <span class="rounded bg-green-100 px-1.5 py-0.5 text-green-700">{{ offerSummary.fullyCompliantCount }} {{ isRtl ? 'متوافق' : 'compliant' }}</span>
+                  <span class="rounded bg-yellow-100 px-1.5 py-0.5 text-yellow-700">{{ offerSummary.partiallyCompliantCount }} {{ isRtl ? 'جزئي' : 'partial' }}</span>
+                  <span class="rounded bg-red-100 px-1.5 py-0.5 text-red-700">{{ offerSummary.nonCompliantCount }} {{ isRtl ? 'غير متوافق' : 'non-compliant' }}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Selected offer detail -->
+          <div v-if="selectedAiOfferId && aiOfferDetails[selectedAiOfferId]" class="rounded-lg border border-purple-200 bg-white p-5">
+            <div class="mb-4 flex items-center justify-between">
+              <h3 class="text-lg font-bold text-gray-900">
+                <i class="pi pi-sparkles me-2 text-purple-600" />
+                {{ isRtl ? 'تفاصيل تحليل العرض' : 'Offer Analysis Details' }}
+                - {{ aiOfferDetails[selectedAiOfferId].blindCode }}
+              </h3>
+              <span
+                class="rounded-full px-3 py-1 text-xs font-medium"
+                :class="aiOfferDetails[selectedAiOfferId].isHumanReviewed ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'"
+              >
+                {{ aiOfferDetails[selectedAiOfferId].isHumanReviewed ? (isRtl ? 'تمت المراجعة' : 'Reviewed') : (isRtl ? 'بانتظار المراجعة' : 'Pending Review') }}
+              </span>
+            </div>
+
+            <!-- Executive Summary -->
+            <div class="mb-4 rounded-lg bg-gray-50 p-4">
+              <h4 class="mb-2 text-sm font-bold text-gray-700">{{ isRtl ? 'الملخص التنفيذي' : 'Executive Summary' }}</h4>
+              <p class="text-sm text-gray-600">{{ aiOfferDetails[selectedAiOfferId].executiveSummary }}</p>
+            </div>
+
+            <!-- Analysis sections -->
+            <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
+              <div class="rounded-lg border border-green-200 bg-green-50 p-4">
+                <h4 class="mb-2 text-sm font-bold text-green-700">
+                  <i class="pi pi-check-circle me-1" /> {{ isRtl ? 'نقاط القوة' : 'Strengths' }}
+                </h4>
+                <p class="text-xs text-green-600 whitespace-pre-line">{{ aiOfferDetails[selectedAiOfferId].strengthsAnalysis }}</p>
+              </div>
+              <div class="rounded-lg border border-red-200 bg-red-50 p-4">
+                <h4 class="mb-2 text-sm font-bold text-red-700">
+                  <i class="pi pi-times-circle me-1" /> {{ isRtl ? 'نقاط الضعف' : 'Weaknesses' }}
+                </h4>
+                <p class="text-xs text-red-600 whitespace-pre-line">{{ aiOfferDetails[selectedAiOfferId].weaknessesAnalysis }}</p>
+              </div>
+              <div class="rounded-lg border border-orange-200 bg-orange-50 p-4">
+                <h4 class="mb-2 text-sm font-bold text-orange-700">
+                  <i class="pi pi-exclamation-triangle me-1" /> {{ isRtl ? 'المخاطر' : 'Risks' }}
+                </h4>
+                <p class="text-xs text-orange-600 whitespace-pre-line">{{ aiOfferDetails[selectedAiOfferId].risksAnalysis }}</p>
+              </div>
+              <div class="rounded-lg border border-blue-200 bg-blue-50 p-4">
+                <h4 class="mb-2 text-sm font-bold text-blue-700">
+                  <i class="pi pi-shield me-1" /> {{ isRtl ? 'تقييم الامتثال' : 'Compliance Assessment' }}
+                </h4>
+                <p class="text-xs text-blue-600 whitespace-pre-line">{{ aiOfferDetails[selectedAiOfferId].complianceAssessment }}</p>
+              </div>
+            </div>
+
+            <!-- Overall recommendation -->
+            <div class="mt-4 rounded-lg border border-purple-200 bg-purple-50 p-4">
+              <h4 class="mb-2 text-sm font-bold text-purple-700">
+                <i class="pi pi-star me-1" /> {{ isRtl ? 'التوصية العامة' : 'Overall Recommendation' }}
+              </h4>
+              <p class="text-sm text-purple-600">{{ aiOfferDetails[selectedAiOfferId].overallRecommendation }}</p>
+            </div>
+
+            <!-- Criterion analyses -->
+            <div v-if="aiOfferDetails[selectedAiOfferId].criterionAnalyses?.length" class="mt-4">
+              <h4 class="mb-3 text-sm font-bold text-gray-700">{{ isRtl ? 'تحليل المعايير' : 'Criteria Analysis' }}</h4>
+              <div class="space-y-3">
+                <div
+                  v-for="ca in aiOfferDetails[selectedAiOfferId].criterionAnalyses"
+                  :key="ca.id"
+                  class="rounded-lg border border-gray-200 p-3"
+                >
+                  <div class="flex items-center justify-between">
+                    <span class="text-sm font-medium text-gray-900">{{ ca.criterionNameAr }}</span>
+                    <div class="flex items-center gap-2">
+                      <span class="text-sm font-bold" :class="getScoreColor(ca.scorePercentage)">
+                        {{ ca.suggestedScore }} / {{ ca.maxScore }}
+                      </span>
+                      <span
+                        class="rounded px-2 py-0.5 text-xs font-medium"
+                        :class="{
+                          'bg-green-100 text-green-700': ca.complianceLevel === 'FullyCompliant',
+                          'bg-yellow-100 text-yellow-700': ca.complianceLevel === 'PartiallyCompliant',
+                          'bg-red-100 text-red-700': ca.complianceLevel === 'NonCompliant',
+                          'bg-gray-100 text-gray-700': ca.complianceLevel === 'RequiresReview',
+                        }"
+                      >
+                        {{ ca.complianceLevel === 'FullyCompliant' ? (isRtl ? 'متوافق' : 'Compliant') :
+                           ca.complianceLevel === 'PartiallyCompliant' ? (isRtl ? 'جزئي' : 'Partial') :
+                           ca.complianceLevel === 'NonCompliant' ? (isRtl ? 'غير متوافق' : 'Non-compliant') :
+                           (isRtl ? 'يحتاج مراجعة' : 'Needs Review') }}
+                      </span>
+                    </div>
+                  </div>
+                  <p class="mt-2 text-xs text-gray-600">{{ ca.detailedJustification }}</p>
+                  <p v-if="ca.complianceNotes" class="mt-1 text-xs text-gray-500 italic">{{ ca.complianceNotes }}</p>
+                </div>
+              </div>
+            </div>
+
+            <!-- Human review section -->
+            <div v-if="!aiOfferDetails[selectedAiOfferId].isHumanReviewed" class="mt-4 rounded-lg border border-yellow-200 bg-yellow-50 p-4">
+              <h4 class="mb-2 text-sm font-bold text-yellow-700">
+                <i class="pi pi-user-edit me-1" /> {{ isRtl ? 'مراجعة عضو اللجنة' : 'Committee Member Review' }}
+              </h4>
+              <textarea
+                v-model="reviewNotes"
+                :placeholder="isRtl ? 'أضف ملاحظات المراجعة...' : 'Add review notes...'"
+                rows="3"
+                class="mb-3 w-full rounded-lg border border-yellow-300 px-3 py-2 text-sm focus:border-yellow-500 focus:outline-none focus:ring-1 focus:ring-yellow-500"
+              />
+              <button
+                @click="submitAiReview(selectedAiOfferId!)"
+                class="rounded-lg bg-yellow-600 px-4 py-2 text-sm font-medium text-white hover:bg-yellow-700"
+              >
+                <i class="pi pi-check me-1" /> {{ isRtl ? 'اعتماد المراجعة' : 'Approve Review' }}
+              </button>
+            </div>
+
+            <!-- AI metadata -->
+            <div class="mt-4 flex items-center gap-4 text-xs text-gray-400">
+              <span><i class="pi pi-cpu me-1" /> {{ aiOfferDetails[selectedAiOfferId].aiModelUsed }}</span>
+              <span><i class="pi pi-clock me-1" /> {{ aiOfferDetails[selectedAiOfferId].analysisLatencyMs }}ms</span>
+              <span><i class="pi pi-calendar me-1" /> {{ new Date(aiOfferDetails[selectedAiOfferId].createdAt).toLocaleDateString('ar-SA') }}</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- No AI data yet -->
+        <div v-else-if="!aiLoading" class="rounded-lg border border-gray-200 bg-white py-12 text-center">
+          <i class="pi pi-sparkles text-4xl text-purple-400" />
+          <h3 class="mt-4 text-lg font-semibold text-gray-700">{{ isRtl ? 'لم يتم تشغيل التحليل بعد' : 'Analysis not run yet' }}</h3>
+          <p class="mt-2 text-sm text-gray-500">{{ isRtl ? 'اضغط على "تشغيل التحليل" لبدء تحليل العروض بالذكاء الاصطناعي' : 'Click "Run Analysis" to start AI-powered offer analysis' }}</p>
+        </div>
+      </div>
+
+      <!-- ═══════════════════════════════════════════════ -->
+      <!-- HEATMAP MATRIX TAB -->
+      <!-- ═══════════════════════════════════════════════ -->
+      <div v-else-if="activeTab === 'matrix'" class="space-y-4">
+        <div class="rounded-lg border border-gray-200 bg-white p-5">
+          <h2 class="mb-4 text-lg font-bold text-gray-900">
+            <i class="pi pi-th-large me-2 text-blue-600" />
+            {{ isRtl ? 'المصفوفة الحرارية للتقييم الفني' : 'Technical Evaluation Heatmap' }}
+          </h2>
+          
+          <div v-if="heatmapData.cells.length > 0" class="overflow-x-auto">
+            <table class="min-w-full border-collapse text-sm">
+              <thead>
+                <tr class="bg-gray-50">
+                  <th class="border border-gray-200 px-3 py-2 text-start text-xs font-bold text-gray-700">
+                    {{ isRtl ? 'المعيار' : 'Criterion' }}
+                  </th>
+                  <th class="border border-gray-200 px-2 py-2 text-center text-xs font-bold text-gray-500">
+                    {{ isRtl ? 'الوزن' : 'Weight' }}
+                  </th>
+                  <th
+                    v-for="code in heatmapData.offerBlindCodes"
+                    :key="code"
+                    class="border border-gray-200 px-3 py-2 text-center text-xs font-bold text-gray-700"
+                  >
+                    {{ code }}
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr v-for="criterion in heatmapData.criteria" :key="criterion.id">
+                  <td class="border border-gray-200 px-3 py-2 text-xs font-medium text-gray-900">
+                    {{ isRtl ? criterion.nameAr : criterion.nameEn }}
+                  </td>
+                  <td class="border border-gray-200 px-2 py-2 text-center text-xs text-gray-500">
+                    {{ criterion.weightPercentage }}%
+                  </td>
+                  <td
+                    v-for="code in heatmapData.offerBlindCodes"
+                    :key="code"
+                    class="border border-gray-200 px-3 py-2 text-center text-sm font-bold"
+                    :class="getHeatmapCellColor(getHeatmapCell(code, criterion.id)?.averageScorePercentage ?? 0)"
+                  >
+                    {{ Math.round(getHeatmapCell(code, criterion.id)?.averageScorePercentage ?? 0) }}%
+                  </td>
+                </tr>
+              </tbody>
+              <!-- Totals row -->
+              <tfoot>
+                <tr class="bg-gray-100 font-bold">
+                  <td class="border border-gray-200 px-3 py-2 text-xs text-gray-900">
+                    {{ isRtl ? 'المجموع المرجح' : 'Weighted Total' }}
+                  </td>
+                  <td class="border border-gray-200 px-2 py-2 text-center text-xs text-gray-500">100%</td>
+                  <td
+                    v-for="code in heatmapData.offerBlindCodes"
+                    :key="code"
+                    class="border border-gray-200 px-3 py-2 text-center text-sm"
+                    :class="getScoreColor(offerTotals[store.blindOffers.find(o => o.blindCode === code)?.offerId ?? ''] ?? 0)"
+                  >
+                    {{ offerTotals[store.blindOffers.find(o => o.blindCode === code)?.offerId ?? ''] ?? 0 }}%
+                  </td>
+                </tr>
+              </tfoot>
+            </table>
+          </div>
+          <div v-else class="py-8 text-center text-sm text-gray-500">
+            {{ isRtl ? 'لا توجد بيانات كافية لعرض المصفوفة الحرارية' : 'Not enough data to display heatmap' }}
+          </div>
+
+          <!-- Legend -->
+          <div class="mt-4 flex items-center gap-4 text-xs text-gray-500">
+            <span class="flex items-center gap-1"><span class="inline-block h-3 w-3 rounded bg-green-100" /> {{ isRtl ? 'ممتاز (80%+)' : 'Excellent (80%+)' }}</span>
+            <span class="flex items-center gap-1"><span class="inline-block h-3 w-3 rounded bg-yellow-100" /> {{ isRtl ? 'متوسط (60-79%)' : 'Average (60-79%)' }}</span>
+            <span class="flex items-center gap-1"><span class="inline-block h-3 w-3 rounded bg-red-100" /> {{ isRtl ? 'ضعيف (<60%)' : 'Weak (<60%)' }}</span>
+          </div>
+        </div>
+
+        <!-- Variance alerts detail -->
+        <div v-if="store.varianceAlerts.length > 0" class="rounded-lg border border-orange-200 bg-white p-5">
+          <h3 class="mb-3 text-sm font-bold text-orange-700">
+            <i class="pi pi-exclamation-triangle me-1" />
+            {{ isRtl ? 'تنبيهات التباين' : 'Variance Alerts' }}
+          </h3>
+          <div class="space-y-2">
+            <div
+              v-for="alert in store.varianceAlerts"
+              :key="`${alert.criterionId}-${alert.offerId}`"
+              class="rounded-lg border border-orange-100 bg-orange-50 p-3"
+            >
+              <div class="flex items-center justify-between">
+                <span class="text-sm font-medium text-gray-900">{{ alert.criterionNameAr }} - {{ alert.offerBlindCode }}</span>
+                <div class="flex gap-2">
+                  <span v-if="alert.hasEvaluatorVariance" class="rounded bg-orange-200 px-2 py-0.5 text-xs text-orange-800">
+                    {{ isRtl ? `تباين مقيمين: ${alert.evaluatorSpread}%` : `Evaluator spread: ${alert.evaluatorSpread}%` }}
+                  </span>
+                  <span v-if="alert.hasHumanAiVariance" class="rounded bg-purple-200 px-2 py-0.5 text-xs text-purple-800">
+                    {{ isRtl ? `فرق AI: ${alert.humanAiDifference}%` : `AI diff: ${alert.humanAiDifference}%` }}
+                  </span>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </div>
 
-      <!-- AI Analysis tab -->
-      <div v-else-if="activeTab === 'ai-analysis'" class="space-y-6">
-        <AiEvaluationPanel
-          :competition-id="competitionId"
-          :evaluation-id="store.selectedCompetition.id"
-        />
-        <AiComparisonMatrix
-          :competition-id="competitionId"
-          :evaluation-id="store.selectedCompetition.id"
-        />
-      </div>
-
-      <!-- Matrix tab -->
-      <div v-else-if="activeTab === 'matrix'" class="space-y-4">
-        <div class="flex items-center justify-between">
-          <h2 class="text-lg font-bold text-secondary">
-            <i class="pi pi-th-large me-2 text-primary" />
-            {{ t('evaluation.heatmap.title') }}
-          </h2>
-          <button
-            class="flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm text-white hover:bg-primary-dark"
-            @click="goToComparison"
-          >
-            <i class="pi pi-external-link" />
-            {{ t('evaluation.heatmap.fullView') }}
-          </button>
+      <!-- ═══════════════════════════════════════════════ -->
+      <!-- MINUTES TAB -->
+      <!-- ═══════════════════════════════════════════════ -->
+      <div v-else-if="activeTab === 'minutes'" class="space-y-4">
+        <div class="rounded-lg border border-gray-200 bg-white p-5">
+          <div class="mb-4 flex items-center justify-between">
+            <h2 class="text-lg font-bold text-gray-900">
+              <i class="pi pi-file-edit me-2 text-blue-600" />
+              {{ isRtl ? 'محضر التقييم الفني' : 'Technical Evaluation Minutes' }}
+            </h2>
+            <div class="flex gap-2">
+              <button
+                @click="generateMinutes"
+                :disabled="minutesGenerating"
+                class="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50"
+              >
+                <i class="pi me-1" :class="minutesGenerating ? 'pi-spinner pi-spin' : 'pi-refresh'" />
+                {{ isRtl ? 'إعادة التوليد' : 'Regenerate' }}
+              </button>
+              <button
+                v-if="minutesContent"
+                @click="copyToClipboard(minutesContent)"
+                class="rounded-lg border border-gray-300 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+              >
+                <i class="pi pi-copy me-1" /> {{ isRtl ? 'نسخ' : 'Copy' }}
+              </button>
+            </div>
+          </div>
+          <div v-if="minutesGenerating" class="flex items-center justify-center py-8">
+            <i class="pi pi-spinner pi-spin text-2xl text-blue-600" />
+            <span class="ms-3 text-sm text-gray-500">{{ isRtl ? 'جارٍ توليد المحضر...' : 'Generating minutes...' }}</span>
+          </div>
+          <pre v-else-if="minutesContent" class="whitespace-pre-wrap rounded-lg bg-gray-50 p-4 text-sm leading-relaxed text-gray-800 font-sans">{{ minutesContent }}</pre>
+          <div v-else class="py-8 text-center text-sm text-gray-500">
+            {{ isRtl ? 'لا يوجد محضر بعد. سيتم توليده تلقائياً.' : 'No minutes yet. Will be generated automatically.' }}
+          </div>
         </div>
-
-        <!-- Inline heatmap preview -->
-        <div class="card overflow-x-auto">
-          <table class="w-full border-collapse text-sm">
-            <thead>
-              <tr>
-                <th class="border-b border-surface-dim px-4 py-3 text-start text-xs font-semibold text-secondary/60">
-                  {{ t('evaluation.heatmap.criterion') }}
-                </th>
-                <th
-                  v-for="vendor in store.vendors"
-                  :key="vendor.id"
-                  class="border-b border-surface-dim px-4 py-3 text-center text-xs font-semibold text-secondary/60"
-                >
-                  {{ vendor.code }}
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr v-for="(row, rowIdx) in store.buildHeatmapCells()" :key="rowIdx">
-                <td class="border-b border-surface-dim px-4 py-3 text-sm font-medium text-secondary">
-                  {{ row[0]?.criterionName }}
-                </td>
-                <td
-                  v-for="cell in row"
-                  :key="cell.vendorId"
-                  class="border-b border-surface-dim px-4 py-3 text-center"
-                  :class="{
-                    'bg-success/10 text-success': cell.color === 'excellent',
-                    'bg-warning/10 text-warning': cell.color === 'average',
-                    'bg-danger/10 text-danger': cell.color === 'weak',
-                  }"
-                >
-                  <span class="text-sm font-bold">{{ cell.percentage.toFixed(0) }}%</span>
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
-
-      <!-- Minutes tab -->
-      <div v-else-if="activeTab === 'minutes'" class="card text-center py-12">
-        <i class="pi pi-file-edit text-4xl text-secondary/20" />
-        <p class="mt-3 text-sm text-secondary/60">{{ t('evaluation.minutes.comingSoon') }}</p>
       </div>
     </template>
+
+    <!-- Submit confirmation dialog -->
+    <div v-if="showSubmitDialog" class="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+      <div class="mx-4 w-full max-w-md rounded-lg bg-white p-6 shadow-xl">
+        <h3 class="text-lg font-bold text-gray-900">{{ isRtl ? 'تأكيد تقديم التقييم' : 'Confirm Submission' }}</h3>
+        <p class="mt-2 text-sm text-gray-600">
+          {{ isRtl ? 'هل أنت متأكد من تقديم التقييم الفني؟ لن تتمكن من تعديل الدرجات بعد التقديم.' : 'Are you sure you want to submit the technical evaluation? You will not be able to modify scores after submission.' }}
+        </p>
+        <div v-if="submitError" class="mt-3 rounded-lg bg-red-50 p-3 text-sm text-red-700">{{ submitError }}</div>
+        <div class="mt-4 flex justify-end gap-3">
+          <button
+            @click="showSubmitDialog = false"
+            class="rounded-lg border border-gray-300 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+          >
+            {{ isRtl ? 'إلغاء' : 'Cancel' }}
+          </button>
+          <button
+            @click="submitEvaluation"
+            :disabled="submitting"
+            class="rounded-lg bg-green-600 px-4 py-2 text-sm font-medium text-white hover:bg-green-700 disabled:opacity-50"
+          >
+            <i class="pi me-1" :class="submitting ? 'pi-spinner pi-spin' : 'pi-check'" />
+            {{ isRtl ? 'تأكيد التقديم' : 'Confirm Submit' }}
+          </button>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
