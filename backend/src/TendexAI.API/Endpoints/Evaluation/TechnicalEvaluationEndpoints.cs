@@ -159,7 +159,7 @@ public static class TechnicalEvaluationEndpoints
 
         var command = new StartTechnicalEvaluationCommand(
             competitionId,
-            request.CommitteeId,
+            request.CommitteeId ?? Guid.Empty,
             userId);
 
         var result = await mediator.Send(command);
@@ -358,7 +358,7 @@ public static class TechnicalEvaluationEndpoints
 //  Request DTOs
 // ═══════════════════════════════════════════════════════════════
 
-public sealed record StartTechnicalEvaluationRequest(Guid CommitteeId);
+public sealed record StartTechnicalEvaluationRequest(Guid? CommitteeId);
 
 public sealed record SubmitTechnicalScoreRequest(
     Guid EvaluationId,

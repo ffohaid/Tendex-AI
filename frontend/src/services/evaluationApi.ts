@@ -158,10 +158,10 @@ export function deleteSupplierOffer(competitionId: string, offerId: string): Pro
  * Technical Evaluation
  * ══════════════════════════════════════════════ */
 
-export function startTechnicalEvaluation(competitionId: string, committeeId: string): Promise<TechnicalEvaluationDetail> {
+export function startTechnicalEvaluation(competitionId: string, committeeId?: string): Promise<TechnicalEvaluationDetail> {
   return httpPost<TechnicalEvaluationDetail>(
     `${COMPETITIONS_BASE}/${competitionId}/technical-evaluation/start`,
-    { committeeId }
+    { committeeId: committeeId || null }
   )
 }
 
@@ -239,10 +239,10 @@ export function openFinancialEnvelopes(competitionId: string): Promise<void> {
  * Financial Evaluation
  * ══════════════════════════════════════════════ */
 
-export function startFinancialEvaluation(competitionId: string, committeeId: string): Promise<FinancialEvaluationDetail> {
+export function startFinancialEvaluation(competitionId: string, committeeId?: string): Promise<FinancialEvaluationDetail> {
   return httpPost<FinancialEvaluationDetail>(
     `${COMPETITIONS_BASE}/${competitionId}/financial-evaluation/start`,
-    { committeeId }
+    { committeeId: committeeId || null }
   )
 }
 

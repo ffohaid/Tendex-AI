@@ -339,7 +339,7 @@ export const useEvaluationStore = defineStore('evaluation', () => {
     loading.value = true
     error.value = null
     try {
-      const result = await api.startTechnicalEvaluation(competitionId, committeeId || '')
+      const result = await api.startTechnicalEvaluation(competitionId, committeeId)
       technicalEvaluation.value = result
       await loadCompetitions()
       return result
@@ -355,7 +355,7 @@ export const useEvaluationStore = defineStore('evaluation', () => {
     loading.value = true
     error.value = null
     try {
-      const result = await api.startFinancialEvaluation(competitionId, committeeId || '')
+      const result = await api.startFinancialEvaluation(competitionId, committeeId)
       financialEvaluation.value = result
       await loadCompetitions()
       return result

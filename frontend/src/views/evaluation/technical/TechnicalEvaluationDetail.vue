@@ -142,7 +142,7 @@ async function startEvaluation() {
   startingEvaluation.value = true
   try {
     const { startTechnicalEvaluation } = await import('@/services/evaluationApi')
-    await startTechnicalEvaluation(competitionId.value, '')
+    await startTechnicalEvaluation(competitionId.value)
     await store.loadTechnicalData(competitionId.value)
   } catch (e: any) {
     store.error = e?.message || 'تعذر بدء التقييم الفني'
