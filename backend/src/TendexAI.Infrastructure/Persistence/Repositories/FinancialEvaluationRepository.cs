@@ -40,7 +40,6 @@ public sealed class FinancialEvaluationRepository : IFinancialEvaluationReposito
         return await _context.FinancialEvaluations
             .Include(e => e.OfferItems)
             .AsSplitQuery()
-            .AsNoTracking()
             .FirstOrDefaultAsync(e => e.Id == id, cancellationToken);
     }
 
@@ -50,7 +49,6 @@ public sealed class FinancialEvaluationRepository : IFinancialEvaluationReposito
         return await _context.FinancialEvaluations
             .Include(e => e.Scores)
             .AsSplitQuery()
-            .AsNoTracking()
             .FirstOrDefaultAsync(e => e.Id == id, cancellationToken);
     }
 
@@ -61,7 +59,6 @@ public sealed class FinancialEvaluationRepository : IFinancialEvaluationReposito
             .Include(e => e.Scores)
             .Include(e => e.OfferItems)
             .AsSplitQuery()
-            .AsNoTracking()
             .FirstOrDefaultAsync(e => e.CompetitionId == competitionId, cancellationToken);
     }
 

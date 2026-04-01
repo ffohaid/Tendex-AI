@@ -33,11 +33,12 @@ public sealed class TechnicalEvaluationRepository : ITechnicalEvaluationReposito
     public async Task<TechnicalEvaluation?> GetByIdWithScoresAsync(
         Guid id, CancellationToken cancellationToken = default)
     {
+        // NOTE: Do NOT use AsNoTracking here — this query is used by
+        // SubmitTechnicalScoreCommandHandler which modifies the entity.
         return await _context.TechnicalEvaluations
             .Include(e => e.Scores)
             .Include(e => e.AiScores)
             .AsSplitQuery()
-            .AsNoTracking()
             .FirstOrDefaultAsync(e => e.Id == id, cancellationToken);
     }
 
@@ -52,11 +53,12 @@ public sealed class TechnicalEvaluationRepository : ITechnicalEvaluationReposito
     public async Task<TechnicalEvaluation?> GetByCompetitionIdWithScoresAsync(
         Guid competitionId, CancellationToken cancellationToken = default)
     {
+        // NOTE: Do NOT use AsNoTracking here — this query is used for
+        // modification operations (score submission, completion, etc.).
         return await _context.TechnicalEvaluations
             .Include(e => e.Scores)
             .Include(e => e.AiScores)
             .AsSplitQuery()
-            .AsNoTracking()
             .FirstOrDefaultAsync(e => e.CompetitionId == competitionId, cancellationToken);
     }
 
