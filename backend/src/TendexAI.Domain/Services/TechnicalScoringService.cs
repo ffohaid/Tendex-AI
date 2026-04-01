@@ -97,8 +97,13 @@ public static class TechnicalScoringService
         if (aiScore is null || humanScores.Count == 0)
             return false;
 
-        decimal humanAverage = humanScores.Average(s => s.GetScorePercentage());
         decimal aiPercentage = aiScore.GetScorePercentage();
+
+        // Skip variance check if AI score is 0 (AI couldn't evaluate - no offer content)
+        if (aiPercentage == 0m)
+            return false;
+
+        decimal humanAverage = humanScores.Average(s => s.GetScorePercentage());
 
         return Math.Abs(humanAverage - aiPercentage) > VarianceThreshold;
     }
