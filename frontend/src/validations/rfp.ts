@@ -151,7 +151,7 @@ export const contentSchema = z.object({
   sections: z
     .array(sectionSchema)
     .min(1, 'يجب إضافة قسم واحد على الأقل في الكراسة'),
-  creationMethod: z.enum(['wizard', 'template', 'clone', 'ai']).default('wizard'),
+  creationMethod: z.enum(['wizard', 'template', 'clone', 'ai', 'upload_extract']).default('wizard'),
   templateId: z.string().nullable().default(null),
   cloneFromId: z.string().nullable().default(null),
 })
