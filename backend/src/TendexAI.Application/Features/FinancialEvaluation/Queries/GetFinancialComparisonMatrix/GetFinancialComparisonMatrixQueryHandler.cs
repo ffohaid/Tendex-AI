@@ -34,7 +34,7 @@ public sealed class GetFinancialComparisonMatrixQueryHandler
         if (evaluation is null)
             return Result.Failure<FinancialComparisonMatrixDto>("No financial evaluation found.");
 
-        var competition = await _competitionRepo.GetByIdAsync(
+        var competition = await _competitionRepo.GetByIdWithDetailsAsync(
             request.CompetitionId, cancellationToken);
 
         if (competition is null)
