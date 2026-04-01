@@ -18,7 +18,7 @@ import {
   approveAward,
   rejectAward,
 } from '@/services/evaluationApi'
-import type { FinalRanking, AwardRecommendation, AwardRanking } from '@/types/evaluation'
+import type { FinalRanking, AwardRecommendation } from '@/types/evaluation'
 import { AwardStatus } from '@/types/evaluation'
 
 const { locale } = useI18n()
