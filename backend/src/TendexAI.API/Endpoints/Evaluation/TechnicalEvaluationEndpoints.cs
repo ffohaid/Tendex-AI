@@ -12,6 +12,7 @@ using TendexAI.Application.Features.TechnicalEvaluation.Queries.GetBlindOffers;
 using TendexAI.Application.Features.TechnicalEvaluation.Queries.GetEvaluationDetails;
 using TendexAI.Application.Features.TechnicalEvaluation.Queries.GetEvaluationResults;
 using TendexAI.Application.Features.TechnicalEvaluation.Queries.GetHeatmap;
+using TendexAI.Application.Features.TechnicalEvaluation.Queries.GetTechnicalScores;
 using TendexAI.Application.Features.TechnicalEvaluation.Queries.GetVarianceAlerts;
 
 namespace TendexAI.API.Endpoints.Evaluation;
@@ -65,6 +66,12 @@ public static class TechnicalEvaluationEndpoints
         // ═══════════════════════════════════════════════════════════
         //  Scoring
         // ═══════════════════════════════════════════════════════════
+
+        group.MapGet("/scores", GetScoresAsync)
+            .WithName("GetTechnicalScores")
+            .WithSummary("Get all technical scores for a competition's evaluation")
+            .Produces<IReadOnlyList<TechnicalScoreDto>>(StatusCodes.Status200OK)
+            .Produces<ProblemDetails>(StatusCodes.Status404NotFound);
 
         group.MapPost("/scores", SubmitScoreAsync)
             .WithName("SubmitTechnicalScore")
@@ -192,6 +199,20 @@ public static class TechnicalEvaluationEndpoints
     {
         var userId = GetCurrentUserId(httpContext);
         var query = new GetBlindOffersQuery(competitionId, userId);
+        var result = await mediator.Send(query);
+
+        return result.IsSuccess
+            ? Results.Ok(result.Value)
+            : Results.Problem(result.Error, statusCode: 404);
+    }
+
+    private static async Task<IResult> GetScoresAsync(
+        Guid competitionId,
+        ISender mediator,
+        HttpContext httpContext)
+    {
+        var userId = GetCurrentUserId(httpContext);
+        var query = new GetTechnicalScoresQuery(competitionId, userId);
         var result = await mediator.Send(query);
 
         return result.IsSuccess
