@@ -16,6 +16,7 @@ import { toTypedSchema } from '@vee-validate/zod'
 import { settingsSchema } from '@/validations/rfp'
 import { useRfpStore } from '@/stores/rfp'
 import FormField from './FormField.vue'
+import AiCriteriaSuggester from './AiCriteriaSuggester.vue'
 
 const { t } = useI18n()
 const rfpStore = useRfpStore()
@@ -86,6 +87,15 @@ function removeCriterion(id: string) {
 
 function updateCriterionField(id: string, field: string, value: string | number) {
   rfpStore.updateCriterion(id, { [field]: value })
+}
+
+/** Handle AI-suggested criteria */
+function handleAiCriteria(criteria: Array<{ name: string; weight: number; description: string }>) {
+  // Clear existing criteria and add AI-suggested ones
+  rfpStore.formData.settings.evaluationCriteria.forEach(c => rfpStore.removeCriterion(c.id))
+  criteria.forEach(c => {
+    rfpStore.addCriterion({ name: c.name, weight: c.weight, description: c.description })
+  })
 }
 
 defineExpose({
@@ -280,14 +290,17 @@ defineExpose({
         <h3 class="text-lg font-bold text-secondary">
           {{ t('rfp.fields.evaluationCriteria') }}
         </h3>
-        <button
-          type="button"
-          class="flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-primary-dark"
-          @click="addCriterion"
-        >
-          <i class="pi pi-plus text-xs"></i>
-          {{ t('rfp.actions.addCriterion') }}
-        </button>
+        <div class="flex items-center gap-3">
+          <button
+            type="button"
+            class="flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-primary-dark"
+            @click="addCriterion"
+          >
+            <i class="pi pi-plus text-xs"></i>
+            {{ t('rfp.actions.addCriterion') }}
+          </button>
+          <AiCriteriaSuggester @criteria-suggested="handleAiCriteria" />
+        </div>
       </div>
 
       <div

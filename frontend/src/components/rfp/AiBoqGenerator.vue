@@ -83,6 +83,74 @@ async function handleGenerate() {
 }
 
 /**
+ * Normalize AI-generated unit strings (Arabic/English/mixed) to frontend UnitOfMeasure keys.
+ * Falls back to 'unit' if no match is found.
+ */
+const unitNormalizationMap: Record<string, string> = {
+  // Arabic unit names
+  'وحدة': 'unit',
+  'عدد': 'unit',
+  'قطعة': 'unit',
+  'متر': 'meter',
+  'م.ط': 'meter',
+  'متر مربع': 'sqm',
+  'م²': 'sqm',
+  'م.م': 'sqm',
+  'متر مكعب': 'cbm',
+  'م³': 'cbm',
+  'كيلوغرام': 'kg',
+  'كجم': 'kg',
+  'طن': 'ton',
+  'لتر': 'liter',
+  'ساعة': 'hour',
+  'يوم': 'day',
+  'شهر': 'month',
+  'سنة': 'year',
+  'مقطوعية': 'lump_sum',
+  'مبلغ مقطوع': 'lump_sum',
+  'مقطوع': 'lump_sum',
+  'رحلة': 'trip',
+  'طقم': 'set',
+  'مجموعة': 'set',
+  'شخص': 'person',
+  'فرد': 'person',
+  'رخصة': 'license',
+  'ترخيص': 'license',
+  // English unit names
+  'unit': 'unit',
+  'each': 'unit',
+  'piece': 'unit',
+  'pcs': 'unit',
+  'meter': 'meter',
+  'sqm': 'sqm',
+  'square meter': 'sqm',
+  'cbm': 'cbm',
+  'cubic meter': 'cbm',
+  'kg': 'kg',
+  'kilogram': 'kg',
+  'ton': 'ton',
+  'liter': 'liter',
+  'hour': 'hour',
+  'day': 'day',
+  'month': 'month',
+  'year': 'year',
+  'lump sum': 'lump_sum',
+  'lumpsum': 'lump_sum',
+  'lump_sum': 'lump_sum',
+  'ls': 'lump_sum',
+  'trip': 'trip',
+  'set': 'set',
+  'person': 'person',
+  'license': 'license',
+}
+
+function normalizeUnit(rawUnit: string): string {
+  if (!rawUnit) return 'unit'
+  const normalized = rawUnit.trim().toLowerCase()
+  return unitNormalizationMap[normalized] || unitNormalizationMap[rawUnit.trim()] || 'unit'
+}
+
+/**
  * Map backend GeneratedBoqItem → frontend BoqItem and emit.
  */
 function applyBoq() {
@@ -91,7 +159,7 @@ function applyBoq() {
   const mapped: BoqItem[] = boqItems.value.map((item) => ({
     itemNumber: item.itemNumber,
     descriptionAr: item.descriptionAr,
-    unit: item.unit,
+    unit: normalizeUnit(item.unit),
     estimatedQuantity: item.quantity,
     estimatedUnitPrice: item.estimatedUnitPrice ?? 0,
     estimatedTotalPrice: (item.quantity ?? 0) * (item.estimatedUnitPrice ?? 0),

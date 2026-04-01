@@ -9,6 +9,7 @@ import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRfpStore } from '@/stores/rfp'
 import { formatCurrency } from '@/utils/numbers'
+import AiComplianceChecker from './AiComplianceChecker.vue'
 
 const { t } = useI18n()
 const rfpStore = useRfpStore()
@@ -296,6 +297,9 @@ function handleSubmit() {
         </p>
       </div>
     </div>
+
+    <!-- AI Compliance Check -->
+    <AiComplianceChecker />
 
     <!-- Submit button -->
     <div class="flex justify-center pt-4">

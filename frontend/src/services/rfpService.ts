@@ -80,9 +80,12 @@ const unitOfMeasureToBackend: Record<string, number> = {
   hour: 7,       // Hour
   day: 8,        // Day
   month: 9,      // Month
-  liter: 10,     // Year (closest mapping)
+  year: 10,      // Year
   trip: 11,      // Trip
   set: 12,       // Set
+  liter: 13,     // Liter (custom)
+  person: 14,    // Person
+  license: 15,   // License
 }
 
 const backendUnitToFrontend: Record<number, UnitOfMeasure> = {
@@ -96,7 +99,7 @@ const backendUnitToFrontend: Record<number, UnitOfMeasure> = {
   7: 'hour',
   8: 'day',
   9: 'month',
-  10: 'liter',
+  10: 'year',
   11: 'trip',
   12: 'set',
 }
@@ -233,14 +236,29 @@ function mapListItemFromBackend(dto: Record<string, unknown>): RfpListItem {
   const boqItemsCount = (dto.boqItemsCount as number) || 0
   const attachmentsCount = (dto.attachmentsCount as number) || 0
 
-  // Calculate completion percentage based on available data
-  let completedSteps = 0
-  if (dto.projectNameAr) completedSteps++ // Step 1
-  if ((dto.technicalWeight as number) > 0) completedSteps++ // Step 2
-  if (sectionsCount > 0) completedSteps++ // Step 3
-  if (boqItemsCount > 0) completedSteps++ // Step 4
-  if (attachmentsCount > 0) completedSteps++ // Step 5
-  const completionPercentage = Math.round((completedSteps / 5) * 100)
+  // Calculate completion percentage based on available data from list DTO.
+  // The list DTO provides counts for sections, BOQ items, and attachments,
+  // plus basic fields like projectNameAr. We use a weighted approach:
+  // Step 1 (Basic Info): 20% - has project name
+  // Step 2 (Settings): 15% - has evaluation criteria (approximated by technicalWeight != default 70)
+  // Step 3 (Content): 25% - has sections
+  // Step 4 (BOQ): 25% - has BOQ items
+  // Step 5 (Attachments): 15% - has attachments
+  let completionPercentage = 0
+  if (dto.projectNameAr) completionPercentage += 20 // Step 1: Basic info filled
+  // Step 2: Settings - check if technicalWeight exists and differs from default,
+  // or if sectionsCount > 0 (which implies settings were passed through)
+  const techWeight = dto.technicalWeight as number | undefined
+  if (techWeight !== undefined && techWeight !== null) {
+    completionPercentage += 15 // Step 2: Settings configured
+  } else if (sectionsCount > 0) {
+    completionPercentage += 15 // If sections exist, user passed through step 2
+  }
+  if (sectionsCount > 0) completionPercentage += 25 // Step 3: Content added
+  if (boqItemsCount > 0) completionPercentage += 25 // Step 4: BOQ items added
+  if (attachmentsCount > 0) completionPercentage += 15 // Step 5: Attachments uploaded
+  // Cap at 100
+  completionPercentage = Math.min(completionPercentage, 100)
 
   return {
     id: String(dto.id || ''),

@@ -15,6 +15,7 @@ import { toTypedSchema } from '@vee-validate/zod'
 import { attachmentsSchema } from '@/validations/rfp'
 import { useRfpStore } from '@/stores/rfp'
 import type { RfpAttachment } from '@/types/rfp'
+import AiAttachmentRecommender from './AiAttachmentRecommender.vue'
 
 const { t } = useI18n()
 const rfpStore = useRfpStore()
@@ -147,6 +148,16 @@ function removeAttachment(id: string) {
   rfpStore.removeAttachment(id)
 }
 
+/** Handle AI attachment recommendations */
+function handleAiAttachments(keys: string[]) {
+  // Select all recommended attachment types
+  keys.forEach(key => {
+    if (!isRequiredAttachmentSelected(key)) {
+      toggleRequiredType(key)
+    }
+  })
+}
+
 /** Count selected required attachments */
 const selectedCount = computed(() => {
   return rfpStore.formData.attachments.requiredAttachmentTypes?.length ?? 0
@@ -177,6 +188,9 @@ defineExpose({
         {{ t('rfp.steps.attachmentsDesc') }}
       </p>
     </div>
+
+    <!-- AI Attachment Recommender -->
+    <AiAttachmentRecommender @select-attachments="handleAiAttachments" />
 
     <!-- Required attachments checklist (interactive checkboxes) -->
     <div class="rounded-lg border border-surface-dim bg-surface-muted p-4">

@@ -390,7 +390,10 @@
       "month": "Month",
       "lumpSum": "Lump Sum",
       "trip": "Trip",
-      "set": "Set"
+      "set": "Set",
+      "year": "Year",
+      "person": "Person",
+      "license": "License"
     },
     "boqFields": {
       "category": "Category",

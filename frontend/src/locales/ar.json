@@ -390,7 +390,10 @@
       "month": "شهر",
       "lumpSum": "مقطوعية",
       "trip": "رحلة",
-      "set": "طقم"
+      "set": "طقم",
+      "year": "سنة",
+      "person": "شخص",
+      "license": "رخصة"
     },
     "boqFields": {
       "category": "التصنيف",

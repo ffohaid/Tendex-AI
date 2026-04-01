@@ -43,9 +43,12 @@ const unitOptions = computed(() => [
   { value: 'hour', label: t('rfp.units.hour') },
   { value: 'day', label: t('rfp.units.day') },
   { value: 'month', label: t('rfp.units.month') },
+  { value: 'year', label: t('rfp.units.year') },
   { value: 'lump_sum', label: t('rfp.units.lumpSum') },
   { value: 'trip', label: t('rfp.units.trip') },
   { value: 'set', label: t('rfp.units.set') },
+  { value: 'person', label: t('rfp.units.person') },
+  { value: 'license', label: t('rfp.units.license') },
 ])
 
 /** Subtotal before VAT */
@@ -334,7 +337,7 @@ defineExpose({
     </div>
 
     <!-- Validation error -->
-    <p v-if="errors.items" class="mt-2 text-sm text-danger">
+    <p v-if="errors.items && rfpStore.formData.boq.items.length === 0" class="mt-2 text-sm text-danger">
       <i class="pi pi-exclamation-circle me-1"></i>
       {{ errors.items }}
     </p>

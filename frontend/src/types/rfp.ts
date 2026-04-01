@@ -48,9 +48,12 @@ export type UnitOfMeasure =
   | 'hour'
   | 'day'
   | 'month'
+  | 'year'
   | 'lump_sum'
   | 'trip'
   | 'set'
+  | 'person'
+  | 'license'
 
 /** Section content color code per PRD template compliance */
 export type TextColorCode = 'black' | 'green' | 'red' | 'blue'

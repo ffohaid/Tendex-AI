@@ -370,7 +370,7 @@ defineExpose({
     </draggable>
 
     <!-- Validation error -->
-    <p v-if="errors.sections" class="mt-2 text-sm text-danger">
+    <p v-if="errors.sections && rfpStore.formData.content.sections.length === 0" class="mt-2 text-sm text-danger">
       <i class="pi pi-exclamation-circle me-1"></i>
       {{ errors.sections }}
     </p>
