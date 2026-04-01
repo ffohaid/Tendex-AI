@@ -22,7 +22,7 @@ public sealed class GetFinancialOfferItemsQueryHandler
     public async Task<Result<IReadOnlyList<FinancialOfferItemDto>>> Handle(
         GetFinancialOfferItemsQuery request, CancellationToken cancellationToken)
     {
-        var evaluation = await _financialRepo.GetWithItemsAsync(
+        var evaluation = await _financialRepo.GetFullAsync(
             request.CompetitionId, cancellationToken);
 
         if (evaluation is null)

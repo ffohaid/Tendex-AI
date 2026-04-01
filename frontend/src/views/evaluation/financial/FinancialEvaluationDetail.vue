@@ -10,6 +10,8 @@ import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { useEvaluationStore } from '@/stores/evaluation'
 import { formatCurrency } from '@/utils/numbers'
+import { httpPost } from '@/services/http'
+import { completeFinancialScoring } from '@/services/evaluationApi'
 import type { ArithmeticVerificationResult } from '@/types/evaluation'
 
 const { locale } = useI18n()
@@ -119,40 +121,32 @@ async function runAiAnalysis() {
   aiAnalysisLoading.value = true
   aiAnalysisError.value = ''
   try {
-    // Use the AI text assist endpoint with a custom prompt for financial analysis
-    const response = await fetch('/api/ai/text/assist', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        text: JSON.stringify({
-          competition: store.selectedCompetition?.projectName,
-          estimatedCost: estimatedCost.value,
-          suppliers: supplierTotals.value.map(s => ({
-            code: s.blindCode,
-            total: s.totalAmount,
-            deviation: s.deviationPercentage,
-            rank: s.financialRank,
-          })),
-          comparisonRows: store.financialComparisonMatrix?.rows?.slice(0, 10).map(r => ({
-            item: r.descriptionAr,
-            estimated: r.estimatedTotalPrice,
-            prices: r.supplierPrices.map(p => ({ code: p.blindCode, total: p.totalPrice, deviation: p.deviationPercentage })),
-          })),
-        }),
-        action: 'custom',
-        customPrompt: `أنت خبير في تحليل العروض المالية للمشتريات الحكومية السعودية. قم بتحليل البيانات المالية التالية وقدم:
-1. ملخص تنفيذي للعروض المالية
-2. تحليل الانحرافات السعرية وأسبابها المحتملة
-3. كشف الأسعار المنخفضة بشكل غير طبيعي (Abnormally Low Prices) مع التبرير
-4. كشف الأسعار المرتفعة بشكل مبالغ فيه
-5. تقييم المخاطر المالية لكل عرض
-6. توصية الترسية مع التبرير المفصل
-7. ملاحظات على هيكل التسعير
-
-اكتب التحليل باللغة العربية بأسلوب رسمي مناسب للجان المشتريات الحكومية.`,
-      }),
+    const financialData = JSON.stringify({
+      competition: store.selectedCompetition?.projectName,
+      estimatedCost: estimatedCost.value,
+      suppliers: supplierTotals.value.map(s => ({
+        code: s.blindCode,
+        total: s.totalAmount,
+        deviation: s.deviationPercentage,
+        rank: s.financialRank,
+      })),
+      comparisonRows: store.financialComparisonMatrix?.rows?.slice(0, 10).map(r => ({
+        item: r.descriptionAr,
+        estimated: r.estimatedTotalPrice,
+        prices: r.supplierPrices.map(p => ({ code: p.blindCode, total: p.totalPrice, deviation: p.deviationPercentage })),
+      })),
     })
-    const data = await response.json()
+    const data = await httpPost<{ isSuccess: boolean; generatedText: string; errorMessage?: string }>(
+      '/v1/ai/text/assist',
+      {
+        action: 'custom',
+        currentText: financialData,
+        fieldName: 'التحليل المالي',
+        fieldPurpose: 'تحليل العروض المالية للمنافسة',
+        projectName: store.selectedCompetition?.projectName || '',
+        customPrompt: `أنت خبير في تحليل العروض المالية للمشتريات الحكومية السعودية وفق نظام المنافسات والمشتريات الحكومية. قم بتحليل البيانات المالية التالية وقدم تقريراً شاملاً يتضمن:\n1. ملخص تنفيذي للعروض المالية مع مقارنة بالتكلفة التقديرية\n2. تحليل الانحرافات السعرية لكل عرض وأسبابها المحتملة\n3. كشف الأسعار المنخفضة بشكل غير طبيعي وفق المادة 45 من نظام المنافسات\n4. كشف الأسعار المرتفعة بشكل مبالغ فيه\n5. تقييم المخاطر المالية لكل عرض\n6. توصية الترسية مع التبرير المفصل وفق معايير الأقل سعراً\n7. ملاحظات على هيكل التسعير وتوزيع الأسعار على البنود\n\nاكتب التحليل باللغة العربية بأسلوب رسمي مناسب للجان فحص العروض الحكومية. استخدم الأرقام الإنجليزية.`,
+      }
+    )
     if (data.isSuccess) {
       aiAnalysisResult.value = data.generatedText
     } else {
@@ -168,38 +162,30 @@ async function runAiAnalysis() {
 async function generateMinutesWithAi() {
   generatingMinutes.value = true
   try {
-    const response = await fetch('/api/ai/text/assist', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        text: JSON.stringify({
-          competition: store.selectedCompetition?.projectName,
-          estimatedCost: estimatedCost.value,
-          suppliers: sortedTotals.value.map(s => ({
-            code: s.blindCode,
-            name: s.supplierName,
-            total: s.totalAmount,
-            deviation: s.deviationPercentage,
-            rank: s.financialRank,
-          })),
-          meetingDate: minutesData.value.meetingDate,
-          meetingLocation: minutesData.value.meetingLocation,
-        }),
-        action: 'custom',
-        customPrompt: `أنت كاتب محاضر رسمي للجان المشتريات الحكومية السعودية. قم بإعداد محضر اجتماع لجنة فحص العروض المالية يتضمن:
-1. بيانات الاجتماع (التاريخ، المكان)
-2. أسماء أعضاء اللجنة (اترك فراغات للأسماء)
-3. ملخص العروض المالية المقدمة مع الترتيب
-4. نتائج التحقق الحسابي
-5. تحليل الانحرافات السعرية
-6. قرارات اللجنة وتوصياتها
-7. التوصية بالترسية مع التبرير
-8. التوقيعات (اترك فراغات)
-
-اكتب المحضر بأسلوب رسمي حكومي باللغة العربية.`,
-      }),
+    const minutesContext = JSON.stringify({
+      competition: store.selectedCompetition?.projectName,
+      estimatedCost: estimatedCost.value,
+      suppliers: sortedTotals.value.map(s => ({
+        code: s.blindCode,
+        name: s.supplierName,
+        total: s.totalAmount,
+        deviation: s.deviationPercentage,
+        rank: s.financialRank,
+      })),
+      meetingDate: minutesData.value.meetingDate,
+      meetingLocation: minutesData.value.meetingLocation,
     })
-    const data = await response.json()
+    const data = await httpPost<{ isSuccess: boolean; generatedText: string }>(
+      '/v1/ai/text/assist',
+      {
+        action: 'custom',
+        currentText: minutesContext,
+        fieldName: 'محضر التقييم المالي',
+        fieldPurpose: 'إعداد محضر لجنة فحص العروض المالية',
+        projectName: store.selectedCompetition?.projectName || '',
+        customPrompt: `أنت كاتب محاضر رسمي للجان المشتريات الحكومية السعودية. قم بإعداد محضر اجتماع لجنة فحص العروض المالية يتضمن:\n1. بيانات الاجتماع (التاريخ، المكان، رقم المنافسة)\n2. أسماء أعضاء اللجنة (اترك فراغات للأسماء والتوقيعات)\n3. ملخص العروض المالية المقدمة مع الترتيب والمبالغ\n4. مقارنة العروض بالتكلفة التقديرية\n5. نتائج التحقق الحسابي من العروض\n6. تحليل الانحرافات السعرية\n7. قرارات اللجنة وتوصياتها بالترسية وفق نظام المنافسات\n8. فراغات التوقيعات\n\nاكتب المحضر بأسلوب رسمي حكومي باللغة العربية. استخدم الأرقام الإنجليزية.`,
+      }
+    )
     if (data.isSuccess) {
       minutesData.value.decisions = data.generatedText
     }
@@ -214,8 +200,7 @@ async function submitFinancialEvaluation() {
   submitting.value = true
   submitError.value = ''
   try {
-    // Submit financial evaluation for approval
-    await fetch(`/api/financial-evaluations/${competitionId.value}/submit`, { method: 'POST' })
+    await completeFinancialScoring(competitionId.value)
     router.push({ name: 'EvaluationFinancial' })
   } catch (e: any) {
     submitError.value = e?.message || (isRtl.value ? 'حدث خطأ أثناء التقديم' : 'Submission error')

@@ -12,6 +12,7 @@ using TendexAI.Application.Features.FinancialEvaluation.Dtos;
 using TendexAI.Application.Features.FinancialEvaluation.Queries.GetFinancialComparisonMatrix;
 using TendexAI.Application.Features.FinancialEvaluation.Queries.GetFinancialEvaluationDetails;
 using TendexAI.Application.Features.FinancialEvaluation.Queries.GetFinancialOfferItems;
+using TendexAI.Application.Features.FinancialEvaluation.Queries.GetFinancialScores;
 
 namespace TendexAI.API.Endpoints.Evaluation;
 
@@ -80,6 +81,11 @@ public static class FinancialEvaluationEndpoints
         // ═══════════════════════════════════════════════════════════
         //  Financial Scoring
         // ═══════════════════════════════════════════════════════════
+
+        group.MapGet("/scores", GetFinancialScoresAsync)
+            .WithName("GetFinancialScores")
+            .WithSummary("Get all financial scores for a competition")
+            .Produces<IReadOnlyList<FinancialScoreDto>>(StatusCodes.Status200OK);
 
         group.MapPost("/offers/{supplierOfferId:guid}/scores", SubmitFinancialScoreAsync)
             .WithName("SubmitFinancialScore")
@@ -211,6 +217,15 @@ public static class FinancialEvaluationEndpoints
                 $"/api/v1/competitions/{competitionId}/financial-evaluation/offers/{supplierOfferId}/scores",
                 result.Value)
             : Results.Problem(result.Error!, statusCode: StatusCodes.Status400BadRequest);
+    }
+
+    private static async Task<IResult> GetFinancialScoresAsync(
+        Guid competitionId, ISender sender)
+    {
+        var result = await sender.Send(new GetFinancialScoresQuery(competitionId));
+        return result.IsSuccess
+            ? Results.Ok(result.Value)
+            : Results.Problem(result.Error!, statusCode: StatusCodes.Status404NotFound);
     }
 
     private static async Task<IResult> CompleteFinancialScoringAsync(
