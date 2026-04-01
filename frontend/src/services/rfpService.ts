@@ -407,6 +407,7 @@ function mapFromBackendResponse(dto: Record<string, unknown>): RfpFormData {
     },
     attachments: {
       files: attachments,
+      requiredAttachmentTypes: (dto.requiredAttachmentTypes as string[]) || [],
     },
     status: (statusIntToString[dto.status as number] || 'draft') as RfpFormData['status'],
     createdAt: (dto.createdAt as string) || '',
