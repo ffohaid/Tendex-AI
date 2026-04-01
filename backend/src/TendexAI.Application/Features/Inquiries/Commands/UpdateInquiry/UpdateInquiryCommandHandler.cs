@@ -35,7 +35,7 @@ public sealed class UpdateInquiryCommandHandler : IRequestHandler<UpdateInquiryC
             request.InternalNotes,
             request.ModifiedBy);
 
-        await _repository.UpdateAsync(inquiry, cancellationToken);
+        // Entity is already tracked by EF Core change tracker - no need for explicit Update
         await _repository.SaveChangesAsync(cancellationToken);
 
         return true;

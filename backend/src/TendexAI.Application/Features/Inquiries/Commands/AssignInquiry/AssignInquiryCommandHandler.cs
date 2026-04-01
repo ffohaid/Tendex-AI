@@ -34,7 +34,7 @@ public sealed class AssignInquiryCommandHandler : IRequestHandler<AssignInquiryC
             inquiry.AssignToCommittee(request.CommitteeId.Value, request.AssignedBy);
         }
 
-        await _repository.UpdateAsync(inquiry, cancellationToken);
+        // Entity is already tracked by EF Core change tracker - no need for explicit Update
         await _repository.SaveChangesAsync(cancellationToken);
 
         return true;

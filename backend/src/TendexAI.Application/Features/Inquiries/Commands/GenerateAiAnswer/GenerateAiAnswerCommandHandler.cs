@@ -72,7 +72,9 @@ public sealed class GenerateAiAnswerCommandHandler : IRequestHandler<GenerateAiA
         var response = inquiry.SubmitDraftAnswer(answerText, isAiGenerated: true, request.RequestedBy);
         response.SetAiMetadata(confidenceScore, aiResponse.ModelName, "كراسة الشروط والمواصفات، نظام المنافسات والمشتريات الحكومية");
 
-        await _inquiryRepository.UpdateAsync(inquiry, cancellationToken);
+        // No need to call UpdateAsync - the entity is already tracked by EF Core
+        // from GetByIdAsync. SubmitDraftAnswer modifies the entity in-place,
+        // and EF Core's change tracker will detect the changes automatically.
         await _inquiryRepository.SaveChangesAsync(cancellationToken);
 
         return new AiAnswerResponseDto
