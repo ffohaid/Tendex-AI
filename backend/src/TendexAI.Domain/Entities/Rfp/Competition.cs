@@ -384,7 +384,9 @@ public sealed class Competition : AggregateRoot<Guid>
 
         section.SetSortOrder(_sections.Count + 1);
         _sections.Add(section);
-        Version++;
+        // Note: Version is NOT incremented here to avoid concurrency conflicts
+        // when multiple sections are added in parallel or batch operations.
+        // Version is only incremented for state transitions and metadata changes.
         return Result.Success();
     }
 
@@ -399,7 +401,6 @@ public sealed class Competition : AggregateRoot<Guid>
 
         _sections.Remove(section);
         ReorderSections();
-        Version++;
         return Result.Success();
     }
 
@@ -413,7 +414,6 @@ public sealed class Competition : AggregateRoot<Guid>
             return Result.Failure("لا يمكن إضافة بنود جدول الكميات: المنافسة ليست في حالة قابلة للتعديل.");
 
         _boqItems.Add(item);
-        Version++;
         return Result.Success();
     }
 
@@ -427,7 +427,6 @@ public sealed class Competition : AggregateRoot<Guid>
             return Result.Failure("بند جدول الكميات غير موجود.");
 
         _boqItems.Remove(item);
-        Version++;
         return Result.Success();
     }
 
@@ -441,7 +440,6 @@ public sealed class Competition : AggregateRoot<Guid>
             return Result.Failure("لا يمكن إضافة معايير التقييم: المنافسة ليست في حالة قابلة للتعديل.");
 
         _evaluationCriteria.Add(criterion);
-        Version++;
         return Result.Success();
     }
 
@@ -455,7 +453,6 @@ public sealed class Competition : AggregateRoot<Guid>
             return Result.Failure("معيار التقييم غير موجود.");
 
         _evaluationCriteria.Remove(criterion);
-        Version++;
         return Result.Success();
     }
 
@@ -469,7 +466,6 @@ public sealed class Competition : AggregateRoot<Guid>
             return Result.Failure("لا يمكن إضافة مرفقات: المنافسة ليست في حالة قابلة للتعديل.");
 
         _attachments.Add(attachment);
-        Version++;
         return Result.Success();
     }
 
@@ -483,7 +479,6 @@ public sealed class Competition : AggregateRoot<Guid>
             return Result.Failure("المرفق غير موجود.");
 
         _attachments.Remove(attachment);
-        Version++;
         return Result.Success();
     }
 
