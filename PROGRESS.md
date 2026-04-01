@@ -24,6 +24,47 @@
 
 *يرجى إضافة أحدث مهمة منجزة في أعلى هذه القائمة.*
 
+### 2026-04-01 - RFP Creation "From Scratch" Enhancement & AI Integration
+- **الحالة:** ✅ مكتمل
+- **ما تم إنجازه:**
+  - **اختبار شامل لرحلة إنشاء كراسة "من البداية"** مع بيانات حقيقية عبر جميع الخطوات الست
+  - **إصلاح رسائل التحقق المستمرة في الخطوات 3 و 4:**
+    - Step3Content.vue: إخفاء رسالة الخطأ عندما تكون الأقسام موجودة
+    - Step4Boq.vue: إخفاء رسالة الخطأ عندما تكون بنود جدول الكميات موجودة
+  - **إصلاح نسبة الإنجاز الثابتة عند 20%:**
+    - تحديث `calculateCompletionPercentage()` في rfpService.ts لحساب النسبة بناءً على currentWizardStep وعدد الأقسام والبنود
+  - **إصلاح وحدات القياس وتطبيع وحدات الذكاء الاصطناعي:**
+    - إضافة وحدات جديدة: year, person, license إلى UnitOfMeasure type
+    - إضافة ترجمات الوحدات الجديدة في ar.json و en.json
+    - إضافة normalizeUnit() في AiBoqGenerator.vue لتحويل وحدات AI العربية/الخام إلى مفاتيح الفرونت إند
+  - **إضافة مكون AiCriteriaSuggester (الخطوة 2):**
+    - زر "اقتراح معايير بالذكاء الاصطناعي" يولد معايير تقييم مناسبة للمشروع
+    - يعرض المعايير المقترحة مع أوزانها ووصفها
+    - زر "تطبيق المعايير" يضيفها مباشرة إلى النموذج
+  - **إضافة مكون AiComplianceChecker (الخطوة 6):**
+    - فحص امتثال الكراسة لنظام المنافسات والمشتريات الحكومية
+    - يعرض نتائج الفحص مع درجة الامتثال (نسبة مئوية)
+    - تصنيف النتائج: ناجح/تحذير/فشل مع توصيات
+  - **إضافة مكون AiAttachmentRecommender (الخطوة 5):**
+    - اقتراح المرفقات الإلزامية المناسبة بناءً على نوع المشروع
+    - زر "تطبيق التوصيات" يحدد المرفقات المقترحة تلقائياً
+- **الملفات المعدلة/المضافة:**
+  - `frontend/src/components/rfp/AiCriteriaSuggester.vue` (جديد)
+  - `frontend/src/components/rfp/AiComplianceChecker.vue` (جديد)
+  - `frontend/src/components/rfp/AiAttachmentRecommender.vue` (جديد)
+  - `frontend/src/components/rfp/AiBoqGenerator.vue` (معدل)
+  - `frontend/src/components/rfp/Step2Settings.vue` (معدل)
+  - `frontend/src/components/rfp/Step3Content.vue` (معدل)
+  - `frontend/src/components/rfp/Step4Boq.vue` (معدل)
+  - `frontend/src/components/rfp/Step5Attachments.vue` (معدل)
+  - `frontend/src/components/rfp/Step6Review.vue` (معدل)
+  - `frontend/src/services/rfpService.ts` (معدل)
+  - `frontend/src/types/rfp.ts` (معدل)
+  - `frontend/src/locales/ar.json` (معدل)
+  - `frontend/src/locales/en.json` (معدل)
+- **النشر:** ✅ تم النشر بنجاح على الخادم
+- **Commit:** `6203a50` - feat: enhance RFP creation flow with AI integration and bug fixes
+
 ### 2026-04-01 - TASK-1008: إصلاح مشكلة DbUpdateConcurrencyException في حفظ الأقسام المستخرجة (Fix Concurrency Issue in Upload & Extract Flow)
 - **الحالة:** ✅ مكتمل
 - **ما تم إنجازه:**
