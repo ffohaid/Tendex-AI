@@ -44,8 +44,6 @@ public sealed class TechnicalEvaluationRepository : ITechnicalEvaluationReposito
     public async Task<TechnicalEvaluation?> GetByIdWithScoresAsync(
         Guid id, CancellationToken cancellationToken = default)
     {
-        // NOTE: Do NOT use AsNoTracking here — this query is used by
-        // SubmitTechnicalScoreCommandHandler which modifies the entity.
         return await _context.TechnicalEvaluations
             .Include(e => e.Scores)
             .Include(e => e.AiScores)
@@ -64,8 +62,6 @@ public sealed class TechnicalEvaluationRepository : ITechnicalEvaluationReposito
     public async Task<TechnicalEvaluation?> GetByCompetitionIdWithScoresAsync(
         Guid competitionId, CancellationToken cancellationToken = default)
     {
-        // NOTE: Do NOT use AsNoTracking here — this query is used for
-        // modification operations (score submission, completion, etc.).
         return await _context.TechnicalEvaluations
             .Include(e => e.Scores)
             .Include(e => e.AiScores)
@@ -86,6 +82,16 @@ public sealed class TechnicalEvaluationRepository : ITechnicalEvaluationReposito
         await _context.TechnicalEvaluations.AddAsync(evaluation, cancellationToken);
     }
 
+    /// <summary>
+    /// Explicitly adds a TechnicalScore entity to the DbContext as Added.
+    /// This avoids the issue where adding a score via the navigation property
+    /// collection (_scores.Add) causes EF Core to mark it as Modified instead of Added.
+    /// </summary>
+    public async Task AddScoreAsync(TechnicalScore score, CancellationToken cancellationToken = default)
+    {
+        await _context.Set<TechnicalScore>().AddAsync(score, cancellationToken);
+    }
+
     public void Update(TechnicalEvaluation evaluation)
     {
         _context.TechnicalEvaluations.Update(evaluation);
@@ -93,44 +99,46 @@ public sealed class TechnicalEvaluationRepository : ITechnicalEvaluationReposito
 
     public async Task SaveChangesAsync(CancellationToken cancellationToken = default)
     {
-        // Debug: log all tracked entity states before saving
+        // Fix entity states: entities added via navigation property collections
+        // may be incorrectly tracked as Modified instead of Added.
+        // Detect and correct this before saving.
         foreach (var entry in _context.ChangeTracker.Entries())
         {
-            if (entry.State != EntityState.Unchanged)
+            if (entry.State == EntityState.Modified)
             {
-                _logger.LogWarning(
-                    "EF ChangeTracker: Entity={EntityType}, State={State}, PK={PrimaryKey}",
-                    entry.Entity.GetType().Name,
-                    entry.State,
-                    entry.Properties.FirstOrDefault(p => p.Metadata.IsPrimaryKey())?.CurrentValue);
+                // Check if this entity actually exists in the database
+                // by comparing original values - if all original values are default,
+                // this is a new entity that should be Added
+                var pkProp = entry.Properties.FirstOrDefault(p => p.Metadata.IsPrimaryKey());
+                if (pkProp != null)
+                {
+                    var pkValue = pkProp.CurrentValue;
+                    _logger.LogInformation(
+                        "Checking Modified entity: {EntityType}, PK={PK}",
+                        entry.Entity.GetType().Name, pkValue);
+
+                    // For entities that were added via navigation property but marked as Modified,
+                    // check if they exist in the database
+                    if (entry.Entity is TechnicalScore)
+                    {
+                        var scoreId = (Guid)pkValue!;
+                        var existsInDb = await _context.Set<TechnicalScore>()
+                            .AsNoTracking()
+                            .AnyAsync(s => s.Id == scoreId, cancellationToken);
+
+                        if (!existsInDb)
+                        {
+                            _logger.LogWarning(
+                                "Correcting entity state from Modified to Added: {EntityType}, PK={PK}",
+                                entry.Entity.GetType().Name, pkValue);
+                            entry.State = EntityState.Added;
+                        }
+                    }
+                }
             }
         }
 
-        try
-        {
-            await _context.SaveChangesAsync(cancellationToken);
-        }
-        catch (DbUpdateConcurrencyException ex)
-        {
-            foreach (var entry in ex.Entries)
-            {
-                _logger.LogError(
-                    "Concurrency conflict: Entity={EntityType}, State={State}",
-                    entry.Entity.GetType().Name,
-                    entry.State);
-
-                var databaseValues = await entry.GetDatabaseValuesAsync(cancellationToken);
-                if (databaseValues == null)
-                {
-                    _logger.LogError("Entity does NOT exist in database (was expected to exist for update)");
-                }
-                else
-                {
-                    _logger.LogError("Entity EXISTS in database. Current DB values available.");
-                }
-            }
-            throw;
-        }
+        await _context.SaveChangesAsync(cancellationToken);
     }
 
     public void Dispose()

@@ -20,6 +20,9 @@ public interface ITechnicalEvaluationRepository
 
     Task AddAsync(TechnicalEvaluation evaluation, CancellationToken cancellationToken = default);
 
+    /// <summary>Explicitly adds a TechnicalScore entity as Added to avoid EF Core tracking issues.</summary>
+    Task AddScoreAsync(TechnicalScore score, CancellationToken cancellationToken = default);
+
     void Update(TechnicalEvaluation evaluation);
 
     Task SaveChangesAsync(CancellationToken cancellationToken = default);

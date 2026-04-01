@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using TendexAI.Domain.Entities.Evaluation;
 using TendexAI.Infrastructure.MultiTenancy;
 
@@ -11,11 +12,15 @@ namespace TendexAI.Infrastructure.Persistence.Repositories;
 public sealed class FinancialEvaluationRepository : IFinancialEvaluationRepository, IDisposable
 {
     private readonly TenantDbContext _context;
+    private readonly ILogger<FinancialEvaluationRepository> _logger;
     private bool _disposed;
 
-    public FinancialEvaluationRepository(ITenantDbContextFactory tenantDbContextFactory)
+    public FinancialEvaluationRepository(
+        ITenantDbContextFactory tenantDbContextFactory,
+        ILogger<FinancialEvaluationRepository> logger)
     {
         _context = tenantDbContextFactory.CreateDbContext();
+        _logger = logger;
     }
 
     public async Task<FinancialEvaluation?> GetByIdAsync(
@@ -86,6 +91,53 @@ public sealed class FinancialEvaluationRepository : IFinancialEvaluationReposito
 
     public async Task SaveChangesAsync(CancellationToken cancellationToken = default)
     {
+        // Fix entity states: entities added via navigation property collections
+        // may be incorrectly tracked as Modified instead of Added.
+        foreach (var entry in _context.ChangeTracker.Entries())
+        {
+            if (entry.State == EntityState.Modified)
+            {
+                if (entry.Entity is FinancialScore)
+                {
+                    var pkProp = entry.Properties.FirstOrDefault(p => p.Metadata.IsPrimaryKey());
+                    if (pkProp != null)
+                    {
+                        var scoreId = (Guid)pkProp.CurrentValue!;
+                        var existsInDb = await _context.Set<FinancialScore>()
+                            .AsNoTracking()
+                            .AnyAsync(s => s.Id == scoreId);
+
+                        if (!existsInDb)
+                        {
+                            _logger.LogWarning(
+                                "Correcting entity state from Modified to Added: {EntityType}, PK={PK}",
+                                entry.Entity.GetType().Name, scoreId);
+                            entry.State = EntityState.Added;
+                        }
+                    }
+                }
+                else if (entry.Entity is FinancialOfferItem)
+                {
+                    var pkProp = entry.Properties.FirstOrDefault(p => p.Metadata.IsPrimaryKey());
+                    if (pkProp != null)
+                    {
+                        var itemId = (Guid)pkProp.CurrentValue!;
+                        var existsInDb = await _context.Set<FinancialOfferItem>()
+                            .AsNoTracking()
+                            .AnyAsync(i => i.Id == itemId);
+
+                        if (!existsInDb)
+                        {
+                            _logger.LogWarning(
+                                "Correcting entity state from Modified to Added: {EntityType}, PK={PK}",
+                                entry.Entity.GetType().Name, itemId);
+                            entry.State = EntityState.Added;
+                        }
+                    }
+                }
+            }
+        }
+
         await _context.SaveChangesAsync(cancellationToken);
     }
 
