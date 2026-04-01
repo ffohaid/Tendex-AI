@@ -3,8 +3,8 @@
  * Step 5: Attachments.
  *
  * Manages file uploads for the RFP booklet with:
+ * - Interactive checkboxes for selecting required attachment types
  * - Drag & Drop file upload zone
- * - Required/optional attachment tracking
  * - File type and size validation
  * - Upload progress indication
  */
@@ -44,11 +44,14 @@ const requiredAttachments = computed(() => [
   { key: 'nda_template', label: t('rfp.requiredAttachments.ndaTemplate') },
 ])
 
-/** Check if a required attachment has been uploaded */
-function isRequiredAttachmentUploaded(key: string): boolean {
-  return rfpStore.formData.attachments.files.some(
-    (f) => f.name.toLowerCase().includes(key.replace(/_/g, ' ')) || f.id === key,
-  )
+/** Check if a required attachment type is selected */
+function isRequiredAttachmentSelected(key: string): boolean {
+  return rfpStore.formData.attachments.requiredAttachmentTypes?.includes(key) ?? false
+}
+
+/** Toggle a required attachment type selection */
+function toggleRequiredType(key: string) {
+  rfpStore.toggleRequiredAttachmentType(key)
 }
 
 /** Allowed file types */
@@ -144,6 +147,11 @@ function removeAttachment(id: string) {
   rfpStore.removeAttachment(id)
 }
 
+/** Count selected required attachments */
+const selectedCount = computed(() => {
+  return rfpStore.formData.attachments.requiredAttachmentTypes?.length ?? 0
+})
+
 defineExpose({
   validate: async () => {
     /**
@@ -170,26 +178,39 @@ defineExpose({
       </p>
     </div>
 
-    <!-- Required attachments checklist -->
+    <!-- Required attachments checklist (interactive checkboxes) -->
     <div class="rounded-lg border border-surface-dim bg-surface-muted p-4">
-      <h3 class="mb-3 text-sm font-bold text-secondary">
-        {{ t('rfp.labels.requiredAttachments') }}
-      </h3>
-      <div class="grid grid-cols-1 gap-2 sm:grid-cols-2">
-        <div
+      <div class="mb-3 flex items-center justify-between">
+        <h3 class="text-sm font-bold text-secondary">
+          {{ t('rfp.labels.requiredAttachments') }}
+        </h3>
+        <span class="text-xs text-tertiary">
+          {{ selectedCount }} / {{ requiredAttachments.length }}
+        </span>
+      </div>
+      <p class="mb-4 text-xs text-tertiary">
+        {{ $t('rfp.messages.selectRequiredAttachments', 'حدد المستندات الإلزامية التي يجب على المتنافسين تقديمها مع عروضهم') }}
+      </p>
+      <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
+        <label
           v-for="req in requiredAttachments"
           :key="req.key"
-          class="flex items-center gap-2 text-sm"
+          class="flex cursor-pointer items-center gap-3 rounded-lg border border-surface-dim bg-white p-3 transition-all hover:border-primary/40 hover:bg-primary/5"
+          :class="{ 'border-primary bg-primary/5': isRequiredAttachmentSelected(req.key) }"
         >
-          <i
-            :class="isRequiredAttachmentUploaded(req.key)
-              ? 'pi pi-check-circle text-success'
-              : 'pi pi-circle text-tertiary'"
-          ></i>
-          <span :class="isRequiredAttachmentUploaded(req.key) ? 'text-secondary' : 'text-tertiary'">
+          <input
+            type="checkbox"
+            :checked="isRequiredAttachmentSelected(req.key)"
+            class="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
+            @change="toggleRequiredType(req.key)"
+          />
+          <span
+            class="text-sm"
+            :class="isRequiredAttachmentSelected(req.key) ? 'font-medium text-secondary' : 'text-tertiary'"
+          >
             {{ req.label }}
           </span>
-        </div>
+        </label>
       </div>
     </div>
 

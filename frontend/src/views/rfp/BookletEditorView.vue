@@ -382,7 +382,16 @@ async function submitForApproval() {
     // Save changes first
     await saveChanges()
 
-    // Initiate the workflow
+    // If competition is in Draft status, transition to UnderPreparation first
+    if (competitionStatus.value === 0) {
+      await httpPost(`/v1/competitions/${competitionId.value}/status`, {
+        newStatus: 1, // UnderPreparation
+        reason: null,
+      })
+      competitionStatus.value = 1
+    }
+
+    // Now initiate the approval workflow from UnderPreparation to PendingApproval
     await initiateWorkflow({
       competitionId: competitionId.value,
       fromStatus: 1, // UnderPreparation

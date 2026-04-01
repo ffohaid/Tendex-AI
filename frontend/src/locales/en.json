@@ -449,6 +449,8 @@
       "noBoqItems": "No items in the bill of quantities yet",
       "noCriteria": "No evaluation criteria yet. Add a new criterion to start.",
       "criteriaWeightTotal": "Total criteria weight",
+      "selectRequiredAttachments": "Select the mandatory documents that bidders must submit with their proposals",
+      "selectedCount": "document(s) selected",
       "dropFilesHere": "Drag and drop files here or click to browse",
       "allowedFileTypes": "PDF, Word, Excel, PNG, JPEG",
       "maxFileSize": "Maximum file size: 25 MB",

@@ -449,6 +449,8 @@
       "noBoqItems": "لا توجد بنود في جدول الكميات بعد",
       "noCriteria": "لا توجد معايير تقييم بعد. أضف معياراً جديداً للبدء.",
       "criteriaWeightTotal": "مجموع أوزان المعايير",
+      "selectRequiredAttachments": "حدد المستندات الإلزامية التي يجب على المتنافسين تقديمها مع عروضهم",
+      "selectedCount": "مستند محدد",
       "dropFilesHere": "اسحب الملفات وأفلتها هنا أو انقر للاختيار",
       "allowedFileTypes": "PDF, Word, Excel, PNG, JPEG",
       "maxFileSize": "الحد الأقصى لحجم الملف: 25 ميجابايت",

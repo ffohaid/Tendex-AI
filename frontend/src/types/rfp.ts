@@ -149,6 +149,8 @@ export interface RfpBoq {
 /** Step 5: Attachments */
 export interface RfpAttachments {
   files: RfpAttachment[]
+  /** Keys of required attachment types selected by the user */
+  requiredAttachmentTypes: string[]
 }
 
 /** Complete RFP form data */

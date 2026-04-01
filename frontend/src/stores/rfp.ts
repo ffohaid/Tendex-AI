@@ -79,6 +79,7 @@ function createEmptyFormData(): RfpFormData {
     },
     attachments: {
       files: [],
+      requiredAttachmentTypes: [],
     },
     status: 'draft',
     createdAt: new Date().toISOString(),
@@ -386,6 +387,17 @@ export const useRfpStore = defineStore('rfp', () => {
     isDirty.value = true
   }
 
+  function toggleRequiredAttachmentType(key: string) {
+    const types = formData.value.attachments.requiredAttachmentTypes
+    const idx = types.indexOf(key)
+    if (idx >= 0) {
+      types.splice(idx, 1)
+    } else {
+      types.push(key)
+    }
+    isDirty.value = true
+  }
+
   /* ---------------------------------------------------------------- */
   /*  Actions: Auto-save (every 30 seconds)                           */
   /* ---------------------------------------------------------------- */
@@ -685,6 +697,7 @@ export const useRfpStore = defineStore('rfp', () => {
     /* Attachments */
     addAttachment,
     removeAttachment,
+    toggleRequiredAttachmentType,
 
     /* Auto-save */
     startAutoSave,
