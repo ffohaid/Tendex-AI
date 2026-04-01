@@ -36,7 +36,7 @@ import type {
   InquiryResponse,
 } from '@/types/inquiry'
 
-const { t, locale } = useI18n()
+const { locale } = useI18n()
 const { formatDateTime, formatNumber } = useFormatters()
 
 /* ------------------------------------------------------------------ */
@@ -201,10 +201,10 @@ async function loadCompetitions(): Promise<void> {
   try {
     const result = await fetchRfpList({ page: 1, pageSize: 100 })
     if (result.success && result.data) {
-      competitions.value = result.data.items.map((c: Record<string, unknown>) => ({
-        id: String(c.id || ''),
-        projectName: String(c.projectName || c.projectNameAr || ''),
-        referenceNumber: String(c.referenceNumber || ''),
+      competitions.value = result.data.items.map((c) => ({
+        id: c.id,
+        projectName: c.projectName || '',
+        referenceNumber: c.referenceNumber || '',
       }))
     }
   } catch {
@@ -214,13 +214,13 @@ async function loadCompetitions(): Promise<void> {
 
 async function loadCommittees(): Promise<void> {
   try {
-    const result = await fetchCommittees({ page: 1, pageSize: 50 })
+    const result = await fetchCommittees({ pageNumber: 1, pageSize: 50 })
     if (result?.items) {
-      committees.value = result.items.map((c: Record<string, unknown>) => ({
-        id: String(c.id || ''),
-        nameAr: String(c.nameAr || c.name || ''),
-        nameEn: String(c.nameEn || c.name || ''),
-        members: Array.isArray(c.members) ? c.members : [],
+      committees.value = result.items.map((c) => ({
+        id: c.id,
+        nameAr: c.nameAr || '',
+        nameEn: c.nameEn || '',
+        members: [],
       }))
     }
   } catch {
