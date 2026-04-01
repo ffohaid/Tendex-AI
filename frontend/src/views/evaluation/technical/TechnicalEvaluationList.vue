@@ -79,7 +79,19 @@ async function handleStartEvaluation(competitionId: string, event: Event) {
     // Navigate to evaluation detail
     router.push({ name: 'TechnicalEvaluationDetail', params: { id: competitionId } })
   } catch (e: any) {
-    startError.value = e?.response?.data?.detail || e?.message || 'حدث خطأ أثناء بدء التقييم'
+    const rawError = e?.response?.data?.detail || e?.message || ''
+    // Translate common backend error messages to Arabic when in RTL mode
+    if (isRtl.value) {
+      const errorTranslations: Record<string, string> = {
+        'Competition must be in OffersClosed or TechnicalAnalysis status to start technical evaluation.': 'يجب أن تكون المنافسة في حالة "إغلاق العروض" أو "التحليل الفني" لبدء التقييم الفني.',
+        'At least 2 supplier offers are required': 'يجب تسجيل عرضين على الأقل قبل بدء التقييم الفني',
+        'Technical evaluation already exists': 'التقييم الفني موجود بالفعل لهذه المنافسة',
+        'Financial evaluation already exists': 'التقييم المالي موجود بالفعل لهذه المنافسة',
+      }
+      startError.value = Object.entries(errorTranslations).find(([key]) => rawError.includes(key))?.[1] || rawError || 'حدث خطأ أثناء بدء التقييم'
+    } else {
+      startError.value = rawError || 'An error occurred while starting the evaluation'
+    }
   } finally {
     startingEvalId.value = null
   }

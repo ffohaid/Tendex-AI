@@ -45,7 +45,7 @@ interface BackendCompetitionItem {
   projectNameAr: string
   projectNameEn: string
   competitionType: string
-  status: string
+  status: string | number
   creationMethod: string
   estimatedBudget: number | null
   currency: string
@@ -57,21 +57,45 @@ interface BackendCompetitionItem {
   createdBy: string | null
 }
 
-function mapStatusToStage(status: string): 'technical' | 'financial' | 'completed' {
+function mapStatusToStage(status: string | number): 'technical' | 'financial' | 'completed' {
+  const s = typeof status === 'number' ? status : parseInt(status, 10)
+  if (!isNaN(s)) {
+    // Numeric status from backend CompetitionStatus enum
+    if (s <= 7) return 'technical'       // Draft(0) → OffersClosed(7)
+    if (s === 8) return 'technical'       // TechnicalAnalysis
+    if (s === 9) return 'technical'       // TechnicalAnalysisCompleted
+    if (s === 10) return 'financial'      // FinancialAnalysis
+    if (s === 11) return 'financial'      // FinancialAnalysisCompleted
+    return 'completed'                    // AwardNotification(12)+
+  }
+  // Fallback for string status names
   switch (status) {
+    case 'TechnicalAnalysis':
     case 'TechnicalEvaluation':
       return 'technical'
+    case 'FinancialAnalysis':
     case 'FinancialEvaluation':
       return 'financial'
     case 'Completed':
     case 'Awarded':
+    case 'AwardNotification':
+    case 'AwardApproved':
       return 'completed'
     default:
       return 'technical'
   }
 }
 
-function mapToEvalStatus(status: string): 'pending' | 'in_progress' | 'completed' | 'approved' {
+function mapToEvalStatus(status: string | number): 'pending' | 'in_progress' | 'completed' | 'approved' {
+  const s = typeof status === 'number' ? status : parseInt(status, 10)
+  if (!isNaN(s)) {
+    // Numeric status from backend CompetitionStatus enum
+    if (s <= 7) return 'pending'          // Draft(0) → OffersClosed(7)
+    if (s === 8) return 'in_progress'     // TechnicalAnalysis
+    if (s === 9) return 'completed'       // TechnicalAnalysisCompleted
+    if (s >= 10) return 'approved'        // FinancialAnalysis(10)+ means tech is approved
+  }
+  // Fallback for string status names
   switch (status) {
     case 'Draft':
     case 'UnderPreparation':
@@ -80,12 +104,17 @@ function mapToEvalStatus(status: string): 'pending' | 'in_progress' | 'completed
     case 'ReceivingOffers':
     case 'OffersClosed':
       return 'pending'
-    case 'TechnicalEvaluation':
+    case 'TechnicalAnalysis':
       return 'in_progress'
-    case 'FinancialEvaluation':
+    case 'TechnicalAnalysisCompleted':
+      return 'completed'
+    case 'FinancialAnalysis':
+    case 'FinancialAnalysisCompleted':
+    case 'AwardNotification':
+    case 'AwardApproved':
     case 'Completed':
     case 'Awarded':
-      return 'completed'
+      return 'approved'
     default:
       return 'pending'
   }
@@ -106,9 +135,19 @@ export async function fetchCompetitionEvaluations(): Promise<CompetitionEvaluati
   return items.map((item): CompetitionEvaluation => {
     const stage = mapStatusToStage(item.status)
     const techStatus = mapToEvalStatus(item.status)
-    const finStatus = stage === 'financial' ? 'in_progress' as const
-      : stage === 'completed' ? 'completed' as const
-      : 'pending' as const
+    // Determine financial status based on numeric status
+    const numStatus = typeof item.status === 'number' ? item.status : parseInt(String(item.status), 10)
+    let finStatus: 'pending' | 'in_progress' | 'completed' | 'approved' = 'pending'
+    if (!isNaN(numStatus)) {
+      if (numStatus === 10) finStatus = 'in_progress'           // FinancialAnalysis
+      else if (numStatus === 11) finStatus = 'completed'        // FinancialAnalysisCompleted
+      else if (numStatus >= 12) finStatus = 'approved'          // Award stages+
+      else finStatus = 'pending'
+    } else {
+      finStatus = stage === 'financial' ? 'in_progress'
+        : stage === 'completed' ? 'completed'
+        : 'pending'
+    }
 
     return {
       id: item.id,
