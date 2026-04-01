@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using TendexAI.Domain.Entities.Evaluation;
 using TendexAI.Infrastructure.MultiTenancy;
 
@@ -7,19 +8,19 @@ namespace TendexAI.Infrastructure.Persistence.Repositories;
 /// <summary>
 /// Repository implementation for TechnicalEvaluation aggregate root.
 /// Operates against the tenant-specific database using ITenantDbContextFactory.
-///
-/// Performance optimizations (TASK-703):
-/// - AsNoTracking() on read-only queries to reduce change tracker overhead.
-/// - AsSplitQuery() retained on multi-Include queries.
 /// </summary>
 public sealed class TechnicalEvaluationRepository : ITechnicalEvaluationRepository, IDisposable
 {
     private readonly TenantDbContext _context;
+    private readonly ILogger<TechnicalEvaluationRepository> _logger;
     private bool _disposed;
 
-    public TechnicalEvaluationRepository(ITenantDbContextFactory tenantDbContextFactory)
+    public TechnicalEvaluationRepository(
+        ITenantDbContextFactory tenantDbContextFactory,
+        ILogger<TechnicalEvaluationRepository> logger)
     {
         _context = tenantDbContextFactory.CreateDbContext();
+        _logger = logger;
     }
 
     public async Task<TechnicalEvaluation?> GetByIdAsync(
@@ -92,7 +93,44 @@ public sealed class TechnicalEvaluationRepository : ITechnicalEvaluationReposito
 
     public async Task SaveChangesAsync(CancellationToken cancellationToken = default)
     {
-        await _context.SaveChangesAsync(cancellationToken);
+        // Debug: log all tracked entity states before saving
+        foreach (var entry in _context.ChangeTracker.Entries())
+        {
+            if (entry.State != EntityState.Unchanged)
+            {
+                _logger.LogWarning(
+                    "EF ChangeTracker: Entity={EntityType}, State={State}, PK={PrimaryKey}",
+                    entry.Entity.GetType().Name,
+                    entry.State,
+                    entry.Properties.FirstOrDefault(p => p.Metadata.IsPrimaryKey())?.CurrentValue);
+            }
+        }
+
+        try
+        {
+            await _context.SaveChangesAsync(cancellationToken);
+        }
+        catch (DbUpdateConcurrencyException ex)
+        {
+            foreach (var entry in ex.Entries)
+            {
+                _logger.LogError(
+                    "Concurrency conflict: Entity={EntityType}, State={State}",
+                    entry.Entity.GetType().Name,
+                    entry.State);
+
+                var databaseValues = await entry.GetDatabaseValuesAsync(cancellationToken);
+                if (databaseValues == null)
+                {
+                    _logger.LogError("Entity does NOT exist in database (was expected to exist for update)");
+                }
+                else
+                {
+                    _logger.LogError("Entity EXISTS in database. Current DB values available.");
+                }
+            }
+            throw;
+        }
     }
 
     public void Dispose()
