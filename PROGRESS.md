@@ -24,6 +24,50 @@
 
 *يرجى إضافة أحدث مهمة منجزة في أعلى هذه القائمة.*
 
+### 2026-04-01 - TASK-1007: مراجعة وتحسين نظام مسارات الاعتماد (Workflow Approval System Review & Enhancement)
+- **الحالة:** ✅ مكتمل
+- **ما تم إنجازه:**
+  - **إعادة تصميم واجهة مصمم المسارات (WorkflowDesignerView.vue):**
+    - إعادة تصميم كاملة للواجهة لتكون واضحة ومفهومة للمستخدم غير التقني
+    - تقسيم الواجهة لأقسام منطقية: المعلومات الأساسية، مرحلة التفعيل، خطوات الاعتماد
+    - إضافة شرح وصفي لكل قسم وأيقونات مساعدة (?) لكل حقل
+    - إضافة رسم بياني بصري (Visual Flow) يعرض تدفق الخطوات
+    - إضافة ملخص "المعتمد المطلوب" لكل خطوة
+    - تحويل الساعات لأيام تلقائياً (يعادل: X يوم)
+    - إضافة أوصاف واضحة لكل دور وظيفي
+    - دعم تعديل الخطوات في وضع التعديل (كان محظوراً سابقاً)
+    - إضافة أزرار نقل الخطوات لأعلى/لأسفل
+  - **تحسين واجهة قائمة المسارات (WorkflowListView.vue):**
+    - إعادة تصميم البطاقات لتعرض معلومات أكثر وضوحاً
+    - إضافة إحصائيات (إجمالي، نشطة، غير نشطة)
+    - إضافة بحث وتصفية حسب الحالة
+    - إضافة زر حذف مع تأكيد
+    - عرض مسار الاعتماد بشكل بصري (المراقب المالي ← صاحب الصلاحية)
+  - **تحسينات الباك إند (ApprovalWorkflowService.cs):**
+    - إضافة التحقق من صلاحية المعتمد عبر CompetitionPermissionService
+    - تفعيل منطق الخطوات المشروطة (ConditionExpression evaluation)
+    - إضافة تحديث حالة المنافسة تلقائياً عند اكتمال جميع خطوات الاعتماد
+    - إنشاء IWorkflowConditionEvaluator لتقييم الشروط
+    - إصلاح استخدام GetByIdForUpdateAsync بدلاً من GetByIdAsync للـ tracking
+  - **تحسينات API (ApprovalWorkflowEndpoints.cs):**
+    - دعم تعديل الخطوات في PUT endpoint (full replacement strategy)
+    - إضافة DELETE endpoint مع حذف ناعم (Soft Delete)
+    - إضافة ClearSteps method في WorkflowDefinition entity
+  - **تحسينات خدمة الواجهة الأمامية (workflowService.ts):**
+    - إضافة deleteWorkflowDefinition function
+    - تحديث UpdateWorkflowDefinitionRequest لدعم الخطوات
+  - **اختبارات شاملة على الإنتاج:**
+    - اختبار إنشاء مسار جديد بخطوتين - نجاح
+    - اختبار تعديل مسار موجود مع تحميل الخطوات - نجاح
+    - اختبار حذف مسار (حذف ناعم) - نجاح
+    - اختبار تفعيل/تعطيل المسارات - نجاح
+    - اختبار التكامل مع محرر الكراسة - نجاح
+    - اختبار API مع Multi-Tenant (X-Tenant-Id header) - نجاح
+- **الملفات المعدلة:**
+  - Frontend: `WorkflowDesignerView.vue`, `WorkflowListView.vue`, `workflowService.ts`
+  - Backend: `ApprovalWorkflowService.cs`, `IApprovalWorkflowService.cs`, `ApprovalWorkflowEndpoints.cs`, `WorkflowDefinition.cs`, `DependencyInjection.cs`
+- **النشر:** ✅ تم النشر بنجاح على خادم الإنتاج (187.124.41.141)
+
 ### 2026-03-31 - TASK-1006: نظام اعتماد الكراسة ومحرك سير العمل (Booklet Approval Workflow Engine)
 - **الحالة:** ✅ مكتمل
 - **ما تم إنجازه:**
