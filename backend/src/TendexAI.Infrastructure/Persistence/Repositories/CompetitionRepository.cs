@@ -134,6 +134,36 @@ public sealed class CompetitionRepository : ICompetitionRepository, IDisposable
         _context.ChangeTracker.Clear();
     }
 
+    public async Task AddSectionDirectAsync(RfpSection section, CancellationToken cancellationToken = default)
+    {
+        await _context.RfpSections.AddAsync(section, cancellationToken);
+        await _context.SaveChangesAsync(cancellationToken);
+        _context.ChangeTracker.Clear();
+    }
+
+    public async Task AddSectionsDirectAsync(IEnumerable<RfpSection> sections, CancellationToken cancellationToken = default)
+    {
+        await _context.RfpSections.AddRangeAsync(sections, cancellationToken);
+        await _context.SaveChangesAsync(cancellationToken);
+        _context.ChangeTracker.Clear();
+    }
+
+    public async Task<int> GetSectionCountAsync(Guid competitionId, CancellationToken cancellationToken = default)
+    {
+        return await _context.RfpSections
+            .CountAsync(s => s.CompetitionId == competitionId, cancellationToken);
+    }
+
+    public async Task<bool> IsCompetitionModifiableAsync(Guid competitionId, CancellationToken cancellationToken = default)
+    {
+        return await _context.Competitions
+            .AsNoTracking()
+            .AnyAsync(c => c.Id == competitionId
+                && !c.IsDeleted
+                && (c.Status == CompetitionStatus.Draft || c.Status == CompetitionStatus.UnderPreparation),
+                cancellationToken);
+    }
+
     public void Dispose()
     {
         if (!_disposed)

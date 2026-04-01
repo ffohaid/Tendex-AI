@@ -46,4 +46,26 @@ public interface ICompetitionRepository
     /// Used in retry scenarios to avoid stale concurrency tokens.
     /// </summary>
     void ClearChangeTracker();
+
+    /// <summary>
+    /// Adds a single section directly to the database without loading the Competition aggregate.
+    /// This bypasses the Competition concurrency token check.
+    /// </summary>
+    Task AddSectionDirectAsync(RfpSection section, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Adds multiple sections directly to the database without loading the Competition aggregate.
+    /// This bypasses the Competition concurrency token check.
+    /// </summary>
+    Task AddSectionsDirectAsync(IEnumerable<RfpSection> sections, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Gets the current count of sections for a competition.
+    /// </summary>
+    Task<int> GetSectionCountAsync(Guid competitionId, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Checks if a competition exists and is in a modifiable state (Draft or UnderPreparation).
+    /// </summary>
+    Task<bool> IsCompetitionModifiableAsync(Guid competitionId, CancellationToken cancellationToken = default);
 }
