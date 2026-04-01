@@ -235,8 +235,9 @@ public sealed class TriggerAiOfferAnalysisCommandHandler
                         }
                     }
 
-                    // Persist the analysis
+                    // Persist the analysis (save immediately per offer)
                     await _analysisRepository.AddAsync(aiAnalysis, cancellationToken);
+                    await _analysisRepository.SaveChangesAsync(cancellationToken);
 
                     offerSummaries.Add(new AiOfferAnalysisSummaryItemDto(
                         offer.Id,

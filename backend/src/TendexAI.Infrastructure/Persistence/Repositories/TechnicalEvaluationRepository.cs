@@ -134,6 +134,21 @@ public sealed class TechnicalEvaluationRepository : ITechnicalEvaluationReposito
                             entry.State = EntityState.Added;
                         }
                     }
+                    else if (entry.Entity is AiTechnicalScore)
+                    {
+                        var scoreId = (Guid)pkValue!;
+                        var existsInDb = await _context.Set<AiTechnicalScore>()
+                            .AsNoTracking()
+                            .AnyAsync(s => s.Id == scoreId, cancellationToken);
+
+                        if (!existsInDb)
+                        {
+                            _logger.LogWarning(
+                                "Correcting entity state from Modified to Added: {EntityType}, PK={PK}",
+                                entry.Entity.GetType().Name, pkValue);
+                            entry.State = EntityState.Added;
+                        }
+                    }
                 }
             }
         }
