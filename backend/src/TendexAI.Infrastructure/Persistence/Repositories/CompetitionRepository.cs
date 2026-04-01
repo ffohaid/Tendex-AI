@@ -129,6 +129,11 @@ public sealed class CompetitionRepository : ICompetitionRepository, IDisposable
         await _context.SaveChangesAsync(cancellationToken);
     }
 
+    public void ClearChangeTracker()
+    {
+        _context.ChangeTracker.Clear();
+    }
+
     public void Dispose()
     {
         if (!_disposed)

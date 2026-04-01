@@ -40,4 +40,10 @@ public interface ICompetitionRepository
     void Update(Competition competition);
 
     Task SaveChangesAsync(CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Clears the change tracker to allow fresh entity loading.
+    /// Used in retry scenarios to avoid stale concurrency tokens.
+    /// </summary>
+    void ClearChangeTracker();
 }

@@ -53,6 +53,9 @@ public sealed class BatchAddRfpSectionsCommandHandler
                         "فشل في حفظ الأقسام بسبب تعارض في البيانات. يرجى المحاولة مرة أخرى.");
                 }
 
+                // Clear the change tracker to discard stale entities and concurrency tokens
+                _repository.ClearChangeTracker();
+
                 // Small delay before retry
                 await Task.Delay(200 * attempt, cancellationToken);
             }
