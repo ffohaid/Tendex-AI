@@ -23,7 +23,7 @@ public sealed class CompleteFinancialScoringCommandHandler
     public async Task<Result<FinancialEvaluationDetailDto>> Handle(
         CompleteFinancialScoringCommand request, CancellationToken cancellationToken)
     {
-        var evaluation = await _financialRepo.GetWithScoresAsync(
+        var evaluation = await _financialRepo.GetFullAsync(
             request.CompetitionId, cancellationToken);
 
         if (evaluation is null)

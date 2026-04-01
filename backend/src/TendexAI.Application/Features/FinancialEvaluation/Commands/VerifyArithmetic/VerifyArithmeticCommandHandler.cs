@@ -27,7 +27,7 @@ public sealed class VerifyArithmeticCommandHandler
     public async Task<Result<ArithmeticVerificationResultDto>> Handle(
         VerifyArithmeticCommand request, CancellationToken cancellationToken)
     {
-        var evaluation = await _financialRepo.GetWithItemsAsync(
+        var evaluation = await _financialRepo.GetFullAsync(
             request.CompetitionId, cancellationToken);
 
         if (evaluation is null)
