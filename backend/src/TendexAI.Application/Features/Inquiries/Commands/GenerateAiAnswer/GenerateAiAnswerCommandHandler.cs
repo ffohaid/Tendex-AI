@@ -51,8 +51,8 @@ public sealed class GenerateAiAnswerCommandHandler : IRequestHandler<GenerateAiA
             TenantId = request.TenantId,
             SystemPrompt = systemPrompt,
             UserPrompt = userPrompt,
-            MaxTokens = 2000,
-            Temperature = 0.3f
+            MaxTokensOverride = 2000,
+            TemperatureOverride = 0.3
         };
 
         var aiResponse = await _aiGateway.GenerateCompletionAsync(aiRequest, cancellationToken);
