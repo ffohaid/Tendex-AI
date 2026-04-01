@@ -24,6 +24,55 @@
 
 *يرجى إضافة أحدث مهمة منجزة في أعلى هذه القائمة.*
 
+### 2026-04-01 - Financial Evaluation, Comprehensive Final Evaluation & Award Recommendation
+- **الحالة:** ✅ مكتمل
+- **ما تم إنجازه:**
+  - **إصلاح تقديم التقييم المالي (CompleteFinancialScoring):**
+    - تعديل `CompleteFinancialScoringCommandHandler` لتوليد الدرجات المالية تلقائياً من بيانات الأسعار
+    - تطبيق معادلة الدرجة المالية: (أقل سعر / سعر العرض) × 100
+    - إنشاء `FinancialScore` records تلقائياً لكل عرض مؤهل
+    - حساب الترتيب النهائي بناءً على الدرجة المركبة (70% فني + 30% مالي)
+  - **اختبار التقييم المالي الشامل:**
+    - اختبار جميع التبويبات: مصفوفة المقارنة، التحقق الحسابي، الترتيب النهائي، المحضر
+    - تقديم التقييم المالي بنجاح (الحالة: بانتظار الاعتماد)
+    - اعتماد التقييم المالي بنجاح
+  - **بناء صفحة التقييم الشامل النهائي (Comprehensive Evaluation):**
+    - إنشاء `ComprehensiveEvaluationList.vue` - قائمة المنافسات الجاهزة للتقييم الشامل
+    - إنشاء `ComprehensiveEvaluationDetail.vue` - صفحة التقييم الشامل مع 3 تبويبات:
+      1. **الترتيب النهائي:** جدول الترتيب الشامل مع الدرجات المركبة ورسم بياني بصري
+      2. **توصية الترسية:** عرض المورد الموصى به مع تبرير مفصل وتبرير AI
+      3. **المحضر الشامل:** توليد محضر اجتماع اللجنة بالذكاء الاصطناعي
+  - **تسجيل نقاط نهاية الترسية (Award Endpoints):**
+    - إضافة `MapAwardEndpoints()` في `Program.cs`
+    - توليد توصية الترسية تلقائياً من الترتيب النهائي
+    - توليد تبرير مفصل بالذكاء الاصطناعي يتضمن:
+      - تحليل مقارن بين العروض
+      - أسباب اختيار العرض الأفضل
+      - تقييم المخاطر
+      - التوصية النهائية مع الإشارة للمواد النظامية (المادة 45 من نظام المنافسات)
+  - **إضافة مسارات التنقل والقائمة الجانبية:**
+    - إضافة routes للتقييم الشامل في `router/index.ts`
+    - إضافة رابط التقييم الشامل في `navigation.ts`
+    - إضافة ترجمات عربية وإنجليزية
+  - **النشر:** تم نشر جميع التغييرات على الخادم الإنتاجي بنجاح
+- **الملفات المعدلة/المضافة:**
+  - `backend/src/TendexAI.Application/Features/FinancialEvaluation/Commands/CompleteFinancialScoring/CompleteFinancialScoringCommandHandler.cs` (معدل)
+  - `backend/src/TendexAI.API/Program.cs` (معدل - إضافة MapAwardEndpoints)
+  - `frontend/src/views/evaluation/comprehensive/ComprehensiveEvaluationList.vue` (جديد)
+  - `frontend/src/views/evaluation/comprehensive/ComprehensiveEvaluationDetail.vue` (جديد)
+  - `frontend/src/services/evaluationApi.ts` (معدل - إضافة دوال Award API)
+  - `frontend/src/types/evaluation.ts` (معدل - إضافة أنواع Award)
+  - `frontend/src/router/index.ts` (معدل - إضافة مسارات التقييم الشامل)
+  - `frontend/src/config/navigation.ts` (معدل - إضافة رابط التقييم الشامل)
+  - `frontend/src/locales/ar.json` (معدل)
+  - `frontend/src/locales/en.json` (معدل)
+- **نتائج الاختبار المباشر:**
+  - ✅ التقييم المالي: تقديم واعتماد بنجاح
+  - ✅ الترتيب النهائي: شركة الأفق (88.60) > التقنية المتقدمة (81.80) > الابتكار الرقمي (78.77)
+  - ✅ توصية الترسية: شركة الأفق للاستشارات بمبلغ 1,784,000 ريال
+  - ✅ تبرير AI: تقرير شامل مع مراجع نظامية
+  - ✅ المحضر الشامل: محضر كامل مع أقسام التوقيع
+
 ### 2026-04-01 - Technical Evaluation (Inspection & Assessment) Complete Testing & Fixes
 - **الحالة:** ✅ مكتمل
 - **ما تم إنجازه:**
