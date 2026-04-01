@@ -111,6 +111,19 @@ const routes: RouteRecordRaw[] = [
         component: () => import('@/views/evaluation/comparison/FinancialComparison.vue'),
         meta: { title: 'Tendex AI - Financial Comparison', requiresAuth: true },
       },
+      /* Comprehensive Evaluation & Award Recommendation */
+      {
+        path: 'evaluation/comprehensive',
+        name: 'ComprehensiveEvaluation',
+        component: () => import('@/views/evaluation/comprehensive/ComprehensiveEvaluationList.vue'),
+        meta: { title: 'Tendex AI - Comprehensive Evaluation', requiresAuth: true },
+      },
+      {
+        path: 'evaluation/comprehensive/:id',
+        name: 'ComprehensiveEvaluationDetail',
+        component: () => import('@/views/evaluation/comprehensive/ComprehensiveEvaluationDetail.vue'),
+        meta: { title: 'Tendex AI - Comprehensive Evaluation Detail', requiresAuth: true },
+      },
       /* Approvals / Task Center routes (TASK-902) */
       {
         path: 'approvals',

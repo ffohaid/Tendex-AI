@@ -474,3 +474,36 @@ export function approveMinutes(competitionId: string, minutesId: string): Promis
 export function signMinutes(competitionId: string, minutesId: string): Promise<void> {
   return httpPost<void>(`${COMPETITIONS_BASE}/${competitionId}/minutes/${minutesId}/sign`)
 }
+
+/* ══════════════════════════════════════════════
+ * Award Recommendation & Final Ranking
+ * ══════════════════════════════════════════════ */
+
+import type { AwardRecommendation, FinalRanking } from '@/types/evaluation'
+
+export function fetchFinalRanking(competitionId: string): Promise<FinalRanking> {
+  return httpGet<FinalRanking>(`${COMPETITIONS_BASE}/${competitionId}/award/final-ranking`)
+}
+
+export function fetchAwardRecommendation(competitionId: string): Promise<AwardRecommendation> {
+  return httpGet<AwardRecommendation>(`${COMPETITIONS_BASE}/${competitionId}/award`)
+}
+
+export function generateAwardRecommendation(
+  competitionId: string,
+  technicalWeight: number = 70,
+  financialWeight: number = 30
+): Promise<AwardRecommendation> {
+  return httpPost<AwardRecommendation>(`${COMPETITIONS_BASE}/${competitionId}/award/generate`, {
+    technicalWeight,
+    financialWeight,
+  })
+}
+
+export function approveAward(competitionId: string): Promise<AwardRecommendation> {
+  return httpPost<AwardRecommendation>(`${COMPETITIONS_BASE}/${competitionId}/award/approve`)
+}
+
+export function rejectAward(competitionId: string, reason: string): Promise<AwardRecommendation> {
+  return httpPost<AwardRecommendation>(`${COMPETITIONS_BASE}/${competitionId}/award/reject`, { reason })
+}

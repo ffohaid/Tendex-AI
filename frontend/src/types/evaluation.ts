@@ -483,3 +483,54 @@ export interface DualDate {
   gregorian: string
   hijri: string
 }
+
+/* ──────────────────────────────────────────────
+ * Award Recommendation & Final Ranking
+ * (Aligned with backend AwardDtos.cs)
+ * ────────────────────────────────────────────── */
+
+export const AwardStatus = {
+  Draft: 0,
+  Generated: 1,
+  PendingApproval: 2,
+  Approved: 3,
+  Rejected: 4,
+} as const
+export type AwardStatus = (typeof AwardStatus)[keyof typeof AwardStatus]
+
+export interface AwardRanking {
+  offerId: string
+  supplierName: string
+  rank: number
+  technicalScore: number
+  financialScore: number
+  combinedScore: number
+  totalOfferAmount: number
+}
+
+export interface AwardRecommendation {
+  id: string
+  competitionId: string
+  status: AwardStatus
+  recommendedOfferId: string
+  recommendedSupplierName: string
+  technicalScore: number
+  financialScore: number
+  combinedScore: number
+  totalOfferAmount: number
+  justification: string
+  approvedAt: string | null
+  approvedBy: string | null
+  rejectionReason: string | null
+  rankings: AwardRanking[]
+  createdAt: string
+}
+
+export interface FinalRanking {
+  competitionId: string
+  competitionName: string
+  technicalWeight: number
+  financialWeight: number
+  rankings: AwardRanking[]
+  estimatedTotalCost: number
+}

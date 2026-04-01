@@ -91,6 +91,12 @@ export const sidebarNavigation: NavigationItem[] = [
         icon: 'pi pi-wallet',
         route: 'EvaluationFinancial',
       },
+      {
+        key: 'evaluation-comprehensive',
+        labelKey: 'nav.evaluation.comprehensive',
+        icon: 'pi pi-chart-pie',
+        route: 'ComprehensiveEvaluation',
+      },
     ],
   },
   {

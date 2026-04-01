@@ -194,4 +194,7 @@ app.MapBookletTemplateEndpoints();
 // Approval Workflow endpoints (workflow engine & definitions)
 app.MapApprovalWorkflowEndpoints();
 
+// Award Recommendation endpoints (final ranking, generate, approve, reject)
+app.MapAwardEndpoints();
+
 app.Run();
