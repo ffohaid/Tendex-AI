@@ -523,11 +523,27 @@ export async function autoSaveDraft(
   )
 }
 
-/** Submit competition for approval */
+/** Submit competition for approval.
+ *  Handles the two-step transition: Draft(0) → UnderPreparation(1) → PendingApproval(2).
+ *  If the competition is already in UnderPreparation, it transitions directly to PendingApproval.
+ */
 export async function submitRfpForApproval(
   id: string,
 ): Promise<ApiResponse<RfpFormData>> {
   return apiCall(async () => {
+    // First, get current competition status
+    const current = await httpGet<Record<string, unknown>>(`${BASE_URL}/${id}`)
+    const currentStatus = (current as Record<string, unknown>).status as number
+
+    // If in Draft (0), transition to UnderPreparation (1) first
+    if (currentStatus === 0) {
+      await httpPost<Record<string, unknown>>(`${BASE_URL}/${id}/status`, {
+        newStatus: 1, // UnderPreparation
+        reason: null,
+      })
+    }
+
+    // Now transition to PendingApproval (2)
     const dto = await httpPost<Record<string, unknown>>(`${BASE_URL}/${id}/status`, {
       newStatus: 2, // PendingApproval
       reason: null,

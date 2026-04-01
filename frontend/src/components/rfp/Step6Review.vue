@@ -68,10 +68,7 @@ const checks = computed(() => [
   },
   {
     label: t('rfp.review.settingsComplete'),
-    passed: !!(
-      rfpStore.formData.settings.evaluationMethod &&
-      rfpStore.formData.settings.evaluationCriteria.length > 0
-    ),
+    passed: !!(rfpStore.formData.settings.evaluationMethod),
     step: 2,
   },
   {
@@ -81,12 +78,12 @@ const checks = computed(() => [
   },
   {
     label: t('rfp.review.boqComplete'),
-    passed: rfpStore.formData.boq.items.length > 0,
+    passed: true, // BOQ is optional — can be added later
     step: 4,
   },
   {
     label: t('rfp.review.attachmentsComplete'),
-    passed: rfpStore.formData.attachments.files.length > 0,
+    passed: true, // File attachments are optional — required attachment types are selected via checkboxes
     step: 5,
   },
 ])

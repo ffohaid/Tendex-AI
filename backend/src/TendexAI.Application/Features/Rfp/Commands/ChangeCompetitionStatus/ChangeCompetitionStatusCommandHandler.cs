@@ -36,11 +36,14 @@ public sealed class ChangeCompetitionStatusCommandHandler
 
         var result = request.NewStatus switch
         {
+            CompetitionStatus.UnderPreparation => competition.TransitionTo(CompetitionStatus.UnderPreparation, request.ChangedByUserId),
+            CompetitionStatus.Draft => competition.TransitionTo(CompetitionStatus.Draft, request.ChangedByUserId, request.Reason),
             CompetitionStatus.PendingApproval => competition.SubmitForApproval(request.ChangedByUserId),
             CompetitionStatus.Approved => competition.Approve(request.ChangedByUserId),
             CompetitionStatus.Rejected => competition.Reject(request.ChangedByUserId, request.Reason ?? "No reason provided."),
             CompetitionStatus.Cancelled => competition.Cancel(request.ChangedByUserId, request.Reason ?? "No reason provided."),
-            _ => Result.Failure($"Status transition to {request.NewStatus} is not supported via this command.")
+            CompetitionStatus.Suspended => competition.Suspend(request.ChangedByUserId, request.Reason ?? "No reason provided."),
+            _ => competition.TransitionTo(request.NewStatus, request.ChangedByUserId, request.Reason)
         };
 
         if (result.IsFailure)
