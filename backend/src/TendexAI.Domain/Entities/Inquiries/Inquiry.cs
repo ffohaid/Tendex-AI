@@ -260,8 +260,8 @@ public sealed class Inquiry : BaseEntity<Guid>
 
     private static string GenerateReferenceNumber()
     {
-        var date = DateTime.UtcNow.ToString("yyyyMMdd");
-        var seq = Guid.NewGuid().ToString("N")[..4].ToUpper();
+        var date = DateTime.UtcNow.ToString("yyyyMMdd", System.Globalization.CultureInfo.InvariantCulture);
+        var seq = Guid.NewGuid().ToString("N")[..4].ToUpper(System.Globalization.CultureInfo.InvariantCulture);
         return $"INQ-{date}-{seq}";
     }
 
