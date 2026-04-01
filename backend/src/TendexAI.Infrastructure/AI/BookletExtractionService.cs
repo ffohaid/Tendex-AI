@@ -465,7 +465,7 @@ public sealed class BookletExtractionService : IBookletExtractionService
     /// <summary>
     /// Maps a parsed JSON response to a BookletExtractionResult.
     /// </summary>
-    private Result<BookletExtractionResult> MapParsedResponse(
+    private static Result<BookletExtractionResult> MapParsedResponse(
         ExtractionJsonResponse parsed,
         string providerName,
         string modelName,
