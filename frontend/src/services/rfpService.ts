@@ -221,6 +221,7 @@ const creationMethodIntToString: Record<number, RfpCreationMethod> = {
   1: 'template',
   2: 'clone',
   3: 'ai',
+  4: 'upload_extract',
 }
 
 /* ------------------------------------------------------------------ */
@@ -880,6 +881,35 @@ export async function fetchTemplates(): Promise<
       `${BASE_URL}/templates`,
     ),
   )
+}
+
+/** Create a new competition from extraction results (Upload & Extract method) */
+export async function createRfpFromExtraction(
+  data: {
+    projectNameAr: string
+    projectNameEn: string
+    description: string | null
+    competitionType: number
+    estimatedBudget: number | null
+    projectDurationDays: number | null
+  },
+): Promise<ApiResponse<RfpFormData>> {
+  const request: CreateCompetitionRequest = {
+    projectNameAr: data.projectNameAr,
+    projectNameEn: data.projectNameEn || data.projectNameAr,
+    description: data.description,
+    competitionType: data.competitionType,
+    creationMethod: 4, // UploadExtract = 4
+    estimatedBudget: data.estimatedBudget,
+    submissionDeadline: null,
+    projectDurationDays: data.projectDurationDays,
+    sourceTemplateId: null,
+    sourceCompetitionId: null,
+  }
+  return apiCall(async () => {
+    const dto = await httpPost<Record<string, unknown>>(BASE_URL, request)
+    return mapFromBackendResponse(dto)
+  })
 }
 
 /** Clone an existing competition */

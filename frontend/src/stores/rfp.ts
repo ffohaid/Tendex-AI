@@ -23,6 +23,7 @@ import type {
   AutoSaveStatus,
   WizardStep,
   EvaluationCriterion,
+  CompetitionType,
 } from '@/types/rfp'
 import {
   createRfp,
@@ -497,6 +498,82 @@ export const useRfpStore = defineStore('rfp', () => {
   }
 
   /**
+   * Pre-fill the form from extraction results (Upload & Extract flow).
+   * Maps AI-extracted data into the store's RfpFormData shape.
+   */
+  function prefillFromExtraction(extraction: {
+    projectNameAr: string
+    projectNameEn?: string
+    projectDescription?: string
+    detectedCompetitionType?: string
+    estimatedBudget?: number
+    projectDurationDays?: number
+    sections: Array<{
+      titleAr: string
+      titleEn?: string
+      sectionType: string
+      contentHtml: string
+      isMandatory: boolean
+      sortOrder: number
+    }>
+    boqItems: Array<{
+      itemNumber: string
+      descriptionAr: string
+      unit: string
+      quantity: number
+      estimatedUnitPrice?: number
+      category?: string
+      sortOrder: number
+    }>
+  }) {
+    // Reset form first
+    resetForm()
+
+    // Map competition type from backend string to frontend literal
+    const competitionTypeMap: Record<string, CompetitionType> = {
+      PublicTender: 'public_tender',
+      LimitedTender: 'limited_tender',
+      DirectPurchase: 'direct_purchase',
+      FrameworkAgreement: 'framework_agreement',
+      ReverseAuction: 'reverse_auction',
+    }
+
+    // Pre-fill basic info
+    formData.value.basicInfo.projectName = extraction.projectNameAr || ''
+    formData.value.basicInfo.projectDescription = extraction.projectDescription || ''
+    formData.value.basicInfo.competitionType =
+      competitionTypeMap[extraction.detectedCompetitionType || ''] || ''
+    formData.value.basicInfo.estimatedValue = extraction.estimatedBudget || null
+
+    // Pre-fill sections
+    formData.value.content.creationMethod = 'upload_extract'
+    formData.value.content.sections = []
+    for (const section of extraction.sections) {
+      addSection({
+        title: section.titleAr,
+        content: '',
+        contentHtml: section.contentHtml,
+        isRequired: section.isMandatory,
+        colorCode: 'green',
+      })
+    }
+
+    // Pre-fill BOQ items
+    formData.value.boq.items = []
+    for (const item of extraction.boqItems) {
+      addBoqItem({
+        category: item.category || '',
+        description: item.descriptionAr,
+        unit: 'unit', // Default; AI may not map exactly
+        quantity: item.quantity,
+        estimatedPrice: item.estimatedUnitPrice || 0,
+      })
+    }
+
+    isDirty.value = true
+  }
+
+  /**
    * Save the current step's data to the backend.
    * Called by the wizard when the user clicks "Next".
    * Returns true if save was successful, false otherwise.
@@ -619,5 +696,8 @@ export const useRfpStore = defineStore('rfp', () => {
     loadRfp,
     resetForm,
     saveForm,
+
+    /* Upload & Extract */
+    prefillFromExtraction,
   }
 })

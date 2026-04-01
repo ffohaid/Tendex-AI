@@ -155,6 +155,9 @@ app.MapRagEndpoints();
 // AI Specification Drafting & BOQ Generation endpoints (TASK-403)
 app.MapAiSpecificationDraftingEndpoints();
 
+// AI Booklet Extraction endpoints (Upload & Extract feature)
+app.MapBookletExtractionEndpoints();
+
 // AI Text Assistant endpoints (general-purpose text generation/improvement)
 app.MapAiTextAssistEndpoints();
 

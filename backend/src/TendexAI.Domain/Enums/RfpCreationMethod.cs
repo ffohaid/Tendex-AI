@@ -16,5 +16,8 @@ public enum RfpCreationMethod
     CopiedFromPrevious = 2,
 
     /// <summary>AI-generated draft from text description.</summary>
-    AiGenerated = 3
+    AiGenerated = 3,
+
+    /// <summary>Created by uploading an existing document and extracting content via AI.</summary>
+    UploadExtract = 4
 }

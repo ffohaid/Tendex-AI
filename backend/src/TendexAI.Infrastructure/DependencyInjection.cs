@@ -233,6 +233,10 @@ public static class DependencyInjection
         // ----- AI Specification Drafting Service (TASK-403) -----
         services.AddScoped<Application.Common.Interfaces.AI.IAiSpecificationDraftingService, AI.AiSpecificationDraftingService>();
 
+        // ----- AI Booklet Extraction Service (Upload & Extract) -----
+        services.AddScoped<Application.Common.Interfaces.AI.IBookletExtractionService, AI.BookletExtractionService>();
+        services.AddScoped<Application.Common.Interfaces.AI.IDocumentTextExtractorService, AI.Rag.DocumentTextExtractorServiceAdapter>();
+
         // ----- AI BOQ Generation Service (TASK-403) -----
         services.AddScoped<Application.Common.Interfaces.AI.IAiBoqGenerationService, AI.AiBoqGenerationService>();
 

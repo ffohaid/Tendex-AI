@@ -6,7 +6,7 @@
  */
 
 /** Booklet creation method */
-export type RfpCreationMethod = 'wizard' | 'template' | 'clone' | 'ai'
+export type RfpCreationMethod = 'wizard' | 'template' | 'clone' | 'ai' | 'upload_extract'
 
 /** Competition status aligned with the 9-stage lifecycle */
 export type RfpStatus =
