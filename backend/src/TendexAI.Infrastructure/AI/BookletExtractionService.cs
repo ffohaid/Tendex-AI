@@ -427,12 +427,12 @@ public sealed class BookletExtractionService : IBookletExtractionService
         {
             trimmed = trimmed["```json".Length..];
         }
-        else if (trimmed.StartsWith("```"))
+        else if (trimmed.StartsWith("```", StringComparison.Ordinal))
         {
             trimmed = trimmed[3..];
         }
 
-        if (trimmed.EndsWith("```"))
+        if (trimmed.EndsWith("```", StringComparison.Ordinal))
         {
             trimmed = trimmed[..^3];
         }
