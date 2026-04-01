@@ -1,9 +1,26 @@
+using System.Security.Claims;
+using MediatR;
+using TendexAI.Application.Features.Inquiries.Commands.ApproveAnswer;
+using TendexAI.Application.Features.Inquiries.Commands.AssignInquiry;
+using TendexAI.Application.Features.Inquiries.Commands.BulkImportInquiries;
+using TendexAI.Application.Features.Inquiries.Commands.CloseInquiry;
+using TendexAI.Application.Features.Inquiries.Commands.CreateInquiry;
+using TendexAI.Application.Features.Inquiries.Commands.GenerateAiAnswer;
+using TendexAI.Application.Features.Inquiries.Commands.RejectAnswer;
+using TendexAI.Application.Features.Inquiries.Commands.SubmitAnswer;
+using TendexAI.Application.Features.Inquiries.Commands.UpdateInquiry;
+using TendexAI.Application.Features.Inquiries.Dtos;
+using TendexAI.Application.Features.Inquiries.Queries.GetInquiriesPaged;
+using TendexAI.Application.Features.Inquiries.Queries.GetInquiryById;
+using TendexAI.Application.Features.Inquiries.Queries.GetInquiryStatistics;
+using TendexAI.Domain.Enums;
+
 namespace TendexAI.API.Endpoints.Inquiries;
 
 /// <summary>
-/// Minimal API endpoints for Inquiries on specification booklets.
-/// TASK-904: Provides CRUD operations for inquiries.
-/// Returns empty/default data until full backend implementation is complete.
+/// Complete Minimal API endpoints for the Inquiries system.
+/// Supports full CRUD, AI-powered answer generation, assignment workflow,
+/// approval flow, bulk import from Etimad, and export tracking.
 /// </summary>
 public static class InquiryEndpoints
 {
@@ -13,163 +30,282 @@ public static class InquiryEndpoints
             .WithTags("Inquiries")
             .RequireAuthorization();
 
-        group.MapGet("/", GetInquiriesAsync)
+        // ─── Queries ───────────────────────────────────────────────
+        group.MapGet("/", GetInquiriesPagedAsync)
             .WithName("GetInquiries")
-            .WithSummary("Retrieve paginated list of inquiries with optional filters");
+            .WithSummary("Get paginated inquiries with filters");
 
-        group.MapGet("/stats", GetInquiryStatsAsync)
-            .WithName("GetInquiryStats")
-            .WithSummary("Retrieve inquiry statistics summary");
+        group.MapGet("/statistics", GetStatisticsAsync)
+            .WithName("GetInquiryStatistics")
+            .WithSummary("Get inquiry statistics dashboard");
 
-        group.MapGet("/{id:guid}", GetInquiryByIdAsync)
+        group.MapGet("/{id:guid}", GetByIdAsync)
             .WithName("GetInquiryById")
-            .WithSummary("Retrieve a single inquiry by ID");
+            .WithSummary("Get inquiry details by ID");
 
-        group.MapPost("/", CreateInquiryAsync)
+        // ─── Commands ──────────────────────────────────────────────
+        group.MapPost("/", CreateAsync)
             .WithName("CreateInquiry")
-            .WithSummary("Create a new inquiry on a specification booklet");
+            .WithSummary("Create a new supplier inquiry");
 
-        group.MapPut("/{id:guid}/answer", AnswerInquiryAsync)
-            .WithName("AnswerInquiry")
-            .WithSummary("Submit an answer for an inquiry");
+        group.MapPost("/bulk-import", BulkImportAsync)
+            .WithName("BulkImportInquiries")
+            .WithSummary("Bulk import inquiries from Etimad");
+
+        group.MapPut("/{id:guid}", UpdateAsync)
+            .WithName("UpdateInquiry")
+            .WithSummary("Update inquiry details");
+
+        group.MapPost("/{id:guid}/assign", AssignAsync)
+            .WithName("AssignInquiry")
+            .WithSummary("Assign inquiry to user or committee");
+
+        group.MapPost("/{id:guid}/submit-answer", SubmitAnswerAsync)
+            .WithName("SubmitInquiryAnswer")
+            .WithSummary("Submit an answer for review");
+
+        group.MapPost("/{id:guid}/approve", ApproveAsync)
+            .WithName("ApproveInquiryAnswer")
+            .WithSummary("Approve the submitted answer");
+
+        group.MapPost("/{id:guid}/reject", RejectAsync)
+            .WithName("RejectInquiryAnswer")
+            .WithSummary("Reject the submitted answer");
+
+        group.MapPost("/{id:guid}/close", CloseAsync)
+            .WithName("CloseInquiry")
+            .WithSummary("Close an inquiry");
+
+        group.MapPost("/{id:guid}/generate-ai-answer", GenerateAiAnswerAsync)
+            .WithName("GenerateAiAnswer")
+            .WithSummary("Generate AI-powered answer suggestion");
 
         return app;
     }
 
-    /// <summary>
-    /// Returns paginated inquiries. Currently returns empty list.
-    /// </summary>
-    private static Task<IResult> GetInquiriesAsync(
+    // ═══════════════════════════════════════════════════════════════
+    //  Query Handlers
+    // ═══════════════════════════════════════════════════════════════
+
+    private static async Task<IResult> GetInquiriesPagedAsync(
+        IMediator mediator,
         int page = 1,
         int pageSize = 10,
+        Guid? competitionId = null,
         string? status = null,
+        string? category = null,
         string? priority = null,
-        string? competitionId = null,
+        Guid? assignedToUserId = null,
         string? search = null,
         CancellationToken cancellationToken = default)
     {
-        var result = new InquiryPagedResultDto
-        {
-            Items = new List<InquiryDto>(),
-            TotalCount = 0,
-            Page = page,
-            PageSize = pageSize,
-            TotalPages = 0
-        };
+        InquiryStatus? statusEnum = null;
+        if (!string.IsNullOrEmpty(status) && Enum.TryParse<InquiryStatus>(status, true, out var s))
+            statusEnum = s;
 
-        return Task.FromResult(Results.Ok(result));
+        InquiryCategory? categoryEnum = null;
+        if (!string.IsNullOrEmpty(category) && Enum.TryParse<InquiryCategory>(category, true, out var c))
+            categoryEnum = c;
+
+        InquiryPriority? priorityEnum = null;
+        if (!string.IsNullOrEmpty(priority) && Enum.TryParse<InquiryPriority>(priority, true, out var p))
+            priorityEnum = p;
+
+        var query = new GetInquiriesPagedQuery(
+            page, pageSize, competitionId, statusEnum, categoryEnum, priorityEnum, assignedToUserId, search);
+
+        var result = await mediator.Send(query, cancellationToken);
+        return Results.Ok(result);
     }
 
-    /// <summary>
-    /// Returns inquiry statistics. Currently returns zeroed stats.
-    /// </summary>
-    private static Task<IResult> GetInquiryStatsAsync(
+    private static async Task<IResult> GetStatisticsAsync(
+        IMediator mediator,
         CancellationToken cancellationToken = default)
     {
-        var result = new InquiryStatsDto
-        {
-            Total = 0,
-            Pending = 0,
-            Answered = 0,
-            Overdue = 0,
-            AverageResponseTimeHours = 0
-        };
-
-        return Task.FromResult(Results.Ok(result));
+        var result = await mediator.Send(new GetInquiryStatisticsQuery(), cancellationToken);
+        return Results.Ok(result);
     }
 
-    /// <summary>
-    /// Returns a single inquiry by ID. Currently returns 404.
-    /// </summary>
-    private static Task<IResult> GetInquiryByIdAsync(
+    private static async Task<IResult> GetByIdAsync(
         Guid id,
+        IMediator mediator,
         CancellationToken cancellationToken = default)
     {
-        return Task.FromResult(Results.NotFound(new { Message = "Inquiry not found" }));
+        var result = await mediator.Send(new GetInquiryByIdQuery(id), cancellationToken);
+        return result is null ? Results.NotFound() : Results.Ok(result);
     }
 
-    /// <summary>
-    /// Creates a new inquiry. Currently returns 201 with placeholder.
-    /// </summary>
-    private static Task<IResult> CreateInquiryAsync(
+    // ═══════════════════════════════════════════════════════════════
+    //  Command Handlers
+    // ═══════════════════════════════════════════════════════════════
+
+    private static async Task<IResult> CreateAsync(
         CreateInquiryRequestDto request,
+        IMediator mediator,
+        HttpContext httpContext,
         CancellationToken cancellationToken = default)
     {
-        return Task.FromResult(Results.Created($"/api/v1/inquiries/{Guid.NewGuid()}", new { Message = "Inquiry creation not yet implemented" }));
+        var userId = httpContext.User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "system";
+        var tenantId = GetTenantId(httpContext);
+
+        Enum.TryParse<InquiryCategory>(request.Category, true, out var category);
+        Enum.TryParse<InquiryPriority>(request.Priority, true, out var priority);
+
+        var command = new CreateInquiryCommand(
+            request.CompetitionId,
+            tenantId,
+            request.QuestionText,
+            category,
+            priority,
+            request.SupplierName,
+            request.EtimadReferenceNumber,
+            request.InternalNotes,
+            userId);
+
+        var id = await mediator.Send(command, cancellationToken);
+        return Results.Created($"/api/v1/inquiries/{id}", new { Id = id });
     }
 
-    /// <summary>
-    /// Answers an inquiry. Currently returns 200 with placeholder.
-    /// </summary>
-    private static Task<IResult> AnswerInquiryAsync(
+    private static async Task<IResult> BulkImportAsync(
+        BulkImportInquiriesRequestDto request,
+        IMediator mediator,
+        HttpContext httpContext,
+        CancellationToken cancellationToken = default)
+    {
+        var userId = httpContext.User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "system";
+        var tenantId = GetTenantId(httpContext);
+
+        var items = request.Inquiries.Select(i =>
+        {
+            Enum.TryParse<InquiryCategory>(i.Category, true, out var cat);
+            Enum.TryParse<InquiryPriority>(i.Priority, true, out var pri);
+            return new BulkImportInquiryItem(i.QuestionText, i.SupplierName, i.EtimadReferenceNumber, cat, pri);
+        }).ToList();
+
+        var command = new BulkImportInquiriesCommand(request.CompetitionId, tenantId, items, userId);
+        var ids = await mediator.Send(command, cancellationToken);
+
+        return Results.Ok(new { ImportedCount = ids.Count, Ids = ids });
+    }
+
+    private static async Task<IResult> UpdateAsync(
         Guid id,
-        AnswerInquiryRequestDto request,
+        UpdateInquiryRequestDto request,
+        IMediator mediator,
+        HttpContext httpContext,
         CancellationToken cancellationToken = default)
     {
-        return Task.FromResult(Results.Ok(new { Message = "Answer submission not yet implemented" }));
+        var userId = httpContext.User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "system";
+
+        Enum.TryParse<InquiryCategory>(request.Category, true, out var category);
+        Enum.TryParse<InquiryPriority>(request.Priority, true, out var priority);
+
+        var command = new UpdateInquiryCommand(id, request.QuestionText, category, priority, request.SupplierName, request.InternalNotes, userId);
+        var result = await mediator.Send(command, cancellationToken);
+
+        return result ? Results.Ok() : Results.NotFound();
     }
-}
 
-// ═══════════════════════════════════════════════════════════════
-//  DTOs
-// ═══════════════════════════════════════════════════════════════
+    private static async Task<IResult> AssignAsync(
+        Guid id,
+        AssignInquiryRequestDto request,
+        IMediator mediator,
+        HttpContext httpContext,
+        CancellationToken cancellationToken = default)
+    {
+        var userId = httpContext.User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "system";
+        var command = new AssignInquiryCommand(id, request.UserId, request.UserName, request.CommitteeId, userId);
+        var result = await mediator.Send(command, cancellationToken);
 
-public sealed record InquiryDto
-{
-    public Guid Id { get; init; }
-    public string ReferenceNumber { get; init; } = null!;
-    public Guid CompetitionId { get; init; }
-    public string CompetitionTitleAr { get; init; } = null!;
-    public string CompetitionTitleEn { get; init; } = null!;
-    public string CompetitionReferenceNumber { get; init; } = null!;
-    public string SubjectAr { get; init; } = null!;
-    public string SubjectEn { get; init; } = null!;
-    public string BodyAr { get; init; } = null!;
-    public string BodyEn { get; init; } = null!;
-    public string Status { get; init; } = null!;
-    public string Priority { get; init; } = null!;
-    public string SubmittedByNameAr { get; init; } = null!;
-    public string SubmittedByNameEn { get; init; } = null!;
-    public DateTime SubmittedAt { get; init; }
-    public DateTime? AnsweredAt { get; init; }
-    public string? AnswerAr { get; init; }
-    public string? AnswerEn { get; init; }
-    public string? AnsweredByNameAr { get; init; }
-    public string? AnsweredByNameEn { get; init; }
-    public DateTime? SlaDeadline { get; init; }
-    public bool IsOverdue { get; init; }
-}
+        return result ? Results.Ok() : Results.NotFound();
+    }
 
-public sealed record InquiryPagedResultDto
-{
-    public List<InquiryDto> Items { get; init; } = new();
-    public int TotalCount { get; init; }
-    public int Page { get; init; }
-    public int PageSize { get; init; }
-    public int TotalPages { get; init; }
-}
+    private static async Task<IResult> SubmitAnswerAsync(
+        Guid id,
+        SubmitAnswerRequestDto request,
+        IMediator mediator,
+        HttpContext httpContext,
+        CancellationToken cancellationToken = default)
+    {
+        var userId = httpContext.User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "system";
+        var command = new SubmitAnswerCommand(id, request.AnswerText, request.IsAiAssisted, userId);
+        var result = await mediator.Send(command, cancellationToken);
 
-public sealed record InquiryStatsDto
-{
-    public int Total { get; init; }
-    public int Pending { get; init; }
-    public int Answered { get; init; }
-    public int Overdue { get; init; }
-    public double AverageResponseTimeHours { get; init; }
-}
+        return result ? Results.Ok() : Results.NotFound();
+    }
 
-public sealed record CreateInquiryRequestDto
-{
-    public Guid CompetitionId { get; init; }
-    public string SubjectAr { get; init; } = null!;
-    public string SubjectEn { get; init; } = null!;
-    public string BodyAr { get; init; } = null!;
-    public string BodyEn { get; init; } = null!;
-    public string Priority { get; init; } = null!;
-}
+    private static async Task<IResult> ApproveAsync(
+        Guid id,
+        IMediator mediator,
+        HttpContext httpContext,
+        CancellationToken cancellationToken = default)
+    {
+        var userId = httpContext.User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "system";
+        var command = new ApproveAnswerCommand(id, userId);
+        var result = await mediator.Send(command, cancellationToken);
 
-public sealed record AnswerInquiryRequestDto
-{
-    public string AnswerAr { get; init; } = null!;
-    public string AnswerEn { get; init; } = null!;
+        return result ? Results.Ok() : Results.NotFound();
+    }
+
+    private static async Task<IResult> RejectAsync(
+        Guid id,
+        RejectAnswerRequestDto request,
+        IMediator mediator,
+        HttpContext httpContext,
+        CancellationToken cancellationToken = default)
+    {
+        var userId = httpContext.User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "system";
+        var command = new RejectAnswerCommand(id, request.Reason, userId);
+        var result = await mediator.Send(command, cancellationToken);
+
+        return result ? Results.Ok() : Results.NotFound();
+    }
+
+    private static async Task<IResult> CloseAsync(
+        Guid id,
+        CloseInquiryRequestDto? request,
+        IMediator mediator,
+        HttpContext httpContext,
+        CancellationToken cancellationToken = default)
+    {
+        var userId = httpContext.User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "system";
+        var command = new CloseInquiryCommand(id, request?.Reason, userId);
+        var result = await mediator.Send(command, cancellationToken);
+
+        return result ? Results.Ok() : Results.NotFound();
+    }
+
+    private static async Task<IResult> GenerateAiAnswerAsync(
+        Guid id,
+        GenerateAiAnswerRequestDto? request,
+        IMediator mediator,
+        HttpContext httpContext,
+        CancellationToken cancellationToken = default)
+    {
+        var userId = httpContext.User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "system";
+        var tenantId = GetTenantId(httpContext);
+
+        try
+        {
+            var command = new GenerateAiAnswerCommand(id, tenantId, request?.AdditionalContext, request?.UseRag ?? true, userId);
+            var result = await mediator.Send(command, cancellationToken);
+            return Results.Ok(result);
+        }
+        catch (InvalidOperationException ex)
+        {
+            return Results.BadRequest(new { Message = ex.Message });
+        }
+    }
+
+    // ═══════════════════════════════════════════════════════════════
+    //  Helpers
+    // ═══════════════════════════════════════════════════════════════
+
+    private static Guid GetTenantId(HttpContext httpContext)
+    {
+        var tenantIdStr = httpContext.Request.Headers["X-Tenant-Id"].FirstOrDefault()
+            ?? httpContext.User.FindFirst("tenant_id")?.Value;
+
+        return Guid.TryParse(tenantIdStr, out var tenantId) ? tenantId : Guid.Empty;
+    }
 }

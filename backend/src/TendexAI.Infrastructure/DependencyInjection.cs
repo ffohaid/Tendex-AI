@@ -13,6 +13,7 @@ using TendexAI.Domain.Entities.Committees;
 using TendexAI.Domain.Entities.Evaluation;
 using TendexAI.Domain.Entities.Rfp;
 using TendexAI.Domain.Entities.Notifications;
+using TendexAI.Domain.Entities.Inquiries;
 using TendexAI.Domain.Entities.Workflow;
 using TendexAI.Application.Features.Rfp.Services;
 using TendexAI.Application.Features.Workflow.Services;
@@ -204,6 +205,9 @@ public static class DependencyInjection
         services.AddScoped<IEvaluationMinutesRepository, EvaluationMinutesRepository>();
         services.AddScoped<IAwardRecommendationRepository, AwardRecommendationRepository>();
         services.AddScoped<INotificationRepository, NotificationRepository>();
+
+        // ----- Inquiry Repositories -----
+        services.AddScoped<IInquiryRepository, InquiryRepository>();
 
         // ----- Approval Workflow & Permission Repositories -----
         services.AddScoped<IApprovalWorkflowStepRepository, ApprovalWorkflowStepRepository>();

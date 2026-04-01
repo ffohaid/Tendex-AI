@@ -5,6 +5,7 @@ using TendexAI.Domain.Entities.Committees;
 using TendexAI.Domain.Entities.Evaluation;
 using TendexAI.Domain.Entities.Notifications;
 using TendexAI.Domain.Entities.Rfp;
+using TendexAI.Domain.Entities.Inquiries;
 using TendexAI.Domain.Entities.Workflow;
 using TendexAI.Application.Common.Interfaces;
 
@@ -84,6 +85,10 @@ public sealed class TenantDbContext : DbContext, IUnitOfWork, ITenantDbContext
     public DbSet<CompetitionPermissionMatrix> CompetitionPermissionMatrices => Set<CompetitionPermissionMatrix>();
     public DbSet<CompetitionCommitteeMember> CompetitionCommitteeMembers => Set<CompetitionCommitteeMember>();
     public DbSet<PhaseTransitionHistory> PhaseTransitionHistories => Set<PhaseTransitionHistory>();
+
+    // ----- Inquiries DbSets -----
+    public DbSet<Inquiry> Inquiries => Set<Inquiry>();
+    public DbSet<InquiryResponse> InquiryResponses => Set<InquiryResponse>();
 
     // ----- Workflow Engine DbSets -----
     public DbSet<WorkflowDefinition> WorkflowDefinitions => Set<WorkflowDefinition>();
