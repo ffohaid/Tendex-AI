@@ -34,6 +34,17 @@ public sealed class FinancialEvaluationRepository : IFinancialEvaluationReposito
             .FirstOrDefaultAsync(e => e.CompetitionId == competitionId, cancellationToken);
     }
 
+    /// <summary>
+    /// Gets a tracked FinancialEvaluation by competition ID for modification.
+    /// Do NOT use AsNoTracking here — callers modify and save the entity.
+    /// </summary>
+    public async Task<FinancialEvaluation?> GetByCompetitionIdForUpdateAsync(
+        Guid competitionId, CancellationToken cancellationToken = default)
+    {
+        return await _context.FinancialEvaluations
+            .FirstOrDefaultAsync(e => e.CompetitionId == competitionId, cancellationToken);
+    }
+
     public async Task<FinancialEvaluation?> GetWithItemsAsync(
         Guid id, CancellationToken cancellationToken = default)
     {

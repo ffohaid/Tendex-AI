@@ -25,7 +25,7 @@ public sealed class RejectTechnicalReportCommandHandler
         CancellationToken cancellationToken)
     {
         // 1. Load evaluation
-        var evaluation = await _evaluationRepository.GetByIdAsync(
+        var evaluation = await _evaluationRepository.GetByIdForUpdateAsync(
             request.EvaluationId, cancellationToken);
 
         if (evaluation is null)
@@ -38,7 +38,6 @@ public sealed class RejectTechnicalReportCommandHandler
             return Result.Failure<TechnicalEvaluationDetailDto>(rejectResult.Error!);
 
         // 3. Persist
-        _evaluationRepository.Update(evaluation);
         await _evaluationRepository.SaveChangesAsync(cancellationToken);
 
         _logger.LogInformation(

@@ -42,7 +42,6 @@ public sealed class ApproveTechnicalReportCommandHandler
             return Result.Failure<TechnicalEvaluationDetailDto>(approveResult.Error!);
 
         // 3. Persist evaluation changes
-        _evaluationRepository.Update(evaluation);
         await _evaluationRepository.SaveChangesAsync(cancellationToken);
 
         _logger.LogInformation(

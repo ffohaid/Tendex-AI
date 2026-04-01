@@ -30,6 +30,16 @@ public sealed class TechnicalEvaluationRepository : ITechnicalEvaluationReposito
             .FirstOrDefaultAsync(e => e.Id == id, cancellationToken);
     }
 
+    /// <summary>
+    /// Gets a tracked entity by ID for modification (no AsNoTracking).
+    /// </summary>
+    public async Task<TechnicalEvaluation?> GetByIdForUpdateAsync(
+        Guid id, CancellationToken cancellationToken = default)
+    {
+        return await _context.TechnicalEvaluations
+            .FirstOrDefaultAsync(e => e.Id == id, cancellationToken);
+    }
+
     public async Task<TechnicalEvaluation?> GetByIdWithScoresAsync(
         Guid id, CancellationToken cancellationToken = default)
     {

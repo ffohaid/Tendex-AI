@@ -26,7 +26,7 @@ public sealed class SubmitFinancialScoreCommandHandler
     public async Task<Result<FinancialScoreDto>> Handle(
         SubmitFinancialScoreCommand request, CancellationToken cancellationToken)
     {
-        var evaluation = await _financialRepo.GetByCompetitionIdAsync(
+        var evaluation = await _financialRepo.GetByCompetitionIdForUpdateAsync(
             request.CompetitionId, cancellationToken);
 
         if (evaluation is null)
@@ -49,7 +49,6 @@ public sealed class SubmitFinancialScoreCommandHandler
         if (addResult.IsFailure)
             return Result.Failure<FinancialScoreDto>(addResult.Error!);
 
-        _financialRepo.Update(evaluation);
         await _financialRepo.SaveChangesAsync(cancellationToken);
 
         _logger.LogInformation(

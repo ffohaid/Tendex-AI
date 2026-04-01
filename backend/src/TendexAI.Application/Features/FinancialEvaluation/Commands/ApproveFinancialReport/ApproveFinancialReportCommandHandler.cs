@@ -23,7 +23,7 @@ public sealed class ApproveFinancialReportCommandHandler
     public async Task<Result<FinancialEvaluationDetailDto>> Handle(
         ApproveFinancialReportCommand request, CancellationToken cancellationToken)
     {
-        var evaluation = await _financialRepo.GetByCompetitionIdAsync(
+        var evaluation = await _financialRepo.GetByCompetitionIdForUpdateAsync(
             request.CompetitionId, cancellationToken);
 
         if (evaluation is null)
@@ -33,7 +33,6 @@ public sealed class ApproveFinancialReportCommandHandler
         if (approveResult.IsFailure)
             return Result.Failure<FinancialEvaluationDetailDto>(approveResult.Error!);
 
-        _financialRepo.Update(evaluation);
         await _financialRepo.SaveChangesAsync(cancellationToken);
 
         _logger.LogInformation(

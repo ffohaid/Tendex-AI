@@ -121,7 +121,6 @@ public sealed class CompleteScoringCommandHandler
             return Result.Failure<IReadOnlyList<OfferEvaluationResultDto>>(approvalResult.Error!);
 
         // 9. Persist all changes
-        _evaluationRepository.Update(evaluation);
         await _offerRepository.SaveChangesAsync(cancellationToken);
         await _evaluationRepository.SaveChangesAsync(cancellationToken);
 

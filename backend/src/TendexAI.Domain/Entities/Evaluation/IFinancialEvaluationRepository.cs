@@ -7,6 +7,7 @@ public interface IFinancialEvaluationRepository
 {
     Task<FinancialEvaluation?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default);
     Task<FinancialEvaluation?> GetByCompetitionIdAsync(Guid competitionId, CancellationToken cancellationToken = default);
+    Task<FinancialEvaluation?> GetByCompetitionIdForUpdateAsync(Guid competitionId, CancellationToken cancellationToken = default);
     Task<FinancialEvaluation?> GetWithItemsAsync(Guid id, CancellationToken cancellationToken = default);
     Task<FinancialEvaluation?> GetWithScoresAsync(Guid id, CancellationToken cancellationToken = default);
     Task<FinancialEvaluation?> GetFullAsync(Guid competitionId, CancellationToken cancellationToken = default);

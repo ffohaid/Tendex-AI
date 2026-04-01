@@ -30,7 +30,7 @@ public sealed class SubmitFinancialOfferItemsCommandHandler
     public async Task<Result<IReadOnlyList<FinancialOfferItemDto>>> Handle(
         SubmitFinancialOfferItemsCommand request, CancellationToken cancellationToken)
     {
-        var evaluation = await _financialRepo.GetByCompetitionIdAsync(
+        var evaluation = await _financialRepo.GetByCompetitionIdForUpdateAsync(
             request.CompetitionId, cancellationToken);
 
         if (evaluation is null)
@@ -72,7 +72,6 @@ public sealed class SubmitFinancialOfferItemsCommandHandler
                 item.DeviationPercentage, item.DeviationLevel));
         }
 
-        _financialRepo.Update(evaluation);
         await _financialRepo.SaveChangesAsync(cancellationToken);
 
         _logger.LogInformation(

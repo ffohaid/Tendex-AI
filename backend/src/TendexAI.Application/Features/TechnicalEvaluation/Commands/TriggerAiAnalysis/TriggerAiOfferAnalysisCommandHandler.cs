@@ -290,7 +290,6 @@ public sealed class TriggerAiOfferAnalysisCommandHandler
         }
 
         // 9. Persist evaluation changes (AI scores added)
-        _evaluationRepository.Update(evaluation);
         await _evaluationRepository.SaveChangesAsync(cancellationToken);
 
         _logger.LogInformation(

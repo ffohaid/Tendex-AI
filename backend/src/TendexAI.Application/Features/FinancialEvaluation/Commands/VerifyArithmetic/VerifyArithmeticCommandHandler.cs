@@ -59,7 +59,6 @@ public sealed class VerifyArithmeticCommandHandler
                     : 0m))
             .ToList();
 
-        _financialRepo.Update(evaluation);
         await _financialRepo.SaveChangesAsync(cancellationToken);
 
         _logger.LogInformation(

@@ -37,7 +37,6 @@ public sealed class CompleteFinancialScoringCommandHandler
         if (submitResult.IsFailure)
             return Result.Failure<FinancialEvaluationDetailDto>(submitResult.Error!);
 
-        _financialRepo.Update(evaluation);
         await _financialRepo.SaveChangesAsync(cancellationToken);
 
         _logger.LogInformation(

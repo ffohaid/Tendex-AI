@@ -85,8 +85,10 @@ public sealed class SubmitTechnicalScoreCommandHandler
         if (addResult.IsFailure)
             return Result.Failure<TechnicalScoreDto>(addResult.Error!);
 
-        // 7. Persist
-        _evaluationRepository.Update(evaluation);
+        // 7. Persist — entity is already tracked via GetByIdWithScoresAsync,
+        //    so we only need SaveChangesAsync. Calling Update() on a tracked
+        //    entity marks child entities (including newly-added scores) as
+        //    Modified instead of Added, causing DbUpdateConcurrencyException.
         await _evaluationRepository.SaveChangesAsync(cancellationToken);
 
         _logger.LogInformation(
