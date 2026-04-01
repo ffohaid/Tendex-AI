@@ -77,12 +77,41 @@ public sealed class BatchAddRfpSectionsCommandHandler
             sections.Add(section);
         }
 
-        // Direct DB insertion - bypasses Competition aggregate and its concurrency token
-        await _repository.AddSectionsDirectAsync(sections, cancellationToken);
-
         _logger.LogInformation(
-            "Successfully added {Count} sections to competition {CompetitionId} via direct insertion",
-            sections.Count, request.CompetitionId);
+            "Created {Count} RfpSection entities for competition {CompetitionId}. First section: Id={SectionId}, Title={Title}, CompetitionId={CompId}",
+            sections.Count, request.CompetitionId,
+            sections.FirstOrDefault()?.Id,
+            sections.FirstOrDefault()?.TitleAr,
+            sections.FirstOrDefault()?.CompetitionId);
+
+        try
+        {
+            // Direct DB insertion - bypasses Competition aggregate and its concurrency token
+            await _repository.AddSectionsDirectAsync(sections, cancellationToken);
+
+            // Verify sections were actually saved
+            var verifyCount = await _repository.GetSectionCountAsync(
+                request.CompetitionId, cancellationToken);
+
+            _logger.LogInformation(
+                "Successfully added {Count} sections to competition {CompetitionId} via direct insertion. Verified section count: {VerifiedCount}",
+                sections.Count, request.CompetitionId, verifyCount);
+
+            if (verifyCount == 0)
+            {
+                _logger.LogError(
+                    "CRITICAL: Sections were added but verification shows 0 sections for competition {CompetitionId}. This indicates a transaction/context issue.",
+                    request.CompetitionId);
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex,
+                "Failed to add sections to competition {CompetitionId}: {ErrorMessage}",
+                request.CompetitionId, ex.Message);
+            return Result.Failure<IReadOnlyList<RfpSectionDto>>(
+                $"فشل في حفظ الأقسام: {ex.Message}");
+        }
 
         var dtos = sections
             .Select(CompetitionMapper.ToSectionDto)
