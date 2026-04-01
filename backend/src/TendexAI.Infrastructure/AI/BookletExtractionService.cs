@@ -239,6 +239,42 @@ public sealed class BookletExtractionService : IBookletExtractionService
                  لا تنسخ النص الكامل حرفياً. ركّز على المتطلبات والشروط الأساسية.
               """;
 
+        var jsonTemplate = """
+            {
+              "projectNameAr": "اسم المشروع بالعربية",
+              "projectNameEn": "Project Name in English (or null)",
+              "projectDescription": "وصف المشروع",
+              "detectedCompetitionType": "public|limited|directPurchase|framework|null",
+              "estimatedBudget": 0.0,
+              "projectDurationDays": 0,
+              "sections": [
+                {
+                  "titleAr": "عنوان القسم بالعربية",
+                  "titleEn": "Section Title in English",
+                  "sectionType": "generalInformation|technicalSpecifications|termsAndConditions|evaluationCriteria|billOfQuantities|attachments|custom",
+                  "contentHtml": "<p>ملخص مختصر للمحتوى</p>",
+                  "isMandatory": true,
+                  "sortOrder": 1,
+                  "confidenceScore": 85.0
+                }
+              ],
+              "boqItems": [
+                {
+                  "itemNumber": "1",
+                  "descriptionAr": "وصف البند",
+                  "unit": "وحدة",
+                  "quantity": 1.0,
+                  "estimatedUnitPrice": 0.0,
+                  "category": "تصنيف",
+                  "sortOrder": 1
+                }
+              ],
+              "extractionSummaryAr": "ملخص عملية الاستخراج",
+              "confidenceScore": 85.0,
+              "warnings": ["أي تحذيرات"]
+            }
+            """;
+
         return $"""
             <role>
             أنت خبير متخصص في تحليل واستخراج محتوى كراسات الشروط والمواصفات للمشتريات الحكومية في المملكة العربية السعودية.
@@ -287,39 +323,7 @@ public sealed class BookletExtractionService : IBookletExtractionService
 
             <output_format>
             أعد الإجابة بتنسيق JSON التالي بدقة (بدون أي نص إضافي خارج JSON):
-            {{
-              "projectNameAr": "اسم المشروع بالعربية",
-              "projectNameEn": "Project Name in English (or null)",
-              "projectDescription": "وصف المشروع",
-              "detectedCompetitionType": "public|limited|directPurchase|framework|null",
-              "estimatedBudget": 0.0,
-              "projectDurationDays": 0,
-              "sections": [
-                {{
-                  "titleAr": "عنوان القسم بالعربية",
-                  "titleEn": "Section Title in English",
-                  "sectionType": "generalInformation|technicalSpecifications|termsAndConditions|evaluationCriteria|billOfQuantities|attachments|custom",
-                  "contentHtml": "<p>ملخص مختصر للمحتوى</p>",
-                  "isMandatory": true,
-                  "sortOrder": 1,
-                  "confidenceScore": 85.0
-                }}
-              ],
-              "boqItems": [
-                {{
-                  "itemNumber": "1",
-                  "descriptionAr": "وصف البند",
-                  "unit": "وحدة",
-                  "quantity": 1.0,
-                  "estimatedUnitPrice": 0.0,
-                  "category": "تصنيف",
-                  "sortOrder": 1
-                }}
-              ],
-              "extractionSummaryAr": "ملخص عملية الاستخراج",
-              "confidenceScore": 85.0,
-              "warnings": ["أي تحذيرات"]
-            }}
+            {jsonTemplate}
             </output_format>
             """;
     }
