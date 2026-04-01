@@ -24,6 +24,34 @@
 
 *يرجى إضافة أحدث مهمة منجزة في أعلى هذه القائمة.*
 
+### 2026-04-01 - Technical Evaluation (Inspection & Assessment) Complete Testing & Fixes
+- **الحالة:** ✅ مكتمل
+- **ما تم إنجازه:**
+  - **اختبار شامل لقسم الفحص والتقييم الفني** مع بيانات حقيقية عبر جميع التبويبات الأربعة
+  - **إصلاح حفظ الدرجات:** اختبار حفظ الدرجات لجميع المعايير الأربعة و3 عروض مجهولة بنجاح تام
+  - **إصلاح تحليل الذكاء الاصطناعي:**
+    - إصلاح تشفير مفتاح API للذكاء الاصطناعي (AES-256 encryption key mismatch)
+    - إصلاح خطأ حفظ نتائج التحليل (DbUpdateException - entity tracking issue)
+    - إضافة SaveChangesAsync منفصل لـ AiOfferAnalysisRepository
+    - إصلاح ربط analysisId بين ملخص التحليل وتفاصيل العرض
+  - **إنشاء GET /scores endpoint:** إنشاء GetTechnicalScoresQuery و Handler و Endpoint لاسترجاع الدرجات المحفوظة
+  - **تحسين المصفوفة الحرارية:** التحقق من عرض الدرجات المرجحة بشكل صحيح مع ألوان التصنيف (أخضر/أصفر/أحمر)
+  - **تحسين تنبيهات التباين:** إصلاح التنبيهات الوهمية بتجاهل درجات الذكاء الاصطناعي الصفرية (AI couldn't evaluate)
+  - **تحسين المحضر:** تحويل المحضر من نص عادي إلى مستند HTML احترافي يتضمن 7 أقسام كاملة وفق نظام المنافسات الحكومية
+  - **النشر:** نشر جميع التغييرات على الخادم الإنتاجي بنجاح
+- **الملفات المعدلة:**
+  - `backend/src/TendexAI.Application/Features/TechnicalEvaluation/Commands/TriggerAiAnalysis/TriggerAiOfferAnalysisCommandHandler.cs`
+  - `backend/src/TendexAI.Application/Features/TechnicalEvaluation/Queries/GetTechnicalScores/GetTechnicalScoresQuery.cs` (NEW)
+  - `backend/src/TendexAI.Application/Features/TechnicalEvaluation/Queries/GetTechnicalScores/GetTechnicalScoresQueryHandler.cs` (NEW)
+  - `backend/src/TendexAI.Application/Features/TechnicalEvaluation/Dtos/AiOfferAnalysisDtos.cs`
+  - `backend/src/TendexAI.Application/Features/TechnicalEvaluation/Queries/GetAiAnalysisSummary/GetAiAnalysisSummaryQueryHandler.cs`
+  - `backend/src/TendexAI.API/Endpoints/Evaluation/TechnicalEvaluationEndpoints.cs`
+  - `backend/src/TendexAI.Domain/Services/TechnicalScoringService.cs`
+  - `backend/src/TendexAI.Infrastructure/Persistence/Repositories/TechnicalEvaluationRepository.cs`
+  - `frontend/src/views/evaluation/technical/TechnicalEvaluationDetail.vue`
+  - `frontend/src/services/evaluationApi.ts`
+  - `frontend/src/services/aiEvaluationService.ts`
+
 ### 2026-04-01 - RFP Creation "From Scratch" Enhancement & AI Integration
 - **الحالة:** ✅ مكتمل
 - **ما تم إنجازه:**
