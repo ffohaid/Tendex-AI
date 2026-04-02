@@ -135,14 +135,26 @@ public sealed class GenerateAiAnswerCommandHandler : IRequestHandler<GenerateAiA
         // 7. Calculate confidence score based on response quality indicators
         var confidenceScore = CalculateConfidenceScore(answerText, inquiry.Category);
 
-        // 8. Save as a draft response
+        // 8. Save as a draft response using direct INSERT to avoid EF Core change tracking issues
         InquiryResponse response;
         try
         {
-            response = inquiry.SubmitDraftAnswer(answerText, isAiGenerated: true, request.RequestedBy);
+            // Create the response entity directly instead of going through the Inquiry aggregate
+            // to avoid DbUpdateConcurrencyException caused by EF Core tracking the Inquiry entity
+            response = InquiryResponse.Create(
+                inquiryId: inquiry.Id,
+                answerText: answerText,
+                isAiGenerated: true,
+                createdBy: request.RequestedBy);
             response.SetAiMetadata(confidenceScore, aiResponse.ModelName, "كراسة الشروط والمواصفات، نظام المنافسات والمشتريات الحكومية");
 
+            // Add the response directly to the DbContext (bypasses Inquiry change tracking)
+            await _inquiryRepository.AddResponseAsync(response, cancellationToken);
             await _inquiryRepository.SaveChangesAsync(cancellationToken);
+
+            // Update the inquiry's LastModifiedAt using ExecuteUpdate (no change tracking)
+            await _inquiryRepository.UpdateInquiryFieldsAsync(
+                inquiry.Id, DateTime.UtcNow, request.RequestedBy, cancellationToken);
 
             _logger.LogInformation(
                 "AI answer saved successfully for inquiry {InquiryId}, response {ResponseId}, confidence {Score}%",

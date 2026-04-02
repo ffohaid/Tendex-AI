@@ -132,6 +132,20 @@ public sealed class InquiryRepository : IInquiryRepository
             _db.Inquiries.Remove(inquiry);
     }
 
+    public async Task AddResponseAsync(InquiryResponse response, CancellationToken ct = default)
+    {
+        await _db.Set<InquiryResponse>().AddAsync(response, ct);
+    }
+
+    public async Task UpdateInquiryFieldsAsync(Guid inquiryId, DateTime lastModifiedAt, string? lastModifiedBy, CancellationToken ct = default)
+    {
+        await _db.Inquiries
+            .Where(i => i.Id == inquiryId)
+            .ExecuteUpdateAsync(setters => setters
+                .SetProperty(i => i.LastModifiedAt, lastModifiedAt)
+                .SetProperty(i => i.LastModifiedBy, lastModifiedBy), ct);
+    }
+
     public async Task<int> SaveChangesAsync(CancellationToken ct = default)
     {
         return await _db.SaveChangesAsync(ct);

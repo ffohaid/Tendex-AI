@@ -37,6 +37,12 @@ public interface IInquiryRepository
     /// <summary>Delete an inquiry.</summary>
     Task DeleteAsync(Guid id, CancellationToken ct = default);
 
+    /// <summary>Add a response directly to the InquiryResponses table.</summary>
+    Task AddResponseAsync(InquiryResponse response, CancellationToken ct = default);
+
+    /// <summary>Update inquiry fields using raw SQL to avoid EF Core change tracking issues.</summary>
+    Task UpdateInquiryFieldsAsync(Guid inquiryId, DateTime lastModifiedAt, string? lastModifiedBy, CancellationToken ct = default);
+
     /// <summary>Save changes to the database.</summary>
     Task<int> SaveChangesAsync(CancellationToken ct = default);
 }
