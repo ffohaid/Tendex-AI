@@ -352,9 +352,14 @@ async function handleChangeStatus() {
 }
 
 async function handleAddMember() {
-  if (!selectedCommittee.value) return
+  if (!selectedCommittee.value) {
+    console.error('[Committees] handleAddMember: selectedCommittee is null')
+    error.value = t('committees.errors.addMemberFailed')
+    return
+  }
   isSubmitting.value = true
   try {
+    console.log('[Committees] Adding member to committee:', selectedCommittee.value.id, memberFormData.value)
     await addCommitteeMember(selectedCommittee.value.id, memberFormData.value)
     showAddMemberDialog.value = false
     memberFormData.value = {
@@ -366,8 +371,10 @@ async function handleAddMember() {
     }
     await loadCommitteeDetail(selectedCommittee.value.id)
     await loadStatistics()
-  } catch {
-    error.value = t('committees.errors.addMemberFailed')
+  } catch (err: any) {
+    console.error('[Committees] Add member error:', err?.response?.data || err?.message || err)
+    const apiMsg = err?.response?.data?.detail || err?.response?.data?.title || err?.response?.data
+    error.value = typeof apiMsg === 'string' ? apiMsg : t('committees.errors.addMemberFailed')
   } finally {
     isSubmitting.value = false
   }
