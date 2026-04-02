@@ -1,6 +1,7 @@
 using MediatR;
 using TendexAI.Application.Features.Inquiries.Dtos;
 using TendexAI.Domain.Entities.Inquiries;
+using TendexAI.Domain.Entities.Rfp;
 
 namespace TendexAI.Application.Features.Inquiries.Queries.GetInquiryById;
 
@@ -9,10 +10,14 @@ public sealed record GetInquiryByIdQuery(Guid InquiryId) : IRequest<InquiryDto?>
 public sealed class GetInquiryByIdQueryHandler : IRequestHandler<GetInquiryByIdQuery, InquiryDto?>
 {
     private readonly IInquiryRepository _repository;
+    private readonly ICompetitionRepository _competitionRepository;
 
-    public GetInquiryByIdQueryHandler(IInquiryRepository repository)
+    public GetInquiryByIdQueryHandler(
+        IInquiryRepository repository,
+        ICompetitionRepository competitionRepository)
     {
         _repository = repository;
+        _competitionRepository = competitionRepository;
     }
 
     public async Task<InquiryDto?> Handle(GetInquiryByIdQuery request, CancellationToken cancellationToken)
@@ -20,15 +25,28 @@ public sealed class GetInquiryByIdQueryHandler : IRequestHandler<GetInquiryByIdQ
         var inquiry = await _repository.GetByIdAsync(request.InquiryId, cancellationToken);
         if (inquiry is null) return null;
 
-        return MapToDto(inquiry);
+        // Load competition name for display
+        string? competitionName = null;
+        try
+        {
+            var competition = await _competitionRepository.GetByIdAsync(inquiry.CompetitionId, cancellationToken);
+            competitionName = competition?.ProjectNameAr;
+        }
+        catch
+        {
+            // Gracefully handle if competition is not found
+        }
+
+        return MapToDto(inquiry, competitionName);
     }
 
-    internal static InquiryDto MapToDto(Inquiry inquiry)
+    internal static InquiryDto MapToDto(Inquiry inquiry, string? competitionName = null)
     {
         return new InquiryDto
         {
             Id = inquiry.Id,
             CompetitionId = inquiry.CompetitionId,
+            CompetitionName = competitionName,
             ReferenceNumber = inquiry.ReferenceNumber,
             QuestionText = inquiry.QuestionText,
             Category = inquiry.Category.ToString(),
