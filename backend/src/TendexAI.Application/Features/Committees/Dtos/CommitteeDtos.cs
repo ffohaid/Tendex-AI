@@ -16,7 +16,11 @@ public sealed record CommitteeListItemDto(
     DateTime StartDate,
     DateTime EndDate,
     Guid? CompetitionId,
-    DateTime CreatedAt);
+    string? CompetitionNameAr,
+    string? CompetitionNameEn,
+    DateTime CreatedAt,
+    int DaysRemaining,
+    double WorkloadScore);
 
 /// <summary>
 /// DTO for committee detail view with members.
@@ -32,6 +36,8 @@ public sealed record CommitteeDetailDto(
     DateTime StartDate,
     DateTime EndDate,
     Guid? CompetitionId,
+    string? CompetitionNameAr,
+    string? CompetitionNameEn,
     CompetitionPhase? ActiveFromPhase,
     CompetitionPhase? ActiveToPhase,
     string? StatusChangeReason,
@@ -39,7 +45,10 @@ public sealed record CommitteeDetailDto(
     DateTime? StatusChangedAt,
     IReadOnlyList<CommitteeMemberDto> Members,
     DateTime CreatedAt,
-    string? CreatedBy);
+    string? CreatedBy,
+    int DaysRemaining,
+    double WorkloadScore,
+    CommitteeAiInsightDto? AiInsight);
 
 /// <summary>
 /// DTO for a committee member.
@@ -66,3 +75,55 @@ public sealed record CommitteePagedResultDto(
     int TotalCount,
     int PageNumber,
     int PageSize);
+
+/// <summary>
+/// Statistics DTO for committee dashboard.
+/// </summary>
+public sealed record CommitteeStatisticsDto(
+    int TotalCommittees,
+    int ActiveCommittees,
+    int SuspendedCommittees,
+    int DissolvedCommittees,
+    int ExpiredCommittees,
+    int TotalMembers,
+    int TotalActiveMembers,
+    double AverageMembers,
+    int CommitteesExpiringSoon,
+    int CommitteesWithNoChair,
+    IReadOnlyList<CommitteeTypeBreakdownDto> TypeBreakdown);
+
+/// <summary>
+/// Breakdown by committee type.
+/// </summary>
+public sealed record CommitteeTypeBreakdownDto(
+    CommitteeType Type,
+    int Count,
+    int ActiveCount);
+
+/// <summary>
+/// AI-generated insight for a committee.
+/// </summary>
+public sealed record CommitteeAiInsightDto(
+    string Summary,
+    IReadOnlyList<string> Recommendations,
+    IReadOnlyList<string> Risks,
+    double HealthScore,
+    string HealthLabel);
+
+/// <summary>
+/// AI recommendation for committee composition.
+/// </summary>
+public sealed record CommitteeAiRecommendationDto(
+    string RecommendationType,
+    string Title,
+    string Description,
+    string Impact,
+    double Confidence);
+
+/// <summary>
+/// Response for AI committee analysis endpoint.
+/// </summary>
+public sealed record CommitteeAiAnalysisResponseDto(
+    CommitteeAiInsightDto Insight,
+    IReadOnlyList<CommitteeAiRecommendationDto> Recommendations);
+

@@ -1380,11 +1380,11 @@
   },
   "committees": {
     "permanentTitle": "Permanent Committees",
-    "permanentSubtitle": "Manage permanent committees, their members, and statuses",
+    "permanentSubtitle": "Manage permanent committees, members, and their statuses",
     "temporaryTitle": "Temporary Committees",
     "temporarySubtitle": "Manage temporary committees linked to competitions",
     "searchPlaceholder": "Search committees...",
-    "emptyState": "No permanent committees found",
+    "emptyState": "No committees found",
     "emptyStateTemporary": "No temporary committees found",
     "statuses": {
       "all": "All Statuses",
@@ -1394,14 +1394,14 @@
       "expired": "Expired"
     },
     "types": {
-      "technicalEvaluation": "Technical Bid Evaluation",
-      "financialEvaluation": "Financial Bid Evaluation",
-      "bookletPreparation": "Booklet Preparation",
-      "inquiryReview": "Inquiry Review",
-      "otherPermanent": "Other Permanent"
+      "technicalEvaluation": "Technical Evaluation Committee",
+      "financialEvaluation": "Financial Evaluation Committee",
+      "bookletPreparation": "Booklet Preparation Committee",
+      "inquiryReview": "Inquiry Review Committee",
+      "otherPermanent": "Other Permanent Committee"
     },
     "roles": {
-      "chair": "Chair",
+      "chair": "Committee Chair",
       "member": "Member",
       "secretary": "Secretary"
     },
@@ -1423,13 +1423,18 @@
       "status": "Status",
       "startDate": "Start Date",
       "competition": "Competition",
-      "actions": "Actions"
+      "actions": "Actions",
+      "daysRemaining": "Days Remaining",
+      "days": "days",
+      "workload": "Workload",
+      "phaseRange": "Phase Range"
     },
     "memberTable": {
       "name": "Name",
       "role": "Role",
       "status": "Status",
-      "actions": "Actions"
+      "actions": "Actions",
+      "assignedAt": "Assigned At"
     },
     "memberStatus": {
       "active": "Active",
@@ -1442,11 +1447,12 @@
       "reactivate": "Reactivate",
       "dissolve": "Dissolve",
       "addMember": "Add Member",
-      "removeMember": "Remove Member"
+      "removeMember": "Remove Member",
+      "aiAnalysis": "AI Analysis"
     },
     "dialog": {
       "createTitle": "Create New Permanent Committee",
-      "createTemporaryTitle": "Create New Temporary Committee",
+      "createTempTitle": "Create New Temporary Committee",
       "editTitle": "Edit Committee",
       "changeStatusTitle": "Change Committee Status",
       "addMemberTitle": "Add New Member"
@@ -1472,20 +1478,40 @@
       "endDate": "End Date",
       "members": "Members",
       "noMembers": "No members in this committee",
-      "noDescription": "No description",
+      "noDescription": "No description available",
       "phaseRange": "Phase Range"
+    },
+    "filters": {
+      "allTypes": "All Types"
+    },
+    "stats": {
+      "total": "Total Committees",
+      "active": "Active Committees",
+      "expiringSoon": "Expiring Soon",
+      "noChair": "No Chair",
+      "avgMembers": "Avg. Members",
+      "totalMembers": "Total Members"
+    },
+    "ai": {
+      "title": "AI Committee Analysis",
+      "analyzing": "Analyzing committee data...",
+      "recommendations": "Recommendations",
+      "risks": "Potential Risks",
+      "detailedRecommendations": "Detailed Recommendations",
+      "noData": "Insufficient data for analysis"
     },
     "prompts": {
       "removalReason": "Please enter the reason for removing this member"
     },
     "errors": {
-      "loadFailed": "Failed to load committees",
+      "loadFailed": "Failed to load committees list",
       "loadDetailFailed": "Failed to load committee details",
       "createFailed": "Failed to create committee",
       "updateFailed": "Failed to update committee",
       "statusChangeFailed": "Failed to change committee status",
       "addMemberFailed": "Failed to add member",
-      "removeMemberFailed": "Failed to remove member"
+      "removeMemberFailed": "Failed to remove member",
+      "aiAnalysisFailed": "Failed to analyze committee data"
     },
     "pagination": {
       "showing": "Showing {from} - {to} of {total}"

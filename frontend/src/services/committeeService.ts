@@ -16,6 +16,8 @@ import type {
   ChangeCommitteeStatusRequest,
   AddCommitteeMemberRequest,
   ConflictOfInterestResult,
+  CommitteeStatistics,
+  CommitteeAiAnalysisResponse,
 } from '@/types/committee'
 import { type CommitteeMemberRole } from '@/types/committee'
 
@@ -142,5 +144,35 @@ export async function fetchCompetitionCommittees(
 ): Promise<CommitteeDetail[]> {
   return httpGet<CommitteeDetail[]>(
     `/v1/competitions/${competitionId}/committees`,
+  )
+}
+
+/* ------------------------------------------------------------------ */
+/*  Statistics & AI Analysis                                           */
+/* ------------------------------------------------------------------ */
+
+/**
+ * Fetch committee statistics for the current tenant.
+ */
+export async function fetchCommitteeStatistics(
+  isPermanent?: boolean,
+): Promise<CommitteeStatistics> {
+  const query = new URLSearchParams()
+  if (isPermanent !== undefined) query.set('isPermanent', String(isPermanent))
+  const queryString = query.toString()
+  const url = queryString
+    ? `${BASE_URL}/statistics?${queryString}`
+    : `${BASE_URL}/statistics`
+  return httpGet<CommitteeStatistics>(url)
+}
+
+/**
+ * Fetch AI-powered analysis and recommendations for a committee.
+ */
+export async function fetchCommitteeAiAnalysis(
+  committeeId: string,
+): Promise<CommitteeAiAnalysisResponse> {
+  return httpGet<CommitteeAiAnalysisResponse>(
+    `${BASE_URL}/${committeeId}/ai-analysis`,
   )
 }

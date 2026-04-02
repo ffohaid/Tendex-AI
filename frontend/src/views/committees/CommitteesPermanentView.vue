@@ -2,16 +2,13 @@
 /**
  * CommitteesPermanentView — Permanent Committees Management Page.
  *
- * TASK-902: Displays a paginated, filterable list of permanent committees.
- * Data is fetched dynamically from the API (no mock data).
- *
- * Features:
- * - Paginated committee list with search & status filter
- * - Create / Edit / View committee dialogs
- * - Member management (add / remove)
- * - Status change (Suspend / Reactivate / Dissolve)
- * - Conflict of interest validation
- * - RTL/LTR support with Tailwind logical properties
+ * Enhanced with:
+ * - Statistics dashboard cards
+ * - AI-powered committee analysis panel
+ * - Enhanced table with workload/days-remaining indicators
+ * - Competition name display
+ * - Improved member management
+ * - Full RTL/LTR support with Tailwind logical properties
  * - English numerals exclusively
  */
 import { ref, onMounted, computed, watch } from 'vue'
@@ -24,6 +21,8 @@ import {
   changeCommitteeStatus,
   addCommitteeMember,
   removeCommitteeMember,
+  fetchCommitteeStatistics,
+  fetchCommitteeAiAnalysis,
 } from '@/services/committeeService'
 import type {
   CommitteeListItem,
@@ -33,6 +32,8 @@ import type {
   ChangeCommitteeStatusRequest,
   AddCommitteeMemberRequest,
   CommitteeMember,
+  CommitteeStatistics,
+  CommitteeAiAnalysisResponse,
 } from '@/types/committee'
 import {
   CommitteeType,
@@ -49,19 +50,25 @@ const { formatDate } = useFormatters()
 /* ------------------------------------------------------------------ */
 const committees = ref<CommitteeListItem[]>([])
 const selectedCommittee = ref<CommitteeDetail | null>(null)
+const statistics = ref<CommitteeStatistics | null>(null)
+const aiAnalysis = ref<CommitteeAiAnalysisResponse | null>(null)
 const isLoading = ref(false)
+const isLoadingStats = ref(false)
+const isLoadingAi = ref(false)
 const error = ref('')
 const currentPage = ref(1)
 const pageSize = ref(10)
 const totalCount = ref(0)
 const searchQuery = ref('')
 const statusFilter = ref<CommitteeStatus | ''>('')
+const typeFilter = ref<CommitteeType | ''>('')
 
 /* Dialogs */
 const showCreateDialog = ref(false)
 const showDetailDialog = ref(false)
 const showStatusDialog = ref(false)
 const showAddMemberDialog = ref(false)
+const showAiPanel = ref(false)
 const isSubmitting = ref(false)
 
 /* Create / Edit form */
@@ -109,6 +116,11 @@ const typeOptions = computed(() => [
   { value: CommitteeType.TechnicalEvaluation, label: t('committees.types.technicalEvaluation') },
   { value: CommitteeType.FinancialEvaluation, label: t('committees.types.financialEvaluation') },
   { value: CommitteeType.OtherPermanent, label: t('committees.types.otherPermanent') },
+])
+
+const typeFilterOptions = computed(() => [
+  { value: '', label: t('committees.filters.allTypes') },
+  ...typeOptions.value,
 ])
 
 const memberRoleOptions = computed(() => [
@@ -176,9 +188,45 @@ function getCommitteeName(item: CommitteeListItem | CommitteeDetail): string {
   return locale.value === 'ar' ? item.nameAr : item.nameEn
 }
 
+function getDaysRemainingClass(days: number): string {
+  if (days <= 0) return 'text-danger'
+  if (days <= 14) return 'text-warning'
+  return 'text-success'
+}
+
+function getWorkloadClass(score: number): string {
+  if (score >= 80) return 'bg-danger'
+  if (score >= 50) return 'bg-warning'
+  return 'bg-success'
+}
+
+function getHealthScoreClass(score: number): string {
+  if (score >= 80) return 'text-success'
+  if (score >= 50) return 'text-warning'
+  return 'text-danger'
+}
+
+function getHealthScoreBg(score: number): string {
+  if (score >= 80) return 'bg-success'
+  if (score >= 50) return 'bg-warning'
+  return 'bg-danger'
+}
+
 /* ------------------------------------------------------------------ */
 /*  API Calls                                                          */
 /* ------------------------------------------------------------------ */
+async function loadStatistics() {
+  isLoadingStats.value = true
+  try {
+    statistics.value = await fetchCommitteeStatistics(true)
+  } catch (err) {
+    console.warn('[Committees] Statistics API unavailable:', err)
+    statistics.value = null
+  } finally {
+    isLoadingStats.value = false
+  }
+}
+
 async function loadCommittees() {
   isLoading.value = true
   error.value = ''
@@ -187,13 +235,13 @@ async function loadCommittees() {
       pageNumber: currentPage.value,
       pageSize: pageSize.value,
       isPermanent: true,
+      type: typeFilter.value !== '' ? typeFilter.value : undefined,
       status: statusFilter.value !== '' ? statusFilter.value : undefined,
       search: searchQuery.value || undefined,
     })
     committees.value = result.items
     totalCount.value = result.totalCount
   } catch (err) {
-    /* Graceful degradation: show empty state when API is unavailable */
     console.warn('[Committees] API unavailable:', err)
     committees.value = []
   } finally {
@@ -205,8 +253,23 @@ async function loadCommitteeDetail(id: string) {
   try {
     selectedCommittee.value = await fetchCommitteeById(id)
     showDetailDialog.value = true
+    aiAnalysis.value = null
+    showAiPanel.value = false
   } catch {
     error.value = t('committees.errors.loadDetailFailed')
+  }
+}
+
+async function loadAiAnalysis(committeeId: string) {
+  isLoadingAi.value = true
+  showAiPanel.value = true
+  try {
+    aiAnalysis.value = await fetchCommitteeAiAnalysis(committeeId)
+  } catch (err) {
+    console.warn('[Committees] AI Analysis unavailable:', err)
+    aiAnalysis.value = null
+  } finally {
+    isLoadingAi.value = false
   }
 }
 
@@ -226,6 +289,7 @@ async function handleCreateCommittee() {
     showCreateDialog.value = false
     resetForm()
     await loadCommittees()
+    await loadStatistics()
   } catch {
     error.value = isEditMode.value
       ? t('committees.errors.updateFailed')
@@ -243,6 +307,7 @@ async function handleChangeStatus() {
     showStatusDialog.value = false
     showDetailDialog.value = false
     await loadCommittees()
+    await loadStatistics()
   } catch {
     error.value = t('committees.errors.statusChangeFailed')
   } finally {
@@ -258,6 +323,7 @@ async function handleAddMember() {
     showAddMemberDialog.value = false
     memberFormData.value = { userId: '', userFullName: '', role: CommitteeMemberRole.Member }
     await loadCommitteeDetail(selectedCommittee.value.id)
+    await loadStatistics()
   } catch {
     error.value = t('committees.errors.addMemberFailed')
   } finally {
@@ -272,6 +338,7 @@ async function handleRemoveMember(member: CommitteeMember) {
   try {
     await removeCommitteeMember(selectedCommittee.value.id, member.userId, reason)
     await loadCommitteeDetail(selectedCommittee.value.id)
+    await loadStatistics()
   } catch {
     error.value = t('committees.errors.removeMemberFailed')
   }
@@ -345,6 +412,11 @@ watch(statusFilter, () => {
   loadCommittees()
 })
 
+watch(typeFilter, () => {
+  currentPage.value = 1
+  loadCommittees()
+})
+
 watch(currentPage, () => {
   loadCommittees()
 })
@@ -354,6 +426,7 @@ watch(currentPage, () => {
 /* ------------------------------------------------------------------ */
 onMounted(() => {
   loadCommittees()
+  loadStatistics()
 })
 </script>
 
@@ -376,6 +449,68 @@ onMounted(() => {
         <i class="pi pi-plus text-xs"></i>
         {{ t('committees.actions.create') }}
       </button>
+    </div>
+
+    <!-- ============================================================ -->
+    <!--  Statistics Dashboard                                         -->
+    <!-- ============================================================ -->
+    <div v-if="isLoadingStats" class="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5">
+      <div v-for="i in 5" :key="i" class="animate-pulse rounded-lg border border-surface-dim bg-white p-4">
+        <div class="h-3 w-20 rounded bg-surface-dim"></div>
+        <div class="mt-3 h-7 w-12 rounded bg-surface-dim"></div>
+      </div>
+    </div>
+    <div v-else-if="statistics" class="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5">
+      <!-- Total -->
+      <div class="rounded-lg border border-surface-dim bg-white p-4">
+        <div class="flex items-center gap-2">
+          <div class="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10">
+            <i class="pi pi-users text-sm text-primary"></i>
+          </div>
+          <p class="text-xs text-tertiary">{{ t('committees.stats.total') }}</p>
+        </div>
+        <p class="mt-2 text-2xl font-bold text-secondary">{{ statistics.totalCommittees }}</p>
+      </div>
+      <!-- Active -->
+      <div class="rounded-lg border border-surface-dim bg-white p-4">
+        <div class="flex items-center gap-2">
+          <div class="flex h-8 w-8 items-center justify-center rounded-lg bg-success/10">
+            <i class="pi pi-check-circle text-sm text-success"></i>
+          </div>
+          <p class="text-xs text-tertiary">{{ t('committees.stats.active') }}</p>
+        </div>
+        <p class="mt-2 text-2xl font-bold text-success">{{ statistics.activeCommittees }}</p>
+      </div>
+      <!-- Expiring Soon -->
+      <div class="rounded-lg border border-surface-dim bg-white p-4">
+        <div class="flex items-center gap-2">
+          <div class="flex h-8 w-8 items-center justify-center rounded-lg bg-warning/10">
+            <i class="pi pi-clock text-sm text-warning"></i>
+          </div>
+          <p class="text-xs text-tertiary">{{ t('committees.stats.expiringSoon') }}</p>
+        </div>
+        <p class="mt-2 text-2xl font-bold text-warning">{{ statistics.committeesExpiringSoon }}</p>
+      </div>
+      <!-- No Chair -->
+      <div class="rounded-lg border border-surface-dim bg-white p-4">
+        <div class="flex items-center gap-2">
+          <div class="flex h-8 w-8 items-center justify-center rounded-lg bg-danger/10">
+            <i class="pi pi-exclamation-triangle text-sm text-danger"></i>
+          </div>
+          <p class="text-xs text-tertiary">{{ t('committees.stats.noChair') }}</p>
+        </div>
+        <p class="mt-2 text-2xl font-bold text-danger">{{ statistics.committeesWithNoChair }}</p>
+      </div>
+      <!-- Avg Members -->
+      <div class="rounded-lg border border-surface-dim bg-white p-4">
+        <div class="flex items-center gap-2">
+          <div class="flex h-8 w-8 items-center justify-center rounded-lg bg-info/10">
+            <i class="pi pi-chart-bar text-sm text-info"></i>
+          </div>
+          <p class="text-xs text-tertiary">{{ t('committees.stats.avgMembers') }}</p>
+        </div>
+        <p class="mt-2 text-2xl font-bold text-secondary">{{ statistics.averageMembers }}</p>
+      </div>
     </div>
 
     <!-- Error Banner -->
@@ -405,6 +540,20 @@ onMounted(() => {
           class="w-full rounded-lg border border-surface-dim bg-surface-ground py-2.5 ps-10 pe-4 text-sm text-secondary placeholder:text-tertiary focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
         />
       </div>
+
+      <!-- Type Filter -->
+      <select
+        v-model="typeFilter"
+        class="rounded-lg border border-surface-dim bg-surface-ground px-4 py-2.5 text-sm text-secondary focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+      >
+        <option
+          v-for="option in typeFilterOptions"
+          :key="String(option.value)"
+          :value="option.value"
+        >
+          {{ option.label }}
+        </option>
+      </select>
 
       <!-- Status Filter -->
       <select
@@ -459,8 +608,11 @@ onMounted(() => {
               <th class="px-4 py-3 text-center font-semibold text-secondary">
                 {{ t('committees.table.status') }}
               </th>
-              <th class="px-4 py-3 text-start font-semibold text-secondary">
-                {{ t('committees.table.startDate') }}
+              <th class="px-4 py-3 text-center font-semibold text-secondary">
+                {{ t('committees.table.daysRemaining') }}
+              </th>
+              <th class="px-4 py-3 text-center font-semibold text-secondary">
+                {{ t('committees.table.workload') }}
               </th>
               <th class="px-4 py-3 text-center font-semibold text-secondary">
                 {{ t('committees.table.actions') }}
@@ -473,14 +625,20 @@ onMounted(() => {
               :key="committee.id"
               class="border-b border-surface-dim last:border-b-0 transition-colors hover:bg-surface-ground/50"
             >
-              <td class="px-4 py-3 font-medium text-secondary">
-                {{ getCommitteeName(committee) }}
+              <td class="px-4 py-3">
+                <p class="font-medium text-secondary">{{ getCommitteeName(committee) }}</p>
+                <p v-if="committee.competitionNameAr || committee.competitionNameEn" class="mt-0.5 text-xs text-tertiary">
+                  {{ locale === 'ar' ? committee.competitionNameAr : committee.competitionNameEn }}
+                </p>
               </td>
               <td class="px-4 py-3 text-tertiary">
                 {{ getTypeName(committee.type) }}
               </td>
               <td class="px-4 py-3 text-center text-secondary">
-                {{ committee.activeMemberCount }}
+                <span class="inline-flex items-center gap-1">
+                  <i class="pi pi-user text-xs text-tertiary"></i>
+                  {{ committee.activeMemberCount }}
+                </span>
               </td>
               <td class="px-4 py-3 text-center">
                 <span
@@ -493,17 +651,44 @@ onMounted(() => {
                   {{ getStatusBadge(committee.status).label }}
                 </span>
               </td>
-              <td class="px-4 py-3 text-tertiary">
-                {{ formatDate(committee.startDate) }}
+              <td class="px-4 py-3 text-center">
+                <span
+                  :class="getDaysRemainingClass(committee.daysRemaining)"
+                  class="text-sm font-semibold"
+                >
+                  {{ committee.daysRemaining > 0 ? committee.daysRemaining : 0 }}
+                </span>
+                <span class="ms-0.5 text-xs text-tertiary">{{ t('committees.table.days') }}</span>
               </td>
               <td class="px-4 py-3 text-center">
-                <button
-                  class="rounded-lg p-1.5 text-tertiary transition-colors hover:bg-surface-ground hover:text-primary"
-                  :title="t('common.edit')"
-                  @click="loadCommitteeDetail(committee.id)"
-                >
-                  <i class="pi pi-eye text-sm"></i>
-                </button>
+                <div class="mx-auto w-16">
+                  <div class="h-1.5 w-full overflow-hidden rounded-full bg-surface-dim">
+                    <div
+                      :class="getWorkloadClass(committee.workloadScore)"
+                      class="h-full rounded-full transition-all"
+                      :style="{ width: Math.min(committee.workloadScore, 100) + '%' }"
+                    ></div>
+                  </div>
+                  <p class="mt-0.5 text-xs text-tertiary">{{ committee.workloadScore }}%</p>
+                </div>
+              </td>
+              <td class="px-4 py-3 text-center">
+                <div class="flex items-center justify-center gap-1">
+                  <button
+                    class="rounded-lg p-1.5 text-tertiary transition-colors hover:bg-surface-ground hover:text-primary"
+                    :title="t('common.view')"
+                    @click="loadCommitteeDetail(committee.id)"
+                  >
+                    <i class="pi pi-eye text-sm"></i>
+                  </button>
+                  <button
+                    class="rounded-lg p-1.5 text-tertiary transition-colors hover:bg-primary/10 hover:text-primary"
+                    :title="t('committees.actions.aiAnalysis')"
+                    @click="loadCommitteeDetail(committee.id); loadAiAnalysis(committee.id)"
+                  >
+                    <i class="pi pi-sparkles text-sm"></i>
+                  </button>
+                </div>
               </td>
             </tr>
           </tbody>
@@ -524,7 +709,7 @@ onMounted(() => {
             :disabled="currentPage === 1"
             @click="goToPage(currentPage - 1)"
           >
-            <i class="pi pi-chevron-left text-xs" :class="{ 'pi-chevron-right': isRtl }"></i>
+            <i class="pi text-xs" :class="isRtl ? 'pi-chevron-right' : 'pi-chevron-left'"></i>
           </button>
           <template v-for="page in totalPages" :key="page">
             <button
@@ -547,7 +732,7 @@ onMounted(() => {
             :disabled="currentPage === totalPages"
             @click="goToPage(currentPage + 1)"
           >
-            <i class="pi pi-chevron-right text-xs" :class="{ 'pi-chevron-left': isRtl }"></i>
+            <i class="pi text-xs" :class="isRtl ? 'pi-chevron-left' : 'pi-chevron-right'"></i>
           </button>
         </div>
       </div>
@@ -690,13 +875,25 @@ onMounted(() => {
         class="fixed inset-0 z-50 flex items-center justify-center bg-black/40"
         @click.self="showDetailDialog = false"
       >
-        <div class="mx-4 w-full max-w-2xl rounded-xl bg-white shadow-xl max-h-[90vh] overflow-y-auto">
+        <div class="mx-4 w-full max-w-3xl rounded-xl bg-white shadow-xl max-h-[90vh] overflow-y-auto">
           <!-- Header -->
           <div class="sticky top-0 z-10 flex items-center justify-between border-b border-surface-dim bg-white px-6 py-4">
-            <h2 class="text-lg font-bold text-secondary">
-              {{ getCommitteeName(selectedCommittee) }}
-            </h2>
+            <div>
+              <h2 class="text-lg font-bold text-secondary">
+                {{ getCommitteeName(selectedCommittee) }}
+              </h2>
+              <p v-if="selectedCommittee.competitionNameAr || selectedCommittee.competitionNameEn" class="mt-0.5 text-xs text-tertiary">
+                {{ locale === 'ar' ? selectedCommittee.competitionNameAr : selectedCommittee.competitionNameEn }}
+              </p>
+            </div>
             <div class="flex items-center gap-2">
+              <button
+                class="rounded-lg border border-primary/30 px-3 py-1.5 text-xs font-medium text-primary hover:bg-primary/5"
+                @click="loadAiAnalysis(selectedCommittee!.id)"
+              >
+                <i class="pi pi-sparkles me-1 text-xs"></i>
+                {{ t('committees.actions.aiAnalysis') }}
+              </button>
               <button
                 class="rounded-lg border border-surface-dim px-3 py-1.5 text-xs font-medium text-secondary hover:bg-surface-ground"
                 @click="openEditDialog(selectedCommittee!)"
@@ -721,7 +918,7 @@ onMounted(() => {
           </div>
 
           <!-- Info Grid -->
-          <div class="grid grid-cols-2 gap-4 p-6 sm:grid-cols-3">
+          <div class="grid grid-cols-2 gap-4 p-6 sm:grid-cols-4">
             <div>
               <p class="text-xs text-tertiary">{{ t('committees.table.type') }}</p>
               <p class="mt-1 text-sm font-medium text-secondary">
@@ -752,11 +949,151 @@ onMounted(() => {
                 {{ formatDate(selectedCommittee.endDate) }}
               </p>
             </div>
+            <div>
+              <p class="text-xs text-tertiary">{{ t('committees.table.daysRemaining') }}</p>
+              <p class="mt-1 text-sm font-semibold" :class="getDaysRemainingClass(selectedCommittee.daysRemaining)">
+                {{ selectedCommittee.daysRemaining > 0 ? selectedCommittee.daysRemaining : 0 }} {{ t('committees.table.days') }}
+              </p>
+            </div>
+            <div>
+              <p class="text-xs text-tertiary">{{ t('committees.table.workload') }}</p>
+              <div class="mt-1">
+                <div class="h-2 w-full overflow-hidden rounded-full bg-surface-dim">
+                  <div
+                    :class="getWorkloadClass(selectedCommittee.workloadScore)"
+                    class="h-full rounded-full transition-all"
+                    :style="{ width: Math.min(selectedCommittee.workloadScore, 100) + '%' }"
+                  ></div>
+                </div>
+                <p class="mt-0.5 text-xs text-tertiary">{{ selectedCommittee.workloadScore }}%</p>
+              </div>
+            </div>
             <div class="col-span-2">
               <p class="text-xs text-tertiary">{{ t('committees.form.description') }}</p>
               <p class="mt-1 text-sm text-secondary">
                 {{ selectedCommittee.description || t('committees.detail.noDescription') }}
               </p>
+            </div>
+          </div>
+
+          <!-- ============================================================ -->
+          <!--  AI Analysis Panel                                           -->
+          <!-- ============================================================ -->
+          <div v-if="showAiPanel" class="border-t border-surface-dim px-6 py-4">
+            <div class="mb-4 flex items-center justify-between">
+              <h3 class="flex items-center gap-2 text-sm font-bold text-secondary">
+                <i class="pi pi-sparkles text-primary"></i>
+                {{ t('committees.ai.title') }}
+              </h3>
+              <button
+                class="rounded-lg p-1 text-tertiary hover:bg-surface-ground"
+                @click="showAiPanel = false"
+              >
+                <i class="pi pi-times text-xs"></i>
+              </button>
+            </div>
+
+            <!-- Loading -->
+            <div v-if="isLoadingAi" class="flex items-center justify-center py-8">
+              <div class="text-center">
+                <i class="pi pi-spin pi-spinner text-2xl text-primary"></i>
+                <p class="mt-2 text-xs text-tertiary">{{ t('committees.ai.analyzing') }}</p>
+              </div>
+            </div>
+
+            <!-- AI Results -->
+            <div v-else-if="aiAnalysis" class="space-y-4">
+              <!-- Health Score -->
+              <div class="flex items-center gap-4 rounded-lg bg-surface-ground p-4">
+                <div class="relative flex h-16 w-16 items-center justify-center">
+                  <svg class="h-16 w-16 -rotate-90" viewBox="0 0 36 36">
+                    <path
+                      class="text-surface-dim"
+                      stroke="currentColor"
+                      stroke-width="3"
+                      fill="none"
+                      d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+                    />
+                    <path
+                      :class="getHealthScoreClass(aiAnalysis.insight.healthScore)"
+                      stroke="currentColor"
+                      stroke-width="3"
+                      fill="none"
+                      :stroke-dasharray="`${aiAnalysis.insight.healthScore}, 100`"
+                      d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+                    />
+                  </svg>
+                  <span class="absolute text-sm font-bold" :class="getHealthScoreClass(aiAnalysis.insight.healthScore)">
+                    {{ aiAnalysis.insight.healthScore }}%
+                  </span>
+                </div>
+                <div class="flex-1">
+                  <p class="text-sm font-semibold text-secondary">{{ aiAnalysis.insight.healthLabel }}</p>
+                  <p class="mt-1 text-xs text-tertiary leading-relaxed">{{ aiAnalysis.insight.summary }}</p>
+                </div>
+              </div>
+
+              <!-- Recommendations -->
+              <div v-if="aiAnalysis.insight.recommendations.length > 0">
+                <h4 class="mb-2 text-xs font-semibold text-secondary">{{ t('committees.ai.recommendations') }}</h4>
+                <ul class="space-y-1.5">
+                  <li
+                    v-for="(rec, idx) in aiAnalysis.insight.recommendations"
+                    :key="idx"
+                    class="flex items-start gap-2 rounded-lg bg-primary/5 p-2.5 text-xs text-secondary"
+                  >
+                    <i class="pi pi-check-circle mt-0.5 text-xs text-primary"></i>
+                    <span>{{ rec }}</span>
+                  </li>
+                </ul>
+              </div>
+
+              <!-- Risks -->
+              <div v-if="aiAnalysis.insight.risks.length > 0">
+                <h4 class="mb-2 text-xs font-semibold text-secondary">{{ t('committees.ai.risks') }}</h4>
+                <ul class="space-y-1.5">
+                  <li
+                    v-for="(risk, idx) in aiAnalysis.insight.risks"
+                    :key="idx"
+                    class="flex items-start gap-2 rounded-lg bg-danger/5 p-2.5 text-xs text-secondary"
+                  >
+                    <i class="pi pi-exclamation-triangle mt-0.5 text-xs text-danger"></i>
+                    <span>{{ risk }}</span>
+                  </li>
+                </ul>
+              </div>
+
+              <!-- Detailed Recommendations -->
+              <div v-if="aiAnalysis.recommendations.length > 0">
+                <h4 class="mb-2 text-xs font-semibold text-secondary">{{ t('committees.ai.detailedRecommendations') }}</h4>
+                <div class="space-y-2">
+                  <div
+                    v-for="(rec, idx) in aiAnalysis.recommendations"
+                    :key="idx"
+                    class="rounded-lg border border-surface-dim p-3"
+                  >
+                    <div class="flex items-center justify-between">
+                      <p class="text-xs font-semibold text-secondary">{{ rec.title }}</p>
+                      <div class="flex items-center gap-2">
+                        <span
+                          class="rounded-full px-2 py-0.5 text-[10px] font-medium"
+                          :class="rec.impact === 'High' ? 'bg-danger/10 text-danger' : rec.impact === 'Medium' ? 'bg-warning/10 text-warning' : 'bg-info/10 text-info'"
+                        >
+                          {{ rec.impact }}
+                        </span>
+                        <span class="text-[10px] text-tertiary">{{ rec.confidence }}%</span>
+                      </div>
+                    </div>
+                    <p class="mt-1 text-xs text-tertiary leading-relaxed">{{ rec.description }}</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- No AI Data -->
+            <div v-else class="py-8 text-center">
+              <i class="pi pi-info-circle text-2xl text-tertiary"></i>
+              <p class="mt-2 text-xs text-tertiary">{{ t('committees.ai.noData') }}</p>
             </div>
           </div>
 
@@ -793,6 +1130,9 @@ onMounted(() => {
                       {{ t('committees.memberTable.status') }}
                     </th>
                     <th class="px-3 py-2 text-center text-xs font-semibold text-tertiary">
+                      {{ t('committees.memberTable.assignedAt') }}
+                    </th>
+                    <th class="px-3 py-2 text-center text-xs font-semibold text-tertiary">
                       {{ t('committees.memberTable.actions') }}
                     </th>
                   </tr>
@@ -803,9 +1143,21 @@ onMounted(() => {
                     :key="member.id"
                     class="border-b border-surface-dim last:border-b-0"
                   >
-                    <td class="px-3 py-2 text-secondary">{{ member.userFullName }}</td>
-                    <td class="px-3 py-2 text-center text-tertiary">
-                      {{ getRoleName(member.role) }}
+                    <td class="px-3 py-2">
+                      <div class="flex items-center gap-2">
+                        <div class="flex h-7 w-7 items-center justify-center rounded-full bg-primary/10 text-xs font-bold text-primary">
+                          {{ member.userFullName.charAt(0) }}
+                        </div>
+                        <span class="text-secondary">{{ member.userFullName }}</span>
+                      </div>
+                    </td>
+                    <td class="px-3 py-2 text-center">
+                      <span
+                        class="inline-block rounded-full px-2 py-0.5 text-xs font-medium"
+                        :class="member.role === CommitteeMemberRole.Chair ? 'bg-primary/10 text-primary' : 'bg-surface-muted text-tertiary'"
+                      >
+                        {{ getRoleName(member.role) }}
+                      </span>
                     </td>
                     <td class="px-3 py-2 text-center">
                       <span
@@ -814,6 +1166,9 @@ onMounted(() => {
                       >
                         {{ member.isActive ? t('committees.memberStatus.active') : t('committees.memberStatus.removed') }}
                       </span>
+                    </td>
+                    <td class="px-3 py-2 text-center text-xs text-tertiary">
+                      {{ formatDate(member.assignedAt) }}
                     </td>
                     <td class="px-3 py-2 text-center">
                       <button

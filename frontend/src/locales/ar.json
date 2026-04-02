@@ -1384,7 +1384,7 @@
     "temporaryTitle": "اللجان المؤقتة",
     "temporarySubtitle": "إدارة اللجان المؤقتة المرتبطة بالمنافسات",
     "searchPlaceholder": "البحث في اللجان...",
-    "emptyState": "لا توجد لجان دائمة حالياً",
+    "emptyState": "لا توجد لجان حالياً",
     "emptyStateTemporary": "لا توجد لجان مؤقتة حالياً",
     "statuses": {
       "all": "جميع الحالات",
@@ -1423,13 +1423,18 @@
       "status": "الحالة",
       "startDate": "تاريخ البداية",
       "competition": "المنافسة",
-      "actions": "الإجراءات"
+      "actions": "الإجراءات",
+      "daysRemaining": "الأيام المتبقية",
+      "days": "يوم",
+      "workload": "عبء العمل",
+      "phaseRange": "نطاق المراحل"
     },
     "memberTable": {
       "name": "الاسم",
       "role": "الدور",
       "status": "الحالة",
-      "actions": "الإجراءات"
+      "actions": "الإجراءات",
+      "assignedAt": "تاريخ التعيين"
     },
     "memberStatus": {
       "active": "نشط",
@@ -1442,11 +1447,12 @@
       "reactivate": "إعادة تفعيل",
       "dissolve": "حل اللجنة",
       "addMember": "إضافة عضو",
-      "removeMember": "إزالة عضو"
+      "removeMember": "إزالة عضو",
+      "aiAnalysis": "تحليل ذكي"
     },
     "dialog": {
       "createTitle": "إنشاء لجنة دائمة جديدة",
-      "createTemporaryTitle": "إنشاء لجنة مؤقتة جديدة",
+      "createTempTitle": "إنشاء لجنة مؤقتة جديدة",
       "editTitle": "تعديل بيانات اللجنة",
       "changeStatusTitle": "تغيير حالة اللجنة",
       "addMemberTitle": "إضافة عضو جديد"
@@ -1475,6 +1481,25 @@
       "noDescription": "لا يوجد وصف",
       "phaseRange": "نطاق المراحل"
     },
+    "filters": {
+      "allTypes": "جميع الأنواع"
+    },
+    "stats": {
+      "total": "إجمالي اللجان",
+      "active": "اللجان النشطة",
+      "expiringSoon": "تنتهي قريباً",
+      "noChair": "بدون رئيس",
+      "avgMembers": "متوسط الأعضاء",
+      "totalMembers": "إجمالي الأعضاء"
+    },
+    "ai": {
+      "title": "التحليل الذكي للجنة",
+      "analyzing": "جاري تحليل بيانات اللجنة...",
+      "recommendations": "التوصيات",
+      "risks": "المخاطر المحتملة",
+      "detailedRecommendations": "توصيات تفصيلية",
+      "noData": "لا تتوفر بيانات كافية للتحليل"
+    },
     "prompts": {
       "removalReason": "يرجى إدخال سبب إزالة العضو"
     },
@@ -1485,7 +1510,8 @@
       "updateFailed": "فشل في تحديث بيانات اللجنة",
       "statusChangeFailed": "فشل في تغيير حالة اللجنة",
       "addMemberFailed": "فشل في إضافة العضو",
-      "removeMemberFailed": "فشل في إزالة العضو"
+      "removeMemberFailed": "فشل في إزالة العضو",
+      "aiAnalysisFailed": "فشل في تحليل بيانات اللجنة"
     },
     "pagination": {
       "showing": "عرض {from} - {to} من {total}"

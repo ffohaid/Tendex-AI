@@ -69,7 +69,11 @@ export interface CommitteeListItem {
   startDate: string
   endDate: string
   competitionId: string | null
+  competitionNameAr: string | null
+  competitionNameEn: string | null
   createdAt: string
+  daysRemaining: number
+  workloadScore: number
 }
 
 /** Detail DTO for a single committee with members. */
@@ -84,6 +88,8 @@ export interface CommitteeDetail {
   startDate: string
   endDate: string
   competitionId: string | null
+  competitionNameAr: string | null
+  competitionNameEn: string | null
   activeFromPhase: CompetitionPhase | null
   activeToPhase: CompetitionPhase | null
   statusChangeReason: string | null
@@ -92,6 +98,9 @@ export interface CommitteeDetail {
   members: CommitteeMember[]
   createdAt: string
   createdBy: string | null
+  daysRemaining: number
+  workloadScore: number
+  aiInsight: CommitteeAiInsight | null
 }
 
 /** DTO for a committee member. */
@@ -122,6 +131,56 @@ export interface CommitteePagedResult {
 export interface ConflictOfInterestResult {
   hasConflict: boolean
   conflictDetails: string | null
+}
+
+/* ------------------------------------------------------------------ */
+/*  Statistics & AI DTOs                                               */
+/* ------------------------------------------------------------------ */
+
+/** Committee statistics DTO. */
+export interface CommitteeStatistics {
+  totalCommittees: number
+  activeCommittees: number
+  suspendedCommittees: number
+  dissolvedCommittees: number
+  expiredCommittees: number
+  totalMembers: number
+  totalActiveMembers: number
+  averageMembers: number
+  committeesExpiringSoon: number
+  committeesWithNoChair: number
+  typeBreakdown: CommitteeTypeBreakdown[]
+}
+
+/** Breakdown by committee type. */
+export interface CommitteeTypeBreakdown {
+  type: CommitteeType
+  count: number
+  activeCount: number
+}
+
+/** AI-generated insight for a committee. */
+export interface CommitteeAiInsight {
+  summary: string
+  recommendations: string[]
+  risks: string[]
+  healthScore: number
+  healthLabel: string
+}
+
+/** AI recommendation for committee composition. */
+export interface CommitteeAiRecommendation {
+  recommendationType: string
+  title: string
+  description: string
+  impact: string
+  confidence: number
+}
+
+/** Response for AI committee analysis endpoint. */
+export interface CommitteeAiAnalysisResponse {
+  insight: CommitteeAiInsight
+  recommendations: CommitteeAiRecommendation[]
 }
 
 /* ------------------------------------------------------------------ */

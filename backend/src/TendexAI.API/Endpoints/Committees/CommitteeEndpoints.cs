@@ -9,6 +9,8 @@ using TendexAI.Application.Features.Committees.Commands.UpdateCommittee;
 using TendexAI.Application.Features.Committees.Dtos;
 using TendexAI.Application.Features.Committees.Queries.GetCommitteeById;
 using TendexAI.Application.Features.Committees.Queries.GetCommitteesList;
+using TendexAI.Application.Features.Committees.Queries.GetCommitteeStatistics;
+using TendexAI.Application.Features.Committees.Queries.GetCommitteeAiAnalysis;
 using TendexAI.Application.Features.Committees.Queries.GetCompetitionCommittees;
 using TendexAI.Application.Features.Committees.Queries.ValidateConflictOfInterest;
 using TendexAI.Domain.Enums;
@@ -93,6 +95,22 @@ public static class CommitteeEndpoints
             .WithName("ValidateConflictOfInterest")
             .WithSummary("Check if adding a user to a committee would violate conflict of interest rules")
             .Produces<ConflictOfInterestResultDto>(StatusCodes.Status200OK)
+            .Produces<ProblemDetails>(StatusCodes.Status404NotFound);
+
+        // ═════════════════════════════════════════════════════════════
+        //  Statistics & AI Analysis
+        // ═════════════════════════════════════════════════════════════
+
+        group.MapGet("/statistics", GetCommitteeStatisticsAsync)
+            .WithName("GetCommitteeStatistics")
+            .WithSummary("Get committee statistics for the current tenant")
+            .Produces<CommitteeStatisticsDto>(StatusCodes.Status200OK)
+            .Produces<ProblemDetails>(StatusCodes.Status400BadRequest);
+
+        group.MapGet("/{committeeId:guid}/ai-analysis", GetCommitteeAiAnalysisAsync)
+            .WithName("GetCommitteeAiAnalysis")
+            .WithSummary("Get AI-powered analysis and recommendations for a committee")
+            .Produces<CommitteeAiAnalysisResponseDto>(StatusCodes.Status200OK)
             .Produces<ProblemDetails>(StatusCodes.Status404NotFound);
 
         // ═════════════════════════════════════════════════════════════
@@ -257,6 +275,30 @@ public static class CommitteeEndpoints
             CommitteeId: committeeId,
             Role: role);
 
+        var result = await sender.Send(query, cancellationToken);
+        return result.IsSuccess
+            ? Results.Ok(result.Value)
+            : Results.Problem(result.Error, statusCode: StatusCodes.Status404NotFound);
+    }
+
+    private static async Task<IResult> GetCommitteeStatisticsAsync(
+        [FromQuery] bool? isPermanent,
+        ISender sender,
+        CancellationToken cancellationToken)
+    {
+        var query = new GetCommitteeStatisticsQuery(IsPermanentFilter: isPermanent);
+        var result = await sender.Send(query, cancellationToken);
+        return result.IsSuccess
+            ? Results.Ok(result.Value)
+            : Results.Problem(result.Error, statusCode: StatusCodes.Status400BadRequest);
+    }
+
+    private static async Task<IResult> GetCommitteeAiAnalysisAsync(
+        Guid committeeId,
+        ISender sender,
+        CancellationToken cancellationToken)
+    {
+        var query = new GetCommitteeAiAnalysisQuery(CommitteeId: committeeId);
         var result = await sender.Send(query, cancellationToken);
         return result.IsSuccess
             ? Results.Ok(result.Value)
