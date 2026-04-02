@@ -24,6 +24,56 @@
 
 *يرجى إضافة أحدث مهمة منجزة في أعلى هذه القائمة.*
 
+### 2026-04-02 - Inquiry System: Full Implementation, AI Integration, and Comprehensive Testing
+- **الحالة:** ✅ مكتمل
+- **ما تم إنجازه:**
+  - **إصلاح DbUpdateConcurrencyException (CRITICAL):**
+    - السبب الجذري: EF Core كان يفشل عند حفظ InquiryResponse جديد مع تعديل Inquiry entity في نفس الوقت
+    - الحل: استخدام AddResponseAsync و UpdateInquiryFieldsAsync (ExecuteUpdateAsync) بدلاً من تعديل الكيان المتتبع مباشرة
+    - إضافة methods جديدة في IInquiryRepository و InquiryRepository
+  - **إصلاح AI Answer Generation:**
+    - إضافة timeout handling (120 ثانية) مع CancellationTokenSource
+    - إضافة try-catch شامل مع logging مفصل
+    - إضافة location block خاص في nginx للـ AI endpoints مع proxy_read_timeout 180s
+  - **إنشاء EF Core Migration لجداول الاستفسارات:**
+    - Migration: AddInquiryEntities يضيف جداول Inquiries و InquiryResponses
+  - **دعم i18n الكامل لصفحة الاستفسارات:**
+    - تحويل جميع النصوص المكتوبة مباشرة (hardcoded) لاستخدام t() من vue-i18n
+    - إضافة 121 مفتاح ترجمة في ar.json و en.json
+    - دعم كامل للعربية (RTL) والإنجليزية (LTR)
+  - **إصلاح CompetitionName في قوائم الاستفسارات:**
+    - تعديل GetInquiryByIdQueryHandler و GetInquiriesPagedQueryHandler لجلب اسم المنافسة من ICompetitionRepository
+  - **تحسين Frontend Error Handling:**
+    - زيادة HTTP timeout إلى 120 ثانية لدعم استدعاءات AI
+    - عرض رسائل خطأ مفصلة من الـ API بدلاً من رسائل عامة
+- **نتائج الاختبار المباشر (Live Testing):**
+  - ✅ إنشاء استفسار جديد يعمل بنجاح
+  - ✅ توليد إجابة بالذكاء الاصطناعي (gemini-2.5-flash) بثقة 85-95% يعمل بنجاح
+  - ✅ سير العمل الكامل: جديد → بانتظار الاعتماد → معتمد يعمل بنجاح
+  - ✅ الإحصائيات تتحدث تلقائياً بعد كل تغيير حالة
+  - ✅ البحث والفلاتر (الحالة، التصنيف، الأولوية) تعمل
+  - ✅ تبديل اللغة (عربي/إنجليزي) يعمل بشكل كامل
+  - ✅ تبويب المعلومات يعرض جميع تفاصيل الاستفسار
+  - ✅ تبويب الإجابات والذكاء الاصطناعي يعمل بالكامل
+  - ✅ تبويب الإسناد يعرض قائمة اللجان
+  - ✅ 3 استفسارات تم إنشاؤها واختبارها بنجاح
+- **الملفات المعدلة:**
+  - `backend/src/TendexAI.Application/Features/Inquiries/Commands/GenerateAiAnswer/GenerateAiAnswerCommandHandler.cs`
+  - `backend/src/TendexAI.Domain/Entities/Inquiries/IInquiryRepository.cs`
+  - `backend/src/TendexAI.Infrastructure/Persistence/Repositories/InquiryRepository.cs`
+  - `backend/src/TendexAI.API/Endpoints/Inquiries/InquiryEndpoints.cs`
+  - `backend/src/TendexAI.Application/Features/Inquiries/Queries/GetInquiryById/GetInquiryByIdQueryHandler.cs`
+  - `backend/src/TendexAI.Application/Features/Inquiries/Queries/GetInquiriesPaged/GetInquiriesPagedQueryHandler.cs`
+  - `frontend/src/views/inquiries/InquiriesView.vue` (إعادة كتابة كاملة مع i18n)
+  - `frontend/src/services/http.ts` (زيادة timeout)
+  - `frontend/src/locales/ar.json` (إضافة 121 مفتاح ترجمة)
+  - `frontend/src/locales/en.json` (إضافة 121 مفتاح ترجمة)
+  - `infrastructure/nginx/conf.d/tendex.conf` (إضافة AI endpoint timeout)
+- **Commits:**
+  - `feat: add inquiry EF migration and fix AI answer generation with proper error handling`
+  - `fix: resolve DbUpdateConcurrencyException in AI answer generation`
+  - `feat: add full i18n support for inquiries page with 121 translation keys`
+
 ### 2026-04-02 - Fix Login, Error Translation, Status Mapping & Financial Evaluation Integration
 - **الحالة:** ✅ مكتمل
 - **ما تم إنجازه:**
