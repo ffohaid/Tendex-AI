@@ -62,14 +62,18 @@ public sealed record PerformanceMetricsDto(
     decimal SlaComplianceRate);
 
 /// <summary>
-/// Pending task for the unified task center.
-/// Maps to the frontend PendingTask interface.
+/// Enhanced pending task for the unified task center.
+/// Includes source type, descriptions, AI recommendations, and assigned-by info.
+/// Maps to the frontend TaskItem interface.
 /// </summary>
 public sealed record PendingTaskDto(
     string Id,
+    string SourceType,
     string Type,
     string TitleAr,
     string TitleEn,
+    string DescriptionAr,
+    string DescriptionEn,
     string CompetitionTitleAr,
     string CompetitionTitleEn,
     string CompetitionReferenceNumber,
@@ -79,11 +83,43 @@ public sealed record PendingTaskDto(
     long RemainingTimeSeconds,
     string Priority,
     string ActionRequired,
-    string ActionUrl);
+    string ActionUrl,
+    string? AssignedByAr = null,
+    string? AssignedByEn = null,
+    string? AiRecommendationAr = null,
+    string? AiRecommendationEn = null,
+    double? AiConfidence = null);
 
 /// <summary>
-/// Paginated result for pending tasks.
+/// Paginated result for pending tasks with statistics.
 /// </summary>
 public sealed record PendingTasksPagedResultDto(
     IReadOnlyList<PendingTaskDto> Items,
-    int TotalCount);
+    int TotalCount,
+    TaskCenterStatsDto? Statistics = null);
+
+/// <summary>
+/// Task center statistics for the dashboard header.
+/// Provides counts by type, priority, and SLA status.
+/// </summary>
+public sealed record TaskCenterStatsDto(
+    int TotalPending,
+    int ApprovalTasks,
+    int EvaluationTasks,
+    int InquiryTasks,
+    int ReviewTasks,
+    int CriticalTasks,
+    int OverdueTasks,
+    int CompletedToday,
+    double AverageSlaCompliancePercent);
+
+/// <summary>
+/// Response DTO for AI task recommendation.
+/// </summary>
+public sealed record TaskAiRecommendationDto(
+    string RecommendationAr,
+    string RecommendationEn,
+    double Confidence,
+    string ModelName,
+    string[] SuggestedActions,
+    string RiskLevel);

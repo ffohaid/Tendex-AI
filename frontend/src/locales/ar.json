@@ -30,7 +30,9 @@
     "arabic": "العربية",
     "select": "اختيار",
     "selectAll": "تحديد الكل",
-    "selected": "محدد"
+    "selected": "محدد",
+    "showing": "عرض",
+    "of": "من"
   },
   "auth": {
     "login": "تسجيل الدخول",
@@ -2077,7 +2079,82 @@
   },
   "taskCenter": {
     "title": "مركز المهام",
+    "subtitle": "جميع المهام والاعتمادات المطلوبة منك في مكان واحد",
     "description": "جميع المهام والاعتمادات المطلوبة منك في مكان واحد",
+    "empty": "لا توجد مهام حالياً",
+    "emptyDescription": "ستظهر هنا المهام والاعتمادات المطلوبة منك عند إسنادها إليك",
+    "stats": {
+      "totalPending": "إجمالي المهام",
+      "critical": "مهام حرجة",
+      "overdue": "مهام متأخرة",
+      "inquiries": "استفسارات",
+      "slaCompliance": "الالتزام بالمواعيد",
+      "approvals": "اعتمادات",
+      "evaluations": "تقييمات",
+      "reviews": "مراجعات",
+      "completedToday": "مكتملة اليوم"
+    },
+    "filters": {
+      "all": "الكل",
+      "approval": "الاعتمادات",
+      "evaluation": "التقييم",
+      "inquiry": "الاستفسارات",
+      "review": "المراجعات"
+    },
+    "priority": {
+      "critical": "حرج",
+      "high": "مرتفع",
+      "medium": "متوسط",
+      "low": "منخفض"
+    },
+    "sla": {
+      "on_track": "في الوقت",
+      "approaching": "يقترب الموعد",
+      "exceeded": "متأخر",
+      "overdue": "متأخر",
+      "onTime": "في الوقت"
+    },
+    "sortBy": {
+      "priority": "الأولوية",
+      "deadline": "الموعد النهائي",
+      "type": "النوع",
+      "date": "التاريخ",
+      "sla": "حالة SLA"
+    },
+    "actions": {
+      "approve": "اعتماد",
+      "reject": "رفض",
+      "return": "إعادة",
+      "view": "عرض",
+      "goToTask": "الانتقال للمهمة",
+      "aiRecommendation": "توصية الذكاء الاصطناعي",
+      "clearSelection": "إلغاء التحديد",
+      "bulkApprove": "اعتماد المحدد",
+      "bulkReject": "رفض المحدد"
+    },
+    "source": {
+      "competition": "منافسة",
+      "inquiry": "استفسار"
+    },
+    "type": {
+      "approve_request": "اعتماد",
+      "evaluate_offer": "تقييم عرض",
+      "answer_inquiry": "الرد على استفسار",
+      "approve_inquiry_response": "اعتماد إجابة استفسار",
+      "committee_action": "إجراء لجنة"
+    },
+    "ai": {
+      "title": "توصية الذكاء الاصطناعي",
+      "recommendation": "التوصية",
+      "confidence": "مستوى الثقة",
+      "priority": "الأولوية",
+      "slaStatus": "حالة الالتزام",
+      "remainingTime": "الوقت المتبقي",
+      "source": "المصدر",
+      "suggestedActions": "الإجراءات المقترحة",
+      "riskLevel": "مستوى المخاطر",
+      "poweredBy": "مدعوم بالذكاء الاصطناعي"
+    },
     "pending": "قيد الانتظار",
     "inProgress": "قيد التنفيذ",
     "completed": "مكتملة",
@@ -2091,35 +2168,7 @@
     "noTasks": "لا توجد مهام حالياً",
     "noTasksDesc": "ستظهر هنا المهام والاعتمادات المطلوبة منك",
     "takeAction": "اتخاذ إجراء",
-    "approve": "اعتماد",
-    "reject": "رفض",
-    "delegate": "تفويض",
-    "subtitle": "جميع المهام والاعتمادات المطلوبة منك في مكان واحد",
-    "empty": "لا توجد مهام حالياً",
-    "emptyDescription": "ستظهر هنا المهام والاعتمادات المطلوبة منك عند إسنادها إليك",
-    "filters": {
-      "all": "الكل",
-      "approval": "الاعتمادات",
-      "evaluation": "التقييم",
-      "inquiry": "الاستفسارات",
-      "review": "المراجعات"
-    },
-    "actions": {
-      "approve": "اعتماد",
-      "reject": "رفض",
-      "view": "عرض"
-    },
-    "sla": {
-      "overdue": "متأخر",
-      "onTime": "في الوقت",
-      "approaching": "يقترب الموعد"
-    },
-    "sortBy": {
-      "date": "التاريخ",
-      "priority": "الأولوية",
-      "deadline": "الموعد النهائي",
-      "type": "النوع"
-    }
+    "delegate": "تفويض"
   },
   "knowledgeBase": {
     "title": "قاعدة المعرفة",

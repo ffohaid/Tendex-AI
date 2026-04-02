@@ -30,7 +30,9 @@
     "arabic": "Arabic",
     "select": "Select",
     "selectAll": "Select All",
-    "selected": "Selected"
+    "selected": "Selected",
+    "showing": "Showing",
+    "of": "of"
   },
   "auth": {
     "login": "Login",
@@ -2077,7 +2079,82 @@
   },
   "taskCenter": {
     "title": "Task Center",
+    "subtitle": "All tasks and approvals assigned to you in one place",
     "description": "All tasks and approvals assigned to you in one place",
+    "empty": "No pending tasks",
+    "emptyDescription": "Tasks and approvals will appear here when assigned to you",
+    "stats": {
+      "totalPending": "Total Tasks",
+      "critical": "Critical Tasks",
+      "overdue": "Overdue Tasks",
+      "inquiries": "Inquiries",
+      "slaCompliance": "SLA Compliance",
+      "approvals": "Approvals",
+      "evaluations": "Evaluations",
+      "reviews": "Reviews",
+      "completedToday": "Completed Today"
+    },
+    "filters": {
+      "all": "All",
+      "approval": "Approvals",
+      "evaluation": "Evaluations",
+      "inquiry": "Inquiries",
+      "review": "Reviews"
+    },
+    "priority": {
+      "critical": "Critical",
+      "high": "High",
+      "medium": "Medium",
+      "low": "Low"
+    },
+    "sla": {
+      "on_track": "On Track",
+      "approaching": "Approaching",
+      "exceeded": "Overdue",
+      "overdue": "Overdue",
+      "onTime": "On Time"
+    },
+    "sortBy": {
+      "priority": "Priority",
+      "deadline": "Deadline",
+      "type": "Type",
+      "date": "Date",
+      "sla": "SLA Status"
+    },
+    "actions": {
+      "approve": "Approve",
+      "reject": "Reject",
+      "return": "Return",
+      "view": "View",
+      "goToTask": "Go to Task",
+      "aiRecommendation": "AI Recommendation",
+      "clearSelection": "Clear Selection",
+      "bulkApprove": "Approve Selected",
+      "bulkReject": "Reject Selected"
+    },
+    "source": {
+      "competition": "Competition",
+      "inquiry": "Inquiry"
+    },
+    "type": {
+      "approve_request": "Approval",
+      "evaluate_offer": "Offer Evaluation",
+      "answer_inquiry": "Answer Inquiry",
+      "approve_inquiry_response": "Approve Inquiry Response",
+      "committee_action": "Committee Action"
+    },
+    "ai": {
+      "title": "AI Recommendation",
+      "recommendation": "Recommendation",
+      "confidence": "Confidence Level",
+      "priority": "Priority",
+      "slaStatus": "SLA Status",
+      "remainingTime": "Remaining Time",
+      "source": "Source",
+      "suggestedActions": "Suggested Actions",
+      "riskLevel": "Risk Level",
+      "poweredBy": "Powered by AI"
+    },
     "pending": "Pending",
     "inProgress": "In Progress",
     "completed": "Completed",
@@ -2088,38 +2165,10 @@
     "lowPriority": "Low Priority",
     "dueDate": "Due Date",
     "assignedBy": "Assigned By",
-    "noTasks": "No tasks yet",
-    "noTasksDesc": "Tasks and approvals assigned to you will appear here",
+    "noTasks": "No tasks currently",
+    "noTasksDesc": "Tasks and approvals will appear here when assigned to you",
     "takeAction": "Take Action",
-    "approve": "Approve",
-    "reject": "Reject",
-    "delegate": "Delegate",
-    "subtitle": "All tasks and approvals assigned to you in one place",
-    "empty": "No tasks yet",
-    "emptyDescription": "Tasks and approvals will appear here when assigned to you",
-    "filters": {
-      "all": "All",
-      "approval": "Approvals",
-      "evaluation": "Evaluations",
-      "inquiry": "Inquiries",
-      "review": "Reviews"
-    },
-    "actions": {
-      "approve": "Approve",
-      "reject": "Reject",
-      "view": "View"
-    },
-    "sla": {
-      "overdue": "Overdue",
-      "onTime": "On Time",
-      "approaching": "Approaching"
-    },
-    "sortBy": {
-      "date": "Date",
-      "priority": "Priority",
-      "deadline": "Deadline",
-      "type": "Type"
-    }
+    "delegate": "Delegate"
   },
   "knowledgeBase": {
     "title": "Knowledge Base",
