@@ -1763,58 +1763,157 @@
   },
   "inquiries": {
     "title": "الاستفسارات",
-    "subtitle": "إدارة الاستفسارات على كراسات الشروط والمواصفات",
+    "subtitle": "إدارة استفسارات الموردين على كراسات الشروط والمواصفات",
     "refresh": "تحديث",
     "errorLoading": "حدث خطأ أثناء تحميل الاستفسارات",
     "retry": "إعادة المحاولة",
-    "overdue": "متأخر",
+    "close": "إغلاق",
+    "addInquiry": "إضافة استفسار",
+    "importFromEtimad": "استيراد من اعتماد",
     "stats": {
       "total": "إجمالي الاستفسارات",
-      "pending": "قيد الانتظار",
-      "answered": "تمت الإجابة",
-      "overdue": "متأخرة"
+      "new": "جديد",
+      "inProgress": "قيد الإجابة",
+      "pendingApproval": "بانتظار الاعتماد",
+      "approved": "معتمد",
+      "overdue": "متأخر"
     },
     "filters": {
       "search": "بحث",
       "searchPlaceholder": "البحث في الاستفسارات...",
       "status": "الحالة",
       "allStatuses": "جميع الحالات",
+      "category": "التصنيف",
+      "allCategories": "جميع التصنيفات",
       "priority": "الأولوية",
       "allPriorities": "جميع الأولويات",
-      "apply": "تطبيق",
+      "apply": "بحث",
       "reset": "إعادة تعيين"
     },
     "status": {
-      "pending": "قيد الانتظار",
-      "answered": "تمت الإجابة",
-      "closed": "مغلق",
-      "escalated": "مُصعّد"
+      "New": "جديد",
+      "InProgress": "قيد الإجابة",
+      "PendingApproval": "بانتظار الاعتماد",
+      "Approved": "معتمد",
+      "Rejected": "مرفوض",
+      "Closed": "مغلق"
+    },
+    "category": {
+      "General": "عام",
+      "Technical": "فني",
+      "Financial": "مالي",
+      "Administrative": "إداري",
+      "Legal": "قانوني"
     },
     "priority": {
-      "critical": "حرج",
-      "high": "عالي",
-      "medium": "متوسط",
-      "low": "منخفض"
+      "Critical": "حرج",
+      "High": "عالي",
+      "Medium": "متوسط",
+      "Low": "منخفض"
     },
     "empty": {
       "title": "لا توجد استفسارات",
-      "subtitle": "لم يتم العثور على أي استفسارات تطابق معايير البحث"
+      "subtitle": "لم يتم العثور على أي استفسارات تطابق معايير البحث",
+      "addNew": "إضافة استفسار جديد"
     },
     "pagination": {
-      "showing": "عرض {from} إلى {to} من {total}"
+      "showing": "عرض {from} إلى {to} من {total}",
+      "page": "صفحة",
+      "of": "من"
+    },
+    "create": {
+      "title": "إضافة استفسار جديد",
+      "competition": "المنافسة",
+      "competitionPlaceholder": "اختر المنافسة...",
+      "supplierName": "اسم المورد",
+      "supplierNamePlaceholder": "اسم المورد المستفسر...",
+      "category": "التصنيف",
+      "priority": "الأولوية",
+      "etimadRef": "رقم مرجع اعتماد",
+      "etimadRefPlaceholder": "رقم الاستفسار في منصة اعتماد...",
+      "questionText": "نص الاستفسار",
+      "questionTextPlaceholder": "اكتب نص استفسار المورد هنا...",
+      "internalNotes": "ملاحظات داخلية",
+      "internalNotesPlaceholder": "ملاحظات داخلية للفريق...",
+      "cancel": "إلغاء",
+      "save": "حفظ الاستفسار"
+    },
+    "bulkImport": {
+      "title": "استيراد مجمّع من اعتماد",
+      "description": "الصق استفسارات الموردين المنسوخة من منصة اعتماد. كل سطر يمثل استفساراً واحداً. يمكنك استخدام الفاصل | لفصل نص الاستفسار عن اسم المورد.",
+      "competition": "المنافسة",
+      "competitionPlaceholder": "اختر المنافسة...",
+      "textLabel": "الاستفسارات (سطر لكل استفسار)",
+      "textPlaceholder": "ما هي مدة تنفيذ المشروع؟ | شركة الأفق",
+      "preview": "معاينة",
+      "previewCount": "معاينة ({count} استفسار)",
+      "questionText": "نص الاستفسار",
+      "supplier": "المورد",
+      "cancel": "إلغاء",
+      "import": "استيراد {count} استفسار"
     },
     "detail": {
       "competition": "المنافسة",
-      "submittedBy": "مقدم من",
-      "submittedAt": "تاريخ التقديم",
-      "status": "الحالة",
+      "supplier": "المورد",
+      "category": "التصنيف",
+      "priority": "الأولوية",
+      "createdAt": "تاريخ الإنشاء",
+      "etimadRef": "مرجع اعتماد",
       "question": "نص الاستفسار",
-      "answer": "الإجابة",
-      "answeredBy": "أجاب بواسطة",
-      "writeAnswer": "كتابة الإجابة",
-      "answerPlaceholder": "اكتب إجابتك هنا...",
-      "close": "إغلاق",
-      "submitAnswer": "إرسال الإجابة"
+      "internalNotes": "ملاحظات داخلية",
+      "tabs": {
+        "info": "المعلومات",
+        "responses": "الإجابات والذكاء الاصطناعي",
+        "assign": "الإسناد"
+      },
+      "answer": {
+        "title": "الإجابة المعتمدة",
+        "writeAnswer": "كتابة الإجابة",
+        "answerPlaceholder": "اكتب إجابتك هنا...",
+        "submitForApproval": "تقديم للاعتماد",
+        "approve": "اعتماد",
+        "reject": "رفض",
+        "close": "إغلاق الاستفسار"
+      },
+      "ai": {
+        "title": "توليد إجابة بالذكاء الاصطناعي",
+        "contextLabel": "سياق إضافي (اختياري)",
+        "contextPlaceholder": "أضف معلومات إضافية لمساعدة الذكاء الاصطناعي...",
+        "generate": "توليد إجابة ذكية",
+        "generating": "جارٍ التوليد...",
+        "result": "الإجابة المقترحة",
+        "confidence": "درجة الثقة",
+        "model": "النموذج المستخدم",
+        "sources": "المصادر",
+        "useAnswer": "استخدام هذه الإجابة",
+        "regenerate": "إعادة التوليد",
+        "error": "فشل في توليد الإجابة"
+      },
+      "responses": {
+        "title": "سجل الإجابات",
+        "empty": "لا توجد إجابات سابقة",
+        "aiGenerated": "مولّد بالذكاء الاصطناعي",
+        "manual": "يدوي",
+        "confidence": "الثقة",
+        "useThis": "استخدام هذه الإجابة"
+      },
+      "assignment": {
+        "title": "إسناد الاستفسار",
+        "currentAssignment": "الإسناد الحالي",
+        "notAssigned": "غير مُسند",
+        "assignedTo": "مُسند إلى",
+        "committee": "اللجنة",
+        "selectCommittee": "اختر اللجنة...",
+        "assign": "إسناد",
+        "assigning": "جارٍ الإسناد..."
+      },
+      "reject": {
+        "title": "رفض الإجابة",
+        "reason": "سبب الرفض",
+        "reasonPlaceholder": "اكتب سبب رفض الإجابة...",
+        "cancel": "إلغاء",
+        "confirm": "تأكيد الرفض"
+      }
     }
   },
   "aiAssistant": {

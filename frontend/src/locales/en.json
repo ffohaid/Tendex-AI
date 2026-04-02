@@ -1763,15 +1763,19 @@
   },
   "inquiries": {
     "title": "Inquiries",
-    "subtitle": "Manage inquiries on specification booklets",
+    "subtitle": "Manage supplier inquiries on specification booklets",
     "refresh": "Refresh",
     "errorLoading": "Failed to load inquiries",
     "retry": "Retry",
-    "overdue": "Overdue",
+    "close": "Close",
+    "addInquiry": "Add Inquiry",
+    "importFromEtimad": "Import from Etimad",
     "stats": {
       "total": "Total Inquiries",
-      "pending": "Pending",
-      "answered": "Answered",
+      "new": "New",
+      "inProgress": "In Progress",
+      "pendingApproval": "Pending Approval",
+      "approved": "Approved",
       "overdue": "Overdue"
     },
     "filters": {
@@ -1779,42 +1783,137 @@
       "searchPlaceholder": "Search inquiries...",
       "status": "Status",
       "allStatuses": "All Statuses",
+      "category": "Category",
+      "allCategories": "All Categories",
       "priority": "Priority",
       "allPriorities": "All Priorities",
-      "apply": "Apply",
+      "apply": "Search",
       "reset": "Reset"
     },
     "status": {
-      "pending": "Pending",
-      "answered": "Answered",
-      "closed": "Closed",
-      "escalated": "Escalated"
+      "New": "New",
+      "InProgress": "In Progress",
+      "PendingApproval": "Pending Approval",
+      "Approved": "Approved",
+      "Rejected": "Rejected",
+      "Closed": "Closed"
+    },
+    "category": {
+      "General": "General",
+      "Technical": "Technical",
+      "Financial": "Financial",
+      "Administrative": "Administrative",
+      "Legal": "Legal"
     },
     "priority": {
-      "critical": "Critical",
-      "high": "High",
-      "medium": "Medium",
-      "low": "Low"
+      "Critical": "Critical",
+      "High": "High",
+      "Medium": "Medium",
+      "Low": "Low"
     },
     "empty": {
       "title": "No Inquiries",
-      "subtitle": "No inquiries match the current search criteria"
+      "subtitle": "No inquiries match the current search criteria",
+      "addNew": "Add New Inquiry"
     },
     "pagination": {
-      "showing": "Showing {from} to {to} of {total}"
+      "showing": "Showing {from} to {to} of {total}",
+      "page": "Page",
+      "of": "of"
+    },
+    "create": {
+      "title": "Add New Inquiry",
+      "competition": "Competition",
+      "competitionPlaceholder": "Select competition...",
+      "supplierName": "Supplier Name",
+      "supplierNamePlaceholder": "Inquiring supplier name...",
+      "category": "Category",
+      "priority": "Priority",
+      "etimadRef": "Etimad Reference Number",
+      "etimadRefPlaceholder": "Inquiry number in Etimad platform...",
+      "questionText": "Inquiry Text",
+      "questionTextPlaceholder": "Type the supplier inquiry text here...",
+      "internalNotes": "Internal Notes",
+      "internalNotesPlaceholder": "Internal notes for the team...",
+      "cancel": "Cancel",
+      "save": "Save Inquiry"
+    },
+    "bulkImport": {
+      "title": "Bulk Import from Etimad",
+      "description": "Paste supplier inquiries copied from Etimad platform. Each line represents one inquiry. Use | separator to split inquiry text from supplier name.",
+      "competition": "Competition",
+      "competitionPlaceholder": "Select competition...",
+      "textLabel": "Inquiries (one per line)",
+      "textPlaceholder": "What is the project duration? | Al-Ofuq Company",
+      "preview": "Preview",
+      "previewCount": "Preview ({count} inquiries)",
+      "questionText": "Inquiry Text",
+      "supplier": "Supplier",
+      "cancel": "Cancel",
+      "import": "Import {count} inquiries"
     },
     "detail": {
       "competition": "Competition",
-      "submittedBy": "Submitted By",
-      "submittedAt": "Submitted At",
-      "status": "Status",
+      "supplier": "Supplier",
+      "category": "Category",
+      "priority": "Priority",
+      "createdAt": "Created At",
+      "etimadRef": "Etimad Reference",
       "question": "Inquiry Text",
-      "answer": "Answer",
-      "answeredBy": "Answered By",
-      "writeAnswer": "Write Answer",
-      "answerPlaceholder": "Type your answer here...",
-      "close": "Close",
-      "submitAnswer": "Submit Answer"
+      "internalNotes": "Internal Notes",
+      "tabs": {
+        "info": "Information",
+        "responses": "Answers & AI",
+        "assign": "Assignment"
+      },
+      "answer": {
+        "title": "Approved Answer",
+        "writeAnswer": "Write Answer",
+        "answerPlaceholder": "Type your answer here...",
+        "submitForApproval": "Submit for Approval",
+        "approve": "Approve",
+        "reject": "Reject",
+        "close": "Close Inquiry"
+      },
+      "ai": {
+        "title": "Generate AI Answer",
+        "contextLabel": "Additional Context (optional)",
+        "contextPlaceholder": "Add additional information to help the AI...",
+        "generate": "Generate Smart Answer",
+        "generating": "Generating...",
+        "result": "Suggested Answer",
+        "confidence": "Confidence Score",
+        "model": "Model Used",
+        "sources": "Sources",
+        "useAnswer": "Use This Answer",
+        "regenerate": "Regenerate",
+        "error": "Failed to generate answer"
+      },
+      "responses": {
+        "title": "Response History",
+        "empty": "No previous responses",
+        "aiGenerated": "AI Generated",
+        "manual": "Manual",
+        "confidence": "Confidence",
+        "useThis": "Use This Answer"
+      },
+      "assignment": {
+        "title": "Inquiry Assignment",
+        "currentAssignment": "Current Assignment",
+        "notAssigned": "Not Assigned",
+        "assignedTo": "Assigned To",
+        "committee": "Committee",
+        "selectCommittee": "Select committee...",
+        "assign": "Assign",
+        "assigning": "Assigning..."
+      },
+      "reject": {
+        "title": "Reject Answer",
+        "reason": "Rejection Reason",
+        "reasonPlaceholder": "Type the reason for rejecting the answer...",
+        "cancel": "Cancel",
+        "confirm": "Confirm Rejection"
+      }
     }
   },
   "aiAssistant": {
