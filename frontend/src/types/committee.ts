@@ -74,6 +74,8 @@ export interface CommitteeListItem {
   createdAt: string
   daysRemaining: number
   workloadScore: number
+  activeFromPhase: CompetitionPhase | null
+  activeToPhase: CompetitionPhase | null
 }
 
 /** Detail DTO for a single committee with members. */

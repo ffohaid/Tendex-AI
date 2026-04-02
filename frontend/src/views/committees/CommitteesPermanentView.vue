@@ -206,12 +206,6 @@ function getHealthScoreClass(score: number): string {
   return 'text-danger'
 }
 
-function getHealthScoreBg(score: number): string {
-  if (score >= 80) return 'bg-success'
-  if (score >= 50) return 'bg-warning'
-  return 'bg-danger'
-}
-
 /* ------------------------------------------------------------------ */
 /*  API Calls                                                          */
 /* ------------------------------------------------------------------ */
