@@ -378,9 +378,10 @@ async function handleGenerateAi(): Promise<void> {
     answerText.value = result.answerText
     // Reload to get updated responses
     selectedInquiry.value = await fetchInquiryById(selectedInquiry.value.id)
-  } catch (err) {
+  } catch (err: any) {
     console.error('[InquiriesView] AI generation failed:', err)
-    error.value = 'فشل في توليد الإجابة بالذكاء الاصطناعي'
+    const apiMessage = err?.response?.data?.message || err?.response?.data?.detail || ''
+    error.value = apiMessage || 'فشل في توليد الإجابة بالذكاء الاصطناعي. يرجى المحاولة مرة أخرى.'
   } finally {
     isGeneratingAi.value = false
   }

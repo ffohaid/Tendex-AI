@@ -287,13 +287,29 @@ public static class InquiryEndpoints
 
         try
         {
-            var command = new GenerateAiAnswerCommand(id, tenantId, request?.AdditionalContext, request?.UseRag ?? true, userId);
+            var command = new GenerateAiAnswerCommand(
+                id,
+                tenantId,
+                request?.AdditionalContext,
+                request?.UseRag ?? true,
+                userId);
+
             var result = await mediator.Send(command, cancellationToken);
             return Results.Ok(result);
         }
         catch (InvalidOperationException ex)
         {
             return Results.BadRequest(new { Message = ex.Message });
+        }
+        catch (OperationCanceledException)
+        {
+            return Results.StatusCode(StatusCodes.Status504GatewayTimeout);
+        }
+        catch (Exception ex)
+        {
+            return Results.Problem(
+                detail: $"حدث خطأ غير متوقع أثناء توليد الإجابة: {ex.Message}",
+                statusCode: StatusCodes.Status500InternalServerError);
         }
     }
 

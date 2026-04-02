@@ -1,4 +1,5 @@
 using MediatR;
+using Microsoft.Extensions.Logging;
 using TendexAI.Application.Common.Interfaces.AI;
 using TendexAI.Application.Features.Inquiries.Dtos;
 using TendexAI.Domain.Entities.Inquiries;
@@ -19,30 +20,62 @@ public sealed class GenerateAiAnswerCommandHandler : IRequestHandler<GenerateAiA
     private readonly IInquiryRepository _inquiryRepository;
     private readonly IAiGateway _aiGateway;
     private readonly ICompetitionRepository _competitionRepository;
+    private readonly ILogger<GenerateAiAnswerCommandHandler> _logger;
+
+    /// <summary>
+    /// Maximum time to wait for the AI provider to respond.
+    /// </summary>
+    private static readonly TimeSpan AiTimeout = TimeSpan.FromSeconds(90);
 
     public GenerateAiAnswerCommandHandler(
         IInquiryRepository inquiryRepository,
         IAiGateway aiGateway,
-        ICompetitionRepository competitionRepository)
+        ICompetitionRepository competitionRepository,
+        ILogger<GenerateAiAnswerCommandHandler> logger)
     {
         _inquiryRepository = inquiryRepository;
         _aiGateway = aiGateway;
         _competitionRepository = competitionRepository;
+        _logger = logger;
     }
 
     public async Task<AiAnswerResponseDto> Handle(GenerateAiAnswerCommand request, CancellationToken cancellationToken)
     {
+        _logger.LogInformation(
+            "Starting AI answer generation for inquiry {InquiryId}, tenant {TenantId}",
+            request.InquiryId, request.TenantId);
+
+        // 1. Load the inquiry
         var inquiry = await _inquiryRepository.GetByIdAsync(request.InquiryId, cancellationToken);
         if (inquiry is null)
-            throw new InvalidOperationException("Inquiry not found.");
+        {
+            _logger.LogWarning("Inquiry {InquiryId} not found", request.InquiryId);
+            throw new InvalidOperationException("الاستفسار غير موجود.");
+        }
 
-        // Get competition context for better AI answers
-        var competition = await _competitionRepository.GetByIdAsync(inquiry.CompetitionId, cancellationToken);
-        var competitionName = competition?.ProjectNameAr ?? "غير محدد";
-        var competitionDesc = competition?.Description ?? "";
-        var competitionRef = competition?.ReferenceNumber ?? "";
+        // 2. Check if AI is available for this tenant
+        var isAiAvailable = await _aiGateway.IsAvailableAsync(request.TenantId, cancellationToken);
+        if (!isAiAvailable)
+        {
+            _logger.LogWarning("No AI configuration found for tenant {TenantId}", request.TenantId);
+            throw new InvalidOperationException("لم يتم تكوين خدمة الذكاء الاصطناعي لهذه الجهة. يرجى إعداد مزود الذكاء الاصطناعي من لوحة تحكم المشغل.");
+        }
 
-        // Build the AI prompt with full context
+        // 3. Get competition context for better AI answers
+        string competitionName = "غير محدد";
+        string competitionDesc = "";
+        try
+        {
+            var competition = await _competitionRepository.GetByIdAsync(inquiry.CompetitionId, cancellationToken);
+            competitionName = competition?.ProjectNameAr ?? "غير محدد";
+            competitionDesc = competition?.Description ?? "";
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Failed to load competition {CompetitionId} for inquiry context", inquiry.CompetitionId);
+        }
+
+        // 4. Build the AI prompt with full context
         var systemPrompt = BuildSystemPrompt(competitionName, competitionDesc);
         var userPrompt = BuildUserPrompt(inquiry, request.AdditionalContext);
 
@@ -55,27 +88,71 @@ public sealed class GenerateAiAnswerCommandHandler : IRequestHandler<GenerateAiA
             TemperatureOverride = 0.3
         };
 
-        var aiResponse = await _aiGateway.GenerateCompletionAsync(aiRequest, cancellationToken);
+        // 5. Call AI with timeout protection
+        AiCompletionResponse aiResponse;
+        try
+        {
+            using var aiCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+            aiCts.CancelAfter(AiTimeout);
+
+            _logger.LogInformation("Calling AI gateway for inquiry {InquiryId}...", request.InquiryId);
+            aiResponse = await _aiGateway.GenerateCompletionAsync(aiRequest, aiCts.Token);
+            _logger.LogInformation(
+                "AI gateway responded for inquiry {InquiryId}: Success={IsSuccess}, Model={Model}",
+                request.InquiryId, aiResponse.IsSuccess, aiResponse.ModelName);
+        }
+        catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested)
+        {
+            _logger.LogError("AI generation timed out after {Timeout}s for inquiry {InquiryId}",
+                AiTimeout.TotalSeconds, request.InquiryId);
+            throw new InvalidOperationException("انتهت مهلة الاتصال بخدمة الذكاء الاصطناعي. يرجى المحاولة مرة أخرى.");
+        }
+        catch (OperationCanceledException)
+        {
+            throw; // Re-throw if the original cancellation token was cancelled
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "AI gateway call failed for inquiry {InquiryId}", request.InquiryId);
+            throw new InvalidOperationException($"فشل الاتصال بخدمة الذكاء الاصطناعي: {ex.Message}");
+        }
 
         if (!aiResponse.IsSuccess)
         {
-            throw new InvalidOperationException($"AI generation failed: {aiResponse.ErrorMessage}");
+            _logger.LogWarning("AI generation returned failure for inquiry {InquiryId}: {Error}",
+                request.InquiryId, aiResponse.ErrorMessage);
+            throw new InvalidOperationException($"فشل توليد الإجابة: {aiResponse.ErrorMessage}");
         }
 
-        // Clean the response
+        // 6. Clean the response
         var answerText = CleanAiResponse(aiResponse.Content);
+        if (string.IsNullOrWhiteSpace(answerText))
+        {
+            _logger.LogWarning("AI returned empty response for inquiry {InquiryId}", request.InquiryId);
+            throw new InvalidOperationException("أرجع الذكاء الاصطناعي إجابة فارغة. يرجى المحاولة مرة أخرى.");
+        }
 
-        // Calculate confidence score based on response quality indicators
+        // 7. Calculate confidence score based on response quality indicators
         var confidenceScore = CalculateConfidenceScore(answerText, inquiry.Category);
 
-        // Save as a draft response
-        var response = inquiry.SubmitDraftAnswer(answerText, isAiGenerated: true, request.RequestedBy);
-        response.SetAiMetadata(confidenceScore, aiResponse.ModelName, "كراسة الشروط والمواصفات، نظام المنافسات والمشتريات الحكومية");
+        // 8. Save as a draft response
+        InquiryResponse response;
+        try
+        {
+            response = inquiry.SubmitDraftAnswer(answerText, isAiGenerated: true, request.RequestedBy);
+            response.SetAiMetadata(confidenceScore, aiResponse.ModelName, "كراسة الشروط والمواصفات، نظام المنافسات والمشتريات الحكومية");
 
-        // No need to call UpdateAsync - the entity is already tracked by EF Core
-        // from GetByIdAsync. SubmitDraftAnswer modifies the entity in-place,
-        // and EF Core's change tracker will detect the changes automatically.
-        await _inquiryRepository.SaveChangesAsync(cancellationToken);
+            await _inquiryRepository.SaveChangesAsync(cancellationToken);
+
+            _logger.LogInformation(
+                "AI answer saved successfully for inquiry {InquiryId}, response {ResponseId}, confidence {Score}%",
+                request.InquiryId, response.Id, confidenceScore);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to save AI answer for inquiry {InquiryId}", request.InquiryId);
+            throw new InvalidOperationException($"تم توليد الإجابة بنجاح لكن فشل حفظها في قاعدة البيانات. يرجى المحاولة مرة أخرى. التفاصيل: {ex.Message}");
+        }
 
         return new AiAnswerResponseDto
         {
