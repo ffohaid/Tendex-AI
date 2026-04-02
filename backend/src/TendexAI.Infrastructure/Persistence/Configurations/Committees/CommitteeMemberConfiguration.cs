@@ -16,6 +16,7 @@ public sealed class CommitteeMemberConfiguration : IEntityTypeConfiguration<Comm
         builder.ToTable("CommitteeMembers", "committees");
 
         builder.HasKey(m => m.Id);
+        builder.Property(m => m.Id).ValueGeneratedNever();
 
         builder.Property(m => m.CommitteeId)
             .IsRequired();
