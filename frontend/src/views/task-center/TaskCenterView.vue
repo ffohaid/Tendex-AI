@@ -33,7 +33,7 @@ import {
   type TaskCenterFilters,
 } from '@/services/taskCenterService'
 
-const { t, locale } = useI18n()
+const { t } = useI18n()
 const router = useRouter()
 const { formatDateTime, formatRemainingTime, formatNumber, formatPercentage, isArabic } = useFormatters()
 
@@ -543,7 +543,7 @@ onMounted(() => {
         :class="{
           'border-blue-200 bg-blue-50/30': selectedTasks.includes(task.id),
           'border-s-4 border-s-red-500': task.slaStatus === 'exceeded',
-          'border-s-4 border-s-amber-400': task.slaStatus === 'approaching' && task.slaStatus !== 'exceeded',
+          'border-s-4 border-s-amber-400': task.slaStatus === 'approaching',
         }"
       >
         <!-- Checkbox -->
