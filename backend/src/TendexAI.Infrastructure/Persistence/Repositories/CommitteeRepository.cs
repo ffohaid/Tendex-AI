@@ -174,26 +174,6 @@ public sealed class CommitteeRepository : ICommitteeRepository, IDisposable
 
     public async Task SaveChangesAsync(CancellationToken cancellationToken = default)
     {
-        // Debug: Log change tracker entries before saving
-        foreach (var entry in _context.ChangeTracker.Entries())
-        {
-            _logger.LogInformation(
-                "[ChangeTracker] Entity={EntityType}, State={State}, PK={PrimaryKey}",
-                entry.Entity.GetType().Name,
-                entry.State,
-                entry.Properties.FirstOrDefault(p => p.Metadata.IsPrimaryKey())?.CurrentValue);
-
-            if (entry.State == EntityState.Modified)
-            {
-                foreach (var prop in entry.Properties.Where(p => p.IsModified))
-                {
-                    _logger.LogInformation(
-                        "[ChangeTracker]   Modified: {Property} = {OldValue} -> {NewValue}",
-                        prop.Metadata.Name, prop.OriginalValue, prop.CurrentValue);
-                }
-            }
-        }
-
         await _context.SaveChangesAsync(cancellationToken);
     }
 

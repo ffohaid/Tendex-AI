@@ -29,21 +29,10 @@ public sealed class AddCommitteeMemberCommandHandler : ICommandHandler<AddCommit
 
     public async Task<Result> Handle(AddCommitteeMemberCommand request, CancellationToken cancellationToken)
     {
-        _logger.LogInformation(
-            "[AddMember] Starting - CommitteeId={CommitteeId}, UserId={UserId}, Role={Role}",
-            request.CommitteeId, request.UserId, request.Role);
-
         var committee = await _committeeRepository.GetByIdWithMembersAsync(
             request.CommitteeId, cancellationToken);
         if (committee is null)
-        {
-            _logger.LogWarning("[AddMember] Committee {CommitteeId} not found", request.CommitteeId);
             return Result.Failure("Committee not found.");
-        }
-
-        _logger.LogInformation(
-            "[AddMember] Committee loaded - Id={Id}, Status={Status}, MemberCount={MemberCount}",
-            committee.Id, committee.Status, committee.Members.Count);
 
         // ─── Conflict of Interest Validation ───
         if (committee.CompetitionId.HasValue)
@@ -65,15 +54,10 @@ public sealed class AddCommitteeMemberCommandHandler : ICommandHandler<AddCommit
                 existingMemberships);
 
             if (conflictResult.IsFailure)
-            {
-                _logger.LogWarning("[AddMember] Conflict of interest: {Error}", conflictResult.Error);
                 return conflictResult;
-            }
         }
 
         var assignedBy = _currentUser.UserId?.ToString() ?? "system";
-
-        _logger.LogInformation("[AddMember] Calling committee.AddMember with assignedBy={AssignedBy}", assignedBy);
 
         var addResult = committee.AddMember(
             request.UserId,
@@ -84,27 +68,9 @@ public sealed class AddCommitteeMemberCommandHandler : ICommandHandler<AddCommit
             assignedBy);
 
         if (addResult.IsFailure)
-        {
-            _logger.LogWarning("[AddMember] AddMember domain failed: {Error}", addResult.Error);
             return addResult;
-        }
 
-        _logger.LogInformation(
-            "[AddMember] Domain AddMember succeeded. MemberCount now={MemberCount}. Calling SaveChangesAsync...",
-            committee.Members.Count);
-
-        try
-        {
-            await _committeeRepository.SaveChangesAsync(cancellationToken);
-            _logger.LogInformation("[AddMember] SaveChangesAsync succeeded!");
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex,
-                "[AddMember] SaveChangesAsync FAILED. ExceptionType={ExType}, Message={Message}",
-                ex.GetType().Name, ex.Message);
-            throw;
-        }
+        await _committeeRepository.SaveChangesAsync(cancellationToken);
 
         _logger.LogInformation(
             "User {UserId} added to committee {CommitteeId} as {Role} by {AssignedBy}",

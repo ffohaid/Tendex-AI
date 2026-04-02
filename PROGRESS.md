@@ -24,6 +24,24 @@
 
 *يرجى إضافة أحدث مهمة منجزة في أعلى هذه القائمة.*
 
+### 2026-04-03 - Fix: DbUpdateConcurrencyException on Committee Member Operations
+- **الحالة:** ✅ مكتمل
+- **ما تم إنجازه:**
+  - **Root Cause Analysis:** Identified that `CommitteeConfiguration` and `CommitteeMemberConfiguration` were missing `ValueGeneratedNever()` on their Id properties. Without this, EF Core assumed database-generated Ids (ValueGeneratedOnAdd), causing new entities added via backing field `_members.Add()` with pre-set Guid Ids to be tracked as `Modified` instead of `Added`.
+  - **Fix Applied:** Added `builder.Property(c => c.Id).ValueGeneratedNever()` to both `CommitteeConfiguration` and `CommitteeMemberConfiguration`, consistent with all other entity configurations in the project.
+  - **Additional Cleanup:** Removed redundant `_committeeRepository.Update(committee)` calls from `AddCommitteeMemberCommandHandler`, `RemoveCommitteeMemberCommandHandler`, and `ChangeCommitteeStatusCommandHandler` since entities loaded with tracking don't need explicit Update() calls.
+  - **Fixed `UpdateCommitteeCommandHandler`:** Changed from `GetByIdAsync` (AsNoTracking) to `GetByIdWithMembersAsync` (tracked) and removed redundant Update() call.
+  - **Deployment:** Successfully rebuilt and deployed backend container on production server.
+  - **Verification:** Tested adding a committee member via the UI - member "أحمد محمد العلي" was successfully added to "لجنة تقييم العروض الفنية".
+- **الملفات المعدلة:**
+  - `CommitteeConfiguration.cs` - Added ValueGeneratedNever()
+  - `CommitteeMemberConfiguration.cs` - Added ValueGeneratedNever()
+  - `AddCommitteeMemberCommandHandler.cs` - Removed redundant Update() and debug logging
+  - `RemoveCommitteeMemberCommandHandler.cs` - Removed redundant Update()
+  - `ChangeCommitteeStatusCommandHandler.cs` - Removed redundant Update()
+  - `UpdateCommitteeCommandHandler.cs` - Fixed to use tracked query
+  - `CommitteeRepository.cs` - Cleaned up debug logging
+
 ### 2026-04-02 - Task Center: Full Implementation with AI Integration
 - **الحالة:** ✅ مكتمل
 - **ما تم إنجازه:**
