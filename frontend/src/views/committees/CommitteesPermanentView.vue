@@ -278,7 +278,13 @@ async function handleCreateCommittee() {
       }
       await updateCommittee(editingCommitteeId.value, updateData)
     } else {
-      await createCommittee({ ...formData.value, isPermanent: true })
+      const payload: CreateCommitteeRequest = {
+        ...formData.value,
+        isPermanent: true,
+        startDate: formData.value.startDate ? new Date(formData.value.startDate).toISOString() : '',
+        endDate: formData.value.endDate ? new Date(formData.value.endDate).toISOString() : '',
+      }
+      await createCommittee(payload)
     }
     showCreateDialog.value = false
     resetForm()

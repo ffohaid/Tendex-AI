@@ -1472,7 +1472,8 @@
       "reason": "Reason",
       "memberName": "Member Name",
       "memberId": "User ID",
-      "memberRole": "Role"
+      "memberRole": "Role",
+      "selectCompetition": "Select linked competition"
     },
     "detail": {
       "endDate": "End Date",

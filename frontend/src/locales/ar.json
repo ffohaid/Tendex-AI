@@ -1472,7 +1472,8 @@
       "reason": "السبب",
       "memberName": "اسم العضو",
       "memberId": "معرف المستخدم",
-      "memberRole": "الدور"
+      "memberRole": "الدور",
+      "selectCompetition": "اختر المنافسة المرتبطة"
     },
     "detail": {
       "endDate": "تاريخ النهاية",

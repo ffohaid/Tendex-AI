@@ -42,6 +42,8 @@ import {
   CompetitionPhase,
 } from '@/types/committee'
 import { useFormatters } from '@/composables/useFormatters'
+import { fetchRfpList } from '@/services/rfpService'
+import type { RfpListItem } from '@/types/rfp'
 
 const { t, locale } = useI18n()
 const { formatDate } = useFormatters()
@@ -56,6 +58,8 @@ const aiAnalysis = ref<CommitteeAiAnalysisResponse | null>(null)
 const isLoading = ref(false)
 const isLoadingStats = ref(false)
 const isLoadingAi = ref(false)
+const competitions = ref<RfpListItem[]>([])
+const isLoadingCompetitions = ref(false)
 const error = ref('')
 const currentPage = ref(1)
 const pageSize = ref(10)
@@ -226,6 +230,20 @@ function getHealthScoreClass(score: number): string {
 /* ------------------------------------------------------------------ */
 /*  API Calls                                                          */
 /* ------------------------------------------------------------------ */
+async function loadCompetitions() {
+  isLoadingCompetitions.value = true
+  try {
+    const result = await fetchRfpList({ page: 1, pageSize: 100 })
+    if (result.success) {
+      competitions.value = result.data.items
+    }
+  } catch (err) {
+    console.warn('[Committees] Failed to load competitions:', err)
+  } finally {
+    isLoadingCompetitions.value = false
+  }
+}
+
 async function loadStatistics() {
   isLoadingStats.value = true
   try {
@@ -295,7 +313,14 @@ async function handleCreateCommittee() {
       }
       await updateCommittee(editingCommitteeId.value, updateData)
     } else {
-      await createCommittee({ ...formData.value, isPermanent: false })
+      const payload: CreateCommitteeRequest = {
+        ...formData.value,
+        isPermanent: false,
+        competitionId: formData.value.competitionId || undefined,
+        startDate: formData.value.startDate ? new Date(formData.value.startDate).toISOString() : '',
+        endDate: formData.value.endDate ? new Date(formData.value.endDate).toISOString() : '',
+      }
+      await createCommittee(payload)
     }
     showCreateDialog.value = false
     resetForm()
@@ -440,6 +465,7 @@ watch(currentPage, () => { loadCommittees() })
 onMounted(() => {
   loadCommittees()
   loadStatistics()
+  loadCompetitions()
 })
 </script>
 
@@ -692,7 +718,10 @@ onMounted(() => {
             </div>
             <div>
               <label class="mb-1 block text-sm font-medium text-secondary">{{ t('committees.form.competitionId') }}</label>
-              <input v-model="formData.competitionId" type="text" :disabled="isEditMode" class="w-full rounded-lg border border-surface-dim px-4 py-2.5 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary disabled:bg-surface-ground" />
+              <select v-model="formData.competitionId" :disabled="isEditMode || isLoadingCompetitions" class="w-full rounded-lg border border-surface-dim px-4 py-2.5 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary disabled:bg-surface-ground disabled:text-tertiary">
+                <option value="">{{ isLoadingCompetitions ? t('common.loading') : t('committees.form.selectCompetition') }}</option>
+                <option v-for="comp in competitions" :key="comp.id" :value="comp.id">{{ comp.projectName }} ({{ comp.referenceNumber }})</option>
+              </select>
             </div>
             <div class="grid grid-cols-2 gap-4">
               <div>
