@@ -27,7 +27,7 @@ public sealed class UpdateCommitteeCommandHandler : ICommandHandler<UpdateCommit
 
     public async Task<Result> Handle(UpdateCommitteeCommand request, CancellationToken cancellationToken)
     {
-        var committee = await _committeeRepository.GetByIdAsync(request.CommitteeId, cancellationToken);
+        var committee = await _committeeRepository.GetByIdWithMembersAsync(request.CommitteeId, cancellationToken);
         if (committee is null)
             return Result.Failure("Committee not found.");
 
@@ -36,7 +36,7 @@ public sealed class UpdateCommitteeCommandHandler : ICommandHandler<UpdateCommit
         if (result.IsFailure)
             return result;
 
-        _committeeRepository.Update(committee);
+        // Entity is already tracked by EF Core (loaded without AsNoTracking).
         await _committeeRepository.SaveChangesAsync(cancellationToken);
 
         _logger.LogInformation("Committee {CommitteeId} updated by user {UserId}", committee.Id, userId);

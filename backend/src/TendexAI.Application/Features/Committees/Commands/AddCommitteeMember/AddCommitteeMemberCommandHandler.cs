@@ -71,7 +71,9 @@ public sealed class AddCommitteeMemberCommandHandler : ICommandHandler<AddCommit
         if (addResult.IsFailure)
             return addResult;
 
-        _committeeRepository.Update(committee);
+        // Note: No need to call Update() since the entity is already tracked by EF Core.
+        // Calling Update() on a tracked entity marks ALL properties as modified,
+        // which can cause DbUpdateConcurrencyException when the row hasn't changed.
         await _committeeRepository.SaveChangesAsync(cancellationToken);
 
         _logger.LogInformation(

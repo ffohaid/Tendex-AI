@@ -46,7 +46,7 @@ public sealed class ChangeCommitteeStatusCommandHandler : ICommandHandler<Change
         if (result.IsFailure)
             return result;
 
-        _committeeRepository.Update(committee);
+        // Entity is already tracked by EF Core (loaded without AsNoTracking).
         await _committeeRepository.SaveChangesAsync(cancellationToken);
 
         _logger.LogInformation(
