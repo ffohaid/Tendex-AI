@@ -1,3 +1,4 @@
+using System.Globalization;
 using TendexAI.Domain.Common;
 using TendexAI.Domain.Enums;
 
@@ -137,14 +138,14 @@ public sealed class Committee : AggregateRoot<Guid>
     private static string? SerializePhases(List<CompetitionPhase> phases)
     {
         if (phases.Count == 0) return null;
-        return string.Join(",", phases.Select(p => ((int)p).ToString()).OrderBy(x => x));
+        return string.Join(",", phases.Select(p => ((int)p).ToString(CultureInfo.InvariantCulture)).OrderBy(x => x));
     }
 
     private static List<CompetitionPhase> DeserializePhases(string? phasesString)
     {
         if (string.IsNullOrWhiteSpace(phasesString)) return [];
         return phasesString.Split(',', StringSplitOptions.RemoveEmptyEntries)
-            .Select(s => (CompetitionPhase)int.Parse(s.Trim()))
+            .Select(s => (CompetitionPhase)int.Parse(s.Trim(), CultureInfo.InvariantCulture))
             .OrderBy(p => p)
             .ToList();
     }
