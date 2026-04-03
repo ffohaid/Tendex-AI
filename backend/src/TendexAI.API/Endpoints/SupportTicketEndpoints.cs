@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Mvc;
 using TendexAI.Application.Common.Interfaces;
 using TendexAI.Domain.Entities;
 using TendexAI.Domain.Enums;
+using TendexAI.Infrastructure.Persistence;
 
 namespace TendexAI.API.Endpoints;
 
@@ -129,14 +130,25 @@ public static class SupportTicketEndpoints
         [FromBody] CreateTicketRequest request,
         [FromServices] ISupportTicketRepository repo,
         [FromServices] ICurrentUserService currentUser,
+        [FromServices] MasterPlatformDbContext masterDb,
         CancellationToken ct = default)
     {
         var ticketNumber = await repo.GetNextTicketNumberAsync(ct);
         var year = DateTime.UtcNow.Year;
 
+        // Resolve tenant name from the database
+        var tenantId = currentUser.TenantId ?? Guid.Empty;
+        string tenantName = "";
+        if (tenantId != Guid.Empty)
+        {
+            var tenant = await masterDb.Tenants.FindAsync(new object[] { tenantId }, ct);
+            tenantName = tenant?.NameAr ?? tenant?.NameEn ?? "";
+        }
+
         var ticket = new SupportTicket
         {
-            TenantId = currentUser.TenantId ?? Guid.Empty,
+            TenantId = tenantId,
+            TenantName = tenantName,
             TicketNumber = $"TKT-{year}-{ticketNumber:D4}",
             Subject = request.Subject,
             Description = request.Description,
@@ -436,7 +448,7 @@ public static class SupportTicketEndpoints
         createdByUserName = t.CreatedByUserName,
         createdByUserEmail = t.CreatedByUserEmail,
         assignedToUserName = t.AssignedToUserName,
-        tenantName = t.Tenant?.NameAr ?? t.Tenant?.NameEn ?? "",
+        tenantName = t.TenantName ?? t.Tenant?.NameAr ?? t.Tenant?.NameEn ?? "",
         tenantId = t.TenantId,
         aiSummary = t.AiSummary,
         aiSentiment = t.AiSentiment,
@@ -462,7 +474,7 @@ public static class SupportTicketEndpoints
         createdByUserEmail = t.CreatedByUserEmail,
         assignedToUserId = t.AssignedToUserId,
         assignedToUserName = t.AssignedToUserName,
-        tenantName = t.Tenant?.NameAr ?? t.Tenant?.NameEn ?? "",
+        tenantName = t.TenantName ?? t.Tenant?.NameAr ?? t.Tenant?.NameEn ?? "",
         tenantId = t.TenantId,
         aiSummary = t.AiSummary,
         aiSuggestedResolution = t.AiSuggestedResolution,
