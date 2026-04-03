@@ -162,8 +162,11 @@ public static class ReportEndpoints
 
             return Results.Ok(result);
         }
-        catch
+        catch (Exception ex)
         {
+            // Log the error for debugging
+            Console.Error.WriteLine($"[Reports] Error generating report: {ex.Message}");
+            Console.Error.WriteLine($"[Reports] Stack: {ex.StackTrace}");
             var fallback = new ReportDataResponse
             {
                 Summary = new ReportSummaryDto(),
