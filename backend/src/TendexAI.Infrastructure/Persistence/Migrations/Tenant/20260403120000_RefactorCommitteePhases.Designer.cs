@@ -4573,14 +4573,7 @@ namespace TendexAI.Infrastructure.Persistence.Migrations.Tenant
                         .IsRequired();
                 });
 
-            modelBuilder.Entity("TendexAI.Domain.Entities.Committees.Committee", b =>
-                {
-                    b.Navigation("Members")
-                        .IsRequired();
-
-                    b.Navigation("Competitions")
-                        .IsRequired();
-                });
+            // Committee navigations (Members, Competitions) are collections - no IsRequired needed
 
             modelBuilder.Entity("TendexAI.Domain.Entities.Evaluation.AiOfferAnalysis", b =>
                 {
