@@ -35,27 +35,23 @@ public sealed class CreateCommitteeCommandValidator : AbstractValidator<CreateCo
         RuleFor(x => x.Description)
             .MaximumLength(2000).WithMessage("Description must not exceed 2000 characters.");
 
-        // Phase range required for non-Comprehensive scopes
-        RuleFor(x => x.ActiveFromPhase)
-            .NotNull()
+        // Phases list required for non-Comprehensive scopes
+        RuleFor(x => x.Phases)
+            .Must(phases => phases is { Count: > 0 })
             .When(x => x.ScopeType != CommitteeScopeType.Comprehensive)
-            .WithMessage("Active-from phase is required for the selected scope type.");
+            .WithMessage("At least one phase must be selected for the chosen scope type.");
 
-        RuleFor(x => x.ActiveToPhase)
-            .NotNull()
-            .When(x => x.ScopeType != CommitteeScopeType.Comprehensive)
-            .WithMessage("Active-to phase is required for the selected scope type.");
-
-        // Phase range must not be set for Comprehensive scope
-        RuleFor(x => x.ActiveFromPhase)
-            .Null()
+        // Phases must not be set for Comprehensive scope
+        RuleFor(x => x.Phases)
+            .Must(phases => phases is null or { Count: 0 })
             .When(x => x.ScopeType == CommitteeScopeType.Comprehensive)
             .WithMessage("Comprehensive scope committees cannot have phase restrictions.");
 
-        RuleFor(x => x.ActiveToPhase)
-            .Null()
-            .When(x => x.ScopeType == CommitteeScopeType.Comprehensive)
-            .WithMessage("Comprehensive scope committees cannot have phase restrictions.");
+        // All selected phases must be valid enum values
+        RuleForEach(x => x.Phases)
+            .IsInEnum()
+            .When(x => x.Phases is { Count: > 0 })
+            .WithMessage("Invalid competition phase value.");
 
         // Competition IDs required for SpecificPhasesSpecificCompetitions
         RuleFor(x => x.CompetitionIds)

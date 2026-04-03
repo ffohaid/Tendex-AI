@@ -7,8 +7,8 @@ namespace TendexAI.Domain.Entities.Committees;
 /// Represents a member assigned to a committee with a specific role.
 /// Maps to PRD Section 4.3 — committee member management.
 /// 
-/// Each member has a role (Chair, Member, Secretary) and an optional
-/// phase range during which their membership is active.
+/// Members inherit the committee's phase scope — individual phase overrides are not supported.
+/// Phase authority is determined at the committee level, not per-member.
 /// </summary>
 public sealed class CommitteeMember : BaseEntity<Guid>
 {
@@ -23,8 +23,6 @@ public sealed class CommitteeMember : BaseEntity<Guid>
         Guid userId,
         string userFullName,
         CommitteeMemberRole role,
-        CompetitionPhase? activeFromPhase,
-        CompetitionPhase? activeToPhase,
         string assignedBy)
     {
         Id = Guid.NewGuid();
@@ -32,8 +30,6 @@ public sealed class CommitteeMember : BaseEntity<Guid>
         UserId = userId;
         UserFullName = userFullName;
         Role = role;
-        ActiveFromPhase = activeFromPhase;
-        ActiveToPhase = activeToPhase;
         IsActive = true;
         AssignedAt = DateTime.UtcNow;
         AssignedBy = assignedBy;
@@ -56,18 +52,6 @@ public sealed class CommitteeMember : BaseEntity<Guid>
 
     /// <summary>The role of this member within the committee.</summary>
     public CommitteeMemberRole Role { get; private set; }
-
-    /// <summary>
-    /// The phase from which this membership becomes active.
-    /// Null means active from the beginning.
-    /// </summary>
-    public CompetitionPhase? ActiveFromPhase { get; private set; }
-
-    /// <summary>
-    /// The phase until which this membership remains active.
-    /// Null means active until the end.
-    /// </summary>
-    public CompetitionPhase? ActiveToPhase { get; private set; }
 
     /// <summary>Whether this membership is currently active.</summary>
     public bool IsActive { get; private set; }
@@ -93,17 +77,6 @@ public sealed class CommitteeMember : BaseEntity<Guid>
     // ═════════════════════════════════════════════════════════════
     //  Methods
     // ═════════════════════════════════════════════════════════════
-
-    /// <summary>
-    /// Checks if this membership is active for a given competition phase.
-    /// </summary>
-    public bool IsActiveForPhase(CompetitionPhase phase)
-    {
-        if (!IsActive) return false;
-        var fromOk = !ActiveFromPhase.HasValue || phase >= ActiveFromPhase.Value;
-        var toOk = !ActiveToPhase.HasValue || phase <= ActiveToPhase.Value;
-        return fromOk && toOk;
-    }
 
     /// <summary>
     /// Deactivates this committee membership with audit information.

@@ -7,10 +7,9 @@ namespace TendexAI.Application.Features.Committees.Commands.AddCommitteeMember;
 /// Command to add a registered platform user as a member to a committee.
 /// The user must exist in the platform and their role must be compatible
 /// with the requested committee role.
+/// Members inherit the committee's phase scope — no per-member phase override.
 /// </summary>
 public sealed record AddCommitteeMemberCommand(
     Guid CommitteeId,
     Guid UserId,
-    CommitteeMemberRole Role,
-    CompetitionPhase? ActiveFromPhase,
-    CompetitionPhase? ActiveToPhase) : ICommand;
+    CommitteeMemberRole Role) : ICommand;

@@ -81,6 +81,7 @@ export interface CommitteeListItem {
   type: CommitteeType
   isPermanent: boolean
   scopeType: CommitteeScopeType
+  phases: CompetitionPhase[]
   status: CommitteeStatus
   activeMemberCount: number
   startDate: string
@@ -99,13 +100,12 @@ export interface CommitteeDetail {
   type: CommitteeType
   isPermanent: boolean
   scopeType: CommitteeScopeType
+  phases: CompetitionPhase[]
   description: string | null
   status: CommitteeStatus
   startDate: string
   endDate: string
   competitions: CommitteeCompetition[]
-  activeFromPhase: CompetitionPhase | null
-  activeToPhase: CompetitionPhase | null
   statusChangeReason: string | null
   statusChangedBy: string | null
   statusChangedAt: string | null
@@ -123,8 +123,6 @@ export interface CommitteeMember {
   userId: string
   userFullName: string
   role: CommitteeMemberRole
-  activeFromPhase: CompetitionPhase | null
-  activeToPhase: CompetitionPhase | null
   isActive: boolean
   assignedAt: string
   assignedBy: string
@@ -227,8 +225,7 @@ export interface CreateCommitteeRequest {
   startDate: string
   endDate: string
   competitionIds?: string[]
-  activeFromPhase?: CompetitionPhase
-  activeToPhase?: CompetitionPhase
+  phases?: CompetitionPhase[]
 }
 
 /** Request body for updating committee information. */
@@ -237,8 +234,7 @@ export interface UpdateCommitteeRequest {
   nameEn: string
   description?: string
   scopeType: CommitteeScopeType
-  activeFromPhase?: CompetitionPhase
-  activeToPhase?: CompetitionPhase
+  phases?: CompetitionPhase[]
   competitionIds?: string[]
 }
 
@@ -252,8 +248,6 @@ export interface ChangeCommitteeStatusRequest {
 export interface AddCommitteeMemberRequest {
   userId: string
   role: CommitteeMemberRole
-  activeFromPhase?: CompetitionPhase
-  activeToPhase?: CompetitionPhase
 }
 
 /* ------------------------------------------------------------------ */

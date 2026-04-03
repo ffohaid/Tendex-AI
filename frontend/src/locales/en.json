@@ -1429,7 +1429,8 @@
       "workload": "Workload",
       "phaseRange": "Phase Range",
       "scope": "Scope",
-      "linkedCompetitions": "linked competitions"
+      "linkedCompetitions": "linked competitions",
+      "phases": "Phases"
     },
     "memberTable": {
       "name": "Name",
@@ -1485,7 +1486,13 @@
       "selectCompetitions": "Select Linked Competitions",
       "noCompetitions": "No competitions available",
       "selectedCount": "{count} competition(s) selected",
-      "role": "Committee Role"
+      "role": "Committee Role",
+      "selectPhases": "Select Phases",
+      "selectAll": "Select All",
+      "deselectAll": "Deselect All",
+      "selectedPhasesCount": "{count} phase(s) selected",
+      "selectAtLeastOnePhase": "At least one phase must be selected",
+      "allPhases": "All Phases"
     },
     "detail": {
       "endDate": "End Date",

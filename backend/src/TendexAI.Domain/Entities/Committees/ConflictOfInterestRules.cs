@@ -17,21 +17,15 @@ public static class ConflictOfInterestRules
     /// <summary>
     /// Validates that adding a user to a committee does not violate conflict of interest rules.
     /// </summary>
-    /// <param name="userId">The user being added.</param>
-    /// <param name="targetCommitteeType">The type of committee the user is being added to.</param>
-    /// <param name="targetRole">The role the user will have in the target committee.</param>
-    /// <param name="existingMemberships">All existing active committee memberships for this user in the same competition.</param>
-    /// <returns>A Result indicating success or the specific conflict violation.</returns>
     public static Result ValidateAssignment(
         Guid userId,
         CommitteeType targetCommitteeType,
         CommitteeMemberRole targetRole,
         IReadOnlyList<(CommitteeType Type, CommitteeMemberRole Role)> existingMemberships)
     {
-        // Rule 1: Cannot be Chair of both Technical and Financial committees
-        // PRD Section 4.2: "Each committee must have its own chair and independent formation"
         var isTargetChair = targetRole == CommitteeMemberRole.Chair;
 
+        // Rule 1: Cannot be Chair of both Technical and Financial committees
         if (isTargetChair && targetCommitteeType == CommitteeType.TechnicalEvaluation)
         {
             if (existingMemberships.Any(m =>
@@ -55,7 +49,6 @@ public static class ConflictOfInterestRules
         }
 
         // Rule 2: Booklet preparer cannot be Chair of evaluation committees
-        // PRD Section 23, Rule #7: "Person who prepared booklet CANNOT approve evaluation results"
         if (targetCommitteeType is CommitteeType.TechnicalEvaluation or CommitteeType.FinancialEvaluation &&
             targetRole == CommitteeMemberRole.Chair)
         {
@@ -82,31 +75,28 @@ public static class ConflictOfInterestRules
     }
 
     /// <summary>
-    /// Validates that a committee assignment respects the phase-based activation rules.
-    /// Technical committees should only be active during Technical Analysis phase.
-    /// Financial committees should only be active during Financial Analysis phase.
+    /// Validates that a committee's selected phases are consistent with its type.
+    /// Technical committees must include the TechnicalAnalysis phase.
+    /// Financial committees must include the FinancialAnalysis phase.
     /// </summary>
     public static Result ValidatePhaseScope(
         CommitteeType committeeType,
-        CompetitionPhase? activeFromPhase,
-        CompetitionPhase? activeToPhase)
+        List<CompetitionPhase>? phases)
     {
+        // If no phases specified (comprehensive scope), all phases are included — always valid
+        if (phases is null || phases.Count == 0)
+            return Result.Success();
+
         if (committeeType == CommitteeType.TechnicalEvaluation)
         {
-            if (activeFromPhase.HasValue && activeFromPhase.Value > CompetitionPhase.TechnicalAnalysis)
-                return Result.Failure("Technical evaluation committee must be active during the Technical Analysis phase.");
-
-            if (activeToPhase.HasValue && activeToPhase.Value < CompetitionPhase.TechnicalAnalysis)
-                return Result.Failure("Technical evaluation committee must be active during the Technical Analysis phase.");
+            if (!phases.Contains(CompetitionPhase.TechnicalAnalysis))
+                return Result.Failure("Technical evaluation committee must include the Technical Analysis phase.");
         }
 
         if (committeeType == CommitteeType.FinancialEvaluation)
         {
-            if (activeFromPhase.HasValue && activeFromPhase.Value > CompetitionPhase.FinancialAnalysis)
-                return Result.Failure("Financial evaluation committee must be active during the Financial Analysis phase.");
-
-            if (activeToPhase.HasValue && activeToPhase.Value < CompetitionPhase.FinancialAnalysis)
-                return Result.Failure("Financial evaluation committee must be active during the Financial Analysis phase.");
+            if (!phases.Contains(CompetitionPhase.FinancialAnalysis))
+                return Result.Failure("Financial evaluation committee must include the Financial Analysis phase.");
         }
 
         return Result.Success();

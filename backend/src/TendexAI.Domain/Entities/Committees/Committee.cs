@@ -15,8 +15,12 @@ namespace TendexAI.Domain.Entities.Committees;
 /// 
 /// SCOPE MODEL:
 /// - Comprehensive: all phases, all competitions
-/// - SpecificPhasesAllCompetitions: specific phases, all competitions
-/// - SpecificPhasesSpecificCompetitions: specific phases, specific competitions (via CommitteeCompetition)
+/// - SpecificPhasesAllCompetitions: specific phases (multi-select), all competitions
+/// - SpecificPhasesSpecificCompetitions: specific phases (multi-select), specific competitions (via CommitteeCompetition)
+/// 
+/// PHASE MODEL:
+/// Phases are stored as a comma-separated string in the database and exposed as List&lt;CompetitionPhase&gt;.
+/// This allows selecting non-contiguous phases (e.g., BookletPreparation + TechnicalAnalysis).
 /// </summary>
 public sealed class Committee : AggregateRoot<Guid>
 {
@@ -39,8 +43,7 @@ public sealed class Committee : AggregateRoot<Guid>
         string? description,
         DateTime startDate,
         DateTime endDate,
-        CompetitionPhase? activeFromPhase,
-        CompetitionPhase? activeToPhase,
+        List<CompetitionPhase>? phases,
         string createdBy)
     {
         Id = Guid.NewGuid();
@@ -54,9 +57,10 @@ public sealed class Committee : AggregateRoot<Guid>
         StartDate = startDate;
         EndDate = endDate;
 
-        // For Comprehensive scope, phases are null (all phases)
-        ActiveFromPhase = scopeType == CommitteeScopeType.Comprehensive ? null : activeFromPhase;
-        ActiveToPhase = scopeType == CommitteeScopeType.Comprehensive ? null : activeToPhase;
+        // For Comprehensive scope, phases are empty (all phases)
+        PhasesString = scopeType == CommitteeScopeType.Comprehensive
+            ? null
+            : SerializePhases(phases ?? []);
 
         Status = CommitteeStatus.Active;
         CreatedAt = DateTime.UtcNow;
@@ -99,11 +103,17 @@ public sealed class Committee : AggregateRoot<Guid>
     /// <summary>Current lifecycle status of the committee.</summary>
     public CommitteeStatus Status { get; private set; }
 
-    /// <summary>The phase from which this committee becomes active (null for Comprehensive scope).</summary>
-    public CompetitionPhase? ActiveFromPhase { get; private set; }
+    /// <summary>
+    /// Comma-separated string of selected phase values (e.g., "1,3,5").
+    /// Null for Comprehensive scope (all phases).
+    /// Stored in database as nvarchar.
+    /// </summary>
+    public string? PhasesString { get; private set; }
 
-    /// <summary>The phase until which this committee remains active (null for Comprehensive scope).</summary>
-    public CompetitionPhase? ActiveToPhase { get; private set; }
+    /// <summary>
+    /// Parsed list of selected phases. Empty list means all phases (Comprehensive).
+    /// </summary>
+    public List<CompetitionPhase> Phases => DeserializePhases(PhasesString);
 
     /// <summary>Reason for suspension or dissolution (audit trail).</summary>
     public string? StatusChangeReason { get; private set; }
@@ -119,6 +129,25 @@ public sealed class Committee : AggregateRoot<Guid>
 
     /// <summary>Navigation property — linked competitions (for SpecificPhasesSpecificCompetitions scope).</summary>
     public IReadOnlyCollection<CommitteeCompetition> Competitions => _competitions.AsReadOnly();
+
+    // ═════════════════════════════════════════════════════════════
+    //  Phase Serialization Helpers
+    // ═════════════════════════════════════════════════════════════
+
+    private static string? SerializePhases(List<CompetitionPhase> phases)
+    {
+        if (phases.Count == 0) return null;
+        return string.Join(",", phases.Select(p => ((int)p).ToString()).OrderBy(x => x));
+    }
+
+    private static List<CompetitionPhase> DeserializePhases(string? phasesString)
+    {
+        if (string.IsNullOrWhiteSpace(phasesString)) return [];
+        return phasesString.Split(',', StringSplitOptions.RemoveEmptyEntries)
+            .Select(s => (CompetitionPhase)int.Parse(s.Trim()))
+            .OrderBy(p => p)
+            .ToList();
+    }
 
     // ═════════════════════════════════════════════════════════════
     //  Competition Management
@@ -171,8 +200,6 @@ public sealed class Committee : AggregateRoot<Guid>
         Guid userId,
         string userFullName,
         CommitteeMemberRole role,
-        CompetitionPhase? activeFromPhase,
-        CompetitionPhase? activeToPhase,
         string assignedBy)
     {
         if (Status != CommitteeStatus.Active)
@@ -187,9 +214,7 @@ public sealed class Committee : AggregateRoot<Guid>
         if (_members.Any(m => m.UserId == userId && m.IsActive))
             return Result.Failure("User is already an active member of this committee.");
 
-        var member = new CommitteeMember(
-            Id, userId, userFullName, role,
-            activeFromPhase, activeToPhase, assignedBy);
+        var member = new CommitteeMember(Id, userId, userFullName, role, assignedBy);
 
         _members.Add(member);
         LastModifiedAt = DateTime.UtcNow;
@@ -245,7 +270,7 @@ public sealed class Committee : AggregateRoot<Guid>
     public IReadOnlyList<CommitteeMember> GetActiveMembersForPhase(CompetitionPhase phase)
     {
         return _members
-            .Where(m => m.IsActive && m.IsActiveForPhase(phase))
+            .Where(m => m.IsActive)
             .ToList()
             .AsReadOnly();
     }
@@ -273,9 +298,9 @@ public sealed class Committee : AggregateRoot<Guid>
         if (ScopeType == CommitteeScopeType.Comprehensive)
             return true;
 
-        var fromOk = !ActiveFromPhase.HasValue || phase >= ActiveFromPhase.Value;
-        var toOk = !ActiveToPhase.HasValue || phase <= ActiveToPhase.Value;
-        return fromOk && toOk;
+        var phases = Phases;
+        if (phases.Count == 0) return true; // No restriction
+        return phases.Contains(phase);
     }
 
     // ═════════════════════════════════════════════════════════════
@@ -367,12 +392,11 @@ public sealed class Committee : AggregateRoot<Guid>
     }
 
     /// <summary>
-    /// Updates the committee's scope type and phase range.
+    /// Updates the committee's scope type and selected phases.
     /// </summary>
     public Result UpdateScope(
         CommitteeScopeType scopeType,
-        CompetitionPhase? activeFromPhase,
-        CompetitionPhase? activeToPhase,
+        List<CompetitionPhase>? phases,
         string updatedBy)
     {
         if (Status == CommitteeStatus.Dissolved)
@@ -381,13 +405,13 @@ public sealed class Committee : AggregateRoot<Guid>
         // Validate scope-phase consistency
         if (scopeType == CommitteeScopeType.Comprehensive)
         {
-            if (activeFromPhase.HasValue || activeToPhase.HasValue)
+            if (phases is { Count: > 0 })
                 return Result.Failure("Comprehensive scope cannot have phase restrictions.");
         }
         else
         {
-            if (!activeFromPhase.HasValue || !activeToPhase.HasValue)
-                return Result.Failure("Phase range is required for the selected scope type.");
+            if (phases is null || phases.Count == 0)
+                return Result.Failure("At least one phase must be selected for the chosen scope type.");
         }
 
         // If changing away from SpecificPhasesSpecificCompetitions, clear competition links
@@ -397,8 +421,9 @@ public sealed class Committee : AggregateRoot<Guid>
         }
 
         ScopeType = scopeType;
-        ActiveFromPhase = scopeType == CommitteeScopeType.Comprehensive ? null : activeFromPhase;
-        ActiveToPhase = scopeType == CommitteeScopeType.Comprehensive ? null : activeToPhase;
+        PhasesString = scopeType == CommitteeScopeType.Comprehensive
+            ? null
+            : SerializePhases(phases ?? []);
         LastModifiedAt = DateTime.UtcNow;
         LastModifiedBy = updatedBy;
         return Result.Success();

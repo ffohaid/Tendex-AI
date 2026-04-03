@@ -185,8 +185,7 @@ public static class CommitteeEndpoints
             StartDate: request.StartDate,
             EndDate: request.EndDate,
             CompetitionIds: request.CompetitionIds,
-            ActiveFromPhase: request.ActiveFromPhase,
-            ActiveToPhase: request.ActiveToPhase);
+            Phases: request.Phases);
 
         var result = await sender.Send(command, cancellationToken);
         return result.IsSuccess
@@ -206,8 +205,7 @@ public static class CommitteeEndpoints
             NameEn: request.NameEn,
             Description: request.Description,
             ScopeType: request.ScopeType,
-            ActiveFromPhase: request.ActiveFromPhase,
-            ActiveToPhase: request.ActiveToPhase,
+            Phases: request.Phases,
             CompetitionIds: request.CompetitionIds);
 
         var result = await sender.Send(command, cancellationToken);
@@ -260,9 +258,7 @@ public static class CommitteeEndpoints
         var command = new AddCommitteeMemberCommand(
             CommitteeId: committeeId,
             UserId: request.UserId,
-            Role: request.Role,
-            ActiveFromPhase: request.ActiveFromPhase,
-            ActiveToPhase: request.ActiveToPhase);
+            Role: request.Role);
 
         var result = await sender.Send(command, cancellationToken);
         if (result.IsSuccess)
@@ -373,8 +369,7 @@ public sealed record CreateCommitteeRequest(
     DateTime StartDate,
     DateTime EndDate,
     List<Guid>? CompetitionIds,
-    CompetitionPhase? ActiveFromPhase,
-    CompetitionPhase? ActiveToPhase);
+    List<CompetitionPhase>? Phases);
 
 /// <summary>Request body for updating committee information.</summary>
 public sealed record UpdateCommitteeRequest(
@@ -382,8 +377,7 @@ public sealed record UpdateCommitteeRequest(
     string NameEn,
     string? Description,
     CommitteeScopeType ScopeType,
-    CompetitionPhase? ActiveFromPhase,
-    CompetitionPhase? ActiveToPhase,
+    List<CompetitionPhase>? Phases,
     List<Guid>? CompetitionIds);
 
 /// <summary>Request body for changing committee status.</summary>
@@ -394,6 +388,4 @@ public sealed record ChangeCommitteeStatusRequest(
 /// <summary>Request body for adding a registered platform user to a committee.</summary>
 public sealed record AddCommitteeMemberRequest(
     Guid UserId,
-    CommitteeMemberRole Role,
-    CompetitionPhase? ActiveFromPhase,
-    CompetitionPhase? ActiveToPhase);
+    CommitteeMemberRole Role);

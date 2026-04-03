@@ -1429,7 +1429,8 @@
       "workload": "عبء العمل",
       "phaseRange": "نطاق المراحل",
       "scope": "نطاق الصلاحية",
-      "linkedCompetitions": "منافسات مرتبطة"
+      "linkedCompetitions": "منافسات مرتبطة",
+      "phases": "المراحل"
     },
     "memberTable": {
       "name": "الاسم",
@@ -1485,7 +1486,13 @@
       "selectCompetitions": "اختر المنافسات المرتبطة",
       "noCompetitions": "لا توجد منافسات متاحة",
       "selectedCount": "تم اختيار {count} منافسة",
-      "role": "الدور في اللجنة"
+      "role": "الدور في اللجنة",
+      "selectPhases": "اختر المراحل",
+      "selectAll": "تحديد الكل",
+      "deselectAll": "إلغاء الكل",
+      "selectedPhasesCount": "تم اختيار {count} مرحلة",
+      "selectAtLeastOnePhase": "يجب اختيار مرحلة واحدة على الأقل",
+      "allPhases": "جميع المراحل"
     },
     "detail": {
       "endDate": "تاريخ النهاية",

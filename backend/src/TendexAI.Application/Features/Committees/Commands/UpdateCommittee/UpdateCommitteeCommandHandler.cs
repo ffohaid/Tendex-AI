@@ -39,11 +39,10 @@ public sealed class UpdateCommitteeCommandHandler : ICommandHandler<UpdateCommit
         if (infoResult.IsFailure)
             return infoResult;
 
-        // Update scope
+        // Update scope with phases list
         var scopeResult = committee.UpdateScope(
             request.ScopeType,
-            request.ActiveFromPhase,
-            request.ActiveToPhase,
+            request.Phases,
             userId);
         if (scopeResult.IsFailure)
             return scopeResult;

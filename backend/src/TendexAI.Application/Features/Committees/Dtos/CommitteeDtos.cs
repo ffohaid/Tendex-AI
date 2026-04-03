@@ -12,6 +12,7 @@ public sealed record CommitteeListItemDto(
     CommitteeType Type,
     bool IsPermanent,
     CommitteeScopeType ScopeType,
+    List<CompetitionPhase> Phases,
     CommitteeStatus Status,
     int ActiveMemberCount,
     DateTime StartDate,
@@ -31,13 +32,12 @@ public sealed record CommitteeDetailDto(
     CommitteeType Type,
     bool IsPermanent,
     CommitteeScopeType ScopeType,
+    List<CompetitionPhase> Phases,
     string? Description,
     CommitteeStatus Status,
     DateTime StartDate,
     DateTime EndDate,
     IReadOnlyList<CommitteeCompetitionDto> Competitions,
-    CompetitionPhase? ActiveFromPhase,
-    CompetitionPhase? ActiveToPhase,
     string? StatusChangeReason,
     string? StatusChangedBy,
     DateTime? StatusChangedAt,
@@ -50,14 +50,13 @@ public sealed record CommitteeDetailDto(
 
 /// <summary>
 /// DTO for a committee member.
+/// Members inherit the committee's phase scope.
 /// </summary>
 public sealed record CommitteeMemberDto(
     Guid Id,
     Guid UserId,
     string UserFullName,
     CommitteeMemberRole Role,
-    CompetitionPhase? ActiveFromPhase,
-    CompetitionPhase? ActiveToPhase,
     bool IsActive,
     DateTime AssignedAt,
     string AssignedBy,

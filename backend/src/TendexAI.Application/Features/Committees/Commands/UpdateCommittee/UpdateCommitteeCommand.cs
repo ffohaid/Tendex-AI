@@ -5,6 +5,7 @@ namespace TendexAI.Application.Features.Committees.Commands.UpdateCommittee;
 
 /// <summary>
 /// Command to update committee information including scope, phases, and competition links.
+/// Phases is a list of selected competition phases (for non-comprehensive scope types).
 /// </summary>
 public sealed record UpdateCommitteeCommand(
     Guid CommitteeId,
@@ -12,6 +13,5 @@ public sealed record UpdateCommitteeCommand(
     string NameEn,
     string? Description,
     CommitteeScopeType ScopeType,
-    CompetitionPhase? ActiveFromPhase,
-    CompetitionPhase? ActiveToPhase,
+    List<CompetitionPhase>? Phases,
     List<Guid>? CompetitionIds) : ICommand;

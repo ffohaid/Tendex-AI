@@ -97,7 +97,10 @@ public sealed class UserRepository : IUserRepository
                 u.FirstName.ToLower().Contains(term) ||
                 u.LastName.ToLower().Contains(term) ||
                 u.Email.ToLower().Contains(term) ||
-                (u.FirstName + " " + u.LastName).ToLower().Contains(term));
+                (u.FirstName + " " + u.LastName).ToLower().Contains(term) ||
+                u.UserRoles.Any(ur =>
+                    ur.Role.NameAr.ToLower().Contains(term) ||
+                    ur.Role.NameEn.ToLower().Contains(term)));
         }
 
         return await query

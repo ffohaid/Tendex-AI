@@ -1,7 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using TendexAI.Domain.Entities.Committees;
-using TendexAI.Domain.Enums;
 
 namespace TendexAI.Infrastructure.Persistence.Configurations.Committees;
 
@@ -31,12 +30,6 @@ public sealed class CommitteeMemberConfiguration : IEntityTypeConfiguration<Comm
         builder.Property(m => m.Role)
             .IsRequired()
             .HasConversion<int>();
-
-        builder.Property(m => m.ActiveFromPhase)
-            .HasConversion<int?>();
-
-        builder.Property(m => m.ActiveToPhase)
-            .HasConversion<int?>();
 
         builder.Property(m => m.IsActive)
             .IsRequired();

@@ -5,6 +5,7 @@ namespace TendexAI.Application.Features.Committees.Commands.CreateCommittee;
 
 /// <summary>
 /// Command to create a new committee (permanent or temporary).
+/// Phases is a list of selected competition phases (for non-comprehensive scope types).
 /// </summary>
 public sealed record CreateCommitteeCommand(
     string NameAr,
@@ -16,5 +17,4 @@ public sealed record CreateCommitteeCommand(
     DateTime StartDate,
     DateTime EndDate,
     List<Guid>? CompetitionIds,
-    CompetitionPhase? ActiveFromPhase,
-    CompetitionPhase? ActiveToPhase) : ICommand<Guid>;
+    List<CompetitionPhase>? Phases) : ICommand<Guid>;

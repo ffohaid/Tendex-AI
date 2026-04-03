@@ -6,6 +6,7 @@
  * - Scope model: Comprehensive / SpecificPhasesAllCompetitions / SpecificPhasesSpecificCompetitions
  * - Dynamic user search for adding members (only registered platform users)
  * - Multi-competition linking
+ * - Multi-phase selection via checkboxes (discrete phases, not range)
  * - Full RTL/LTR support with Tailwind logical properties
  * - English numerals exclusively
  */
@@ -77,7 +78,7 @@ const showAddMemberDialog = ref(false)
 const showAiPanel = ref(false)
 const isSubmitting = ref(false)
 
-/* Create / Edit form */
+/* Create / Edit form — uses phases[] instead of activeFromPhase/activeToPhase */
 const formData = ref<CreateCommitteeRequest>({
   nameAr: '',
   nameEn: '',
@@ -88,8 +89,7 @@ const formData = ref<CreateCommitteeRequest>({
   startDate: '',
   endDate: '',
   competitionIds: [],
-  activeFromPhase: undefined,
-  activeToPhase: undefined,
+  phases: [],
 })
 
 /* Status change form */
@@ -98,12 +98,10 @@ const statusChangeData = ref<ChangeCommitteeStatusRequest>({
   reason: '',
 })
 
-/* Add member form */
+/* Add member form — simplified: only userId and role */
 const memberFormData = ref<AddCommitteeMemberRequest>({
   userId: '',
   role: CommitteeMemberRole.Member,
-  activeFromPhase: undefined,
-  activeToPhase: undefined,
 })
 
 /* User search for add member */
@@ -228,6 +226,12 @@ function getPhaseName(phase: CompetitionPhase | null | undefined): string {
   return map[phase] || '-'
 }
 
+/** Format a list of phases as comma-separated names */
+function formatPhasesList(phases: CompetitionPhase[] | null | undefined): string {
+  if (!phases || phases.length === 0) return t('committees.form.allPhases')
+  return phases.map(p => getPhaseName(p)).join('، ')
+}
+
 function getRoleName(role: CommitteeMemberRole): string {
   const map: Record<number, string> = {
     [CommitteeMemberRole.Chair]: t('committees.roles.chair'),
@@ -245,6 +249,32 @@ function getHealthScoreClass(score: number): string {
   if (score >= 80) return 'text-success'
   if (score >= 50) return 'text-warning'
   return 'text-danger'
+}
+
+/* ------------------------------------------------------------------ */
+/*  Phase Toggle Helpers                                               */
+/* ------------------------------------------------------------------ */
+function togglePhase(phase: CompetitionPhase) {
+  const phases = formData.value.phases || []
+  const idx = phases.indexOf(phase)
+  if (idx >= 0) {
+    phases.splice(idx, 1)
+  } else {
+    phases.push(phase)
+  }
+  formData.value.phases = [...phases]
+}
+
+function isPhaseSelected(phase: CompetitionPhase): boolean {
+  return (formData.value.phases || []).includes(phase)
+}
+
+function selectAllPhases() {
+  formData.value.phases = phaseOptions.value.map(o => o.value)
+}
+
+function deselectAllPhases() {
+  formData.value.phases = []
 }
 
 /* ------------------------------------------------------------------ */
@@ -358,8 +388,7 @@ async function handleCreateCommittee() {
         nameEn: formData.value.nameEn,
         description: formData.value.description,
         scopeType: formData.value.scopeType,
-        activeFromPhase: showPhaseFields.value ? formData.value.activeFromPhase : undefined,
-        activeToPhase: showPhaseFields.value ? formData.value.activeToPhase : undefined,
+        phases: showPhaseFields.value ? formData.value.phases : undefined,
         competitionIds: showCompetitionFields.value ? formData.value.competitionIds : undefined,
       }
       await updateCommittee(editingCommitteeId.value, updateData)
@@ -369,8 +398,7 @@ async function handleCreateCommittee() {
         isPermanent: true,
         startDate: formData.value.startDate ? new Date(formData.value.startDate).toISOString() : '',
         endDate: formData.value.endDate ? new Date(formData.value.endDate).toISOString() : '',
-        activeFromPhase: showPhaseFields.value ? formData.value.activeFromPhase : undefined,
-        activeToPhase: showPhaseFields.value ? formData.value.activeToPhase : undefined,
+        phases: showPhaseFields.value ? formData.value.phases : undefined,
         competitionIds: showCompetitionFields.value ? formData.value.competitionIds : undefined,
       }
       await createCommittee(payload)
@@ -416,7 +444,10 @@ async function handleAddMember() {
   }
   isSubmitting.value = true
   try {
-    await addCommitteeMember(selectedCommittee.value.id, memberFormData.value)
+    await addCommitteeMember(selectedCommittee.value.id, {
+      userId: memberFormData.value.userId,
+      role: memberFormData.value.role,
+    })
     showAddMemberDialog.value = false
     resetMemberForm()
     await loadCommitteeDetail(selectedCommittee.value.id)
@@ -465,8 +496,7 @@ function openEditDialog(committee: CommitteeDetail) {
     startDate: committee.startDate,
     endDate: committee.endDate,
     competitionIds: committee.competitions?.map(c => c.competitionId) || [],
-    activeFromPhase: committee.activeFromPhase || undefined,
-    activeToPhase: committee.activeToPhase || undefined,
+    phases: committee.phases || [],
   }
   showCreateDialog.value = true
 }
@@ -492,8 +522,7 @@ function resetForm() {
     startDate: '',
     endDate: '',
     competitionIds: [],
-    activeFromPhase: undefined,
-    activeToPhase: undefined,
+    phases: [],
   }
 }
 
@@ -501,8 +530,6 @@ function resetMemberForm() {
   memberFormData.value = {
     userId: '',
     role: CommitteeMemberRole.Member,
-    activeFromPhase: undefined,
-    activeToPhase: undefined,
   }
   userSearchQuery.value = ''
   selectedUser.value = null
@@ -791,20 +818,38 @@ onMounted(() => {
               </p>
             </div>
 
-            <!-- Phase Range (conditional) -->
-            <div v-if="showPhaseFields" class="grid grid-cols-2 gap-4">
-              <div>
-                <label class="mb-1 block text-sm font-medium text-secondary">{{ t('committees.form.activeFromPhase') }}</label>
-                <select v-model="formData.activeFromPhase" class="w-full rounded-lg border border-surface-dim px-4 py-2.5 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary">
-                  <option v-for="opt in phaseOptions" :key="opt.value" :value="opt.value">{{ opt.label }}</option>
-                </select>
+            <!-- Phase Selection via Checkboxes (conditional) -->
+            <div v-if="showPhaseFields">
+              <div class="mb-2 flex items-center justify-between">
+                <label class="block text-sm font-medium text-secondary">{{ t('committees.form.selectPhases') }}</label>
+                <div class="flex items-center gap-2">
+                  <button type="button" class="text-xs font-medium text-primary hover:underline" @click="selectAllPhases">{{ t('committees.form.selectAll') }}</button>
+                  <span class="text-xs text-tertiary">|</span>
+                  <button type="button" class="text-xs font-medium text-tertiary hover:underline" @click="deselectAllPhases">{{ t('committees.form.deselectAll') }}</button>
+                </div>
               </div>
-              <div>
-                <label class="mb-1 block text-sm font-medium text-secondary">{{ t('committees.form.activeToPhase') }}</label>
-                <select v-model="formData.activeToPhase" class="w-full rounded-lg border border-surface-dim px-4 py-2.5 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary">
-                  <option v-for="opt in phaseOptions" :key="opt.value" :value="opt.value">{{ opt.label }}</option>
-                </select>
+              <div class="rounded-lg border border-surface-dim p-3 space-y-1.5">
+                <label
+                  v-for="opt in phaseOptions"
+                  :key="opt.value"
+                  class="flex cursor-pointer items-center gap-2.5 rounded-lg px-2 py-1.5 text-sm transition-colors hover:bg-surface-ground"
+                  :class="{ 'bg-primary/5': isPhaseSelected(opt.value) }"
+                >
+                  <input
+                    type="checkbox"
+                    :checked="isPhaseSelected(opt.value)"
+                    class="rounded border-surface-dim text-primary focus:ring-primary"
+                    @change="togglePhase(opt.value)"
+                  />
+                  <span class="text-secondary">{{ opt.label }}</span>
+                </label>
               </div>
+              <p v-if="(formData.phases || []).length > 0" class="mt-1.5 text-xs text-primary">
+                {{ t('committees.form.selectedPhasesCount', { count: (formData.phases || []).length }) }}
+              </p>
+              <p v-else class="mt-1.5 text-xs text-danger">
+                {{ t('committees.form.selectAtLeastOnePhase') }}
+              </p>
             </div>
 
             <!-- Competition Selection (conditional) -->
@@ -843,7 +888,7 @@ onMounted(() => {
             </div>
             <div class="flex items-center justify-end gap-3 pt-2">
               <button type="button" class="rounded-lg border border-surface-dim px-4 py-2.5 text-sm font-medium text-secondary hover:bg-surface-ground" @click="showCreateDialog = false">{{ t('common.cancel') }}</button>
-              <button type="submit" :disabled="isSubmitting" class="rounded-lg bg-primary px-4 py-2.5 text-sm font-medium text-white hover:bg-primary-dark disabled:opacity-50">
+              <button type="submit" :disabled="isSubmitting || (showPhaseFields && (!formData.phases || formData.phases.length === 0))" class="rounded-lg bg-primary px-4 py-2.5 text-sm font-medium text-white hover:bg-primary-dark disabled:opacity-50">
                 <i v-if="isSubmitting" class="pi pi-spin pi-spinner me-1 text-xs"></i>
                 {{ isEditMode ? t('common.save') : t('common.create') }}
               </button>
@@ -900,11 +945,17 @@ onMounted(() => {
               <p class="text-xs text-tertiary">{{ t('committees.detail.endDate') }}</p>
               <p class="mt-1 text-sm text-secondary">{{ formatDate(selectedCommittee.endDate) }}</p>
             </div>
-            <div v-if="selectedCommittee.activeFromPhase">
-              <p class="text-xs text-tertiary">{{ t('committees.table.phaseRange') }}</p>
-              <p class="mt-1 text-xs text-secondary">
-                {{ getPhaseName(selectedCommittee.activeFromPhase) }} → {{ getPhaseName(selectedCommittee.activeToPhase) }}
-              </p>
+            <div v-if="selectedCommittee.phases && selectedCommittee.phases.length > 0" class="col-span-2">
+              <p class="text-xs text-tertiary">{{ t('committees.table.phases') }}</p>
+              <div class="mt-1 flex flex-wrap gap-1">
+                <span
+                  v-for="phase in selectedCommittee.phases"
+                  :key="phase"
+                  class="inline-block rounded-full bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary"
+                >
+                  {{ getPhaseName(phase) }}
+                </span>
+              </div>
             </div>
             <div class="col-span-2">
               <p class="text-xs text-tertiary">{{ t('committees.form.description') }}</p>

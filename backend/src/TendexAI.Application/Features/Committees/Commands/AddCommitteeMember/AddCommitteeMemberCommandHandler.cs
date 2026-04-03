@@ -15,6 +15,7 @@ namespace TendexAI.Application.Features.Committees.Commands.AddCommitteeMember;
 /// 2. User belongs to the same tenant
 /// 3. User's platform role is compatible with the requested committee role
 /// 4. Conflict of interest rules (PRD Section 4.2, Section 23 Rules #3, #7)
+/// Members inherit the committee's phase scope — no per-member phase override.
 /// </summary>
 public sealed class AddCommitteeMemberCommandHandler : ICommandHandler<AddCommitteeMemberCommand>
 {
@@ -87,7 +88,6 @@ public sealed class AddCommitteeMemberCommandHandler : ICommandHandler<AddCommit
         }
 
         // ─── Conflict of Interest Validation ─────────────────────────────
-        // Check across all competitions this committee has authority over
         var competitionIds = committee.Competitions
             .Select(c => c.CompetitionId)
             .ToList();
@@ -117,7 +117,7 @@ public sealed class AddCommitteeMemberCommandHandler : ICommandHandler<AddCommit
             }
         }
 
-        // ─── Add Member ──────────────────────────────────────────────────
+        // ─── Add Member (no per-member phase override) ──────────────────
         var assignedBy = _currentUser.UserId?.ToString() ?? "system";
         var userFullName = $"{user.FirstName} {user.LastName}".Trim();
 
@@ -125,8 +125,6 @@ public sealed class AddCommitteeMemberCommandHandler : ICommandHandler<AddCommit
             request.UserId,
             userFullName,
             request.Role,
-            request.ActiveFromPhase,
-            request.ActiveToPhase,
             assignedBy);
 
         if (addResult.IsFailure)

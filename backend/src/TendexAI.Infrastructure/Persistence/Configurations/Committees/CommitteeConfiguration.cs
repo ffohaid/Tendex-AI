@@ -54,11 +54,14 @@ public sealed class CommitteeConfiguration : IEntityTypeConfiguration<Committee>
             .IsRequired()
             .HasConversion<int>();
 
-        builder.Property(c => c.ActiveFromPhase)
-            .HasConversion<int?>();
+        // Phases stored as comma-separated string (e.g., "1,3,5")
+        // Replaces the old ActiveFromPhase/ActiveToPhase range model
+        builder.Property(c => c.PhasesString)
+            .HasColumnName("PhasesString")
+            .HasMaxLength(100);
 
-        builder.Property(c => c.ActiveToPhase)
-            .HasConversion<int?>();
+        // Ignore the computed Phases property (derived from PhasesString)
+        builder.Ignore(c => c.Phases);
 
         builder.Property(c => c.StatusChangeReason)
             .HasMaxLength(2000);

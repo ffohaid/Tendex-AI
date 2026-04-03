@@ -9,7 +9,7 @@ namespace TendexAI.Application.Features.Committees.Commands.CreateCommittee;
 
 /// <summary>
 /// Handles the creation of a new committee.
-/// Validates business rules including scope type, phase constraints, and competition links.
+/// Validates business rules including scope type, phase selection, and competition links.
 /// </summary>
 public sealed class CreateCommitteeCommandHandler : ICommandHandler<CreateCommitteeCommand, Guid>
 {
@@ -39,7 +39,7 @@ public sealed class CreateCommitteeCommandHandler : ICommandHandler<CreateCommit
         // Comprehensive scope: no phases, no competition links
         if (request.ScopeType == CommitteeScopeType.Comprehensive)
         {
-            if (request.ActiveFromPhase.HasValue || request.ActiveToPhase.HasValue)
+            if (request.Phases is { Count: > 0 })
                 return Result.Failure<Guid>("Comprehensive scope committees cannot have phase restrictions.");
 
             if (request.CompetitionIds is { Count: > 0 })
@@ -49,8 +49,8 @@ public sealed class CreateCommitteeCommandHandler : ICommandHandler<CreateCommit
         // SpecificPhasesAllCompetitions: phases required, no competition links
         if (request.ScopeType == CommitteeScopeType.SpecificPhasesAllCompetitions)
         {
-            if (!request.ActiveFromPhase.HasValue || !request.ActiveToPhase.HasValue)
-                return Result.Failure<Guid>("Phase range is required for 'Specific Phases - All Competitions' scope.");
+            if (request.Phases is not { Count: > 0 })
+                return Result.Failure<Guid>("At least one phase must be selected for 'Specific Phases - All Competitions' scope.");
 
             if (request.CompetitionIds is { Count: > 0 })
                 return Result.Failure<Guid>("'Specific Phases - All Competitions' scope cannot be linked to specific competitions.");
@@ -59,21 +59,18 @@ public sealed class CreateCommitteeCommandHandler : ICommandHandler<CreateCommit
         // SpecificPhasesSpecificCompetitions: phases required, competition links required
         if (request.ScopeType == CommitteeScopeType.SpecificPhasesSpecificCompetitions)
         {
-            if (!request.ActiveFromPhase.HasValue || !request.ActiveToPhase.HasValue)
-                return Result.Failure<Guid>("Phase range is required for 'Specific Phases - Specific Competitions' scope.");
+            if (request.Phases is not { Count: > 0 })
+                return Result.Failure<Guid>("At least one phase must be selected for 'Specific Phases - Specific Competitions' scope.");
 
             if (request.CompetitionIds is not { Count: > 0 })
                 return Result.Failure<Guid>("At least one competition must be linked for 'Specific Phases - Specific Competitions' scope.");
         }
 
         // Validate phase scope for evaluation committees
-        if (request.ActiveFromPhase.HasValue && request.ActiveToPhase.HasValue)
-        {
-            var phaseScopeResult = ConflictOfInterestRules.ValidatePhaseScope(
-                request.Type, request.ActiveFromPhase, request.ActiveToPhase);
-            if (phaseScopeResult.IsFailure)
-                return Result.Failure<Guid>(phaseScopeResult.Error!);
-        }
+        var phaseScopeResult = ConflictOfInterestRules.ValidatePhaseScope(
+            request.Type, request.Phases);
+        if (phaseScopeResult.IsFailure)
+            return Result.Failure<Guid>(phaseScopeResult.Error!);
 
         // ── Create Committee ──────────────────────────────────────────────
         var committee = new Committee(
@@ -86,8 +83,7 @@ public sealed class CreateCommitteeCommandHandler : ICommandHandler<CreateCommit
             description: request.Description,
             startDate: request.StartDate,
             endDate: request.EndDate,
-            activeFromPhase: request.ActiveFromPhase,
-            activeToPhase: request.ActiveToPhase,
+            phases: request.Phases,
             createdBy: userId);
 
         // ── Link Competitions (if applicable) ─────────────────────────────

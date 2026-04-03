@@ -21,6 +21,7 @@ public static class CommitteeMappingExtensions
             Type: committee.Type,
             IsPermanent: committee.IsPermanent,
             ScopeType: committee.ScopeType,
+            Phases: committee.Phases,
             Status: committee.Status,
             ActiveMemberCount: committee.ActiveMemberCount,
             StartDate: committee.StartDate,
@@ -46,13 +47,12 @@ public static class CommitteeMappingExtensions
             Type: committee.Type,
             IsPermanent: committee.IsPermanent,
             ScopeType: committee.ScopeType,
+            Phases: committee.Phases,
             Description: committee.Description,
             Status: committee.Status,
             StartDate: committee.StartDate,
             EndDate: committee.EndDate,
             Competitions: committee.Competitions.Select(c => c.ToDto()).ToList().AsReadOnly(),
-            ActiveFromPhase: committee.ActiveFromPhase,
-            ActiveToPhase: committee.ActiveToPhase,
             StatusChangeReason: committee.StatusChangeReason,
             StatusChangedBy: committee.StatusChangedBy,
             StatusChangedAt: committee.StatusChangedAt,
@@ -72,8 +72,6 @@ public static class CommitteeMappingExtensions
             UserId: member.UserId,
             UserFullName: member.UserFullName,
             Role: member.Role,
-            ActiveFromPhase: member.ActiveFromPhase,
-            ActiveToPhase: member.ActiveToPhase,
             IsActive: member.IsActive,
             AssignedAt: member.AssignedAt,
             AssignedBy: member.AssignedBy,
@@ -88,7 +86,7 @@ public static class CommitteeMappingExtensions
         return new CommitteeCompetitionDto(
             Id: competition.Id,
             CompetitionId: competition.CompetitionId,
-            CompetitionNameAr: null, // Can be enriched via join if needed
+            CompetitionNameAr: null,
             CompetitionNameEn: null,
             AssignedAt: competition.AssignedAt);
     }
