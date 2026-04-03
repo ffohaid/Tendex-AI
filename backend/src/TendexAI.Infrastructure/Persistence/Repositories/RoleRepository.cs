@@ -64,6 +64,21 @@ public sealed class RoleRepository : IRoleRepository
         _context.Roles.Update(role);
     }
 
+    /// <inheritdoc />
+    public async Task UpdatePermissionsAsync(Guid roleId, IReadOnlyList<Guid> permissionIds, CancellationToken cancellationToken = default)
+    {
+        // Remove existing permissions using direct DbContext access to avoid concurrency issues
+        var existingPermissions = await _context.Set<RolePermission>()
+            .Where(rp => rp.RoleId == roleId)
+            .ToListAsync(cancellationToken);
+
+        _context.Set<RolePermission>().RemoveRange(existingPermissions);
+
+        // Add new permissions
+        var newPermissions = permissionIds.Select(pid => new RolePermission(roleId, pid)).ToList();
+        await _context.Set<RolePermission>().AddRangeAsync(newPermissions, cancellationToken);
+    }
+
     public async Task SaveChangesAsync(CancellationToken cancellationToken = default)
     {
         await _context.SaveChangesAsync(cancellationToken);

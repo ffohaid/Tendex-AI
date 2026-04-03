@@ -54,18 +54,11 @@ public sealed class UpdateRoleCommandHandler : ICommandHandler<UpdateRoleCommand
         // Update permissions if provided
         if (request.PermissionIds is not null)
         {
-            // Remove existing permissions
-            role.RolePermissions.Clear();
-
-            // Add new permissions
-            foreach (var permissionId in request.PermissionIds)
-            {
-                var rolePermission = new RolePermission(role.Id, permissionId);
-                role.RolePermissions.Add(rolePermission);
-            }
+            // Use the repository method to handle permission updates properly
+            // This avoids EF Core concurrency issues with Clear() + re-add
+            await _roleRepository.UpdatePermissionsAsync(role.Id, request.PermissionIds, cancellationToken);
         }
 
-        _roleRepository.Update(role);
         // CRITICAL FIX: Use repository's SaveChangesAsync which operates on TenantDbContext
         await _roleRepository.SaveChangesAsync(cancellationToken);
 

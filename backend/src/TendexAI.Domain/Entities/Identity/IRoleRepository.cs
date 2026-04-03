@@ -12,5 +12,10 @@ public interface IRoleRepository
     Task<bool> ExistsByNameAsync(string normalizedName, Guid tenantId, CancellationToken cancellationToken = default);
     Task AddAsync(Role role, CancellationToken cancellationToken = default);
     void Update(Role role);
+    /// <summary>
+    /// Updates the permissions for a role by removing old permissions and adding new ones.
+    /// Uses direct SQL to avoid EF Core concurrency issues with navigation collections.
+    /// </summary>
+    Task UpdatePermissionsAsync(Guid roleId, IReadOnlyList<Guid> permissionIds, CancellationToken cancellationToken = default);
     Task SaveChangesAsync(CancellationToken cancellationToken = default);
 }
