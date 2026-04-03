@@ -156,8 +156,24 @@ onMounted(async () => {
     invitationInfo.value = response
     isTokenValid.value = true
   } catch (err) {
-    isTokenValid.value = true // Still allow form even if validation endpoint doesn't exist yet
-    invitationInfo.value = null
+    if (isAxiosError(err)) {
+      const status = err.response?.status
+      const detail = err.response?.data?.detail
+      if (status === 410) {
+        // Token already used, expired, or revoked
+        isTokenValid.value = false
+        validationError.value = detail || 'هذه الدعوة لم تعد صالحة.'
+      } else if (status === 400) {
+        isTokenValid.value = false
+        validationError.value = detail || 'رابط الدعوة غير صالح.'
+      } else {
+        isTokenValid.value = false
+        validationError.value = 'حدث خطأ أثناء التحقق من الدعوة. يرجى المحاولة لاحقاً.'
+      }
+    } else {
+      isTokenValid.value = false
+      validationError.value = 'حدث خطأ في الاتصال بالخادم. يرجى المحاولة لاحقاً.'
+    }
   } finally {
     isValidating.value = false
   }

@@ -145,6 +145,14 @@ public static class UserManagementEndpoints
             .Produces<Guid>(StatusCodes.Status201Created)
             .Produces<ProblemDetails>(StatusCodes.Status400BadRequest);
 
+        invitationsGroup.MapGet("/validate", ValidateInvitationTokenAsync)
+            .WithName("ValidateInvitationToken")
+            .WithSummary("Validate an invitation token and return invitation details")
+            .AllowAnonymous()
+            .Produces<InvitationValidationResponse>(StatusCodes.Status200OK)
+            .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+            .Produces<ProblemDetails>(StatusCodes.Status410Gone);
+
         invitationsGroup.MapPost("/accept", AcceptInvitationAsync)
             .WithName("AcceptInvitation")
             .WithSummary("Accept an invitation and complete registration")
@@ -512,6 +520,45 @@ public static class UserManagementEndpoints
         return result.IsSuccess
             ? Results.NoContent()
             : Results.Problem(result.Error, statusCode: 400);
+    }
+
+    private static async Task<IResult> ValidateInvitationTokenAsync(
+        [FromQuery] string token,
+        [AsParameters] ValidateTokenDependencies deps,
+        CancellationToken cancellationToken)
+    {
+        if (string.IsNullOrWhiteSpace(token))
+            return Results.Problem("Token is required.", statusCode: 400);
+
+        var invitation = await deps.InvitationRepository.GetByTokenAsync(token, cancellationToken);
+        if (invitation is null)
+            return Results.Problem("رابط الدعوة غير صالح أو منتهي الصلاحية.", statusCode: 400);
+
+        // Check if already accepted
+        if (invitation.Status == Domain.Enums.InvitationStatus.Accepted)
+            return Results.Problem(
+                detail: "تم قبول هذه الدعوة بالفعل. يمكنك تسجيل الدخول بحسابك.",
+                statusCode: 410);
+
+        // Check if revoked
+        if (invitation.Status == Domain.Enums.InvitationStatus.Revoked)
+            return Results.Problem(
+                detail: "تم إلغاء هذه الدعوة. يرجى التواصل مع مدير النظام.",
+                statusCode: 410);
+
+        // Check if expired
+        if (invitation.Status == Domain.Enums.InvitationStatus.Expired || !invitation.IsValid())
+            return Results.Problem(
+                detail: "انتهت صلاحية هذه الدعوة. يرجى طلب دعوة جديدة من مدير النظام.",
+                statusCode: 410);
+
+        return Results.Ok(new InvitationValidationResponse(
+            Email: invitation.Email,
+            FirstNameAr: invitation.FirstNameAr,
+            LastNameAr: invitation.LastNameAr,
+            RoleName: invitation.Role?.NameAr ?? "عضو",
+            TenantName: "Tendex AI"
+        ));
     }
 
     // ===== Helper Methods =====

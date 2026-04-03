@@ -63,3 +63,21 @@ public sealed record UpdateRoleRequest(
 /// Request model for activating/deactivating a role.
 /// </summary>
 public sealed record ToggleRoleStatusRequest(bool Activate);
+
+/// <summary>
+/// Response model for invitation token validation.
+/// </summary>
+public sealed record InvitationValidationResponse(
+    string Email,
+    string FirstNameAr,
+    string LastNameAr,
+    string RoleName,
+    string TenantName);
+
+/// <summary>
+/// Dependencies for the ValidateInvitationToken endpoint (injected via [AsParameters]).
+/// </summary>
+public sealed class ValidateTokenDependencies
+{
+    public required TendexAI.Domain.Entities.Identity.IUserInvitationRepository InvitationRepository { get; init; }
+}
