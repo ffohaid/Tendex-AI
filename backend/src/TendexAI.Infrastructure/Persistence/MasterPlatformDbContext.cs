@@ -41,6 +41,10 @@ public sealed class MasterPlatformDbContext : DbContext, IMasterPlatformDbContex
 
     public DbSet<ImpersonationConsent> ImpersonationConsents => Set<ImpersonationConsent>();
 
+    public DbSet<SupportTicket> SupportTickets => Set<SupportTicket>();
+
+    public DbSet<SupportTicketMessage> SupportTicketMessages => Set<SupportTicketMessage>();
+
     // ----- Model Configuration -----
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)

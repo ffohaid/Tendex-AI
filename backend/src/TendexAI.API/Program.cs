@@ -204,4 +204,7 @@ app.MapAwardEndpoints();
 // Permission Matrix endpoints (flexible N-dimensional permission matrix)
 app.MapPermissionMatrixEndpoints();
 
+// Support Ticket endpoints (tenant-operator support system with AI)
+app.MapSupportTicketEndpoints();
+
 app.Run();

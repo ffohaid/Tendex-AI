@@ -23,4 +23,10 @@ public interface ICurrentUserService
 
     /// <summary>Indicates whether the current user is authenticated.</summary>
     bool IsAuthenticated { get; }
+
+    /// <summary>Gets the email of the current user.</summary>
+    string? Email { get; }
+
+    /// <summary>Gets the roles of the current user.</summary>
+    IReadOnlyList<string>? Roles { get; }
 }

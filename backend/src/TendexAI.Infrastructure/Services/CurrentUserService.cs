@@ -74,4 +74,16 @@ public sealed class CurrentUserService : ICurrentUserService
     /// <inheritdoc />
     public bool IsAuthenticated =>
         _httpContextAccessor.HttpContext?.User?.Identity?.IsAuthenticated ?? false;
+
+    /// <inheritdoc />
+    public string? Email =>
+        _httpContextAccessor.HttpContext?.User?.FindFirstValue(ClaimTypes.Email)
+        ?? _httpContextAccessor.HttpContext?.User?.FindFirstValue("email");
+
+    /// <inheritdoc />
+    public IReadOnlyList<string>? Roles =>
+        _httpContextAccessor.HttpContext?.User?.FindAll(ClaimTypes.Role)
+            .Select(c => c.Value)
+            .ToList()
+            .AsReadOnly();
 }

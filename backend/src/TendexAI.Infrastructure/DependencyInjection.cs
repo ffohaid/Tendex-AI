@@ -218,6 +218,7 @@ public static class DependencyInjection
         services.AddScoped<ICompetitionPermissionMatrixRepository, CompetitionPermissionMatrixRepository>();
         services.AddScoped<ICompetitionCommitteeMemberRepository, CompetitionCommitteeMemberRepository>();
         services.AddScoped<IPhaseTransitionHistoryRepository, PhaseTransitionHistoryRepository>();
+        services.AddScoped<ISupportTicketRepository, SupportTicketRepository>();
 
         // ----- Approval Workflow Service -----
         services.AddSingleton<IWorkflowConditionEvaluator, SimpleWorkflowConditionEvaluator>();
