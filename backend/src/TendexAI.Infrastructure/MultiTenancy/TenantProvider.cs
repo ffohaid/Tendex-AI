@@ -10,7 +10,8 @@ namespace TendexAI.Infrastructure.MultiTenancy;
 /// Resolves the current tenant from the HTTP request context.
 /// Tenant identification is performed via the "X-Tenant-Id" header.
 /// The resolved tenant's connection string is cached per-request to avoid repeated DB lookups.
-/// Connection strings are stored encrypted (AES-256) and decrypted in-memory only.
+/// Connection strings may be stored encrypted (AES-256) or as plain text;
+/// this provider handles both cases gracefully.
 /// </summary>
 public sealed class TenantProvider : ITenantProvider
 {
@@ -84,18 +85,39 @@ public sealed class TenantProvider : ITenantProvider
 
         _cachedTenantId = tenant.Id;
 
-        // Decrypt the connection string in-memory (stored encrypted with AES-256)
+        // Resolve connection string - handle both encrypted and plain text formats
         if (!string.IsNullOrWhiteSpace(tenant.ConnectionString))
         {
-            try
-            {
-                _cachedConnectionString = _encryptor.Decrypt(tenant.ConnectionString);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Failed to decrypt connection string for tenant {TenantId}", tenantId);
-                _cachedConnectionString = null;
-            }
+            _cachedConnectionString = ResolveConnectionString(tenant.ConnectionString, tenantId);
+        }
+    }
+
+    /// <summary>
+    /// Attempts to decrypt the connection string. If decryption fails (e.g., the string
+    /// is already in plain text format), falls back to using the raw value.
+    /// This handles the case where the platform-operator tenant has an unencrypted
+    /// connection string while government tenants have encrypted ones.
+    /// </summary>
+    private string ResolveConnectionString(string storedValue, Guid tenantId)
+    {
+        // Quick check: if it looks like a plain SQL Server connection string, use it directly
+        if (storedValue.Contains("Server=", StringComparison.OrdinalIgnoreCase) ||
+            storedValue.Contains("Data Source=", StringComparison.OrdinalIgnoreCase))
+        {
+            return storedValue;
+        }
+
+        // Otherwise, try to decrypt it (AES-256 encrypted)
+        try
+        {
+            return _encryptor.Decrypt(storedValue);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex,
+                "Failed to decrypt connection string for tenant {TenantId}. " +
+                "Attempting to use as plain text.", tenantId);
+            return storedValue;
         }
     }
 }
