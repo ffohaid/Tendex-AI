@@ -226,12 +226,6 @@ function getPhaseName(phase: CompetitionPhase | null | undefined): string {
   return map[phase] || '-'
 }
 
-/** Format a list of phases as comma-separated names */
-function formatPhasesList(phases: CompetitionPhase[] | null | undefined): string {
-  if (!phases || phases.length === 0) return t('committees.form.allPhases')
-  return phases.map(p => getPhaseName(p)).join('، ')
-}
-
 function getRoleName(role: CommitteeMemberRole): string {
   const map: Record<number, string> = {
     [CommitteeMemberRole.Chair]: t('committees.roles.chair'),
