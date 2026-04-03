@@ -241,18 +241,6 @@ function getCommitteeName(item: CommitteeListItem | CommitteeDetail): string {
   return locale.value === 'ar' ? item.nameAr : item.nameEn
 }
 
-function getDaysRemainingClass(days: number): string {
-  if (days <= 0) return 'text-danger'
-  if (days <= 14) return 'text-warning'
-  return 'text-success'
-}
-
-function getWorkloadClass(score: number): string {
-  if (score >= 0.8) return 'bg-danger'
-  if (score >= 0.5) return 'bg-warning'
-  return 'bg-success'
-}
-
 function getHealthScoreClass(score: number): string {
   if (score >= 80) return 'text-success'
   if (score >= 50) return 'text-warning'
