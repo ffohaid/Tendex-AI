@@ -622,24 +622,46 @@ onMounted(() => { loadUsers(); loadRoles() })
     <!-- EDIT USER DIALOG -->
     <Teleport to="body">
       <div v-if="showEditDialog && selectedUser" class="fixed inset-0 z-50 flex items-center justify-center bg-black/40" @click.self="showEditDialog = false">
-        <div class="w-full max-w-md rounded-xl bg-white shadow-xl">
+        <div class="w-full max-w-lg rounded-xl bg-white shadow-xl">
           <div class="flex items-center justify-between border-b border-surface-dim px-6 py-4">
             <h3 class="text-lg font-semibold text-secondary">{{ t('settings.users.editDialogTitle') }}</h3>
             <button class="rounded-lg p-1 text-tertiary hover:bg-surface-ground" @click="showEditDialog = false"><i class="pi pi-times"></i></button>
           </div>
           <form class="p-6" @submit.prevent="handleUpdateUser">
-            <div class="space-y-4">
+            <!-- User info header -->
+            <div class="mb-5 flex items-center gap-3 rounded-lg border border-surface-dim bg-surface-ground p-3">
+              <div class="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10 text-sm font-semibold text-primary">{{ selectedUser.firstName?.charAt(0) || '' }}{{ selectedUser.lastName?.charAt(0) || '' }}</div>
               <div>
-                <label class="mb-1 block text-sm font-medium text-secondary">{{ t('settings.users.fields.firstName') }} *</label>
-                <input v-model="editForm.firstName" type="text" required class="w-full rounded-lg border border-surface-dim bg-surface-ground px-4 py-2.5 text-sm text-secondary focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary" />
+                <p class="text-sm font-medium text-secondary" dir="ltr">{{ selectedUser.email }}</p>
+                <div class="flex flex-wrap gap-1 mt-1">
+                  <span v-for="role in selectedUser.roles" :key="role.roleId" class="inline-block rounded-full bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary">{{ locale === 'ar' ? role.nameAr : role.nameEn }}</span>
+                </div>
               </div>
-              <div>
-                <label class="mb-1 block text-sm font-medium text-secondary">{{ t('settings.users.fields.lastName') }} *</label>
-                <input v-model="editForm.lastName" type="text" required class="w-full rounded-lg border border-surface-dim bg-surface-ground px-4 py-2.5 text-sm text-secondary focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary" />
+            </div>
+            <div class="space-y-4">
+              <div class="grid grid-cols-2 gap-4">
+                <div>
+                  <label class="mb-1 block text-sm font-medium text-secondary">{{ t('settings.users.fields.firstName') }} *</label>
+                  <input v-model="editForm.firstName" type="text" required class="w-full rounded-lg border border-surface-dim bg-surface-ground px-4 py-2.5 text-sm text-secondary focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary" />
+                </div>
+                <div>
+                  <label class="mb-1 block text-sm font-medium text-secondary">{{ t('settings.users.fields.lastName') }} *</label>
+                  <input v-model="editForm.lastName" type="text" required class="w-full rounded-lg border border-surface-dim bg-surface-ground px-4 py-2.5 text-sm text-secondary focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary" />
+                </div>
               </div>
               <div>
                 <label class="mb-1 block text-sm font-medium text-secondary">{{ t('settings.users.fields.phone') }}</label>
-                <input v-model="editForm.phoneNumber" type="tel" dir="ltr" class="w-full rounded-lg border border-surface-dim bg-surface-ground px-4 py-2.5 text-sm text-secondary focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary" />
+                <input v-model="editForm.phoneNumber" type="tel" dir="ltr" class="w-full rounded-lg border border-surface-dim bg-surface-ground px-4 py-2.5 text-sm text-secondary focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary" :placeholder="'+966 5xx xxx xxxx'" />
+              </div>
+              <div class="grid grid-cols-2 gap-4 rounded-lg border border-surface-dim bg-surface-ground/50 p-3">
+                <div>
+                  <p class="text-xs text-tertiary">{{ t('settings.users.table.status') }}</p>
+                  <span :class="[getStatusBadge(selectedUser.isActive).bgClass, getStatusBadge(selectedUser.isActive).textClass]" class="mt-1 inline-block rounded-full px-2.5 py-0.5 text-xs font-medium">{{ getStatusBadge(selectedUser.isActive).label }}</span>
+                </div>
+                <div>
+                  <p class="text-xs text-tertiary">{{ t('settings.users.table.lastLogin') }}</p>
+                  <p class="mt-1 text-sm font-medium text-secondary">{{ formatDateTime(selectedUser.lastLoginAt) }}</p>
+                </div>
               </div>
             </div>
             <div class="mt-6 flex items-center justify-end gap-3">
@@ -662,22 +684,36 @@ onMounted(() => { loadUsers(); loadRoles() })
             <button class="rounded-lg p-1 text-tertiary hover:bg-surface-ground" @click="showRoleDialog = false"><i class="pi pi-times"></i></button>
           </div>
           <div class="p-6">
+            <!-- User info -->
+            <div class="mb-4 flex items-center gap-3 rounded-lg border border-surface-dim bg-surface-ground p-3">
+              <div class="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10 text-sm font-semibold text-primary">{{ selectedUser.firstName?.charAt(0) || '' }}{{ selectedUser.lastName?.charAt(0) || '' }}</div>
+              <div>
+                <p class="text-sm font-medium text-secondary">{{ selectedUser.firstName }} {{ selectedUser.lastName }}</p>
+                <p class="text-xs text-tertiary" dir="ltr">{{ selectedUser.email }}</p>
+              </div>
+            </div>
+            <!-- Current roles -->
             <div class="mb-4">
-              <h4 class="mb-2 text-sm font-medium text-secondary">{{ t('settings.users.currentRoles') }}</h4>
-              <div v-if="selectedUser.roles.length === 0" class="text-sm text-tertiary">{{ t('settings.users.noRolesAssigned') }}</div>
+              <h4 class="mb-2 text-sm font-medium text-secondary">{{ t('settings.users.currentRoles') }} ({{ selectedUser.roles.length }})</h4>
+              <div v-if="selectedUser.roles.length === 0" class="rounded-lg border border-dashed border-surface-dim bg-surface-ground/50 p-4 text-center text-sm text-tertiary">{{ t('settings.users.noRolesAssigned') }}</div>
               <div v-else class="space-y-2">
                 <div v-for="role in selectedUser.roles" :key="role.roleId" class="flex items-center justify-between rounded-lg border border-surface-dim bg-surface-ground px-3 py-2">
-                  <div>
-                    <p class="text-sm font-medium text-secondary">{{ locale === 'ar' ? role.nameAr : role.nameEn }}</p>
-                    <p class="text-xs text-tertiary">{{ t('settings.users.assignedAt') }}: {{ formatDate(role.assignedAt) }}</p>
+                  <div class="flex items-center gap-2">
+                    <i class="pi pi-shield text-sm text-primary"></i>
+                    <div>
+                      <p class="text-sm font-medium text-secondary">{{ locale === 'ar' ? role.nameAr : role.nameEn }}</p>
+                      <p class="text-xs text-tertiary">{{ t('settings.users.assignedAt') }}: {{ formatDate(role.assignedAt) }}</p>
+                    </div>
                   </div>
-                  <button class="rounded-lg p-1 text-tertiary transition-colors hover:bg-red-50 hover:text-red-600" :title="t('settings.users.removeRole')" @click="handleRemoveRole(selectedUser!.id, role.roleId)"><i class="pi pi-trash text-sm"></i></button>
+                  <button class="rounded-lg p-1.5 text-tertiary transition-colors hover:bg-red-50 hover:text-red-600" :title="t('settings.users.removeRole')" @click="handleRemoveRole(selectedUser!.id, role.roleId)"><i class="pi pi-trash text-sm"></i></button>
                 </div>
               </div>
             </div>
+            <!-- Assign new role -->
             <div class="border-t border-surface-dim pt-4">
               <h4 class="mb-2 text-sm font-medium text-secondary">{{ t('settings.users.assignNewRole') }}</h4>
-              <div class="flex items-center gap-2">
+              <div v-if="availableRolesForAssignment.length === 0" class="text-sm text-tertiary">{{ t('settings.users.allRolesAssigned') }}</div>
+              <div v-else class="flex items-center gap-2">
                 <select v-model="selectedRoleId" class="flex-1 rounded-lg border border-surface-dim bg-surface-ground px-4 py-2.5 text-sm text-secondary focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary">
                   <option value="">{{ t('settings.users.selectRole') }}</option>
                   <option v-for="role in availableRolesForAssignment" :key="role.id" :value="role.id">{{ getRoleName(role) }}</option>

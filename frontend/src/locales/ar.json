@@ -1746,7 +1746,8 @@
         "totalUsers": "إجمالي المستخدمين",
         "activeUsers": "المستخدمون النشطون",
         "inactiveUsers": "المستخدمون المعطلون"
-      }
+      },
+      "allRolesAssigned": "تم إسناد جميع الأدوار المتاحة لهذا المستخدم"
     },
     "roles": {
       "title": "الأدوار والصلاحيات",
@@ -2391,7 +2392,11 @@
     },
     "actions": {
       "view": "عرض"
-    }
+    },
+    "grantAll": "منح الكل",
+    "revokeAll": "سحب الكل",
+    "noRolesForStage": "لا توجد أدوار لهذه المرحلة",
+    "selectCompetitionAndStage": "اختر منافسة ومرحلة لعرض الصلاحيات"
   },
   "operatorAi": {
     "title": "إعدادات الذكاء الاصطناعي",

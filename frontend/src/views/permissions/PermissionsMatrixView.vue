@@ -368,10 +368,10 @@ onMounted(() => {
         </span>
         <div class="flex gap-2">
           <button class="text-xs font-medium text-success hover:underline" @click="grantAll">
-            Grant All
+            {{ t('permissions.grantAll') }}
           </button>
           <button class="text-xs font-medium text-danger hover:underline" @click="revokeAll">
-            Revoke All
+            {{ t('permissions.revokeAll') }}
           </button>
         </div>
       </div>
@@ -391,8 +391,8 @@ onMounted(() => {
         <h3 class="empty-state-title">{{ t('common.noData') }}</h3>
         <p class="empty-state-text">
           {{ selectedCompetitionId && selectedStageId
-            ? 'No roles found for this stage'
-            : 'Select a competition and stage to view permissions' }}
+            ? t('permissions.noRolesForStage')
+            : t('permissions.selectCompetitionAndStage') }}
         </p>
       </div>
 

@@ -1746,7 +1746,8 @@
         "totalUsers": "Total Users",
         "activeUsers": "Active Users",
         "inactiveUsers": "Inactive Users"
-      }
+      },
+      "allRolesAssigned": "All available roles have been assigned to this user"
     },
     "roles": {
       "title": "Roles & Permissions",
@@ -2391,7 +2392,11 @@
     },
     "actions": {
       "view": "View"
-    }
+    },
+    "grantAll": "Grant All",
+    "revokeAll": "Revoke All",
+    "noRolesForStage": "No roles found for this stage",
+    "selectCompetitionAndStage": "Select a competition and stage to view permissions"
   },
   "operatorAi": {
     "title": "AI Settings",
