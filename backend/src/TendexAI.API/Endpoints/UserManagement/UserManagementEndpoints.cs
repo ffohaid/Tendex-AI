@@ -531,8 +531,15 @@ public static class UserManagementEndpoints
 
     private static string GetCurrentUserName(HttpContext httpContext)
     {
+        // JWT contains first_name and last_name as separate claims
+        var firstName = httpContext.User.FindFirstValue("first_name");
+        var lastName = httpContext.User.FindFirstValue("last_name");
+        
+        if (!string.IsNullOrWhiteSpace(firstName) || !string.IsNullOrWhiteSpace(lastName))
+            return $"{firstName} {lastName}".Trim();
+        
         return httpContext.User.FindFirstValue(ClaimTypes.Name)
             ?? httpContext.User.FindFirstValue("name")
-            ?? "System";
+            ?? "مدير النظام";
     }
 }
