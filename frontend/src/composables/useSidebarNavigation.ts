@@ -24,7 +24,7 @@ export function useSidebarNavigation(items: NavigationItem[]) {
   const isPrivileged = computed(() => {
     const roles = authStore.userRoles
     return roles.some((r: string) =>
-      ['Owner', 'System Administrator', 'SuperAdmin', 'Operator'].includes(r)
+      ['Owner', 'Tenant Owner', 'System Administrator', 'Super Admin', 'SuperAdmin', 'Operator', 'مدير النظام'].includes(r)
     )
   })
 

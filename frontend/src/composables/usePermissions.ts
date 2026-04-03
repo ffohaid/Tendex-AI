@@ -136,8 +136,10 @@ export const PERMISSIONS = {
 
 /* ── System Role Constants ── */
 export const SYSTEM_ROLES = {
-  OWNER: 'Owner',
-  ADMIN: 'System Administrator',
+  OWNER: 'Tenant Owner',
+  OWNER_ALT: 'Owner',
+  ADMIN: 'Super Admin',
+  ADMIN_ALT: 'System Administrator',
   SECTOR_REP: 'Sector Representative',
   FINANCIAL_CONTROLLER: 'Financial Controller',
   AUDITOR: 'Auditor',
@@ -256,9 +258,13 @@ export function usePermissions() {
     return can(required)
   }
 
-  const isOwner = computed(() => authStore.hasRole(SYSTEM_ROLES.OWNER))
+  const isOwner = computed(() =>
+    authStore.hasRole(SYSTEM_ROLES.OWNER) || authStore.hasRole(SYSTEM_ROLES.OWNER_ALT)
+  )
   const isAdmin = computed(() =>
-    authStore.hasRole(SYSTEM_ROLES.ADMIN) || authStore.hasRole(SYSTEM_ROLES.OWNER)
+    authStore.hasRole(SYSTEM_ROLES.ADMIN) ||
+    authStore.hasRole(SYSTEM_ROLES.ADMIN_ALT) ||
+    isOwner.value
   )
   const isSectorRep = computed(() => authStore.hasRole(SYSTEM_ROLES.SECTOR_REP))
   const isFinancialController = computed(() => authStore.hasRole(SYSTEM_ROLES.FINANCIAL_CONTROLLER))

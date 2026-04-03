@@ -481,7 +481,7 @@ router.beforeEach((to, _from, next) => {
 
     // Owner and Admin bypass all checks
     const isPrivileged = userRoles.some(r =>
-      ['Owner', 'System Administrator', 'SuperAdmin', 'Operator'].includes(r)
+      ['Owner', 'Tenant Owner', 'System Administrator', 'Super Admin', 'SuperAdmin', 'Operator', 'مدير النظام'].includes(r)
     )
 
     if (!isPrivileged) {
