@@ -464,9 +464,11 @@ router.beforeEach((to, _from, next) => {
   }
 
   if (isGuestOnly && hasToken) {
-    /* Already authenticated, redirect to dashboard */
-    next({ name: 'Dashboard' })
-    return
+    /* Allow accept-invitation page even for authenticated users */
+    if (to.name !== 'AcceptInvitation') {
+      next({ name: 'Dashboard' })
+      return
+    }
   }
 
   /* ── Permission & Role Enforcement ── */
