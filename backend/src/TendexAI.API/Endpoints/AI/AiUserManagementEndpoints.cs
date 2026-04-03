@@ -91,24 +91,20 @@ public static class AiUserManagementEndpoints
 
             var systemPrompt = string.Join("\n", RoleSuggestionSystemLines);
 
-            var userPrompt = $"""
-                بناءً على المعلومات التالية، اقترح الدور المناسب والصلاحيات المطلوبة:
-
-                المسمى الوظيفي: {request.JobTitle ?? "غير محدد"}
-                القسم: {request.Department ?? "غير محدد"}
-                المسؤوليات: {request.Responsibilities ?? "غير محددة"}
-                الأدوار الحالية المسندة: {request.CurrentRoles ?? "لا يوجد"}
-
-                أعد الإجابة بتنسيق JSON التالي فقط:
-                {{
-                  "suggestedRoleNameAr": "اسم الدور بالعربية",
-                  "suggestedRoleNameEn": "Role Name in English",
-                  "reason": "سبب الاقتراح",
-                  "suggestedPermissions": ["صلاحية 1", "صلاحية 2"],
-                  "suggestedPhases": ["المرحلة 1", "المرحلة 2"],
-                  "riskNotes": "ملاحظات أمنية إن وجدت"
-                }}
-                """;
+            var userPrompt = "بناءً على المعلومات التالية، اقترح الدور المناسب والصلاحيات المطلوبة:\n\n"
+                + $"المسمى الوظيفي: {request.JobTitle ?? "غير محدد"}\n"
+                + $"القسم: {request.Department ?? "غير محدد"}\n"
+                + $"المسؤوليات: {request.Responsibilities ?? "غير محددة"}\n"
+                + $"الأدوار الحالية المسندة: {request.CurrentRoles ?? "لا يوجد"}\n\n"
+                + "أعد الإجابة بتنسيق JSON التالي فقط:\n"
+                + "{\n"
+                + "  \"suggestedRoleNameAr\": \"اسم الدور بالعربية\",\n"
+                + "  \"suggestedRoleNameEn\": \"Role Name in English\",\n"
+                + "  \"reason\": \"سبب الاقتراح\",\n"
+                + "  \"suggestedPermissions\": [\"صلاحية 1\", \"صلاحية 2\"],\n"
+                + "  \"suggestedPhases\": [\"المرحلة 1\", \"المرحلة 2\"],\n"
+                + "  \"riskNotes\": \"ملاحظات أمنية إن وجدت\"\n"
+                + "}";
 
             var aiRequest = new AiCompletionRequest
             {
@@ -156,24 +152,20 @@ public static class AiUserManagementEndpoints
 
             var systemPrompt = string.Join("\n", PermissionAnalysisSystemLines);
 
-            var userPrompt = $"""
-                حلل الصلاحيات التالية وقدم توصيات:
-
-                اسم الدور: {request.RoleName ?? "غير محدد"}
-                الصلاحيات الحالية: {request.CurrentPermissions ?? "لا يوجد"}
-                عدد المستخدمين المسندين: {request.UserCount}
-                نوع التحليل المطلوب: {request.AnalysisType ?? "شامل"}
-
-                أعد الإجابة بتنسيق JSON التالي فقط:
-                {{
-                  "summary": "ملخص التحليل",
-                  "riskLevel": "منخفض/متوسط/عالي",
-                  "recommendations": ["توصية 1", "توصية 2"],
-                  "excessivePermissions": ["صلاحية زائدة 1"],
-                  "missingPermissions": ["صلاحية مفقودة 1"],
-                  "securityNotes": "ملاحظات أمنية"
-                }}
-                """;
+            var userPrompt = "حلل الصلاحيات التالية وقدم توصيات:\n\n"
+                + $"اسم الدور: {request.RoleName ?? "غير محدد"}\n"
+                + $"الصلاحيات الحالية: {request.CurrentPermissions ?? "لا يوجد"}\n"
+                + $"عدد المستخدمين المسندين: {request.UserCount}\n"
+                + $"نوع التحليل المطلوب: {request.AnalysisType ?? "شامل"}\n\n"
+                + "أعد الإجابة بتنسيق JSON التالي فقط:\n"
+                + "{\n"
+                + "  \"summary\": \"ملخص التحليل\",\n"
+                + "  \"riskLevel\": \"منخفض/متوسط/عالي\",\n"
+                + "  \"recommendations\": [\"توصية 1\", \"توصية 2\"],\n"
+                + "  \"excessivePermissions\": [\"صلاحية زائدة 1\"],\n"
+                + "  \"missingPermissions\": [\"صلاحية مفقودة 1\"],\n"
+                + "  \"securityNotes\": \"ملاحظات أمنية\"\n"
+                + "}";
 
             var aiRequest = new AiCompletionRequest
             {
