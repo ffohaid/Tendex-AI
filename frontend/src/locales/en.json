@@ -1427,7 +1427,9 @@
       "daysRemaining": "Days Remaining",
       "days": "days",
       "workload": "Workload",
-      "phaseRange": "Phase Range"
+      "phaseRange": "Phase Range",
+      "scope": "Scope",
+      "linkedCompetitions": "linked competitions"
     },
     "memberTable": {
       "name": "Name",
@@ -1448,14 +1450,16 @@
       "dissolve": "Dissolve",
       "addMember": "Add Member",
       "removeMember": "Remove Member",
-      "aiAnalysis": "AI Analysis"
+      "aiAnalysis": "AI Analysis",
+      "confirm": "Confirm"
     },
     "dialog": {
       "createTitle": "Create New Permanent Committee",
       "createTempTitle": "Create New Temporary Committee",
       "editTitle": "Edit Committee",
       "changeStatusTitle": "Change Committee Status",
-      "addMemberTitle": "Add New Member"
+      "addMemberTitle": "Add New Member",
+      "createPermTitle": "Create New Permanent Committee"
     },
     "form": {
       "nameAr": "Committee Name (Arabic)",
@@ -1473,14 +1477,24 @@
       "memberName": "Member Name",
       "memberId": "User ID",
       "memberRole": "Role",
-      "selectCompetition": "Select linked competition"
+      "selectCompetition": "Select linked competition",
+      "scopeType": "Committee Scope",
+      "searchUser": "Search User",
+      "searchUserPlaceholder": "Search by name or email...",
+      "noUsersFound": "No matching users found",
+      "selectCompetitions": "Select Linked Competitions",
+      "noCompetitions": "No competitions available",
+      "selectedCount": "{count} competition(s) selected",
+      "role": "Committee Role"
     },
     "detail": {
       "endDate": "End Date",
       "members": "Members",
       "noMembers": "No members in this committee",
       "noDescription": "No description available",
-      "phaseRange": "Phase Range"
+      "phaseRange": "Phase Range",
+      "linkedCompetitions": "Linked Competitions",
+      "removed": "Removed"
     },
     "filters": {
       "allTypes": "All Types"
@@ -1499,7 +1513,8 @@
       "recommendations": "Recommendations",
       "risks": "Potential Risks",
       "detailedRecommendations": "Detailed Recommendations",
-      "noData": "Insufficient data for analysis"
+      "noData": "Insufficient data for analysis",
+      "unavailable": "AI analysis is currently unavailable"
     },
     "prompts": {
       "removalReason": "Please enter the reason for removing this member"
@@ -1512,10 +1527,21 @@
       "statusChangeFailed": "Failed to change committee status",
       "addMemberFailed": "Failed to add member",
       "removeMemberFailed": "Failed to remove member",
-      "aiAnalysisFailed": "Failed to analyze committee data"
+      "aiAnalysisFailed": "Failed to analyze committee data",
+      "selectUserRequired": "Please select a user from the list"
     },
     "pagination": {
       "showing": "Showing {from} - {to} of {total}"
+    },
+    "scopeTypes": {
+      "comprehensive": "Comprehensive - All Phases for All Competitions",
+      "specificPhasesAll": "Specific Phases - All Competitions",
+      "specificPhasesSpecific": "Specific Phases - Specific Competitions"
+    },
+    "scopeHints": {
+      "comprehensive": "The committee operates across all phases for all competitions linked to the organization",
+      "specificPhasesAll": "The committee operates on specific phases only but for all competitions",
+      "specificPhasesSpecific": "The committee operates on specific phases for specific competitions only"
     }
   },
   "approvals": {

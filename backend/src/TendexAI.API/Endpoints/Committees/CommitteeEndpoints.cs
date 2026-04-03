@@ -12,6 +12,7 @@ using TendexAI.Application.Features.Committees.Queries.GetCommitteesList;
 using TendexAI.Application.Features.Committees.Queries.GetCommitteeStatistics;
 using TendexAI.Application.Features.Committees.Queries.GetCommitteeAiAnalysis;
 using TendexAI.Application.Features.Committees.Queries.GetCompetitionCommittees;
+using TendexAI.Application.Features.Committees.Queries.GetEligibleUsers;
 using TendexAI.Application.Features.Committees.Queries.ValidateConflictOfInterest;
 using TendexAI.Domain.Enums;
 
@@ -19,7 +20,8 @@ namespace TendexAI.API.Endpoints.Committees;
 
 /// <summary>
 /// Defines Minimal API endpoints for committee management.
-/// Covers CRUD operations, member management, and conflict of interest validation.
+/// Covers CRUD operations, member management, eligible user search,
+/// and conflict of interest validation.
 /// All endpoints operate against the tenant-specific database.
 /// </summary>
 public static class CommitteeEndpoints
@@ -57,7 +59,7 @@ public static class CommitteeEndpoints
 
         group.MapPut("/{committeeId:guid}", UpdateCommitteeAsync)
             .WithName("UpdateCommittee")
-            .WithSummary("Update committee basic information")
+            .WithSummary("Update committee information, scope, and competition links")
             .Produces(StatusCodes.Status200OK)
             .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
             .Produces<ProblemDetails>(StatusCodes.Status404NotFound);
@@ -73,9 +75,15 @@ public static class CommitteeEndpoints
         //  Member Management
         // ═════════════════════════════════════════════════════════════
 
+        group.MapGet("/{committeeId:guid}/eligible-users", GetEligibleUsersAsync)
+            .WithName("GetEligibleUsers")
+            .WithSummary("Search for platform users eligible to be added to a committee")
+            .Produces<IReadOnlyList<EligibleUserDto>>(StatusCodes.Status200OK)
+            .Produces<ProblemDetails>(StatusCodes.Status404NotFound);
+
         group.MapPost("/{committeeId:guid}/members", AddCommitteeMemberAsync)
             .WithName("AddCommitteeMember")
-            .WithSummary("Add a member to a committee with conflict of interest validation")
+            .WithSummary("Add a registered platform user to a committee with validation")
             .Produces(StatusCodes.Status200OK)
             .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
             .Produces<ProblemDetails>(StatusCodes.Status409Conflict);
@@ -172,10 +180,11 @@ public static class CommitteeEndpoints
             NameEn: request.NameEn,
             Type: request.Type,
             IsPermanent: request.IsPermanent,
+            ScopeType: request.ScopeType,
             Description: request.Description,
             StartDate: request.StartDate,
             EndDate: request.EndDate,
-            CompetitionId: request.CompetitionId,
+            CompetitionIds: request.CompetitionIds,
             ActiveFromPhase: request.ActiveFromPhase,
             ActiveToPhase: request.ActiveToPhase);
 
@@ -195,7 +204,11 @@ public static class CommitteeEndpoints
             CommitteeId: committeeId,
             NameAr: request.NameAr,
             NameEn: request.NameEn,
-            Description: request.Description);
+            Description: request.Description,
+            ScopeType: request.ScopeType,
+            ActiveFromPhase: request.ActiveFromPhase,
+            ActiveToPhase: request.ActiveToPhase,
+            CompetitionIds: request.CompetitionIds);
 
         var result = await sender.Send(command, cancellationToken);
         return result.IsSuccess
@@ -220,6 +233,24 @@ public static class CommitteeEndpoints
             : Results.Problem(result.Error, statusCode: StatusCodes.Status400BadRequest);
     }
 
+    private static async Task<IResult> GetEligibleUsersAsync(
+        Guid committeeId,
+        [FromQuery] CommitteeMemberRole? role,
+        [FromQuery] string? search,
+        ISender sender,
+        CancellationToken cancellationToken)
+    {
+        var query = new GetEligibleUsersQuery(
+            CommitteeId: committeeId,
+            Role: role,
+            SearchTerm: search);
+
+        var result = await sender.Send(query, cancellationToken);
+        return result.IsSuccess
+            ? Results.Ok(result.Value)
+            : Results.Problem(result.Error, statusCode: StatusCodes.Status404NotFound);
+    }
+
     private static async Task<IResult> AddCommitteeMemberAsync(
         Guid committeeId,
         AddCommitteeMemberRequest request,
@@ -229,7 +260,6 @@ public static class CommitteeEndpoints
         var command = new AddCommitteeMemberCommand(
             CommitteeId: committeeId,
             UserId: request.UserId,
-            UserFullName: request.UserFullName,
             Role: request.Role,
             ActiveFromPhase: request.ActiveFromPhase,
             ActiveToPhase: request.ActiveToPhase);
@@ -338,10 +368,11 @@ public sealed record CreateCommitteeRequest(
     string NameEn,
     CommitteeType Type,
     bool IsPermanent,
+    CommitteeScopeType ScopeType,
     string? Description,
     DateTime StartDate,
     DateTime EndDate,
-    Guid? CompetitionId,
+    List<Guid>? CompetitionIds,
     CompetitionPhase? ActiveFromPhase,
     CompetitionPhase? ActiveToPhase);
 
@@ -349,17 +380,20 @@ public sealed record CreateCommitteeRequest(
 public sealed record UpdateCommitteeRequest(
     string NameAr,
     string NameEn,
-    string? Description);
+    string? Description,
+    CommitteeScopeType ScopeType,
+    CompetitionPhase? ActiveFromPhase,
+    CompetitionPhase? ActiveToPhase,
+    List<Guid>? CompetitionIds);
 
 /// <summary>Request body for changing committee status.</summary>
 public sealed record ChangeCommitteeStatusRequest(
     CommitteeStatus NewStatus,
     string? Reason);
 
-/// <summary>Request body for adding a member to a committee.</summary>
+/// <summary>Request body for adding a registered platform user to a committee.</summary>
 public sealed record AddCommitteeMemberRequest(
     Guid UserId,
-    string UserFullName,
     CommitteeMemberRole Role,
     CompetitionPhase? ActiveFromPhase,
     CompetitionPhase? ActiveToPhase);

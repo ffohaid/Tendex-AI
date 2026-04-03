@@ -36,6 +36,11 @@ public sealed class CommitteeConfiguration : IEntityTypeConfiguration<Committee>
         builder.Property(c => c.IsPermanent)
             .IsRequired();
 
+        builder.Property(c => c.ScopeType)
+            .IsRequired()
+            .HasConversion<int>()
+            .HasDefaultValue(CommitteeScopeType.Comprehensive);
+
         builder.Property(c => c.Description)
             .HasMaxLength(2000);
 
@@ -77,20 +82,29 @@ public sealed class CommitteeConfiguration : IEntityTypeConfiguration<Committee>
         builder.HasIndex(c => new { c.TenantId, c.Status })
             .HasDatabaseName("IX_Committees_TenantId_Status");
 
-        builder.HasIndex(c => c.CompetitionId)
-            .HasDatabaseName("IX_Committees_CompetitionId");
-
-        builder.HasIndex(c => new { c.CompetitionId, c.Type })
-            .HasDatabaseName("IX_Committees_CompetitionId_Type");
-
         builder.HasIndex(c => new { c.TenantId, c.IsPermanent })
             .HasDatabaseName("IX_Committees_TenantId_IsPermanent");
+
+        builder.HasIndex(c => new { c.TenantId, c.ScopeType })
+            .HasDatabaseName("IX_Committees_TenantId_ScopeType");
 
         // ----- Relationships -----
         builder.HasMany(c => c.Members)
             .WithOne(m => m.Committee)
             .HasForeignKey(m => m.CommitteeId)
             .OnDelete(DeleteBehavior.NoAction);
+
+        builder.HasMany(c => c.Competitions)
+            .WithOne(cc => cc.Committee)
+            .HasForeignKey(cc => cc.CommitteeId)
+            .OnDelete(DeleteBehavior.NoAction);
+
+        // ----- Backing fields -----
+        builder.Navigation(c => c.Members)
+            .UsePropertyAccessMode(PropertyAccessMode.Field);
+
+        builder.Navigation(c => c.Competitions)
+            .UsePropertyAccessMode(PropertyAccessMode.Field);
 
         // Ignore domain events collection
         builder.Ignore(c => c.DomainEvents);

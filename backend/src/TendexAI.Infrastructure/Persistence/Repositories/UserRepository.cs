@@ -81,6 +81,36 @@ public sealed class UserRepository : IUserRepository
             .CountAsync(u => u.TenantId == tenantId, cancellationToken);
     }
 
+    public async Task<IReadOnlyList<ApplicationUser>> SearchByTenantAsync(
+        Guid tenantId,
+        string? searchTerm,
+        int maxResults = 20,
+        CancellationToken cancellationToken = default)
+    {
+        var query = _context.Users
+            .Where(u => u.TenantId == tenantId && u.IsActive);
+
+        if (!string.IsNullOrWhiteSpace(searchTerm))
+        {
+            var term = searchTerm.Trim().ToLowerInvariant();
+            query = query.Where(u =>
+                u.FirstName.ToLower().Contains(term) ||
+                u.LastName.ToLower().Contains(term) ||
+                u.Email.ToLower().Contains(term) ||
+                (u.FirstName + " " + u.LastName).ToLower().Contains(term));
+        }
+
+        return await query
+            .Include(u => u.UserRoles)
+                .ThenInclude(ur => ur.Role)
+            .OrderBy(u => u.FirstName)
+            .ThenBy(u => u.LastName)
+            .Take(maxResults)
+            .AsSplitQuery()
+            .AsNoTracking()
+            .ToListAsync(cancellationToken);
+    }
+
     public async Task AddAsync(ApplicationUser user, CancellationToken cancellationToken = default)
     {
         await _context.Users.AddAsync(user, cancellationToken);

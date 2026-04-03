@@ -39,6 +39,7 @@ public sealed class CommitteeRepository : ICommitteeRepository, IDisposable
     {
         return await _context.Committees
             .Include(c => c.Members)
+            .Include(c => c.Competitions)
             .AsSplitQuery()
             .FirstOrDefaultAsync(c => c.Id == id, cancellationToken);
     }
@@ -56,6 +57,7 @@ public sealed class CommitteeRepository : ICommitteeRepository, IDisposable
     {
         var query = _context.Committees
             .Include(c => c.Members.Where(m => m.IsActive))
+            .Include(c => c.Competitions)
             .Where(c => c.TenantId == tenantId);
 
         if (typeFilter.HasValue)
@@ -68,7 +70,8 @@ public sealed class CommitteeRepository : ICommitteeRepository, IDisposable
             query = query.Where(c => c.IsPermanent == isPermanentFilter.Value);
 
         if (competitionIdFilter.HasValue)
-            query = query.Where(c => c.CompetitionId == competitionIdFilter.Value);
+            query = query.Where(c =>
+                c.Competitions.Any(cc => cc.CompetitionId == competitionIdFilter.Value));
 
         if (!string.IsNullOrWhiteSpace(searchTerm))
         {
@@ -97,7 +100,8 @@ public sealed class CommitteeRepository : ICommitteeRepository, IDisposable
     {
         return await _context.Committees
             .Include(c => c.Members)
-            .Where(c => c.CompetitionId == competitionId)
+            .Include(c => c.Competitions)
+            .Where(c => c.Competitions.Any(cc => cc.CompetitionId == competitionId))
             .OrderBy(c => c.Type)
             .AsSplitQuery()
             .AsNoTracking()
@@ -110,8 +114,9 @@ public sealed class CommitteeRepository : ICommitteeRepository, IDisposable
     {
         return await _context.Committees
             .Include(c => c.Members)
+            .Include(c => c.Competitions)
             .FirstOrDefaultAsync(c =>
-                c.CompetitionId == competitionId &&
+                c.Competitions.Any(cc => cc.CompetitionId == competitionId) &&
                 c.Type == CommitteeType.TechnicalEvaluation &&
                 c.Status != CommitteeStatus.Dissolved,
                 cancellationToken);
@@ -123,8 +128,9 @@ public sealed class CommitteeRepository : ICommitteeRepository, IDisposable
     {
         return await _context.Committees
             .Include(c => c.Members)
+            .Include(c => c.Competitions)
             .FirstOrDefaultAsync(c =>
-                c.CompetitionId == competitionId &&
+                c.Competitions.Any(cc => cc.CompetitionId == competitionId) &&
                 c.Type == CommitteeType.FinancialEvaluation &&
                 c.Status != CommitteeStatus.Dissolved,
                 cancellationToken);
@@ -137,10 +143,12 @@ public sealed class CommitteeRepository : ICommitteeRepository, IDisposable
     {
         var query = _context.Committees
             .Include(c => c.Members)
+            .Include(c => c.Competitions)
             .Where(c => c.Members.Any(m => m.UserId == userId && m.IsActive));
 
         if (competitionId.HasValue)
-            query = query.Where(c => c.CompetitionId == competitionId.Value);
+            query = query.Where(c =>
+                c.Competitions.Any(cc => cc.CompetitionId == competitionId.Value));
 
         return await query
             .AsSplitQuery()
@@ -155,7 +163,7 @@ public sealed class CommitteeRepository : ICommitteeRepository, IDisposable
     {
         return await _context.Committees
             .AnyAsync(c =>
-                c.CompetitionId == competitionId &&
+                c.Competitions.Any(cc => cc.CompetitionId == competitionId) &&
                 c.Type == CommitteeType.BookletPreparation &&
                 c.Status != CommitteeStatus.Dissolved &&
                 c.Members.Any(m => m.UserId == userId && m.IsActive),

@@ -11,13 +11,12 @@ public sealed record CommitteeListItemDto(
     string NameEn,
     CommitteeType Type,
     bool IsPermanent,
+    CommitteeScopeType ScopeType,
     CommitteeStatus Status,
     int ActiveMemberCount,
     DateTime StartDate,
     DateTime EndDate,
-    Guid? CompetitionId,
-    string? CompetitionNameAr,
-    string? CompetitionNameEn,
+    IReadOnlyList<CommitteeCompetitionDto> Competitions,
     DateTime CreatedAt,
     int DaysRemaining,
     double WorkloadScore);
@@ -31,13 +30,12 @@ public sealed record CommitteeDetailDto(
     string NameEn,
     CommitteeType Type,
     bool IsPermanent,
+    CommitteeScopeType ScopeType,
     string? Description,
     CommitteeStatus Status,
     DateTime StartDate,
     DateTime EndDate,
-    Guid? CompetitionId,
-    string? CompetitionNameAr,
-    string? CompetitionNameEn,
+    IReadOnlyList<CommitteeCompetitionDto> Competitions,
     CompetitionPhase? ActiveFromPhase,
     CompetitionPhase? ActiveToPhase,
     string? StatusChangeReason,
@@ -66,6 +64,16 @@ public sealed record CommitteeMemberDto(
     DateTime? RemovedAt,
     string? RemovedBy,
     string? RemovalReason);
+
+/// <summary>
+/// DTO for a competition linked to a committee.
+/// </summary>
+public sealed record CommitteeCompetitionDto(
+    Guid Id,
+    Guid CompetitionId,
+    string? CompetitionNameAr,
+    string? CompetitionNameEn,
+    DateTime AssignedAt);
 
 /// <summary>
 /// Paginated result DTO for committees.
@@ -127,3 +135,19 @@ public sealed record CommitteeAiAnalysisResponseDto(
     CommitteeAiInsightDto Insight,
     IReadOnlyList<CommitteeAiRecommendationDto> Recommendations);
 
+/// <summary>
+/// DTO for an eligible user that can be added to a committee.
+/// </summary>
+public sealed record EligibleUserDto(
+    Guid Id,
+    string FullName,
+    string Email,
+    IReadOnlyList<UserRoleSummaryDto> Roles);
+
+/// <summary>
+/// Summary DTO for a user's platform role.
+/// </summary>
+public sealed record UserRoleSummaryDto(
+    string NameAr,
+    string NameEn,
+    string NormalizedName);

@@ -18,6 +18,7 @@ import type {
   ConflictOfInterestResult,
   CommitteeStatistics,
   CommitteeAiAnalysisResponse,
+  EligibleUser,
 } from '@/types/committee'
 import { type CommitteeMemberRole } from '@/types/committee'
 
@@ -69,7 +70,7 @@ export async function createCommittee(
 }
 
 /**
- * Update committee basic information.
+ * Update committee basic information and scope.
  */
 export async function updateCommittee(
   committeeId: string,
@@ -93,7 +94,27 @@ export async function changeCommitteeStatus(
 /* ------------------------------------------------------------------ */
 
 /**
- * Add a member to a committee with conflict of interest validation.
+ * Search for eligible platform users who can be added to a committee.
+ * Filters by committee role compatibility and returns only active users
+ * from the same tenant.
+ */
+export async function searchEligibleUsers(
+  committeeId: string,
+  search: string,
+  role?: CommitteeMemberRole,
+): Promise<EligibleUser[]> {
+  const query = new URLSearchParams()
+  if (search) query.set('search', search)
+  if (role !== undefined) query.set('role', String(role))
+  const queryString = query.toString()
+  return httpGet<EligibleUser[]>(
+    `${BASE_URL}/${committeeId}/eligible-users?${queryString}`,
+  )
+}
+
+/**
+ * Add a registered platform user as a member to a committee.
+ * The user must exist in the platform and have compatible roles.
  */
 export async function addCommitteeMember(
   committeeId: string,

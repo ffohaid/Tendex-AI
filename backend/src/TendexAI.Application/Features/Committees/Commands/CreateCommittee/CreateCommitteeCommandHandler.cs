@@ -9,7 +9,7 @@ namespace TendexAI.Application.Features.Committees.Commands.CreateCommittee;
 
 /// <summary>
 /// Handles the creation of a new committee.
-/// Validates business rules including phase scope and committee type constraints.
+/// Validates business rules including scope type, phase constraints, and competition links.
 /// </summary>
 public sealed class CreateCommitteeCommandHandler : ICommandHandler<CreateCommitteeCommand, Guid>
 {
@@ -35,60 +35,79 @@ public sealed class CreateCommitteeCommandHandler : ICommandHandler<CreateCommit
 
         var userId = _currentUser.UserId?.ToString() ?? "system";
 
-        // Validate phase scope for evaluation committees
-        var phaseScopeResult = ConflictOfInterestRules.ValidatePhaseScope(
-            request.Type, request.ActiveFromPhase, request.ActiveToPhase);
-        if (phaseScopeResult.IsFailure)
-            return Result.Failure<Guid>(phaseScopeResult.Error!);
-
-        // For temporary committees, competition ID is required
-        if (!request.IsPermanent && !request.CompetitionId.HasValue)
-            return Result.Failure<Guid>("Competition ID is required for temporary committees.");
-
-        // For permanent committees, competition ID should not be set
-        if (request.IsPermanent && request.CompetitionId.HasValue)
-            return Result.Failure<Guid>("Permanent committees should not be linked to a specific competition.");
-
-        // Ensure only one technical and one financial committee per competition
-        if (request.CompetitionId.HasValue)
+        // ── Scope Validation ──────────────────────────────────────────────
+        // Comprehensive scope: no phases, no competition links
+        if (request.ScopeType == CommitteeScopeType.Comprehensive)
         {
-            if (request.Type == CommitteeType.TechnicalEvaluation)
-            {
-                var existing = await _committeeRepository.GetTechnicalCommitteeForCompetitionAsync(
-                    request.CompetitionId.Value, cancellationToken);
-                if (existing is not null)
-                    return Result.Failure<Guid>("A technical evaluation committee already exists for this competition.");
-            }
+            if (request.ActiveFromPhase.HasValue || request.ActiveToPhase.HasValue)
+                return Result.Failure<Guid>("Comprehensive scope committees cannot have phase restrictions.");
 
-            if (request.Type == CommitteeType.FinancialEvaluation)
-            {
-                var existing = await _committeeRepository.GetFinancialCommitteeForCompetitionAsync(
-                    request.CompetitionId.Value, cancellationToken);
-                if (existing is not null)
-                    return Result.Failure<Guid>("A financial evaluation committee already exists for this competition.");
-            }
+            if (request.CompetitionIds is { Count: > 0 })
+                return Result.Failure<Guid>("Comprehensive scope committees cannot be linked to specific competitions.");
         }
 
+        // SpecificPhasesAllCompetitions: phases required, no competition links
+        if (request.ScopeType == CommitteeScopeType.SpecificPhasesAllCompetitions)
+        {
+            if (!request.ActiveFromPhase.HasValue || !request.ActiveToPhase.HasValue)
+                return Result.Failure<Guid>("Phase range is required for 'Specific Phases - All Competitions' scope.");
+
+            if (request.CompetitionIds is { Count: > 0 })
+                return Result.Failure<Guid>("'Specific Phases - All Competitions' scope cannot be linked to specific competitions.");
+        }
+
+        // SpecificPhasesSpecificCompetitions: phases required, competition links required
+        if (request.ScopeType == CommitteeScopeType.SpecificPhasesSpecificCompetitions)
+        {
+            if (!request.ActiveFromPhase.HasValue || !request.ActiveToPhase.HasValue)
+                return Result.Failure<Guid>("Phase range is required for 'Specific Phases - Specific Competitions' scope.");
+
+            if (request.CompetitionIds is not { Count: > 0 })
+                return Result.Failure<Guid>("At least one competition must be linked for 'Specific Phases - Specific Competitions' scope.");
+        }
+
+        // Validate phase scope for evaluation committees
+        if (request.ActiveFromPhase.HasValue && request.ActiveToPhase.HasValue)
+        {
+            var phaseScopeResult = ConflictOfInterestRules.ValidatePhaseScope(
+                request.Type, request.ActiveFromPhase, request.ActiveToPhase);
+            if (phaseScopeResult.IsFailure)
+                return Result.Failure<Guid>(phaseScopeResult.Error!);
+        }
+
+        // ── Create Committee ──────────────────────────────────────────────
         var committee = new Committee(
             tenantId: tenantId.Value,
             nameAr: request.NameAr,
             nameEn: request.NameEn,
             type: request.Type,
             isPermanent: request.IsPermanent,
+            scopeType: request.ScopeType,
             description: request.Description,
             startDate: request.StartDate,
             endDate: request.EndDate,
-            competitionId: request.CompetitionId,
             activeFromPhase: request.ActiveFromPhase,
             activeToPhase: request.ActiveToPhase,
             createdBy: userId);
+
+        // ── Link Competitions (if applicable) ─────────────────────────────
+        if (request.ScopeType == CommitteeScopeType.SpecificPhasesSpecificCompetitions
+            && request.CompetitionIds is { Count: > 0 })
+        {
+            foreach (var competitionId in request.CompetitionIds)
+            {
+                var linkResult = committee.LinkCompetition(competitionId, userId);
+                if (linkResult.IsFailure)
+                    return Result.Failure<Guid>(linkResult.Error!);
+            }
+        }
 
         await _committeeRepository.AddAsync(committee, cancellationToken);
         await _committeeRepository.SaveChangesAsync(cancellationToken);
 
         _logger.LogInformation(
-            "Committee {CommitteeId} ({Type}) created for tenant {TenantId} by user {UserId}",
-            committee.Id, request.Type, tenantId.Value, userId);
+            "Committee {CommitteeId} ({Type}, Scope={ScopeType}) created for tenant {TenantId} by user {UserId}",
+            committee.Id, request.Type, request.ScopeType, tenantId.Value, userId);
 
         return Result.Success(committee.Id);
     }

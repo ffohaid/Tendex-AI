@@ -12,6 +12,11 @@ public interface IUserRepository
     Task<bool> ExistsByEmailAsync(string email, CancellationToken cancellationToken = default);
     Task<IReadOnlyList<ApplicationUser>> GetByTenantIdAsync(Guid tenantId, int page, int pageSize, CancellationToken cancellationToken = default);
     Task<int> GetCountByTenantIdAsync(Guid tenantId, CancellationToken cancellationToken = default);
+    Task<IReadOnlyList<ApplicationUser>> SearchByTenantAsync(
+        Guid tenantId,
+        string? searchTerm,
+        int maxResults = 20,
+        CancellationToken cancellationToken = default);
     Task AddAsync(ApplicationUser user, CancellationToken cancellationToken = default);
     void Update(ApplicationUser user);
     Task AddUserRoleAsync(UserRole userRole, CancellationToken cancellationToken = default);

@@ -9,10 +9,7 @@ namespace TendexAI.Application.Features.Committees.Dtos;
 public static class CommitteeMappingExtensions
 {
     /// <summary>Maps a Committee entity to a list item DTO.</summary>
-    public static CommitteeListItemDto ToListItemDto(
-        this Committee committee,
-        string? competitionNameAr = null,
-        string? competitionNameEn = null)
+    public static CommitteeListItemDto ToListItemDto(this Committee committee)
     {
         var daysRemaining = (int)(committee.EndDate - DateTime.UtcNow).TotalDays;
         var workloadScore = CalculateWorkloadScore(committee);
@@ -23,13 +20,12 @@ public static class CommitteeMappingExtensions
             NameEn: committee.NameEn,
             Type: committee.Type,
             IsPermanent: committee.IsPermanent,
+            ScopeType: committee.ScopeType,
             Status: committee.Status,
             ActiveMemberCount: committee.ActiveMemberCount,
             StartDate: committee.StartDate,
             EndDate: committee.EndDate,
-            CompetitionId: committee.CompetitionId,
-            CompetitionNameAr: competitionNameAr,
-            CompetitionNameEn: competitionNameEn,
+            Competitions: committee.Competitions.Select(c => c.ToDto()).ToList().AsReadOnly(),
             CreatedAt: committee.CreatedAt,
             DaysRemaining: daysRemaining,
             WorkloadScore: workloadScore);
@@ -38,8 +34,6 @@ public static class CommitteeMappingExtensions
     /// <summary>Maps a Committee entity (with members) to a detail DTO.</summary>
     public static CommitteeDetailDto ToDetailDto(
         this Committee committee,
-        string? competitionNameAr = null,
-        string? competitionNameEn = null,
         CommitteeAiInsightDto? aiInsight = null)
     {
         var daysRemaining = (int)(committee.EndDate - DateTime.UtcNow).TotalDays;
@@ -51,13 +45,12 @@ public static class CommitteeMappingExtensions
             NameEn: committee.NameEn,
             Type: committee.Type,
             IsPermanent: committee.IsPermanent,
+            ScopeType: committee.ScopeType,
             Description: committee.Description,
             Status: committee.Status,
             StartDate: committee.StartDate,
             EndDate: committee.EndDate,
-            CompetitionId: committee.CompetitionId,
-            CompetitionNameAr: competitionNameAr,
-            CompetitionNameEn: competitionNameEn,
+            Competitions: committee.Competitions.Select(c => c.ToDto()).ToList().AsReadOnly(),
             ActiveFromPhase: committee.ActiveFromPhase,
             ActiveToPhase: committee.ActiveToPhase,
             StatusChangeReason: committee.StatusChangeReason,
@@ -87,6 +80,17 @@ public static class CommitteeMappingExtensions
             RemovedAt: member.RemovedAt,
             RemovedBy: member.RemovedBy,
             RemovalReason: member.RemovalReason);
+    }
+
+    /// <summary>Maps a CommitteeCompetition entity to a DTO.</summary>
+    public static CommitteeCompetitionDto ToDto(this CommitteeCompetition competition)
+    {
+        return new CommitteeCompetitionDto(
+            Id: competition.Id,
+            CompetitionId: competition.CompetitionId,
+            CompetitionNameAr: null, // Can be enriched via join if needed
+            CompetitionNameEn: null,
+            AssignedAt: competition.AssignedAt);
     }
 
     /// <summary>

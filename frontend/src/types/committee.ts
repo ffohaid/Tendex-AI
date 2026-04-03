@@ -40,6 +40,13 @@ export const CommitteeMemberRole = {
 } as const
 export type CommitteeMemberRole = (typeof CommitteeMemberRole)[keyof typeof CommitteeMemberRole]
 
+export const CommitteeScopeType = {
+  Comprehensive: 1,
+  SpecificPhasesAllCompetitions: 2,
+  SpecificPhasesSpecificCompetitions: 3,
+} as const
+export type CommitteeScopeType = (typeof CommitteeScopeType)[keyof typeof CommitteeScopeType]
+
 export const CompetitionPhase = {
   BookletPreparation: 1,
   BookletApproval: 2,
@@ -57,6 +64,15 @@ export type CompetitionPhase = (typeof CompetitionPhase)[keyof typeof Competitio
 /*  Committee DTOs                                                     */
 /* ------------------------------------------------------------------ */
 
+/** Competition linked to a committee. */
+export interface CommitteeCompetition {
+  id: string
+  competitionId: string
+  competitionNameAr: string | null
+  competitionNameEn: string | null
+  assignedAt: string
+}
+
 /** Summary DTO for committee list view. */
 export interface CommitteeListItem {
   id: string
@@ -64,18 +80,15 @@ export interface CommitteeListItem {
   nameEn: string
   type: CommitteeType
   isPermanent: boolean
+  scopeType: CommitteeScopeType
   status: CommitteeStatus
   activeMemberCount: number
   startDate: string
   endDate: string
-  competitionId: string | null
-  competitionNameAr: string | null
-  competitionNameEn: string | null
+  competitions: CommitteeCompetition[]
   createdAt: string
   daysRemaining: number
   workloadScore: number
-  activeFromPhase: CompetitionPhase | null
-  activeToPhase: CompetitionPhase | null
 }
 
 /** Detail DTO for a single committee with members. */
@@ -85,13 +98,12 @@ export interface CommitteeDetail {
   nameEn: string
   type: CommitteeType
   isPermanent: boolean
+  scopeType: CommitteeScopeType
   description: string | null
   status: CommitteeStatus
   startDate: string
   endDate: string
-  competitionId: string | null
-  competitionNameAr: string | null
-  competitionNameEn: string | null
+  competitions: CommitteeCompetition[]
   activeFromPhase: CompetitionPhase | null
   activeToPhase: CompetitionPhase | null
   statusChangeReason: string | null
@@ -133,6 +145,21 @@ export interface CommitteePagedResult {
 export interface ConflictOfInterestResult {
   hasConflict: boolean
   conflictDetails: string | null
+}
+
+/** Eligible user that can be added to a committee. */
+export interface EligibleUser {
+  id: string
+  fullName: string
+  email: string
+  roles: UserRoleSummary[]
+}
+
+/** Summary of a user's platform role. */
+export interface UserRoleSummary {
+  nameAr: string
+  nameEn: string
+  normalizedName: string
 }
 
 /* ------------------------------------------------------------------ */
@@ -195,10 +222,11 @@ export interface CreateCommitteeRequest {
   nameEn: string
   type: CommitteeType
   isPermanent: boolean
+  scopeType: CommitteeScopeType
   description?: string
   startDate: string
   endDate: string
-  competitionId?: string
+  competitionIds?: string[]
   activeFromPhase?: CompetitionPhase
   activeToPhase?: CompetitionPhase
 }
@@ -208,6 +236,10 @@ export interface UpdateCommitteeRequest {
   nameAr: string
   nameEn: string
   description?: string
+  scopeType: CommitteeScopeType
+  activeFromPhase?: CompetitionPhase
+  activeToPhase?: CompetitionPhase
+  competitionIds?: string[]
 }
 
 /** Request body for changing committee status. */
@@ -216,10 +248,9 @@ export interface ChangeCommitteeStatusRequest {
   reason?: string
 }
 
-/** Request body for adding a member to a committee. */
+/** Request body for adding a registered platform user to a committee. */
 export interface AddCommitteeMemberRequest {
   userId: string
-  userFullName: string
   role: CommitteeMemberRole
   activeFromPhase?: CompetitionPhase
   activeToPhase?: CompetitionPhase

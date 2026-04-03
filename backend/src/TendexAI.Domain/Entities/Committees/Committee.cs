@@ -12,10 +12,16 @@ namespace TendexAI.Domain.Entities.Committees;
 /// 
 /// CRITICAL BUSINESS RULE (PRD Section 4.2):
 /// Technical evaluation committee must be completely separate from financial evaluation committee.
+/// 
+/// SCOPE MODEL:
+/// - Comprehensive: all phases, all competitions
+/// - SpecificPhasesAllCompetitions: specific phases, all competitions
+/// - SpecificPhasesSpecificCompetitions: specific phases, specific competitions (via CommitteeCompetition)
 /// </summary>
 public sealed class Committee : AggregateRoot<Guid>
 {
     private readonly List<CommitteeMember> _members = [];
+    private readonly List<CommitteeCompetition> _competitions = [];
 
     /// <summary>Required for EF Core.</summary>
     private Committee() { }
@@ -29,10 +35,10 @@ public sealed class Committee : AggregateRoot<Guid>
         string nameEn,
         CommitteeType type,
         bool isPermanent,
+        CommitteeScopeType scopeType,
         string? description,
         DateTime startDate,
         DateTime endDate,
-        Guid? competitionId,
         CompetitionPhase? activeFromPhase,
         CompetitionPhase? activeToPhase,
         string createdBy)
@@ -43,12 +49,15 @@ public sealed class Committee : AggregateRoot<Guid>
         NameEn = nameEn;
         Type = type;
         IsPermanent = isPermanent;
+        ScopeType = scopeType;
         Description = description;
         StartDate = startDate;
         EndDate = endDate;
-        CompetitionId = competitionId;
-        ActiveFromPhase = activeFromPhase;
-        ActiveToPhase = activeToPhase;
+
+        // For Comprehensive scope, phases are null (all phases)
+        ActiveFromPhase = scopeType == CommitteeScopeType.Comprehensive ? null : activeFromPhase;
+        ActiveToPhase = scopeType == CommitteeScopeType.Comprehensive ? null : activeToPhase;
+
         Status = CommitteeStatus.Active;
         CreatedAt = DateTime.UtcNow;
         CreatedBy = createdBy;
@@ -73,6 +82,11 @@ public sealed class Committee : AggregateRoot<Guid>
     /// <summary>Whether this is a permanent committee (true) or temporary (false).</summary>
     public bool IsPermanent { get; private set; }
 
+    /// <summary>
+    /// The scope type determining how the committee's authority is applied.
+    /// </summary>
+    public CommitteeScopeType ScopeType { get; private set; }
+
     /// <summary>Optional description of the committee's mandate.</summary>
     public string? Description { get; private set; }
 
@@ -85,16 +99,10 @@ public sealed class Committee : AggregateRoot<Guid>
     /// <summary>Current lifecycle status of the committee.</summary>
     public CommitteeStatus Status { get; private set; }
 
-    /// <summary>
-    /// The competition this committee is linked to (null for permanent committees).
-    /// Temporary committees are always linked to a specific competition.
-    /// </summary>
-    public Guid? CompetitionId { get; private set; }
-
-    /// <summary>The phase from which this committee becomes active (for temporary committees).</summary>
+    /// <summary>The phase from which this committee becomes active (null for Comprehensive scope).</summary>
     public CompetitionPhase? ActiveFromPhase { get; private set; }
 
-    /// <summary>The phase until which this committee remains active (for temporary committees).</summary>
+    /// <summary>The phase until which this committee remains active (null for Comprehensive scope).</summary>
     public CompetitionPhase? ActiveToPhase { get; private set; }
 
     /// <summary>Reason for suspension or dissolution (audit trail).</summary>
@@ -109,13 +117,55 @@ public sealed class Committee : AggregateRoot<Guid>
     /// <summary>Navigation property — committee members.</summary>
     public IReadOnlyCollection<CommitteeMember> Members => _members.AsReadOnly();
 
+    /// <summary>Navigation property — linked competitions (for SpecificPhasesSpecificCompetitions scope).</summary>
+    public IReadOnlyCollection<CommitteeCompetition> Competitions => _competitions.AsReadOnly();
+
+    // ═════════════════════════════════════════════════════════════
+    //  Competition Management
+    // ═════════════════════════════════════════════════════════════
+
+    /// <summary>
+    /// Links a competition to this committee.
+    /// Only valid for SpecificPhasesSpecificCompetitions scope.
+    /// </summary>
+    public Result LinkCompetition(Guid competitionId, string assignedBy)
+    {
+        if (ScopeType != CommitteeScopeType.SpecificPhasesSpecificCompetitions)
+            return Result.Failure("Competitions can only be linked to committees with 'SpecificPhasesSpecificCompetitions' scope.");
+
+        if (_competitions.Any(c => c.CompetitionId == competitionId))
+            return Result.Failure("This competition is already linked to the committee.");
+
+        var link = new CommitteeCompetition(Id, competitionId, assignedBy);
+        _competitions.Add(link);
+        LastModifiedAt = DateTime.UtcNow;
+        LastModifiedBy = assignedBy;
+        return Result.Success();
+    }
+
+    /// <summary>
+    /// Unlinks a competition from this committee.
+    /// </summary>
+    public Result UnlinkCompetition(Guid competitionId, string removedBy)
+    {
+        var link = _competitions.FirstOrDefault(c => c.CompetitionId == competitionId);
+        if (link is null)
+            return Result.Failure("Competition is not linked to this committee.");
+
+        _competitions.Remove(link);
+        LastModifiedAt = DateTime.UtcNow;
+        LastModifiedBy = removedBy;
+        return Result.Success();
+    }
+
     // ═════════════════════════════════════════════════════════════
     //  Member Management
     // ═════════════════════════════════════════════════════════════
 
     /// <summary>
-    /// Adds a member to the committee with a specified role.
-    /// Enforces business rule: only one Chair per committee.
+    /// Adds a registered platform user as a member of this committee.
+    /// The userId must correspond to an active ApplicationUser in the same tenant.
+    /// Role compatibility between the user's platform role and committee role is enforced externally.
     /// </summary>
     public Result AddMember(
         Guid userId,
@@ -198,6 +248,34 @@ public sealed class Committee : AggregateRoot<Guid>
             .Where(m => m.IsActive && m.IsActiveForPhase(phase))
             .ToList()
             .AsReadOnly();
+    }
+
+    /// <summary>
+    /// Checks if this committee has authority over a specific competition.
+    /// </summary>
+    public bool HasAuthorityOverCompetition(Guid competitionId)
+    {
+        return ScopeType switch
+        {
+            CommitteeScopeType.Comprehensive => true,
+            CommitteeScopeType.SpecificPhasesAllCompetitions => true,
+            CommitteeScopeType.SpecificPhasesSpecificCompetitions =>
+                _competitions.Any(c => c.CompetitionId == competitionId),
+            _ => false
+        };
+    }
+
+    /// <summary>
+    /// Checks if this committee has authority over a specific phase.
+    /// </summary>
+    public bool HasAuthorityOverPhase(CompetitionPhase phase)
+    {
+        if (ScopeType == CommitteeScopeType.Comprehensive)
+            return true;
+
+        var fromOk = !ActiveFromPhase.HasValue || phase >= ActiveFromPhase.Value;
+        var toOk = !ActiveToPhase.HasValue || phase <= ActiveToPhase.Value;
+        return fromOk && toOk;
     }
 
     // ═════════════════════════════════════════════════════════════
@@ -285,6 +363,44 @@ public sealed class Committee : AggregateRoot<Guid>
 
         LastModifiedAt = DateTime.UtcNow;
         LastModifiedBy = extendedBy;
+        return Result.Success();
+    }
+
+    /// <summary>
+    /// Updates the committee's scope type and phase range.
+    /// </summary>
+    public Result UpdateScope(
+        CommitteeScopeType scopeType,
+        CompetitionPhase? activeFromPhase,
+        CompetitionPhase? activeToPhase,
+        string updatedBy)
+    {
+        if (Status == CommitteeStatus.Dissolved)
+            return Result.Failure("Cannot update a dissolved committee.");
+
+        // Validate scope-phase consistency
+        if (scopeType == CommitteeScopeType.Comprehensive)
+        {
+            if (activeFromPhase.HasValue || activeToPhase.HasValue)
+                return Result.Failure("Comprehensive scope cannot have phase restrictions.");
+        }
+        else
+        {
+            if (!activeFromPhase.HasValue || !activeToPhase.HasValue)
+                return Result.Failure("Phase range is required for the selected scope type.");
+        }
+
+        // If changing away from SpecificPhasesSpecificCompetitions, clear competition links
+        if (scopeType != CommitteeScopeType.SpecificPhasesSpecificCompetitions && _competitions.Count > 0)
+        {
+            _competitions.Clear();
+        }
+
+        ScopeType = scopeType;
+        ActiveFromPhase = scopeType == CommitteeScopeType.Comprehensive ? null : activeFromPhase;
+        ActiveToPhase = scopeType == CommitteeScopeType.Comprehensive ? null : activeToPhase;
+        LastModifiedAt = DateTime.UtcNow;
+        LastModifiedBy = updatedBy;
         return Result.Success();
     }
 

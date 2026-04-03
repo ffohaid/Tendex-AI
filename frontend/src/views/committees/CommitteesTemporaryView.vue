@@ -2,12 +2,10 @@
 /**
  * CommitteesTemporaryView — Temporary Committees Management Page.
  *
- * Enhanced with:
- * - Statistics dashboard cards
- * - AI-powered committee analysis panel
- * - Enhanced table with workload/days-remaining indicators
- * - Competition name and phase range display
- * - Improved member management
+ * Redesigned with:
+ * - Scope model: Comprehensive / SpecificPhasesAllCompetitions / SpecificPhasesSpecificCompetitions
+ * - Dynamic user search for adding members (only registered platform users)
+ * - Multi-competition linking
  * - Full RTL/LTR support with Tailwind logical properties
  * - English numerals exclusively
  */
@@ -23,6 +21,7 @@ import {
   removeCommitteeMember,
   fetchCommitteeStatistics,
   fetchCommitteeAiAnalysis,
+  searchEligibleUsers,
 } from '@/services/committeeService'
 import type {
   CommitteeListItem,
@@ -34,11 +33,13 @@ import type {
   CommitteeMember,
   CommitteeStatistics,
   CommitteeAiAnalysisResponse,
+  EligibleUser,
 } from '@/types/committee'
 import {
   CommitteeType,
   CommitteeStatus,
   CommitteeMemberRole,
+  CommitteeScopeType,
   CompetitionPhase,
 } from '@/types/committee'
 import { useFormatters } from '@/composables/useFormatters'
@@ -82,12 +83,13 @@ const formData = ref<CreateCommitteeRequest>({
   nameEn: '',
   type: CommitteeType.BookletPreparation,
   isPermanent: false,
+  scopeType: CommitteeScopeType.Comprehensive,
   description: '',
   startDate: '',
   endDate: '',
-  competitionId: '',
-  activeFromPhase: CompetitionPhase.BookletPreparation,
-  activeToPhase: CompetitionPhase.ContractSigning,
+  competitionIds: [],
+  activeFromPhase: undefined,
+  activeToPhase: undefined,
 })
 
 /* Status change form */
@@ -99,11 +101,16 @@ const statusChangeData = ref<ChangeCommitteeStatusRequest>({
 /* Add member form */
 const memberFormData = ref<AddCommitteeMemberRequest>({
   userId: '',
-  userFullName: '',
   role: CommitteeMemberRole.Member,
-  activeFromPhase: CompetitionPhase.BookletPreparation,
-  activeToPhase: CompetitionPhase.ContractSigning,
+  activeFromPhase: undefined,
+  activeToPhase: undefined,
 })
+
+/* User search for add member */
+const userSearchQuery = ref('')
+const eligibleUsers = ref<EligibleUser[]>([])
+const isSearchingUsers = ref(false)
+const selectedUser = ref<EligibleUser | null>(null)
 
 const isEditMode = ref(false)
 const editingCommitteeId = ref('')
@@ -113,6 +120,15 @@ const editingCommitteeId = ref('')
 /* ------------------------------------------------------------------ */
 const totalPages = computed(() => Math.ceil(totalCount.value / pageSize.value))
 const isRtl = computed(() => locale.value === 'ar')
+
+const showPhaseFields = computed(() =>
+  formData.value.scopeType === CommitteeScopeType.SpecificPhasesAllCompetitions ||
+  formData.value.scopeType === CommitteeScopeType.SpecificPhasesSpecificCompetitions
+)
+
+const showCompetitionFields = computed(() =>
+  formData.value.scopeType === CommitteeScopeType.SpecificPhasesSpecificCompetitions
+)
 
 const statusOptions = computed(() => [
   { value: '', label: t('committees.statuses.all') },
@@ -125,11 +141,19 @@ const statusOptions = computed(() => [
 const typeOptions = computed(() => [
   { value: CommitteeType.BookletPreparation, label: t('committees.types.bookletPreparation') },
   { value: CommitteeType.InquiryReview, label: t('committees.types.inquiryReview') },
+  { value: CommitteeType.TechnicalEvaluation, label: t('committees.types.technicalEvaluation') },
+  { value: CommitteeType.FinancialEvaluation, label: t('committees.types.financialEvaluation') },
 ])
 
 const typeFilterOptions = computed(() => [
   { value: '', label: t('committees.filters.allTypes') },
   ...typeOptions.value,
+])
+
+const scopeTypeOptions = computed(() => [
+  { value: CommitteeScopeType.Comprehensive, label: t('committees.scopeTypes.comprehensive') },
+  { value: CommitteeScopeType.SpecificPhasesAllCompetitions, label: t('committees.scopeTypes.specificPhasesAll') },
+  { value: CommitteeScopeType.SpecificPhasesSpecificCompetitions, label: t('committees.scopeTypes.specificPhasesSpecific') },
 ])
 
 const phaseOptions = computed(() => [
@@ -180,6 +204,15 @@ function getTypeName(type: CommitteeType): string {
   return map[type] || ''
 }
 
+function getScopeTypeName(scopeType: number): string {
+  const map: Record<number, string> = {
+    [CommitteeScopeType.Comprehensive]: t('committees.scopeTypes.comprehensive'),
+    [CommitteeScopeType.SpecificPhasesAllCompetitions]: t('committees.scopeTypes.specificPhasesAll'),
+    [CommitteeScopeType.SpecificPhasesSpecificCompetitions]: t('committees.scopeTypes.specificPhasesSpecific'),
+  }
+  return map[scopeType] || ''
+}
+
 function getPhaseName(phase: CompetitionPhase | null | undefined): string {
   if (phase === null || phase === undefined) return '-'
   const map: Record<number, string> = {
@@ -216,8 +249,8 @@ function getDaysRemainingClass(days: number): string {
 }
 
 function getWorkloadClass(score: number): string {
-  if (score >= 80) return 'bg-danger'
-  if (score >= 50) return 'bg-warning'
+  if (score >= 0.8) return 'bg-danger'
+  if (score >= 0.5) return 'bg-warning'
   return 'bg-success'
 }
 
@@ -264,8 +297,8 @@ async function loadCommittees() {
       pageNumber: currentPage.value,
       pageSize: pageSize.value,
       isPermanent: false,
-      type: typeFilter.value !== '' ? typeFilter.value : undefined,
-      status: statusFilter.value !== '' ? statusFilter.value : undefined,
+      type: typeFilter.value !== '' ? (typeFilter.value as CommitteeType) : undefined,
+      status: statusFilter.value !== '' ? (statusFilter.value as CommitteeStatus) : undefined,
       search: searchQuery.value || undefined,
     })
     committees.value = result.items
@@ -302,6 +335,33 @@ async function loadAiAnalysis(committeeId: string) {
   }
 }
 
+async function handleSearchUsers() {
+  if (!selectedCommittee.value || userSearchQuery.value.length < 2) {
+    eligibleUsers.value = []
+    return
+  }
+  isSearchingUsers.value = true
+  try {
+    eligibleUsers.value = await searchEligibleUsers(
+      selectedCommittee.value.id,
+      userSearchQuery.value,
+      memberFormData.value.role,
+    )
+  } catch (err) {
+    console.warn('[Committees] User search failed:', err)
+    eligibleUsers.value = []
+  } finally {
+    isSearchingUsers.value = false
+  }
+}
+
+function selectUser(user: EligibleUser) {
+  selectedUser.value = user
+  memberFormData.value.userId = user.id
+  userSearchQuery.value = user.fullName
+  eligibleUsers.value = []
+}
+
 async function handleCreateCommittee() {
   isSubmitting.value = true
   try {
@@ -310,15 +370,21 @@ async function handleCreateCommittee() {
         nameAr: formData.value.nameAr,
         nameEn: formData.value.nameEn,
         description: formData.value.description,
+        scopeType: formData.value.scopeType,
+        activeFromPhase: showPhaseFields.value ? formData.value.activeFromPhase : undefined,
+        activeToPhase: showPhaseFields.value ? formData.value.activeToPhase : undefined,
+        competitionIds: showCompetitionFields.value ? formData.value.competitionIds : undefined,
       }
       await updateCommittee(editingCommitteeId.value, updateData)
     } else {
       const payload: CreateCommitteeRequest = {
         ...formData.value,
         isPermanent: false,
-        competitionId: formData.value.competitionId || undefined,
         startDate: formData.value.startDate ? new Date(formData.value.startDate).toISOString() : '',
         endDate: formData.value.endDate ? new Date(formData.value.endDate).toISOString() : '',
+        activeFromPhase: showPhaseFields.value ? formData.value.activeFromPhase : undefined,
+        activeToPhase: showPhaseFields.value ? formData.value.activeToPhase : undefined,
+        competitionIds: showCompetitionFields.value ? formData.value.competitionIds : undefined,
       }
       await createCommittee(payload)
     }
@@ -326,10 +392,11 @@ async function handleCreateCommittee() {
     resetForm()
     await loadCommittees()
     await loadStatistics()
-  } catch {
-    error.value = isEditMode.value
+  } catch (err: any) {
+    const apiMsg = err?.response?.data?.detail || err?.response?.data?.title || err?.response?.data
+    error.value = typeof apiMsg === 'string' ? apiMsg : (isEditMode.value
       ? t('committees.errors.updateFailed')
-      : t('committees.errors.createFailed')
+      : t('committees.errors.createFailed'))
   } finally {
     isSubmitting.value = false
   }
@@ -353,26 +420,21 @@ async function handleChangeStatus() {
 
 async function handleAddMember() {
   if (!selectedCommittee.value) {
-    console.error('[Committees] handleAddMember: selectedCommittee is null')
     error.value = t('committees.errors.addMemberFailed')
+    return
+  }
+  if (!memberFormData.value.userId) {
+    error.value = t('committees.errors.selectUserRequired')
     return
   }
   isSubmitting.value = true
   try {
-    console.log('[Committees] Adding member to committee:', selectedCommittee.value.id, memberFormData.value)
     await addCommitteeMember(selectedCommittee.value.id, memberFormData.value)
     showAddMemberDialog.value = false
-    memberFormData.value = {
-      userId: '',
-      userFullName: '',
-      role: CommitteeMemberRole.Member,
-      activeFromPhase: CompetitionPhase.BookletPreparation,
-      activeToPhase: CompetitionPhase.ContractSigning,
-    }
+    resetMemberForm()
     await loadCommitteeDetail(selectedCommittee.value.id)
     await loadStatistics()
   } catch (err: any) {
-    console.error('[Committees] Add member error:', err?.response?.data || err?.message || err)
     const apiMsg = err?.response?.data?.detail || err?.response?.data?.title || err?.response?.data
     error.value = typeof apiMsg === 'string' ? apiMsg : t('committees.errors.addMemberFailed')
   } finally {
@@ -411,12 +473,13 @@ function openEditDialog(committee: CommitteeDetail) {
     nameEn: committee.nameEn,
     type: committee.type,
     isPermanent: false,
+    scopeType: committee.scopeType,
     description: committee.description || '',
     startDate: committee.startDate,
     endDate: committee.endDate,
-    competitionId: committee.competitionId || '',
-    activeFromPhase: committee.activeFromPhase || CompetitionPhase.BookletPreparation,
-    activeToPhase: committee.activeToPhase || CompetitionPhase.ContractSigning,
+    competitionIds: committee.competitions?.map(c => c.competitionId) || [],
+    activeFromPhase: committee.activeFromPhase || undefined,
+    activeToPhase: committee.activeToPhase || undefined,
   }
   showCreateDialog.value = true
 }
@@ -426,19 +489,52 @@ function openStatusDialog() {
   showStatusDialog.value = true
 }
 
+function openAddMemberDialog() {
+  resetMemberForm()
+  showAddMemberDialog.value = true
+}
+
 function resetForm() {
   formData.value = {
     nameAr: '',
     nameEn: '',
     type: CommitteeType.BookletPreparation,
     isPermanent: false,
+    scopeType: CommitteeScopeType.Comprehensive,
     description: '',
     startDate: '',
     endDate: '',
-    competitionId: '',
-    activeFromPhase: CompetitionPhase.BookletPreparation,
-    activeToPhase: CompetitionPhase.ContractSigning,
+    competitionIds: [],
+    activeFromPhase: undefined,
+    activeToPhase: undefined,
   }
+}
+
+function resetMemberForm() {
+  memberFormData.value = {
+    userId: '',
+    role: CommitteeMemberRole.Member,
+    activeFromPhase: undefined,
+    activeToPhase: undefined,
+  }
+  userSearchQuery.value = ''
+  selectedUser.value = null
+  eligibleUsers.value = []
+}
+
+function toggleCompetition(compId: string) {
+  const ids = formData.value.competitionIds || []
+  const idx = ids.indexOf(compId)
+  if (idx >= 0) {
+    ids.splice(idx, 1)
+  } else {
+    ids.push(compId)
+  }
+  formData.value.competitionIds = [...ids]
+}
+
+function isCompetitionSelected(compId: string): boolean {
+  return (formData.value.competitionIds || []).includes(compId)
 }
 
 /* ------------------------------------------------------------------ */
@@ -459,6 +555,17 @@ watch(searchQuery, () => {
   searchTimeout = setTimeout(() => {
     currentPage.value = 1
     loadCommittees()
+  }, 400)
+})
+
+let userSearchTimeout: ReturnType<typeof setTimeout> | null = null
+watch(userSearchQuery, () => {
+  if (userSearchTimeout) clearTimeout(userSearchTimeout)
+  if (selectedUser.value && userSearchQuery.value === selectedUser.value.fullName) return
+  selectedUser.value = null
+  memberFormData.value.userId = ''
+  userSearchTimeout = setTimeout(() => {
+    handleSearchUsers()
   }, 400)
 })
 
@@ -608,7 +715,7 @@ onMounted(() => {
             <tr class="border-b border-surface-dim bg-surface-ground">
               <th class="px-4 py-3 text-start font-semibold text-secondary">{{ t('committees.table.name') }}</th>
               <th class="px-4 py-3 text-start font-semibold text-secondary">{{ t('committees.table.type') }}</th>
-              <th class="px-4 py-3 text-start font-semibold text-secondary">{{ t('committees.table.phaseRange') }}</th>
+              <th class="px-4 py-3 text-start font-semibold text-secondary">{{ t('committees.table.scope') }}</th>
               <th class="px-4 py-3 text-center font-semibold text-secondary">{{ t('committees.table.members') }}</th>
               <th class="px-4 py-3 text-center font-semibold text-secondary">{{ t('committees.table.status') }}</th>
               <th class="px-4 py-3 text-center font-semibold text-secondary">{{ t('committees.table.daysRemaining') }}</th>
@@ -620,16 +727,15 @@ onMounted(() => {
             <tr v-for="committee in committees" :key="committee.id" class="border-b border-surface-dim last:border-b-0 transition-colors hover:bg-surface-ground/50">
               <td class="px-4 py-3">
                 <p class="font-medium text-secondary">{{ getCommitteeName(committee) }}</p>
-                <p v-if="committee.competitionNameAr || committee.competitionNameEn" class="mt-0.5 text-xs text-tertiary">
-                  {{ locale === 'ar' ? committee.competitionNameAr : committee.competitionNameEn }}
+                <p v-if="committee.competitions && committee.competitions.length > 0" class="mt-0.5 text-xs text-tertiary">
+                  {{ committee.competitions.length }} {{ t('committees.table.linkedCompetitions') }}
                 </p>
               </td>
               <td class="px-4 py-3 text-tertiary">{{ getTypeName(committee.type) }}</td>
               <td class="px-4 py-3 text-xs text-tertiary">
-                <span v-if="committee.activeFromPhase !== null && committee.activeFromPhase !== undefined">
-                  {{ getPhaseName(committee.activeFromPhase) }} → {{ getPhaseName(committee.activeToPhase) }}
+                <span class="inline-block rounded-full px-2 py-0.5 text-xs font-medium bg-primary/10 text-primary">
+                  {{ getScopeTypeName(committee.scopeType) }}
                 </span>
-                <span v-else>-</span>
               </td>
               <td class="px-4 py-3 text-center text-secondary">
                 <span class="inline-flex items-center gap-1">
@@ -651,9 +757,9 @@ onMounted(() => {
               <td class="px-4 py-3 text-center">
                 <div class="mx-auto w-16">
                   <div class="h-1.5 w-full overflow-hidden rounded-full bg-surface-dim">
-                    <div :class="getWorkloadClass(committee.workloadScore)" class="h-full rounded-full transition-all" :style="{ width: Math.min(committee.workloadScore, 100) + '%' }"></div>
+                    <div :class="getWorkloadClass(committee.workloadScore)" class="h-full rounded-full transition-all" :style="{ width: Math.round(committee.workloadScore * 100) + '%' }"></div>
                   </div>
-                  <p class="mt-0.5 text-xs text-tertiary">{{ committee.workloadScore }}%</p>
+                  <p class="mt-0.5 text-xs text-tertiary">{{ Math.round(committee.workloadScore * 100) }}%</p>
                 </div>
               </td>
               <td class="px-4 py-3 text-center">
@@ -723,27 +829,66 @@ onMounted(() => {
                 <option v-for="opt in typeOptions" :key="opt.value" :value="opt.value">{{ opt.label }}</option>
               </select>
             </div>
+
+            <!-- Scope Type -->
             <div>
-              <label class="mb-1 block text-sm font-medium text-secondary">{{ t('committees.form.competitionId') }}</label>
-              <select v-model="formData.competitionId" :disabled="isEditMode || isLoadingCompetitions" class="w-full rounded-lg border border-surface-dim px-4 py-2.5 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary disabled:bg-surface-ground disabled:text-tertiary">
-                <option value="">{{ isLoadingCompetitions ? t('common.loading') : t('committees.form.selectCompetition') }}</option>
-                <option v-for="comp in competitions" :key="comp.id" :value="comp.id">{{ comp.projectName }} ({{ comp.referenceNumber }})</option>
+              <label class="mb-1 block text-sm font-medium text-secondary">{{ t('committees.form.scopeType') }}</label>
+              <select v-model="formData.scopeType" :disabled="isEditMode" class="w-full rounded-lg border border-surface-dim px-4 py-2.5 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary disabled:bg-surface-ground disabled:text-tertiary">
+                <option v-for="opt in scopeTypeOptions" :key="opt.value" :value="opt.value">{{ opt.label }}</option>
               </select>
+              <p class="mt-1 text-xs text-tertiary">
+                <template v-if="formData.scopeType === CommitteeScopeType.Comprehensive">{{ t('committees.scopeHints.comprehensive') }}</template>
+                <template v-else-if="formData.scopeType === CommitteeScopeType.SpecificPhasesAllCompetitions">{{ t('committees.scopeHints.specificPhasesAll') }}</template>
+                <template v-else>{{ t('committees.scopeHints.specificPhasesSpecific') }}</template>
+              </p>
             </div>
-            <div class="grid grid-cols-2 gap-4">
+
+            <!-- Phase Range (conditional) -->
+            <div v-if="showPhaseFields" class="grid grid-cols-2 gap-4">
               <div>
                 <label class="mb-1 block text-sm font-medium text-secondary">{{ t('committees.form.activeFromPhase') }}</label>
-                <select v-model="formData.activeFromPhase" :disabled="isEditMode" class="w-full rounded-lg border border-surface-dim px-4 py-2.5 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary disabled:bg-surface-ground">
+                <select v-model="formData.activeFromPhase" class="w-full rounded-lg border border-surface-dim px-4 py-2.5 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary">
                   <option v-for="opt in phaseOptions" :key="opt.value" :value="opt.value">{{ opt.label }}</option>
                 </select>
               </div>
               <div>
                 <label class="mb-1 block text-sm font-medium text-secondary">{{ t('committees.form.activeToPhase') }}</label>
-                <select v-model="formData.activeToPhase" :disabled="isEditMode" class="w-full rounded-lg border border-surface-dim px-4 py-2.5 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary disabled:bg-surface-ground">
+                <select v-model="formData.activeToPhase" class="w-full rounded-lg border border-surface-dim px-4 py-2.5 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary">
                   <option v-for="opt in phaseOptions" :key="opt.value" :value="opt.value">{{ opt.label }}</option>
                 </select>
               </div>
             </div>
+
+            <!-- Competition Selection (conditional) -->
+            <div v-if="showCompetitionFields">
+              <label class="mb-1 block text-sm font-medium text-secondary">{{ t('committees.form.selectCompetitions') }}</label>
+              <div v-if="isLoadingCompetitions" class="flex items-center gap-2 py-2 text-xs text-tertiary">
+                <i class="pi pi-spin pi-spinner text-xs"></i>
+                {{ t('common.loading') }}
+              </div>
+              <div v-else class="max-h-40 overflow-y-auto rounded-lg border border-surface-dim p-2 space-y-1">
+                <label
+                  v-for="comp in competitions"
+                  :key="comp.id"
+                  class="flex cursor-pointer items-center gap-2 rounded-lg px-2 py-1.5 text-sm transition-colors hover:bg-surface-ground"
+                  :class="{ 'bg-primary/5': isCompetitionSelected(comp.id) }"
+                >
+                  <input
+                    type="checkbox"
+                    :checked="isCompetitionSelected(comp.id)"
+                    class="rounded border-surface-dim text-primary focus:ring-primary"
+                    @change="toggleCompetition(comp.id)"
+                  />
+                  <span class="text-secondary">{{ comp.projectName }}</span>
+                  <span class="text-xs text-tertiary">({{ comp.referenceNumber }})</span>
+                </label>
+                <p v-if="competitions.length === 0" class="py-2 text-center text-xs text-tertiary">{{ t('committees.form.noCompetitions') }}</p>
+              </div>
+              <p v-if="(formData.competitionIds || []).length > 0" class="mt-1 text-xs text-primary">
+                {{ t('committees.form.selectedCount', { count: (formData.competitionIds || []).length }) }}
+              </p>
+            </div>
+
             <div>
               <label class="mb-1 block text-sm font-medium text-secondary">{{ t('committees.form.description') }}</label>
               <textarea v-model="formData.description" rows="3" class="w-full rounded-lg border border-surface-dim px-4 py-2.5 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"></textarea>
@@ -780,8 +925,8 @@ onMounted(() => {
           <div class="sticky top-0 z-10 flex items-center justify-between border-b border-surface-dim bg-white px-6 py-4">
             <div>
               <h2 class="text-lg font-bold text-secondary">{{ getCommitteeName(selectedCommittee) }}</h2>
-              <p v-if="selectedCommittee.competitionNameAr || selectedCommittee.competitionNameEn" class="mt-0.5 text-xs text-tertiary">
-                {{ locale === 'ar' ? selectedCommittee.competitionNameAr : selectedCommittee.competitionNameEn }}
+              <p class="mt-0.5 text-xs text-tertiary">
+                {{ getScopeTypeName(selectedCommittee.scopeType) }}
               </p>
             </div>
             <div class="flex items-center gap-2">
@@ -823,7 +968,7 @@ onMounted(() => {
               <p class="text-xs text-tertiary">{{ t('committees.detail.endDate') }}</p>
               <p class="mt-1 text-sm text-secondary">{{ formatDate(selectedCommittee.endDate) }}</p>
             </div>
-            <div>
+            <div v-if="selectedCommittee.activeFromPhase">
               <p class="text-xs text-tertiary">{{ t('committees.table.phaseRange') }}</p>
               <p class="mt-1 text-xs text-secondary">
                 {{ getPhaseName(selectedCommittee.activeFromPhase) }} → {{ getPhaseName(selectedCommittee.activeToPhase) }}
@@ -838,6 +983,21 @@ onMounted(() => {
             <div class="col-span-2">
               <p class="text-xs text-tertiary">{{ t('committees.form.description') }}</p>
               <p class="mt-1 text-sm text-secondary">{{ selectedCommittee.description || t('committees.detail.noDescription') }}</p>
+            </div>
+          </div>
+
+          <!-- Linked Competitions -->
+          <div v-if="selectedCommittee.competitions && selectedCommittee.competitions.length > 0" class="border-t border-surface-dim px-6 py-4">
+            <h3 class="mb-3 text-sm font-bold text-secondary">{{ t('committees.detail.linkedCompetitions') }}</h3>
+            <div class="flex flex-wrap gap-2">
+              <span
+                v-for="comp in selectedCommittee.competitions"
+                :key="comp.id"
+                class="inline-flex items-center gap-1 rounded-full bg-primary/10 px-3 py-1 text-xs font-medium text-primary"
+              >
+                <i class="pi pi-briefcase text-xs"></i>
+                {{ comp.competitionNameAr || comp.competitionId.substring(0, 8) }}
+              </span>
             </div>
           </div>
 
@@ -875,8 +1035,8 @@ onMounted(() => {
               <div v-if="aiAnalysis.insight.recommendations.length > 0">
                 <h4 class="mb-2 text-xs font-semibold text-secondary">{{ t('committees.ai.recommendations') }}</h4>
                 <ul class="space-y-1.5">
-                  <li v-for="(rec, idx) in aiAnalysis.insight.recommendations" :key="idx" class="flex items-start gap-2 rounded-lg bg-primary/5 p-2.5 text-xs text-secondary">
-                    <i class="pi pi-check-circle mt-0.5 text-xs text-primary"></i>
+                  <li v-for="(rec, idx) in aiAnalysis.insight.recommendations" :key="idx" class="flex items-start gap-2 rounded-lg bg-success/5 px-3 py-2 text-xs text-secondary">
+                    <i class="pi pi-check-circle mt-0.5 text-success"></i>
                     <span>{{ rec }}</span>
                   </li>
                 </ul>
@@ -884,94 +1044,197 @@ onMounted(() => {
               <div v-if="aiAnalysis.insight.risks.length > 0">
                 <h4 class="mb-2 text-xs font-semibold text-secondary">{{ t('committees.ai.risks') }}</h4>
                 <ul class="space-y-1.5">
-                  <li v-for="(risk, idx) in aiAnalysis.insight.risks" :key="idx" class="flex items-start gap-2 rounded-lg bg-danger/5 p-2.5 text-xs text-secondary">
-                    <i class="pi pi-exclamation-triangle mt-0.5 text-xs text-danger"></i>
+                  <li v-for="(risk, idx) in aiAnalysis.insight.risks" :key="idx" class="flex items-start gap-2 rounded-lg bg-danger/5 px-3 py-2 text-xs text-secondary">
+                    <i class="pi pi-exclamation-triangle mt-0.5 text-danger"></i>
                     <span>{{ risk }}</span>
                   </li>
                 </ul>
               </div>
-              <div v-if="aiAnalysis.recommendations.length > 0">
-                <h4 class="mb-2 text-xs font-semibold text-secondary">{{ t('committees.ai.detailedRecommendations') }}</h4>
-                <div class="space-y-2">
-                  <div v-for="(rec, idx) in aiAnalysis.recommendations" :key="idx" class="rounded-lg border border-surface-dim p-3">
-                    <div class="flex items-center justify-between">
-                      <p class="text-xs font-semibold text-secondary">{{ rec.title }}</p>
-                      <div class="flex items-center gap-2">
-                        <span class="rounded-full px-2 py-0.5 text-[10px] font-medium" :class="rec.impact === 'High' ? 'bg-danger/10 text-danger' : rec.impact === 'Medium' ? 'bg-warning/10 text-warning' : 'bg-info/10 text-info'">{{ rec.impact }}</span>
-                        <span class="text-[10px] text-tertiary">{{ rec.confidence }}%</span>
-                      </div>
-                    </div>
-                    <p class="mt-1 text-xs text-tertiary leading-relaxed">{{ rec.description }}</p>
-                  </div>
-                </div>
-              </div>
             </div>
-            <div v-else class="py-8 text-center">
-              <i class="pi pi-info-circle text-2xl text-tertiary"></i>
-              <p class="mt-2 text-xs text-tertiary">{{ t('committees.ai.noData') }}</p>
-            </div>
+            <div v-else class="py-4 text-center text-xs text-tertiary">{{ t('committees.ai.unavailable') }}</div>
           </div>
 
           <!-- Members Section -->
           <div class="border-t border-surface-dim px-6 py-4">
             <div class="mb-4 flex items-center justify-between">
-              <h3 class="text-sm font-bold text-secondary">
-                {{ t('committees.detail.members') }}
-                <span class="ms-1 text-xs text-tertiary">({{ selectedCommittee.members.filter(m => m.isActive).length }})</span>
-              </h3>
-              <button class="flex items-center gap-1 rounded-lg bg-primary/10 px-3 py-1.5 text-xs font-medium text-primary hover:bg-primary/20" @click="showAddMemberDialog = true">
+              <h3 class="text-sm font-bold text-secondary">{{ t('committees.detail.members') }}</h3>
+              <button
+                class="flex items-center gap-1.5 rounded-lg bg-primary px-3 py-1.5 text-xs font-medium text-white hover:bg-primary-dark"
+                @click="openAddMemberDialog"
+              >
                 <i class="pi pi-user-plus text-xs"></i>
                 {{ t('committees.actions.addMember') }}
               </button>
             </div>
-            <div v-if="selectedCommittee.members.length > 0" class="overflow-x-auto">
-              <table class="w-full text-sm">
-                <thead>
-                  <tr class="border-b border-surface-dim bg-surface-ground">
-                    <th class="px-3 py-2 text-start text-xs font-semibold text-tertiary">{{ t('committees.memberTable.name') }}</th>
-                    <th class="px-3 py-2 text-center text-xs font-semibold text-tertiary">{{ t('committees.memberTable.role') }}</th>
-                    <th class="px-3 py-2 text-center text-xs font-semibold text-tertiary">{{ t('committees.memberTable.status') }}</th>
-                    <th class="px-3 py-2 text-center text-xs font-semibold text-tertiary">{{ t('committees.memberTable.assignedAt') }}</th>
-                    <th class="px-3 py-2 text-center text-xs font-semibold text-tertiary">{{ t('committees.memberTable.actions') }}</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr v-for="member in selectedCommittee.members" :key="member.id" class="border-b border-surface-dim last:border-b-0">
-                    <td class="px-3 py-2">
-                      <div class="flex items-center gap-2">
-                        <div class="flex h-7 w-7 items-center justify-center rounded-full bg-primary/10 text-xs font-bold text-primary">{{ member.userFullName.charAt(0) }}</div>
-                        <span class="text-secondary">{{ member.userFullName }}</span>
-                      </div>
-                    </td>
-                    <td class="px-3 py-2 text-center">
-                      <span class="inline-block rounded-full px-2 py-0.5 text-xs font-medium" :class="member.role === CommitteeMemberRole.Chair ? 'bg-primary/10 text-primary' : 'bg-surface-muted text-tertiary'">{{ getRoleName(member.role) }}</span>
-                    </td>
-                    <td class="px-3 py-2 text-center">
-                      <span :class="member.isActive ? 'bg-success/10 text-success' : 'bg-surface-muted text-tertiary'" class="inline-block rounded-full px-2 py-0.5 text-xs font-medium">
-                        {{ member.isActive ? t('committees.memberStatus.active') : t('committees.memberStatus.removed') }}
-                      </span>
-                    </td>
-                    <td class="px-3 py-2 text-center text-xs text-tertiary">{{ formatDate(member.assignedAt) }}</td>
-                    <td class="px-3 py-2 text-center">
-                      <button v-if="member.isActive" class="rounded-lg p-1 text-danger/70 hover:bg-danger/5 hover:text-danger" :title="t('committees.actions.removeMember')" @click="handleRemoveMember(member)">
-                        <i class="pi pi-user-minus text-xs"></i>
-                      </button>
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
+
+            <div v-if="selectedCommittee.members.length === 0" class="py-6 text-center text-xs text-tertiary">
+              {{ t('committees.detail.noMembers') }}
             </div>
-            <p v-else class="py-4 text-center text-sm text-tertiary">{{ t('committees.detail.noMembers') }}</p>
+            <div v-else class="space-y-2">
+              <div
+                v-for="member in selectedCommittee.members"
+                :key="member.id"
+                class="flex items-center justify-between rounded-lg border border-surface-dim p-3"
+                :class="{ 'opacity-50': !member.isActive }"
+              >
+                <div class="flex items-center gap-3">
+                  <div class="flex h-9 w-9 items-center justify-center rounded-full bg-primary/10 text-sm font-bold text-primary">
+                    {{ member.userFullName.charAt(0) }}
+                  </div>
+                  <div>
+                    <p class="text-sm font-medium text-secondary">{{ member.userFullName }}</p>
+                    <div class="flex items-center gap-2 mt-0.5">
+                      <span class="text-xs text-tertiary">{{ getRoleName(member.role) }}</span>
+                      <span v-if="!member.isActive" class="text-xs text-danger">{{ t('committees.detail.removed') }}</span>
+                    </div>
+                  </div>
+                </div>
+                <div class="flex items-center gap-2">
+                  <span class="text-xs text-tertiary">{{ formatDate(member.assignedAt) }}</span>
+                  <button
+                    v-if="member.isActive"
+                    class="rounded-lg p-1.5 text-tertiary transition-colors hover:bg-danger/10 hover:text-danger"
+                    :title="t('committees.actions.removeMember')"
+                    @click="handleRemoveMember(member)"
+                  >
+                    <i class="pi pi-user-minus text-xs"></i>
+                  </button>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </div>
     </Teleport>
 
-    <!-- Change Status Dialog -->
+    <!-- ============================================================ -->
+    <!--  Add Member Dialog (Dynamic User Search)                      -->
+    <!-- ============================================================ -->
     <Teleport to="body">
-      <div v-if="showStatusDialog" class="fixed inset-0 z-[60] flex items-center justify-center bg-black/40" @click.self="showStatusDialog = false">
+      <div v-if="showAddMemberDialog" class="fixed inset-0 z-50 flex items-center justify-center bg-black/40" @click.self="showAddMemberDialog = false">
         <div class="mx-4 w-full max-w-md rounded-xl bg-white p-6 shadow-xl">
-          <h2 class="mb-4 text-lg font-bold text-secondary">{{ t('committees.dialog.changeStatusTitle') }}</h2>
+          <div class="mb-6 flex items-center justify-between">
+            <h2 class="text-lg font-bold text-secondary">{{ t('committees.dialog.addMemberTitle') }}</h2>
+            <button class="rounded-lg p-1 text-tertiary hover:bg-surface-ground" @click="showAddMemberDialog = false">
+              <i class="pi pi-times"></i>
+            </button>
+          </div>
+
+          <form class="space-y-4" @submit.prevent="handleAddMember">
+            <!-- Role Selection (first, to filter eligible users) -->
+            <div>
+              <label class="mb-1 block text-sm font-medium text-secondary">{{ t('committees.form.role') }}</label>
+              <select v-model="memberFormData.role" class="w-full rounded-lg border border-surface-dim px-4 py-2.5 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary">
+                <option v-for="opt in memberRoleOptions" :key="opt.value" :value="opt.value">{{ opt.label }}</option>
+              </select>
+            </div>
+
+            <!-- User Search -->
+            <div>
+              <label class="mb-1 block text-sm font-medium text-secondary">{{ t('committees.form.searchUser') }}</label>
+              <div class="relative">
+                <i class="pi pi-search absolute start-3 top-1/2 -translate-y-1/2 text-sm text-tertiary"></i>
+                <input
+                  v-model="userSearchQuery"
+                  type="text"
+                  :placeholder="t('committees.form.searchUserPlaceholder')"
+                  class="w-full rounded-lg border border-surface-dim py-2.5 ps-10 pe-4 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+                  :class="{ 'border-success ring-1 ring-success': selectedUser }"
+                />
+                <i v-if="isSearchingUsers" class="pi pi-spin pi-spinner absolute end-3 top-1/2 -translate-y-1/2 text-sm text-tertiary"></i>
+                <i v-else-if="selectedUser" class="pi pi-check-circle absolute end-3 top-1/2 -translate-y-1/2 text-sm text-success"></i>
+              </div>
+
+              <!-- Search Results Dropdown -->
+              <div v-if="eligibleUsers.length > 0 && !selectedUser" class="mt-1 max-h-48 overflow-y-auto rounded-lg border border-surface-dim bg-white shadow-lg">
+                <button
+                  v-for="user in eligibleUsers"
+                  :key="user.id"
+                  type="button"
+                  class="flex w-full items-center gap-3 px-3 py-2.5 text-start transition-colors hover:bg-surface-ground"
+                  @click="selectUser(user)"
+                >
+                  <div class="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10 text-xs font-bold text-primary">
+                    {{ user.fullName.charAt(0) }}
+                  </div>
+                  <div class="flex-1 min-w-0">
+                    <p class="text-sm font-medium text-secondary truncate">{{ user.fullName }}</p>
+                    <p class="text-xs text-tertiary truncate">{{ user.email }}</p>
+                  </div>
+                  <div class="flex flex-wrap gap-1">
+                    <span
+                      v-for="role in user.roles"
+                      :key="role.normalizedName"
+                      class="rounded-full bg-primary/10 px-1.5 py-0.5 text-[10px] font-medium text-primary"
+                    >
+                      {{ locale === 'ar' ? role.nameAr : role.nameEn }}
+                    </span>
+                  </div>
+                </button>
+              </div>
+
+              <!-- No Results -->
+              <p v-if="userSearchQuery.length >= 2 && eligibleUsers.length === 0 && !isSearchingUsers && !selectedUser" class="mt-1 text-xs text-tertiary">
+                {{ t('committees.form.noUsersFound') }}
+              </p>
+
+              <!-- Selected User Info -->
+              <div v-if="selectedUser" class="mt-2 flex items-center gap-2 rounded-lg bg-success/5 border border-success/20 px-3 py-2">
+                <div class="flex h-7 w-7 items-center justify-center rounded-full bg-primary/10 text-xs font-bold text-primary">
+                  {{ selectedUser.fullName.charAt(0) }}
+                </div>
+                <div class="flex-1 min-w-0">
+                  <p class="text-sm font-medium text-secondary truncate">{{ selectedUser.fullName }}</p>
+                  <p class="text-xs text-tertiary truncate">{{ selectedUser.email }}</p>
+                </div>
+                <button type="button" class="rounded p-1 text-tertiary hover:text-danger" @click="resetMemberForm">
+                  <i class="pi pi-times text-xs"></i>
+                </button>
+              </div>
+            </div>
+
+            <!-- Phase Range (optional) -->
+            <div class="grid grid-cols-2 gap-4">
+              <div>
+                <label class="mb-1 block text-sm font-medium text-secondary">{{ t('committees.form.activeFromPhase') }}</label>
+                <select v-model="memberFormData.activeFromPhase" class="w-full rounded-lg border border-surface-dim px-4 py-2.5 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary">
+                  <option :value="undefined">{{ t('committees.form.allPhases') }}</option>
+                  <option v-for="opt in phaseOptions" :key="opt.value" :value="opt.value">{{ opt.label }}</option>
+                </select>
+              </div>
+              <div>
+                <label class="mb-1 block text-sm font-medium text-secondary">{{ t('committees.form.activeToPhase') }}</label>
+                <select v-model="memberFormData.activeToPhase" class="w-full rounded-lg border border-surface-dim px-4 py-2.5 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary">
+                  <option :value="undefined">{{ t('committees.form.allPhases') }}</option>
+                  <option v-for="opt in phaseOptions" :key="opt.value" :value="opt.value">{{ opt.label }}</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="flex items-center justify-end gap-3 pt-2">
+              <button type="button" class="rounded-lg border border-surface-dim px-4 py-2.5 text-sm font-medium text-secondary hover:bg-surface-ground" @click="showAddMemberDialog = false">{{ t('common.cancel') }}</button>
+              <button type="submit" :disabled="isSubmitting || !selectedUser" class="rounded-lg bg-primary px-4 py-2.5 text-sm font-medium text-white hover:bg-primary-dark disabled:opacity-50">
+                <i v-if="isSubmitting" class="pi pi-spin pi-spinner me-1 text-xs"></i>
+                {{ t('committees.actions.addMember') }}
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </Teleport>
+
+    <!-- ============================================================ -->
+    <!--  Change Status Dialog                                         -->
+    <!-- ============================================================ -->
+    <Teleport to="body">
+      <div v-if="showStatusDialog" class="fixed inset-0 z-50 flex items-center justify-center bg-black/40" @click.self="showStatusDialog = false">
+        <div class="mx-4 w-full max-w-sm rounded-xl bg-white p-6 shadow-xl">
+          <div class="mb-6 flex items-center justify-between">
+            <h2 class="text-lg font-bold text-secondary">{{ t('committees.dialog.changeStatusTitle') }}</h2>
+            <button class="rounded-lg p-1 text-tertiary hover:bg-surface-ground" @click="showStatusDialog = false">
+              <i class="pi pi-times"></i>
+            </button>
+          </div>
           <form class="space-y-4" @submit.prevent="handleChangeStatus">
             <div>
               <label class="mb-1 block text-sm font-medium text-secondary">{{ t('committees.form.newStatus') }}</label>
@@ -983,54 +1246,11 @@ onMounted(() => {
               <label class="mb-1 block text-sm font-medium text-secondary">{{ t('committees.form.reason') }}</label>
               <textarea v-model="statusChangeData.reason" rows="3" class="w-full rounded-lg border border-surface-dim px-4 py-2.5 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"></textarea>
             </div>
-            <div class="flex items-center justify-end gap-3">
+            <div class="flex items-center justify-end gap-3 pt-2">
               <button type="button" class="rounded-lg border border-surface-dim px-4 py-2.5 text-sm font-medium text-secondary hover:bg-surface-ground" @click="showStatusDialog = false">{{ t('common.cancel') }}</button>
-              <button type="submit" :disabled="isSubmitting" class="rounded-lg bg-warning px-4 py-2.5 text-sm font-medium text-white hover:bg-warning/90 disabled:opacity-50">{{ t('common.confirm') }}</button>
-            </div>
-          </form>
-        </div>
-      </div>
-    </Teleport>
-
-    <!-- Add Member Dialog -->
-    <Teleport to="body">
-      <div v-if="showAddMemberDialog" class="fixed inset-0 z-[60] flex items-center justify-center bg-black/40" @click.self="showAddMemberDialog = false">
-        <div class="mx-4 w-full max-w-md rounded-xl bg-white p-6 shadow-xl">
-          <h2 class="mb-4 text-lg font-bold text-secondary">{{ t('committees.dialog.addMemberTitle') }}</h2>
-          <form class="space-y-4" @submit.prevent="handleAddMember">
-            <div>
-              <label class="mb-1 block text-sm font-medium text-secondary">{{ t('committees.form.memberName') }}</label>
-              <input v-model="memberFormData.userFullName" type="text" required class="w-full rounded-lg border border-surface-dim px-4 py-2.5 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary" />
-            </div>
-            <div>
-              <label class="mb-1 block text-sm font-medium text-secondary">{{ t('committees.form.memberId') }}</label>
-              <input v-model="memberFormData.userId" type="text" required class="w-full rounded-lg border border-surface-dim px-4 py-2.5 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary" />
-            </div>
-            <div>
-              <label class="mb-1 block text-sm font-medium text-secondary">{{ t('committees.form.memberRole') }}</label>
-              <select v-model="memberFormData.role" class="w-full rounded-lg border border-surface-dim px-4 py-2.5 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary">
-                <option v-for="opt in memberRoleOptions" :key="opt.value" :value="opt.value">{{ opt.label }}</option>
-              </select>
-            </div>
-            <div class="grid grid-cols-2 gap-4">
-              <div>
-                <label class="mb-1 block text-sm font-medium text-secondary">{{ t('committees.form.activeFromPhase') }}</label>
-                <select v-model="memberFormData.activeFromPhase" class="w-full rounded-lg border border-surface-dim px-4 py-2.5 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary">
-                  <option v-for="opt in phaseOptions" :key="opt.value" :value="opt.value">{{ opt.label }}</option>
-                </select>
-              </div>
-              <div>
-                <label class="mb-1 block text-sm font-medium text-secondary">{{ t('committees.form.activeToPhase') }}</label>
-                <select v-model="memberFormData.activeToPhase" class="w-full rounded-lg border border-surface-dim px-4 py-2.5 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary">
-                  <option v-for="opt in phaseOptions" :key="opt.value" :value="opt.value">{{ opt.label }}</option>
-                </select>
-              </div>
-            </div>
-            <div class="flex items-center justify-end gap-3">
-              <button type="button" class="rounded-lg border border-surface-dim px-4 py-2.5 text-sm font-medium text-secondary hover:bg-surface-ground" @click="showAddMemberDialog = false">{{ t('common.cancel') }}</button>
-              <button type="submit" :disabled="isSubmitting" class="rounded-lg bg-primary px-4 py-2.5 text-sm font-medium text-white hover:bg-primary-dark disabled:opacity-50">
+              <button type="submit" :disabled="isSubmitting" class="rounded-lg bg-warning px-4 py-2.5 text-sm font-medium text-white hover:bg-warning/90 disabled:opacity-50">
                 <i v-if="isSubmitting" class="pi pi-spin pi-spinner me-1 text-xs"></i>
-                {{ t('committees.actions.addMember') }}
+                {{ t('committees.actions.confirm') }}
               </button>
             </div>
           </form>

@@ -1427,7 +1427,9 @@
       "daysRemaining": "الأيام المتبقية",
       "days": "يوم",
       "workload": "عبء العمل",
-      "phaseRange": "نطاق المراحل"
+      "phaseRange": "نطاق المراحل",
+      "scope": "نطاق الصلاحية",
+      "linkedCompetitions": "منافسات مرتبطة"
     },
     "memberTable": {
       "name": "الاسم",
@@ -1448,14 +1450,16 @@
       "dissolve": "حل اللجنة",
       "addMember": "إضافة عضو",
       "removeMember": "إزالة عضو",
-      "aiAnalysis": "تحليل ذكي"
+      "aiAnalysis": "تحليل ذكي",
+      "confirm": "تأكيد"
     },
     "dialog": {
       "createTitle": "إنشاء لجنة دائمة جديدة",
       "createTempTitle": "إنشاء لجنة مؤقتة جديدة",
       "editTitle": "تعديل بيانات اللجنة",
       "changeStatusTitle": "تغيير حالة اللجنة",
-      "addMemberTitle": "إضافة عضو جديد"
+      "addMemberTitle": "إضافة عضو جديد",
+      "createPermTitle": "إنشاء لجنة دائمة جديدة"
     },
     "form": {
       "nameAr": "اسم اللجنة (عربي)",
@@ -1473,14 +1477,24 @@
       "memberName": "اسم العضو",
       "memberId": "معرف المستخدم",
       "memberRole": "الدور",
-      "selectCompetition": "اختر المنافسة المرتبطة"
+      "selectCompetition": "اختر المنافسة المرتبطة",
+      "scopeType": "نطاق صلاحية اللجنة",
+      "searchUser": "البحث عن مستخدم",
+      "searchUserPlaceholder": "ابحث بالاسم أو البريد الإلكتروني...",
+      "noUsersFound": "لم يتم العثور على مستخدمين مطابقين",
+      "selectCompetitions": "اختر المنافسات المرتبطة",
+      "noCompetitions": "لا توجد منافسات متاحة",
+      "selectedCount": "تم اختيار {count} منافسة",
+      "role": "الدور في اللجنة"
     },
     "detail": {
       "endDate": "تاريخ النهاية",
       "members": "الأعضاء",
       "noMembers": "لا يوجد أعضاء في هذه اللجنة",
       "noDescription": "لا يوجد وصف",
-      "phaseRange": "نطاق المراحل"
+      "phaseRange": "نطاق المراحل",
+      "linkedCompetitions": "المنافسات المرتبطة",
+      "removed": "تم الإزالة"
     },
     "filters": {
       "allTypes": "جميع الأنواع"
@@ -1499,7 +1513,8 @@
       "recommendations": "التوصيات",
       "risks": "المخاطر المحتملة",
       "detailedRecommendations": "توصيات تفصيلية",
-      "noData": "لا تتوفر بيانات كافية للتحليل"
+      "noData": "لا تتوفر بيانات كافية للتحليل",
+      "unavailable": "التحليل الذكي غير متاح حالياً"
     },
     "prompts": {
       "removalReason": "يرجى إدخال سبب إزالة العضو"
@@ -1512,10 +1527,21 @@
       "statusChangeFailed": "فشل في تغيير حالة اللجنة",
       "addMemberFailed": "فشل في إضافة العضو",
       "removeMemberFailed": "فشل في إزالة العضو",
-      "aiAnalysisFailed": "فشل في تحليل بيانات اللجنة"
+      "aiAnalysisFailed": "فشل في تحليل بيانات اللجنة",
+      "selectUserRequired": "يجب اختيار مستخدم من القائمة"
     },
     "pagination": {
       "showing": "عرض {from} - {to} من {total}"
+    },
+    "scopeTypes": {
+      "comprehensive": "شاملة - جميع المراحل لجميع المنافسات",
+      "specificPhasesAll": "مراحل محددة - لجميع المنافسات",
+      "specificPhasesSpecific": "مراحل محددة - لمنافسات محددة"
+    },
+    "scopeHints": {
+      "comprehensive": "اللجنة تعمل على جميع المراحل لجميع المنافسات المرتبطة بالجهة",
+      "specificPhasesAll": "اللجنة تعمل على مراحل محددة فقط ولكن لجميع المنافسات",
+      "specificPhasesSpecific": "اللجنة تعمل على مراحل محددة لمنافسات محددة فقط"
     }
   },
   "approvals": {

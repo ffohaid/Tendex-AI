@@ -11,9 +11,10 @@ public sealed record CreateCommitteeCommand(
     string NameEn,
     CommitteeType Type,
     bool IsPermanent,
+    CommitteeScopeType ScopeType,
     string? Description,
     DateTime StartDate,
     DateTime EndDate,
-    Guid? CompetitionId,
+    List<Guid>? CompetitionIds,
     CompetitionPhase? ActiveFromPhase,
     CompetitionPhase? ActiveToPhase) : ICommand<Guid>;

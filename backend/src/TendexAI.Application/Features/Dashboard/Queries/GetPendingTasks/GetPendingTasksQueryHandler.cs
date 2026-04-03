@@ -98,6 +98,8 @@ public sealed class GetPendingTasksQueryHandler
             var competitions = dbContext.GetDbSet<Competition>();
 
             // Get competitions where the user is an active committee member
+            var committeeCompetitions = dbContext.GetDbSet<CommitteeCompetition>();
+
             var userCommitteeCompetitionIds = await committeeMembers
                 .AsNoTracking()
                 .Where(cm => cm.UserId == userId && cm.IsActive)
@@ -105,13 +107,16 @@ public sealed class GetPendingTasksQueryHandler
                     committees.AsNoTracking().Where(c => c.TenantId == tenantId),
                     cm => cm.CommitteeId,
                     c => c.Id,
-                    (cm, c) => new { c.CompetitionId, CommitteeType = c.Type, cm.Role })
-                .Where(x => x.CompetitionId.HasValue)
+                    (cm, c) => new { CommitteeId = c.Id, CommitteeType = c.Type, cm.Role })
+                .Join(
+                    committeeCompetitions.AsNoTracking(),
+                    x => x.CommitteeId,
+                    cc => cc.CommitteeId,
+                    (x, cc) => new { cc.CompetitionId, x.CommitteeType, x.Role })
                 .ToListAsync(cancellationToken);
 
             var competitionIds = userCommitteeCompetitionIds
-                .Where(x => x.CompetitionId.HasValue)
-                .Select(x => x.CompetitionId!.Value)
+                .Select(x => x.CompetitionId)
                 .Distinct()
                 .ToList();
 

@@ -22,16 +22,19 @@ public sealed class ValidateConflictOfInterestQueryHandler
         ValidateConflictOfInterestQuery request,
         CancellationToken cancellationToken)
     {
-        var committee = await _committeeRepository.GetByIdAsync(request.CommitteeId, cancellationToken);
+        var committee = await _committeeRepository.GetByIdWithMembersAsync(request.CommitteeId, cancellationToken);
         if (committee is null)
             return Result.Failure<ConflictOfInterestResultDto>("Committee not found.");
 
         var existingMembershipDescriptions = new List<string>();
 
-        if (committee.CompetitionId.HasValue)
+        // Check conflict of interest for each linked competition
+        var competitionIds = committee.Competitions.Select(c => c.CompetitionId).ToList();
+
+        foreach (var competitionId in competitionIds)
         {
             var userCommittees = await _committeeRepository.GetCommitteesByUserIdAsync(
-                request.UserId, committee.CompetitionId.Value, cancellationToken);
+                request.UserId, competitionId, cancellationToken);
 
             var existingMemberships = userCommittees
                 .SelectMany(c => c.Members

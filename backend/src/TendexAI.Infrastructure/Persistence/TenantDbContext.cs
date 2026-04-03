@@ -49,6 +49,7 @@ public sealed class TenantDbContext : DbContext, IUnitOfWork, ITenantDbContext
     // ----- Committee DbSets -----
     public DbSet<Committee> Committees => Set<Committee>();
     public DbSet<CommitteeMember> CommitteeMembers => Set<CommitteeMember>();
+    public DbSet<CommitteeCompetition> CommitteeCompetitions => Set<CommitteeCompetition>();
 
     // ----- Evaluation DbSets -----
     public DbSet<SupplierOffer> SupplierOffers => Set<SupplierOffer>();
