@@ -1,4 +1,3 @@
-using Microsoft.Data.SqlClient;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using TendexAI.Application.Common.Interfaces;
@@ -137,12 +136,32 @@ public sealed class CreateTenantCommandHandler : ICommandHandler<CreateTenantCom
         var masterConnectionString = _configuration.GetConnectionString("MasterPlatform")
             ?? throw new InvalidOperationException("MasterPlatform connection string is not configured.");
 
-        var builder = new SqlConnectionStringBuilder(masterConnectionString)
-        {
-            InitialCatalog = databaseName
-        };
+        // Replace the Database/Initial Catalog in the master connection string
+        var parts = masterConnectionString.Split(';', StringSplitOptions.RemoveEmptyEntries);
+        var newParts = new List<string>();
+        var dbReplaced = false;
 
-        return builder.ConnectionString;
+        foreach (var part in parts)
+        {
+            var trimmed = part.Trim();
+            if (trimmed.StartsWith("Database=", StringComparison.OrdinalIgnoreCase) ||
+                trimmed.StartsWith("Initial Catalog=", StringComparison.OrdinalIgnoreCase))
+            {
+                newParts.Add($"Database={databaseName}");
+                dbReplaced = true;
+            }
+            else
+            {
+                newParts.Add(trimmed);
+            }
+        }
+
+        if (!dbReplaced)
+        {
+            newParts.Add($"Database={databaseName}");
+        }
+
+        return string.Join(";", newParts) + ";";
     }
 
     private static TenantDto MapToDto(Tenant tenant)
