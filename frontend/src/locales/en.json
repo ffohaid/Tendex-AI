@@ -32,7 +32,12 @@
     "selectAll": "Select All",
     "selected": "Selected",
     "showing": "Showing",
-    "of": "of"
+    "of": "of",
+    "refresh": "Refresh",
+    "results": "results",
+    "minutes": "minutes",
+    "hours": "hours",
+    "all": "All"
   },
   "auth": {
     "login": "Login",
@@ -150,8 +155,9 @@
       "aiSettings": "AI Settings",
       "subscriptions": "Plans & Subscriptions",
       "consumption": "Consumption Monitoring",
-      "support": "Technical Support",
-      "health": "System Health"
+      "support": "Support Tickets",
+      "health": "System Health",
+      "auditLog": "Audit Log"
     },
     "workflow": {
       "title": "Approval Workflows",
@@ -173,7 +179,8 @@
     "systemHealth": "System Health",
     "consumption": "Consumption Monitoring",
     "subscriptions": "Plans & Subscriptions",
-    "operatorPortal": "Operator Portal"
+    "operatorPortal": "Operator Portal",
+    "support": "Support"
   },
   "header": {
     "searchPlaceholder": "Search the platform...",
@@ -816,7 +823,8 @@
       "active": "Active",
       "suspended": "Suspended",
       "pendingProvisioning": "Pending Provisioning",
-      "cancelled": "Cancelled"
+      "cancelled": "Cancelled",
+      "archived": "Archived"
     },
     "actions": {
       "create": "Add Entity",
@@ -901,6 +909,9 @@
     },
     "errors": {
       "unexpected": "An unexpected error occurred. Please try again."
+    },
+    "filters": {
+      "allStatuses": "All Statuses"
     }
   },
   "purchaseOrders": {
@@ -2586,5 +2597,85 @@
     "pending": "Pending",
     "inProgress": "In Progress",
     "skipped": "Skipped"
+  },
+  "support": {
+    "title": "Technical Support",
+    "tickets": "Support Tickets",
+    "newTicket": "New Ticket",
+    "ticketId": "Ticket ID",
+    "subject": "Subject",
+    "description": "Description",
+    "priority": "Priority",
+    "status": "Status",
+    "category": "Category",
+    "createdAt": "Created At",
+    "updatedAt": "Last Updated",
+    "assignedTo": "Assigned To",
+    "submittedBy": "Submitted By",
+    "tenant": "Organization",
+    "messages": "Messages",
+    "addMessage": "Add Reply",
+    "messagePlaceholder": "Type your reply here...",
+    "sendMessage": "Send",
+    "aiSuggestion": "AI Suggestion",
+    "useAiSuggestion": "Use Suggestion",
+    "priorities": {
+      "low": "Low",
+      "medium": "Medium",
+      "high": "High",
+      "critical": "Critical"
+    },
+    "statuses": {
+      "open": "Open",
+      "inProgress": "In Progress",
+      "waitingOnCustomer": "Waiting on Customer",
+      "waitingOnSupport": "Waiting on Support",
+      "resolved": "Resolved",
+      "closed": "Closed"
+    },
+    "categories": {
+      "technical": "Technical Issue",
+      "account": "Account Management",
+      "billing": "Billing & Subscriptions",
+      "feature": "Feature Request",
+      "training": "Training & Inquiry",
+      "other": "Other"
+    },
+    "noTickets": "No Support Tickets",
+    "noTicketsDesc": "No support tickets have been created yet.",
+    "createFirst": "Create First Ticket",
+    "filterByStatus": "Filter by Status",
+    "filterByPriority": "Filter by Priority",
+    "allStatuses": "All Statuses",
+    "allPriorities": "All Priorities",
+    "closeTicket": "Close Ticket",
+    "reopenTicket": "Reopen Ticket",
+    "escalate": "Escalate",
+    "resolve": "Resolve",
+    "stats": {
+      "total": "Total Tickets",
+      "open": "Open",
+      "inProgress": "In Progress",
+      "resolved": "Resolved",
+      "avgResponseTime": "Avg Response Time"
+    }
+  },
+  "auditLog": {
+    "title": "Audit Log",
+    "description": "View all platform-level activities and actions",
+    "action": "Action",
+    "user": "User",
+    "tenant": "Organization",
+    "timestamp": "Timestamp",
+    "details": "Details",
+    "ipAddress": "IP Address",
+    "userAgent": "Browser",
+    "resource": "Resource",
+    "noLogs": "No logs found",
+    "filterByAction": "Filter by Action",
+    "filterByTenant": "Filter by Organization",
+    "filterByUser": "Filter by User",
+    "dateRange": "Date Range",
+    "exportLogs": "Export Logs"
   }
 }

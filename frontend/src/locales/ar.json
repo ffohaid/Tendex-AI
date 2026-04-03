@@ -32,7 +32,12 @@
     "selectAll": "تحديد الكل",
     "selected": "محدد",
     "showing": "عرض",
-    "of": "من"
+    "of": "من",
+    "refresh": "تحديث",
+    "results": "نتيجة",
+    "minutes": "دقيقة",
+    "hours": "ساعة",
+    "all": "الكل"
   },
   "auth": {
     "login": "تسجيل الدخول",
@@ -151,7 +156,8 @@
       "subscriptions": "الخطط والاشتراكات",
       "consumption": "مراقبة الاستهلاك",
       "support": "الدعم الفني",
-      "health": "صحة النظام"
+      "health": "صحة النظام",
+      "auditLog": "سجل التدقيق"
     },
     "workflow": {
       "title": "مسارات الاعتماد",
@@ -173,7 +179,8 @@
     "systemHealth": "صحة النظام",
     "consumption": "مراقبة الاستهلاك",
     "subscriptions": "الاشتراكات والخطط",
-    "operatorPortal": "لوحة المشغل"
+    "operatorPortal": "لوحة المشغل",
+    "support": "الدعم الفني"
   },
   "header": {
     "searchPlaceholder": "البحث في المنصة...",
@@ -816,7 +823,8 @@
       "active": "نشطة",
       "suspended": "معلقة",
       "pendingProvisioning": "قيد التجهيز",
-      "cancelled": "ملغاة"
+      "cancelled": "ملغاة",
+      "archived": "مؤرشفة"
     },
     "actions": {
       "create": "إضافة جهة",
@@ -901,6 +909,14 @@
     },
     "errors": {
       "unexpected": "حدث خطأ غير متوقع. يرجى المحاولة مرة أخرى."
+    },
+    "filters": {
+      "allStatuses": "جميع الحالات",
+      "active": "نشطة",
+      "suspended": "معلقة",
+      "pendingProvisioning": "قيد التجهيز",
+      "cancelled": "ملغاة",
+      "archived": "مؤرشفة"
     }
   },
   "purchaseOrders": {
@@ -2586,5 +2602,85 @@
     "pending": "بانتظار",
     "inProgress": "جاري",
     "skipped": "تم تخطيه"
+  },
+  "support": {
+    "title": "الدعم الفني",
+    "tickets": "تذاكر الدعم",
+    "newTicket": "تذكرة جديدة",
+    "ticketId": "رقم التذكرة",
+    "subject": "الموضوع",
+    "description": "الوصف",
+    "priority": "الأولوية",
+    "status": "الحالة",
+    "category": "التصنيف",
+    "createdAt": "تاريخ الإنشاء",
+    "updatedAt": "آخر تحديث",
+    "assignedTo": "مسند إلى",
+    "submittedBy": "مقدم من",
+    "tenant": "الجهة",
+    "messages": "الرسائل",
+    "addMessage": "إضافة رد",
+    "messagePlaceholder": "اكتب ردك هنا...",
+    "sendMessage": "إرسال",
+    "aiSuggestion": "اقتراح الذكاء الاصطناعي",
+    "useAiSuggestion": "استخدام الاقتراح",
+    "priorities": {
+      "low": "منخفضة",
+      "medium": "متوسطة",
+      "high": "عالية",
+      "critical": "حرجة"
+    },
+    "statuses": {
+      "open": "مفتوحة",
+      "inProgress": "قيد المعالجة",
+      "waitingOnCustomer": "بانتظار العميل",
+      "waitingOnSupport": "بانتظار الدعم",
+      "resolved": "تم الحل",
+      "closed": "مغلقة"
+    },
+    "categories": {
+      "technical": "مشكلة تقنية",
+      "account": "إدارة الحساب",
+      "billing": "الفواتير والاشتراكات",
+      "feature": "طلب ميزة",
+      "training": "تدريب واستفسار",
+      "other": "أخرى"
+    },
+    "noTickets": "لا توجد تذاكر دعم",
+    "noTicketsDesc": "لم يتم إنشاء أي تذاكر دعم بعد.",
+    "createFirst": "إنشاء أول تذكرة",
+    "filterByStatus": "تصفية حسب الحالة",
+    "filterByPriority": "تصفية حسب الأولوية",
+    "allStatuses": "جميع الحالات",
+    "allPriorities": "جميع الأولويات",
+    "closeTicket": "إغلاق التذكرة",
+    "reopenTicket": "إعادة فتح التذكرة",
+    "escalate": "تصعيد",
+    "resolve": "حل",
+    "stats": {
+      "total": "إجمالي التذاكر",
+      "open": "مفتوحة",
+      "inProgress": "قيد المعالجة",
+      "resolved": "تم الحل",
+      "avgResponseTime": "متوسط وقت الاستجابة"
+    }
+  },
+  "auditLog": {
+    "title": "سجل التدقيق",
+    "description": "عرض جميع الأنشطة والإجراءات على مستوى المنصة",
+    "action": "الإجراء",
+    "user": "المستخدم",
+    "tenant": "الجهة",
+    "timestamp": "الوقت",
+    "details": "التفاصيل",
+    "ipAddress": "عنوان IP",
+    "userAgent": "المتصفح",
+    "resource": "المورد",
+    "noLogs": "لا توجد سجلات",
+    "filterByAction": "تصفية حسب الإجراء",
+    "filterByTenant": "تصفية حسب الجهة",
+    "filterByUser": "تصفية حسب المستخدم",
+    "dateRange": "النطاق الزمني",
+    "exportLogs": "تصدير السجلات"
   }
 }

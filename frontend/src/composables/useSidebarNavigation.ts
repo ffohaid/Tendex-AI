@@ -29,10 +29,15 @@ const TENANT_ADMIN_ALIASES = [
  *
  * Governance Role Hierarchy:
  * ─────────────────────────────────────────────────────────────────
- * 1. OperatorSuperAdmin    → Sees ONLY the operator panel
- * 2. TenantPrimaryAdmin    → Sees everything within their tenant
- *                            (bypasses all permission checks)
- * 3. All other roles       → Controlled by permission matrix
+ * 1. Dual-role user (both Operator + Tenant Admin)
+ *    → Sees BOTH the operator panel AND the tenant panel
+ * 2. OperatorSuperAdmin (only)
+ *    → Sees ONLY the operator panel
+ * 3. TenantPrimaryAdmin (only)
+ *    → Sees everything within their tenant (bypasses all permission checks)
+ *    → Does NOT see operator panel
+ * 4. All other roles
+ *    → Controlled by permission matrix
  *
  * Implements:
  * - Accordion behavior: when a parent menu item is expanded,
@@ -47,8 +52,7 @@ export function useSidebarNavigation(items: NavigationItem[]) {
   const expandedKey = ref<string | null>(null)
 
   /**
-   * Check if the current user is the Operator Primary Admin.
-   * This user sees ONLY the operator panel.
+   * Check if the current user is the Operator Admin.
    */
   const isOperatorAdmin = computed(() => {
     return authStore.userRoles.some(r => OPERATOR_ADMIN_ALIASES.includes(r))
@@ -56,10 +60,17 @@ export function useSidebarNavigation(items: NavigationItem[]) {
 
   /**
    * Check if the current user is the Tenant Primary Admin.
-   * This user bypasses all permission checks within their tenant.
    */
   const isTenantAdmin = computed(() => {
     return authStore.userRoles.some(r => TENANT_ADMIN_ALIASES.includes(r))
+  })
+
+  /**
+   * Check if the current user has BOTH operator and tenant admin roles.
+   * Dual-role users see both panels.
+   */
+  const isDualRole = computed(() => {
+    return isOperatorAdmin.value && isTenantAdmin.value
   })
 
   /**
@@ -69,19 +80,28 @@ export function useSidebarNavigation(items: NavigationItem[]) {
     return OPERATOR_ADMIN_ALIASES.includes(role)
   }
 
-
   /**
    * Check if a single navigation item is accessible to the current user.
    */
   function isItemAccessible(item: NavigationItem): boolean {
-    // ── Operator Primary Admin: ONLY sees operator panel ──
-    if (isOperatorAdmin.value) {
+    // ── Dual-role user: sees BOTH operator and tenant panels ──
+    if (isDualRole.value) {
+      // Show operator panel items
+      if (item.key === 'operator' || item.requiredRoles?.some(r => isOperatorRole(r))) {
+        return true
+      }
+      // Show all tenant items (TenantPrimaryAdmin bypasses permissions)
+      return true
+    }
+
+    // ── Operator Admin ONLY: sees ONLY operator panel ──
+    if (isOperatorAdmin.value && !isTenantAdmin.value) {
       return item.key === 'operator' ||
         (item.requiredRoles?.some(r => isOperatorRole(r)) ?? false)
     }
 
-    // ── Tenant Primary Admin: sees everything EXCEPT operator panel ──
-    if (isTenantAdmin.value) {
+    // ── Tenant Primary Admin ONLY: sees everything EXCEPT operator panel ──
+    if (isTenantAdmin.value && !isOperatorAdmin.value) {
       // Block operator panel for tenant admins
       if (item.requiredRoles?.some(r => isOperatorRole(r))) return false
       return true
@@ -171,6 +191,7 @@ export function useSidebarNavigation(items: NavigationItem[]) {
     filteredNavigation,
     isOperatorAdmin,
     isTenantAdmin,
+    isDualRole,
     toggleExpand,
     isExpanded,
     collapseAll,

@@ -375,6 +375,38 @@ const routes: RouteRecordRaw[] = [
           requiredRoles: ['OperatorPrimaryAdmin'],
         },
       },
+      /* Operator Portal - Support Tickets */
+      {
+        path: 'operator/support',
+        name: 'OperatorSupportTickets',
+        component: () => import('@/views/operator/SupportTicketsView.vue'),
+        meta: {
+          title: 'Tendex AI - Support Tickets',
+          requiresAuth: true,
+          requiredRoles: ['OperatorPrimaryAdmin'],
+        },
+      },
+      {
+        path: 'operator/audit-log',
+        name: 'OperatorAuditLog',
+        component: () => import('@/views/operator/AuditLogView.vue'),
+        meta: {
+          title: 'Tendex AI - Audit Log',
+          requiresAuth: true,
+          requiredRoles: ['OperatorPrimaryAdmin'],
+        },
+      },
+      /* Tenant Support Tickets */
+      {
+        path: 'support',
+        name: 'SupportTickets',
+        component: () => import('@/views/support/SupportTicketsView.vue'),
+        meta: {
+          title: 'Tendex AI - Support',
+          requiresAuth: true,
+          requiredPermission: 'support.view',
+        },
+      },
     ],
   },
   {
@@ -498,8 +530,15 @@ router.beforeEach((to, _from, next) => {
     const isOperatorAdmin = userRoles.some(r => OPERATOR_ALIASES.includes(r))
     const isTenantAdmin = userRoles.some(r => TENANT_ADMIN_ALIASES.includes(r))
 
-    // ── OperatorPrimaryAdmin: can ONLY access operator routes ──
-    if (isOperatorAdmin) {
+    const isDualRole = isOperatorAdmin && isTenantAdmin
+
+    // ── Dual-role user (both Operator + Tenant Admin): can access BOTH panels ──
+    if (isDualRole) {
+      // Dual-role users bypass all permission checks
+      // They can access both operator and tenant routes
+    }
+    // ── OperatorPrimaryAdmin ONLY: can ONLY access operator routes ──
+    else if (isOperatorAdmin && !isTenantAdmin) {
       const isOperatorRoute = to.path.startsWith('/operator') || to.name === 'Dashboard'
       const requiredRoles = to.meta.requiredRoles as string[] | undefined
       const isAllowed = isOperatorRoute || requiredRoles?.some(r => OPERATOR_ALIASES.includes(r))
@@ -508,8 +547,8 @@ router.beforeEach((to, _from, next) => {
         return
       }
     }
-    // ── TenantPrimaryAdmin: bypasses permission checks, but NOT operator routes ──
-    else if (isTenantAdmin) {
+    // ── TenantPrimaryAdmin ONLY: bypasses permission checks, but NOT operator routes ──
+    else if (isTenantAdmin && !isOperatorAdmin) {
       const requiredRoles = to.meta.requiredRoles as string[] | undefined
       if (requiredRoles?.some(r => OPERATOR_ALIASES.includes(r))) {
         next({ name: 'AccessDenied' })

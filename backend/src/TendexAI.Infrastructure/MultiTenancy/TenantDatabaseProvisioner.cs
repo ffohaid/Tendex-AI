@@ -132,20 +132,9 @@ public sealed class TenantDatabaseProvisioner : ITenantDatabaseProvisioner
         // and cannot be parameterized in CREATE DATABASE statement
         var sanitizedName = SanitizeDatabaseName(databaseName);
         var createCommand = connection.CreateCommand();
-        createCommand.CommandText = $"""
-            CREATE DATABASE [{sanitizedName}]
-            CONTAINMENT = NONE
-            ON PRIMARY (
-                NAME = N'{sanitizedName}',
-                SIZE = 64MB,
-                FILEGROWTH = 64MB
-            )
-            LOG ON (
-                NAME = N'{sanitizedName}_log',
-                SIZE = 32MB,
-                FILEGROWTH = 32MB
-            )
-            """;
+        // Use simple CREATE DATABASE without explicit file paths
+        // SQL Server in Docker will use default data directory
+        createCommand.CommandText = $"CREATE DATABASE [{sanitizedName}]";
 
         await createCommand.ExecuteNonQueryAsync(cancellationToken);
 

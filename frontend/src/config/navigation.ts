@@ -206,6 +206,15 @@ export const sidebarNavigation: NavigationItem[] = [
     permission: 'inquiries.view',
   },
 
+  /* ── Support Tickets (all authenticated users) ── */
+  {
+    key: 'support',
+    labelKey: 'nav.support',
+    icon: 'pi pi-ticket',
+    route: 'SupportTickets',
+    permission: 'support.view',
+  },
+
   /* ── Reports (TenantPrimaryAdmin only) ── */
   {
     key: 'reports',
@@ -276,6 +285,18 @@ export const sidebarNavigation: NavigationItem[] = [
         labelKey: 'operator.subscriptions',
         icon: 'pi pi-credit-card',
         route: 'OperatorSubscriptions',
+      },
+      {
+        key: 'operator-support',
+        labelKey: 'nav.operator.support',
+        icon: 'pi pi-ticket',
+        route: 'OperatorSupportTickets',
+      },
+      {
+        key: 'operator-audit-log',
+        labelKey: 'nav.operator.auditLog',
+        icon: 'pi pi-history',
+        route: 'OperatorAuditLog',
       },
       {
         key: 'operator-impersonation',
