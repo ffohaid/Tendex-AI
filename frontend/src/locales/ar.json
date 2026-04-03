@@ -1793,7 +1793,24 @@
       "createSuccess": "تم إنشاء الدور بنجاح",
       "updateSuccess": "تم تحديث الدور بنجاح",
       "activateSuccess": "تم تفعيل الدور بنجاح",
-      "deactivateSuccess": "تم تعطيل الدور بنجاح"
+      "deactivateSuccess": "تم تعطيل الدور بنجاح",
+      "modules": {
+        "Dashboard": "لوحة التحكم",
+        "Users": "المستخدمون",
+        "Roles": "الأدوار",
+        "RFP": "كراسات الشروط",
+        "Competitions": "المنافسات",
+        "Committees": "اللجان",
+        "Evaluation": "الفحص والتقييم",
+        "Offers": "العروض",
+        "Inquiries": "الاستفسارات",
+        "KnowledgeBase": "قاعدة المعرفة",
+        "AI": "الذكاء الاصطناعي",
+        "Settings": "الإعدادات",
+        "Reports": "التقارير",
+        "Workflow": "سير العمل",
+        "AuditLog": "سجل التدقيق"
+      }
     }
   },
   "reports": {
@@ -2106,6 +2123,18 @@
         "bestPractices": "أفضل ممارسات تعيين الأدوار والصلاحيات",
         "secureStructure": "إعداد هيكل صلاحيات آمن للجان",
         "lifecycleRoles": "الأدوار المطلوبة لدورة حياة المنافسة"
+      }
+    },
+    "userManagement": {
+      "title": "المساعد الذكي",
+      "placeholder": "اسأل المساعد الذكي عن إدارة المستخدمين والأدوار...",
+      "send": "إرسال",
+      "thinking": "جاري التحليل...",
+      "suggestions": {
+        "roleSuggestion": "اقتراح أدوار مناسبة",
+        "permissionAnalysis": "تحليل الصلاحيات",
+        "securityReview": "مراجعة أمنية",
+        "bestPractices": "أفضل الممارسات"
       }
     }
   },

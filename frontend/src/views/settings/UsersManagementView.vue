@@ -278,7 +278,7 @@ function goToInvPage(page: number) { if (page >= 1 && page <= invTotalPages.valu
 /* Watchers */
 watch(currentPage, () => loadUsers())
 watch(invCurrentPage, () => loadInvitations())
-watch(activeTab, (tab) => { if (tab === 'invitations' && invitations.value.length === 0) loadInvitations() })
+watch(activeTab, (tab) => { if (tab === 'invitations') loadInvitations() })
 
 /* Lifecycle */
 onMounted(() => { loadUsers(); loadRoles() })

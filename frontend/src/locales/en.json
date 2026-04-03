@@ -1793,7 +1793,24 @@
       "createSuccess": "Role created successfully",
       "updateSuccess": "Role updated successfully",
       "activateSuccess": "Role activated successfully",
-      "deactivateSuccess": "Role deactivated successfully"
+      "deactivateSuccess": "Role deactivated successfully",
+      "modules": {
+        "Dashboard": "Dashboard",
+        "Users": "Users",
+        "Roles": "Roles",
+        "RFP": "RFP (Specifications)",
+        "Competitions": "Competitions",
+        "Committees": "Committees",
+        "Evaluation": "Evaluation",
+        "Offers": "Offers",
+        "Inquiries": "Inquiries",
+        "KnowledgeBase": "Knowledge Base",
+        "AI": "Artificial Intelligence",
+        "Settings": "Settings",
+        "Reports": "Reports",
+        "Workflow": "Workflow",
+        "AuditLog": "Audit Log"
+      }
     }
   },
   "reports": {
@@ -2106,6 +2123,18 @@
         "bestPractices": "Best practices for assigning roles and permissions",
         "secureStructure": "Setting up a secure permission structure for committees",
         "lifecycleRoles": "Required roles for the full competition lifecycle"
+      }
+    },
+    "userManagement": {
+      "title": "AI Assistant",
+      "placeholder": "Ask the AI assistant about user and role management...",
+      "send": "Send",
+      "thinking": "Analyzing...",
+      "suggestions": {
+        "roleSuggestion": "Role Suggestions",
+        "permissionAnalysis": "Permission Analysis",
+        "securityReview": "Security Review",
+        "bestPractices": "Best Practices"
       }
     }
   },
