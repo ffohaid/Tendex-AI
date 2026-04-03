@@ -491,14 +491,18 @@ router.beforeEach((to, _from, next) => {
       // Ignore parse errors
     }
 
-    const isOperatorAdmin = userRoles.includes('OperatorPrimaryAdmin')
-    const isTenantAdmin = userRoles.includes('TenantPrimaryAdmin')
+    // Role name aliases to support both old and new naming conventions
+    const OPERATOR_ALIASES = ['OperatorPrimaryAdmin', 'Operator Super Admin', 'OperatorSuperAdmin', 'SuperAdmin', 'Super Admin']
+    const TENANT_ADMIN_ALIASES = ['TenantPrimaryAdmin', 'Tenant Primary Admin', 'Tenant Owner']
+
+    const isOperatorAdmin = userRoles.some(r => OPERATOR_ALIASES.includes(r))
+    const isTenantAdmin = userRoles.some(r => TENANT_ADMIN_ALIASES.includes(r))
 
     // ── OperatorPrimaryAdmin: can ONLY access operator routes ──
     if (isOperatorAdmin) {
       const isOperatorRoute = to.path.startsWith('/operator') || to.name === 'Dashboard'
       const requiredRoles = to.meta.requiredRoles as string[] | undefined
-      const isAllowed = isOperatorRoute || requiredRoles?.includes('OperatorPrimaryAdmin')
+      const isAllowed = isOperatorRoute || requiredRoles?.some(r => OPERATOR_ALIASES.includes(r))
       if (!isAllowed) {
         next({ name: 'OperatorDashboard' })
         return
@@ -507,7 +511,7 @@ router.beforeEach((to, _from, next) => {
     // ── TenantPrimaryAdmin: bypasses permission checks, but NOT operator routes ──
     else if (isTenantAdmin) {
       const requiredRoles = to.meta.requiredRoles as string[] | undefined
-      if (requiredRoles?.includes('OperatorPrimaryAdmin')) {
+      if (requiredRoles?.some(r => OPERATOR_ALIASES.includes(r))) {
         next({ name: 'AccessDenied' })
         return
       }

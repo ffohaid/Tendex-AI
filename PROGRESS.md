@@ -3295,3 +3295,55 @@
 - **النشر:** ✅ تم النشر بنجاح على https://netaq.pro
 - **Commit:** `feat: overhaul user management & roles system with AI integration`
 
+
+---
+
+## 2026-04-03: Role Name Alignment & Sidebar Navigation Fix
+
+### المشكلة
+- أسماء الأدوار في قاعدة البيانات لم تكن متطابقة مع ما يتوقعه الـ Frontend
+- عمود `IsProtected` كان مفقوداً من جدول `Roles` في قاعدة البيانات
+- المستخدم `admin@netaq.pro` كان يملك دورين متعارضين (Operator Super Admin + Tenant Owner)
+
+### الإصلاحات المنفذة
+
+#### 1. تحديث أسماء الأدوار في قاعدة البيانات
+- تم تحديث `Tenant Owner` → `Tenant Primary Admin` (المسؤول الأول بالجهة)
+- تم تحديث `Super Admin` → `Operator Super Admin` (المسؤول الأول)
+- تم التحديث في كلتا قاعدتي البيانات: `master_platform` و `tenant_a86f3588`
+
+#### 2. إضافة عمود `IsProtected` لجدول Roles
+- تمت إضافة العمود `IsProtected BIT NOT NULL DEFAULT 0` لكلتا قاعدتي البيانات
+- تم تعيين `IsProtected = 1` للأدوار المحمية: `Operator Super Admin` و `Tenant Primary Admin`
+
+#### 3. تحديث Frontend لدعم أسماء الأدوار المتعددة
+- تم تحديث `useSidebarNavigation.ts` لدعم aliases للأدوار (القديمة والجديدة)
+- تم تحديث `router/index.ts` لدعم نفس الـ aliases في route guards
+- الأسماء المدعومة لـ Operator: `OperatorPrimaryAdmin`, `Operator Super Admin`, `OperatorSuperAdmin`, `SuperAdmin`, `Super Admin`
+- الأسماء المدعومة لـ Tenant Admin: `TenantPrimaryAdmin`, `Tenant Primary Admin`, `Tenant Owner`
+
+#### 4. إصلاح تعيين الأدوار للمستخدمين
+- تم إزالة دور `Operator Super Admin` من المستخدم `admin@netaq.pro`
+- المستخدم الآن لديه فقط دور `Tenant Primary Admin` (المسؤول الأول بالجهة)
+
+### النتيجة
+- ✅ تسجيل الدخول يعمل بنجاح
+- ✅ القائمة الجانبية تعرض جميع العناصر بشكل صحيح:
+  - لوحة التحكم، كراسات الشروط، اللجان، الفحص والتقييم
+  - قاعدة المعرفة، المساعد الذكي AI، الإعدادات
+  - مركز المهام، الاستفسارات، التقارير
+- ✅ الداشبورد يعرض البيانات الحقيقية (35 منافسة نشطة، 3 عروض)
+- ✅ نظام الصلاحيات المرن يعمل بشكل صحيح
+
+### الملفات المعدلة
+- `frontend/src/composables/useSidebarNavigation.ts` - إضافة role aliases
+- `frontend/src/router/index.ts` - تحديث route guards لدعم role aliases
+
+### تغييرات قاعدة البيانات
+- `master_platform.[identity].Roles` - إضافة عمود IsProtected + تحديث أسماء الأدوار
+- `tenant_a86f3588.[identity].Roles` - إضافة عمود IsProtected + تحديث أسماء الأدوار
+- `tenant_a86f3588.[identity].UserRoles` - إزالة دور Operator من admin@netaq.pro
+
+### النشر
+- ✅ تم النشر بنجاح على https://netaq.pro
+- **Commit:** `fix: align role names between database and frontend, add IsProtected column`

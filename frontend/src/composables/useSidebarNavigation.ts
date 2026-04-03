@@ -3,11 +3,33 @@ import type { NavigationItem } from '@/types/navigation'
 import { useAuthStore } from '@/stores/auth'
 
 /**
+ * Role name aliases to support both old and new naming conventions.
+ *
+ * The database may contain either the old names (e.g., "Tenant Owner")
+ * or the new names (e.g., "Tenant Primary Admin"). This mapping ensures
+ * the sidebar works correctly regardless of which naming convention is
+ * stored in the database.
+ */
+const OPERATOR_ADMIN_ALIASES = [
+  'OperatorPrimaryAdmin',
+  'Operator Super Admin',
+  'OperatorSuperAdmin',
+  'SuperAdmin',
+  'Super Admin',
+]
+
+const TENANT_ADMIN_ALIASES = [
+  'TenantPrimaryAdmin',
+  'Tenant Primary Admin',
+  'Tenant Owner',
+]
+
+/**
  * Composable for managing sidebar navigation state.
  *
  * Governance Role Hierarchy:
  * ─────────────────────────────────────────────────────────────────
- * 1. OperatorPrimaryAdmin  → Sees ONLY the operator panel
+ * 1. OperatorSuperAdmin    → Sees ONLY the operator panel
  * 2. TenantPrimaryAdmin    → Sees everything within their tenant
  *                            (bypasses all permission checks)
  * 3. All other roles       → Controlled by permission matrix
@@ -29,7 +51,7 @@ export function useSidebarNavigation(items: NavigationItem[]) {
    * This user sees ONLY the operator panel.
    */
   const isOperatorAdmin = computed(() => {
-    return authStore.userRoles.includes('OperatorPrimaryAdmin')
+    return authStore.userRoles.some(r => OPERATOR_ADMIN_ALIASES.includes(r))
   })
 
   /**
@@ -37,8 +59,16 @@ export function useSidebarNavigation(items: NavigationItem[]) {
    * This user bypasses all permission checks within their tenant.
    */
   const isTenantAdmin = computed(() => {
-    return authStore.userRoles.includes('TenantPrimaryAdmin')
+    return authStore.userRoles.some(r => TENANT_ADMIN_ALIASES.includes(r))
   })
+
+  /**
+   * Check if a required role matches any of the operator admin aliases.
+   */
+  function isOperatorRole(role: string): boolean {
+    return OPERATOR_ADMIN_ALIASES.includes(role)
+  }
+
 
   /**
    * Check if a single navigation item is accessible to the current user.
@@ -47,13 +77,13 @@ export function useSidebarNavigation(items: NavigationItem[]) {
     // ── Operator Primary Admin: ONLY sees operator panel ──
     if (isOperatorAdmin.value) {
       return item.key === 'operator' ||
-        (item.requiredRoles?.includes('OperatorPrimaryAdmin') ?? false)
+        (item.requiredRoles?.some(r => isOperatorRole(r)) ?? false)
     }
 
     // ── Tenant Primary Admin: sees everything EXCEPT operator panel ──
     if (isTenantAdmin.value) {
       // Block operator panel for tenant admins
-      if (item.requiredRoles?.includes('OperatorPrimaryAdmin')) return false
+      if (item.requiredRoles?.some(r => isOperatorRole(r))) return false
       return true
     }
 
