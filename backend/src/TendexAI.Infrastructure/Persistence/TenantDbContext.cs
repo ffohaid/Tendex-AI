@@ -34,6 +34,7 @@ public sealed class TenantDbContext : DbContext, IUnitOfWork, ITenantDbContext
     public DbSet<MfaRecoveryCode> MfaRecoveryCodes => Set<MfaRecoveryCode>();
     public DbSet<AuditLog> AuditLogs => Set<AuditLog>();
     public DbSet<UserInvitation> UserInvitations => Set<UserInvitation>();
+    public DbSet<PermissionMatrixRule> PermissionMatrixRules => Set<PermissionMatrixRule>();
 
     // ----- RFP (Competition) DbSets -----
     public DbSet<Competition> Competitions => Set<Competition>();

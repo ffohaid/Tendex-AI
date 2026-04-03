@@ -28,6 +28,8 @@ using TendexAI.Infrastructure.Services.Identity;
 using TendexAI.Infrastructure.Services.Caching;
 using TendexAI.Infrastructure.Services.Email;
 using TendexAI.Infrastructure.AI;
+using TendexAI.Infrastructure.Authorization;
+using Microsoft.AspNetCore.Authorization;
 using TendexAI.Application.Features.VideoAnalysis;
 using TendexAI.Infrastructure.AI.Rag;
 using TendexAI.Infrastructure.Storage.MinIO;
@@ -248,6 +250,11 @@ public static class DependencyInjection
 
         // ----- Competition Permission Service -----
         services.AddScoped<ICompetitionPermissionService, Application.Features.Rfp.Services.CompetitionPermissionService>();
+
+        // ----- Flexible Permission Matrix -----
+        services.AddScoped<IPermissionMatrixRepository, PermissionMatrixRepository>();
+        services.AddScoped<Application.Interfaces.IPermissionEvaluator, PermissionEvaluatorService>();
+        services.AddScoped<IAuthorizationHandler, PermissionRequirementHandler>();
         services.AddScoped<IUserSystemRoleProvider, UserSystemRoleProvider>();
 
         // ----- Cross-Tenant User Search Service -----

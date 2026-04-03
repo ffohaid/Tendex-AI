@@ -8,6 +8,12 @@ import { createRouter, createWebHistory, type RouteRecordRaw } from 'vue-router'
  * - AuthLayout: authentication pages (login, MFA, password reset)
  *
  * Lazy-loaded components for optimal bundle splitting.
+ *
+ * Permission-based access control:
+ * - `meta.requiresAuth`: requires authentication
+ * - `meta.requiredPermission`: requires specific permission code(s)
+ * - `meta.requiredRoles`: requires specific system role(s)
+ * - Owner and Admin roles bypass all permission checks
  */
 const routes: RouteRecordRaw[] = [
   {
@@ -26,25 +32,25 @@ const routes: RouteRecordRaw[] = [
         path: 'rfp',
         name: 'rfp-list',
         component: () => import('@/views/rfp/RfpListView.vue'),
-        meta: { title: 'Tendex AI - RFP List', requiresAuth: true },
+        meta: { title: 'Tendex AI - RFP List', requiresAuth: true, requiredPermission: 'rfp.view' },
       },
       {
         path: 'rfp/new',
         name: 'rfp-method-selection',
         component: () => import('@/views/rfp/RfpMethodSelectionView.vue'),
-        meta: { title: 'Tendex AI - New RFP', requiresAuth: true },
+        meta: { title: 'Tendex AI - New RFP', requiresAuth: true, requiredPermission: 'rfp.create' },
       },
       {
         path: 'rfp/create',
         name: 'rfp-create',
         component: () => import('@/views/rfp/RfpCreateView.vue'),
-        meta: { title: 'Tendex AI - Create RFP', requiresAuth: true },
+        meta: { title: 'Tendex AI - Create RFP', requiresAuth: true, requiredPermission: 'rfp.create' },
       },
       {
         path: 'rfp/:id/edit',
         name: 'rfp-edit',
         component: () => import('@/views/rfp/RfpCreateView.vue'),
-        meta: { title: 'Tendex AI - Edit RFP', requiresAuth: true },
+        meta: { title: 'Tendex AI - Edit RFP', requiresAuth: true, requiredPermission: 'rfp.update' },
         props: true,
       },
       /* Committee Management routes (TASK-902) */
@@ -52,26 +58,26 @@ const routes: RouteRecordRaw[] = [
         path: 'committees/permanent',
         name: 'CommitteesPermanent',
         component: () => import('@/views/committees/CommitteesPermanentView.vue'),
-        meta: { title: 'Tendex AI - Permanent Committees', requiresAuth: true },
+        meta: { title: 'Tendex AI - Permanent Committees', requiresAuth: true, requiredPermission: 'committees.view' },
       },
       {
         path: 'committees/temporary',
         name: 'CommitteesTemporary',
         component: () => import('@/views/committees/CommitteesTemporaryView.vue'),
-        meta: { title: 'Tendex AI - Temporary Committees', requiresAuth: true },
+        meta: { title: 'Tendex AI - Temporary Committees', requiresAuth: true, requiredPermission: 'committees.view' },
       },
       /* Supplier Offers Management */
       {
         path: 'evaluation/offers',
         name: 'SupplierOffers',
         component: () => import('@/views/evaluation/offers/SupplierOffersView.vue'),
-        meta: { title: 'Tendex AI - Supplier Offers', requiresAuth: true },
+        meta: { title: 'Tendex AI - Supplier Offers', requiresAuth: true, requiredPermission: 'offers.view' },
       },
       {
         path: 'evaluation/offers/:competitionId',
         name: 'SupplierOffersDetail',
         component: () => import('@/views/evaluation/offers/SupplierOffersDetailView.vue'),
-        meta: { title: 'Tendex AI - Supplier Offers Detail', requiresAuth: true },
+        meta: { title: 'Tendex AI - Supplier Offers Detail', requiresAuth: true, requiredPermission: 'offers.view' },
         props: true,
       },
       /* Evaluation routes (TASK-505) */
@@ -79,122 +85,122 @@ const routes: RouteRecordRaw[] = [
         path: 'evaluation/technical',
         name: 'EvaluationTechnical',
         component: () => import('@/views/evaluation/technical/TechnicalEvaluationList.vue'),
-        meta: { title: 'Tendex AI - Technical Evaluation', requiresAuth: true },
+        meta: { title: 'Tendex AI - Technical Evaluation', requiresAuth: true, requiredPermission: 'evaluation.view' },
       },
       {
         path: 'evaluation/technical/:id',
         name: 'TechnicalEvaluationDetail',
         component: () => import('@/views/evaluation/technical/TechnicalEvaluationDetail.vue'),
-        meta: { title: 'Tendex AI - Technical Evaluation Detail', requiresAuth: true },
+        meta: { title: 'Tendex AI - Technical Evaluation Detail', requiresAuth: true, requiredPermission: 'evaluation.technical' },
       },
       {
         path: 'evaluation/technical/:id/comparison',
         name: 'TechnicalComparison',
         component: () => import('@/views/evaluation/comparison/TechnicalComparison.vue'),
-        meta: { title: 'Tendex AI - Technical Comparison', requiresAuth: true },
+        meta: { title: 'Tendex AI - Technical Comparison', requiresAuth: true, requiredPermission: 'evaluation.technical' },
       },
       {
         path: 'evaluation/financial',
         name: 'EvaluationFinancial',
         component: () => import('@/views/evaluation/financial/FinancialEvaluationList.vue'),
-        meta: { title: 'Tendex AI - Financial Evaluation', requiresAuth: true },
+        meta: { title: 'Tendex AI - Financial Evaluation', requiresAuth: true, requiredPermission: 'evaluation.view' },
       },
       {
         path: 'evaluation/financial/:id',
         name: 'FinancialEvaluationDetail',
         component: () => import('@/views/evaluation/financial/FinancialEvaluationDetail.vue'),
-        meta: { title: 'Tendex AI - Financial Evaluation Detail', requiresAuth: true },
+        meta: { title: 'Tendex AI - Financial Evaluation Detail', requiresAuth: true, requiredPermission: 'evaluation.financial' },
       },
       {
         path: 'evaluation/financial/:id/comparison',
         name: 'FinancialComparison',
         component: () => import('@/views/evaluation/comparison/FinancialComparison.vue'),
-        meta: { title: 'Tendex AI - Financial Comparison', requiresAuth: true },
+        meta: { title: 'Tendex AI - Financial Comparison', requiresAuth: true, requiredPermission: 'evaluation.financial' },
       },
       /* Comprehensive Evaluation & Award Recommendation */
       {
         path: 'evaluation/comprehensive',
         name: 'ComprehensiveEvaluation',
         component: () => import('@/views/evaluation/comprehensive/ComprehensiveEvaluationList.vue'),
-        meta: { title: 'Tendex AI - Comprehensive Evaluation', requiresAuth: true },
+        meta: { title: 'Tendex AI - Comprehensive Evaluation', requiresAuth: true, requiredPermission: 'evaluation.view' },
       },
       {
         path: 'evaluation/comprehensive/:id',
         name: 'ComprehensiveEvaluationDetail',
         component: () => import('@/views/evaluation/comprehensive/ComprehensiveEvaluationDetail.vue'),
-        meta: { title: 'Tendex AI - Comprehensive Evaluation Detail', requiresAuth: true },
+        meta: { title: 'Tendex AI - Comprehensive Evaluation Detail', requiresAuth: true, requiredPermission: 'evaluation.view' },
       },
       /* Approvals / Task Center routes (TASK-902) */
       {
         path: 'approvals',
         name: 'Approvals',
         component: () => import('@/views/approvals/ApprovalsView.vue'),
-        meta: { title: 'Tendex AI - Approvals', requiresAuth: true },
+        meta: { title: 'Tendex AI - Approvals', requiresAuth: true, requiredPermission: 'approvals.view' },
       },
       /* Inquiries routes (TASK-904) */
       {
         path: 'inquiries',
         name: 'Inquiries',
         component: () => import('@/views/inquiries/InquiriesView.vue'),
-        meta: { title: 'Tendex AI - Inquiries', requiresAuth: true },
+        meta: { title: 'Tendex AI - Inquiries', requiresAuth: true, requiredPermission: 'inquiries.view' },
       },
       /* Reports routes (TASK-904) */
       {
         path: 'reports',
         name: 'Reports',
         component: () => import('@/views/reports/ReportsView.vue'),
-        meta: { title: 'Tendex AI - Reports', requiresAuth: true },
+        meta: { title: 'Tendex AI - Reports', requiresAuth: true, requiredPermission: 'reports.view' },
       },
       /* AI Assistant routes (TASK-904) */
       {
         path: 'ai-assistant',
         name: 'AiAssistant',
         component: () => import('@/views/ai/AiAssistantView.vue'),
-        meta: { title: 'Tendex AI - AI Assistant', requiresAuth: true },
+        meta: { title: 'Tendex AI - AI Assistant', requiresAuth: true, requiredPermission: 'ai.view' },
       },
       /* Operator / Super Admin routes (TASK-601) */
       {
         path: 'operator',
         name: 'OperatorDashboard',
         component: () => import('@/views/operator/OperatorDashboardView.vue'),
-        meta: { title: 'Tendex AI - Operator Dashboard', requiresAuth: true },
+        meta: { title: 'Tendex AI - Operator Dashboard', requiresAuth: true, requiredRoles: ['SuperAdmin', 'Operator'] },
       },
       {
         path: 'operator/tenants',
         name: 'TenantList',
         component: () => import('@/views/tenants/TenantListView.vue'),
-        meta: { title: 'Tendex AI - Tenants', requiresAuth: true },
+        meta: { title: 'Tendex AI - Tenants', requiresAuth: true, requiredRoles: ['SuperAdmin', 'Operator'] },
       },
       {
         path: 'operator/tenants/create',
         name: 'TenantCreate',
         component: () => import('@/views/tenants/TenantCreateView.vue'),
-        meta: { title: 'Tendex AI - Create Tenant', requiresAuth: true },
+        meta: { title: 'Tendex AI - Create Tenant', requiresAuth: true, requiredRoles: ['SuperAdmin', 'Operator'] },
       },
       {
         path: 'operator/tenants/:id',
         name: 'TenantDetail',
         component: () => import('@/views/tenants/TenantDetailView.vue'),
-        meta: { title: 'Tendex AI - Tenant Detail', requiresAuth: true },
+        meta: { title: 'Tendex AI - Tenant Detail', requiresAuth: true, requiredRoles: ['SuperAdmin', 'Operator'] },
         props: true,
       },
       {
         path: 'operator/purchase-orders',
         name: 'PurchaseOrderList',
         component: () => import('@/views/purchase-orders/PurchaseOrderListView.vue'),
-        meta: { title: 'Tendex AI - Purchase Orders', requiresAuth: true },
+        meta: { title: 'Tendex AI - Purchase Orders', requiresAuth: true, requiredPermission: 'purchaseorders.view' },
       },
       {
         path: 'operator/purchase-orders/create',
         name: 'PurchaseOrderCreate',
         component: () => import('@/views/purchase-orders/PurchaseOrderCreateView.vue'),
-        meta: { title: 'Tendex AI - Create Purchase Order', requiresAuth: true },
+        meta: { title: 'Tendex AI - Create Purchase Order', requiresAuth: true, requiredPermission: 'purchaseorders.create' },
       },
       {
         path: 'operator/purchase-orders/:id',
         name: 'PurchaseOrderDetail',
         component: () => import('@/views/purchase-orders/PurchaseOrderDetailView.vue'),
-        meta: { title: 'Tendex AI - Purchase Order Detail', requiresAuth: true },
+        meta: { title: 'Tendex AI - Purchase Order Detail', requiresAuth: true, requiredPermission: 'purchaseorders.view' },
         props: true,
       },
       /* Settings routes (TASK-903) */
@@ -202,19 +208,19 @@ const routes: RouteRecordRaw[] = [
         path: 'settings/organization',
         name: 'SettingsOrganization',
         component: () => import('@/views/settings/OrganizationSettingsView.vue'),
-        meta: { title: 'Tendex AI - Organization Settings', requiresAuth: true },
+        meta: { title: 'Tendex AI - Organization Settings', requiresAuth: true, requiredPermission: 'organization.view' },
       },
       {
         path: 'settings/users',
         name: 'SettingsUsers',
         component: () => import('@/views/settings/UsersManagementView.vue'),
-        meta: { title: 'Tendex AI - User Management', requiresAuth: true },
+        meta: { title: 'Tendex AI - User Management', requiresAuth: true, requiredPermission: 'users.view' },
       },
       {
         path: 'settings/roles',
         name: 'SettingsRoles',
         component: () => import('@/views/settings/RolesManagementView.vue'),
-        meta: { title: 'Tendex AI - Roles & Permissions', requiresAuth: true },
+        meta: { title: 'Tendex AI - Roles & Permissions', requiresAuth: true, requiredPermission: 'roles.view' },
       },
       /* Operator Panel - Tenant Feature Flags & Branding (TASK-604) */
       {
@@ -256,61 +262,61 @@ const routes: RouteRecordRaw[] = [
         path: 'workflow',
         name: 'WorkflowList',
         component: () => import('@/views/workflow/WorkflowListView.vue'),
-        meta: { title: 'Tendex AI - Workflow Templates', requiresAuth: true },
+        meta: { title: 'Tendex AI - Workflow Templates', requiresAuth: true, requiredPermission: 'workflow.view' },
       },
       {
         path: 'workflow/designer',
         name: 'WorkflowDesigner',
         component: () => import('@/views/workflow/WorkflowDesignerView.vue'),
-        meta: { title: 'Tendex AI - Workflow Designer', requiresAuth: true },
+        meta: { title: 'Tendex AI - Workflow Designer', requiresAuth: true, requiredPermission: 'workflow.create' },
       },
       {
         path: 'workflow/designer/:id',
         name: 'WorkflowDesignerEdit',
         component: () => import('@/views/workflow/WorkflowDesignerView.vue'),
-        meta: { title: 'Tendex AI - Edit Workflow', requiresAuth: true },
+        meta: { title: 'Tendex AI - Edit Workflow', requiresAuth: true, requiredPermission: 'workflow.update' },
         props: true,
       },
-      /* 4D Permissions Matrix */
+      /* Flexible Permissions Matrix */
       {
         path: 'permissions/matrix',
         name: 'PermissionsMatrix',
         component: () => import('@/views/permissions/PermissionsMatrixView.vue'),
-        meta: { title: 'Tendex AI - Permissions Matrix', requiresAuth: true },
+        meta: { title: 'Tendex AI - Permissions Matrix', requiresAuth: true, requiredPermission: 'matrix.view' },
       },
       /* Unified Task Center */
       {
         path: 'task-center',
         name: 'TaskCenter',
         component: () => import('@/views/task-center/TaskCenterView.vue'),
-        meta: { title: 'Tendex AI - Task Center', requiresAuth: true },
+        meta: { title: 'Tendex AI - Task Center', requiresAuth: true, requiredPermission: 'tasks.view' },
       },
       /* Knowledge Base / RAG */
       {
         path: 'knowledge-base',
         name: 'KnowledgeBase',
         component: () => import('@/views/knowledge-base/KnowledgeBaseView.vue'),
-        meta: { title: 'Tendex AI - Knowledge Base', requiresAuth: true },
+        meta: { title: 'Tendex AI - Knowledge Base', requiresAuth: true, requiredPermission: 'knowledgebase.view' },
       },
       /* Competition Templates */
       {
         path: 'rfp/templates',
         name: 'RfpTemplates',
         component: () => import('@/views/rfp/RfpTemplatesView.vue'),
-        meta: { title: 'Tendex AI - Competition Templates', requiresAuth: true },
+        meta: { title: 'Tendex AI - Competition Templates', requiresAuth: true, requiredPermission: 'templates.view' },
       },
       /* Booklet Templates (EXPRO Official Templates) */
       {
         path: 'rfp/booklet-templates',
         name: 'BookletTemplates',
         component: () => import('@/views/rfp/BookletTemplatesView.vue'),
-        meta: { title: 'Tendex AI - Booklet Templates', requiresAuth: true },
+        meta: { title: 'Tendex AI - Booklet Templates', requiresAuth: true, requiredPermission: 'templates.view' },
       },
       {
         path: 'rfp/booklet-editor/:id',
         name: 'BookletEditor',
         component: () => import('@/views/rfp/BookletEditorView.vue'),
-        meta: { title: 'Tendex AI - Booklet Editor', requiresAuth: true },
+        meta: { title: 'Tendex AI - Booklet Editor', requiresAuth: true, requiredPermission: 'templates.create' },
       },
       /* Notifications */
       {
@@ -324,7 +330,7 @@ const routes: RouteRecordRaw[] = [
         path: 'reports/export',
         name: 'ReportGenerator',
         component: () => import('@/views/reports/ReportGeneratorView.vue'),
-        meta: { title: 'Tendex AI - Export Reports', requiresAuth: true },
+        meta: { title: 'Tendex AI - Export Reports', requiresAuth: true, requiredPermission: 'reports.export' },
       },
       /* Operator Portal - New Pages (TASK-1001) */
       {
@@ -399,6 +405,13 @@ const routes: RouteRecordRaw[] = [
       },
     ],
   },
+  /* Access Denied page */
+  {
+    path: '/access-denied',
+    name: 'AccessDenied',
+    component: () => import('@/views/errors/AccessDeniedView.vue'),
+    meta: { title: 'Tendex AI - Access Denied' },
+  },
   /* Catch-all redirect */
   {
     path: '/:pathMatch(.*)*',
@@ -417,6 +430,9 @@ const router = createRouter({
  * - Updates document title.
  * - Redirects unauthenticated users to login.
  * - Redirects authenticated users away from guest-only pages.
+ * - Enforces permission-based access control using requiredPermission meta.
+ * - Enforces role-based access control using requiredRoles meta.
+ * - Owner and Admin roles bypass all permission/role checks.
  */
 router.beforeEach((to, _from, next) => {
   /* Update document title */
@@ -438,12 +454,61 @@ router.beforeEach((to, _from, next) => {
       name: 'Login',
       query: { redirect: to.fullPath },
     })
-  } else if (isGuestOnly && hasToken) {
+    return
+  }
+
+  if (isGuestOnly && hasToken) {
     /* Already authenticated, redirect to dashboard */
     next({ name: 'Dashboard' })
-  } else {
-    next()
+    return
   }
+
+  /* ── Permission & Role Enforcement ── */
+  if (hasToken) {
+    // Parse user data from localStorage
+    let userRoles: string[] = []
+    let userPermissions: string[] = []
+    try {
+      const raw = localStorage.getItem('user')
+      if (raw) {
+        const userData = JSON.parse(raw)
+        userRoles = userData.roles ?? []
+        userPermissions = userData.permissions ?? []
+      }
+    } catch {
+      // Ignore parse errors
+    }
+
+    // Owner and Admin bypass all checks
+    const isPrivileged = userRoles.some(r =>
+      ['Owner', 'System Administrator', 'SuperAdmin', 'Operator'].includes(r)
+    )
+
+    if (!isPrivileged) {
+      // Check requiredRoles
+      const requiredRoles = to.meta.requiredRoles as string[] | undefined
+      if (requiredRoles && requiredRoles.length > 0) {
+        const hasRequiredRole = requiredRoles.some(r => userRoles.includes(r))
+        if (!hasRequiredRole) {
+          next({ name: 'AccessDenied' })
+          return
+        }
+      }
+
+      // Check requiredPermission
+      const requiredPermission = to.meta.requiredPermission as string | string[] | undefined
+      if (requiredPermission) {
+        const perms = Array.isArray(requiredPermission) ? requiredPermission : [requiredPermission]
+        const hasPermission = perms.some(p => userPermissions.includes(p))
+        if (!hasPermission) {
+          next({ name: 'AccessDenied' })
+          return
+        }
+      }
+    }
+  }
+
+  next()
 })
 
 export default router

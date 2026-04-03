@@ -1,31 +1,22 @@
 <script setup lang="ts">
 import { useI18n } from 'vue-i18n'
 import { useAppStore } from '@/stores/app'
-import { useAuthStore } from '@/stores/auth'
 import { computed } from 'vue'
 import { sidebarNavigation } from '@/config/navigation'
 import { useSidebarNavigation } from '@/composables/useSidebarNavigation'
 import SidebarMenuItem from './SidebarMenuItem.vue'
-import type { NavigationItem } from '@/types/navigation'
 
 const { t } = useI18n()
 const appStore = useAppStore()
-const authStore = useAuthStore()
 
 const isCollapsed = computed(() => appStore.sidebarCollapsed)
 
 /**
- * Filter navigation items based on user roles.
- * Items with requiredRoles are only shown if the user has at least one of the required roles.
+ * useSidebarNavigation now handles permission-based filtering internally.
+ * It checks user roles and permissions from the auth store and filters
+ * navigation items accordingly. Owner and Admin users see all items.
  */
-const filteredNavigation = computed<NavigationItem[]>(() => {
-  return sidebarNavigation.filter((item) => {
-    if (!item.requiredRoles || item.requiredRoles.length === 0) return true
-    return item.requiredRoles.some((role) => authStore.hasRole(role))
-  })
-})
-
-const { toggleExpand, isExpanded } = useSidebarNavigation(filteredNavigation.value)
+const { filteredNavigation, toggleExpand, isExpanded } = useSidebarNavigation(sidebarNavigation)
 </script>
 
 <template>
@@ -61,8 +52,8 @@ const { toggleExpand, isExpanded } = useSidebarNavigation(filteredNavigation.val
           class="pi text-sm transition-transform duration-200"
           :class="[
             isCollapsed
-              ? 'pi-angle-double-right rtl:pi-angle-double-left'
-              : 'pi-angle-double-left rtl:pi-angle-double-right',
+              ? 'pi pi-angle-double-right rtl:pi-angle-double-left'
+              : 'pi pi-angle-double-left rtl:pi-angle-double-right',
           ]"
         ></i>
         <span v-if="!isCollapsed" class="text-xs">

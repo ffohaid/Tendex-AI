@@ -16,6 +16,7 @@ using TendexAI.API.Endpoints.Notifications;
 using TendexAI.API.Endpoints.Reports;
 using TendexAI.API.Endpoints.Inquiries;
 using TendexAI.API.Endpoints.Workflow;
+using TendexAI.API.Endpoints.PermissionMatrix;
 
 // Enable PII logging for debugging JWT validation issues (TEMPORARY)
 IdentityModelEventSource.ShowPII = true;
@@ -199,5 +200,8 @@ app.MapApprovalWorkflowEndpoints();
 
 // Award Recommendation endpoints (final ranking, generate, approve, reject)
 app.MapAwardEndpoints();
+
+// Permission Matrix endpoints (flexible N-dimensional permission matrix)
+app.MapPermissionMatrixEndpoints();
 
 app.Run();
