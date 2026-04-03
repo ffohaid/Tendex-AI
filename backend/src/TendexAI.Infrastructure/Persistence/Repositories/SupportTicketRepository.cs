@@ -100,9 +100,6 @@ public class SupportTicketRepository : ISupportTicketRepository
 
     public async Task<int> GetNextTicketNumberAsync(CancellationToken cancellationToken = default)
     {
-        var maxNumber = await _context.SupportTickets
-            .MaxAsync(t => (int?)t.Id.GetHashCode(), cancellationToken) ?? 0;
-
         var count = await _context.SupportTickets.CountAsync(cancellationToken);
         return count + 1;
     }
