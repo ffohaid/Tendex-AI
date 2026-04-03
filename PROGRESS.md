@@ -24,6 +24,62 @@
 
 *يرجى إضافة أحدث مهمة منجزة في أعلى هذه القائمة.*
 
+### 2026-04-03 - feat: Committee System Redesign (Scope Model, Dynamic User Linking, Multi-Competition)
+- **الحالة:** ✅ مكتمل
+- **ما تم إنجازه:**
+  - **Domain Model Redesign:**
+    - Added `CommitteeScopeType` enum: `Comprehensive` (all phases, all competitions), `SpecificPhasesAllCompetitions`, `SpecificPhasesSpecificCompetitions`
+    - Created `CommitteeCompetition` entity for M:N relationship between committees and competitions
+    - Updated `Committee` entity with `ScopeType` property, `UpdateScope()` method, and `Competitions` navigation collection
+    - Removed flat `CompetitionId` property from Committee
+  - **Dynamic User Linking:**
+    - `AddCommitteeMemberCommandHandler` now validates user exists in platform via `IUserRepository`
+    - Validates user is active and role-compatible (CommitteeChair requires Admin/CommitteeManager role)
+    - `UserFullName` is auto-fetched from `ApplicationUser` - no manual entry
+    - Added `SearchByTenantAsync` to `IUserRepository` for eligible user search
+    - Created `GetEligibleUsersQuery` for searching platform users eligible for committee membership
+  - **Backend Updates:**
+    - Updated `CreateCommitteeCommand/Handler` with ScopeType, phases, and competition IDs
+    - Updated `UpdateCommitteeCommand/Handler` with scope management and competition linking
+    - Updated `CommitteeEndpoints` with new request DTOs and eligible users endpoint
+    - Updated `CommitteeDtos` and `CommitteeMappingExtensions` for new scope model
+    - Fixed `ValidateConflictOfInterestQueryHandler` and `GetPendingTasksQueryHandler` for new competition model
+    - Added `CommitteeCompetitionConfiguration` for EF Core
+  - **Frontend Updates:**
+    - Rewrote `CommitteesTemporaryView.vue` with scope type selector, dynamic phase fields, multi-competition checkboxes, and user search autocomplete
+    - Rewrote `CommitteesPermanentView.vue` with same improvements
+    - Updated `committee.ts` types with `CommitteeScopeType`, `CompetitionPhase`, `EligibleUser` interfaces
+    - Updated `committeeService.ts` with `searchEligibleUsers` API call
+    - Updated Arabic and English i18n translations with scope-related keys
+  - **Database Migration:**
+    - Added `ScopeType` column to `[committees].[Committees]`
+    - Created `[committees].[CommitteeCompetitions]` table with FK constraints
+    - Migrated existing `CompetitionId` data to new M:N relationship
+    - Dropped `CompetitionId` column and related index
+  - **Deployment:** Successfully rebuilt and deployed both backend and frontend on production server
+  - **Verification:** Tested on https://netaq.pro/committees/temporary - committees load with scope info, create dialog shows scope options
+- **الملفات المعدلة:**
+  - `backend/src/TendexAI.Domain/Enums/CommitteeScopeType.cs` (new)
+  - `backend/src/TendexAI.Domain/Entities/Committees/Committee.cs`
+  - `backend/src/TendexAI.Domain/Entities/Committees/CommitteeCompetition.cs` (new)
+  - `backend/src/TendexAI.Domain/Entities/Identity/IUserRepository.cs`
+  - `backend/src/TendexAI.Infrastructure/Persistence/Repositories/UserRepository.cs`
+  - `backend/src/TendexAI.Infrastructure/Persistence/Repositories/CommitteeRepository.cs`
+  - `backend/src/TendexAI.Infrastructure/Persistence/Configurations/Committees/*`
+  - `backend/src/TendexAI.Infrastructure/Persistence/TenantDbContext.cs`
+  - `backend/src/TendexAI.Application/Features/Committees/Commands/*`
+  - `backend/src/TendexAI.Application/Features/Committees/Queries/*`
+  - `backend/src/TendexAI.Application/Features/Committees/Dtos/*`
+  - `backend/src/TendexAI.API/Endpoints/Committees/CommitteeEndpoints.cs`
+  - `frontend/src/types/committee.ts`
+  - `frontend/src/services/committeeService.ts`
+  - `frontend/src/views/committees/CommitteesTemporaryView.vue`
+  - `frontend/src/views/committees/CommitteesPermanentView.vue`
+  - `frontend/src/locales/ar.json`
+  - `frontend/src/locales/en.json`
+  - `infrastructure/migrations/committee_redesign_migration.sql` (new)
+  - `docs/committee-redesign.md` (new)
+
 ### 2026-04-03 - Fix: DbUpdateConcurrencyException on Committee Member Operations
 - **الحالة:** ✅ مكتمل
 - **ما تم إنجازه:**
