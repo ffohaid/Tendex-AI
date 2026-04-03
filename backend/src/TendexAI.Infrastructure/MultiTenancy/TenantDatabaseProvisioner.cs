@@ -161,6 +161,10 @@ public sealed class TenantDatabaseProvisioner : ITenantDatabaseProvisioner
                 maxRetryDelay: TimeSpan.FromSeconds(10),
                 errorNumbersToAdd: null);
         });
+        // Suppress PendingModelChangesWarning during provisioning
+        // The snapshot may differ slightly from the current model during development
+        optionsBuilder.ConfigureWarnings(w =>
+            w.Ignore(Microsoft.EntityFrameworkCore.Diagnostics.RelationalEventId.PendingModelChangesWarning));
 
         await using var context = new TenantDbContext(optionsBuilder.Options);
         await context.Database.MigrateAsync(cancellationToken);
