@@ -60,8 +60,9 @@ public sealed class CreateTenantCommandHandler : ICommandHandler<CreateTenantCom
                 $"A tenant with subdomain '{request.Subdomain}' already exists.");
         }
 
-        // Generate database name from identifier
-        var databaseName = $"tendex_tenant_{request.Identifier.ToLowerInvariant()}";
+        // Generate database name from identifier (replace hyphens with underscores for SQL compatibility)
+        var sanitizedIdentifier = request.Identifier.ToLowerInvariant().Replace('-', '_');
+        var databaseName = $"tendex_tenant_{sanitizedIdentifier}";
 
         // Generate and encrypt connection string
         var rawConnectionString = GenerateConnectionString(databaseName);
