@@ -392,6 +392,12 @@ const routes: RouteRecordRaw[] = [
         meta: { title: 'Tendex AI - Verify Code', guest: true },
       },
       {
+        path: 'accept-invitation',
+        name: 'AcceptInvitation',
+        component: () => import('@/views/auth/AcceptInvitationView.vue'),
+        meta: { title: 'Tendex AI - Accept Invitation', guest: true },
+      },
+      {
         path: 'forgot-password',
         name: 'ForgotPassword',
         component: () => import('@/views/auth/ForgotPasswordView.vue'),
