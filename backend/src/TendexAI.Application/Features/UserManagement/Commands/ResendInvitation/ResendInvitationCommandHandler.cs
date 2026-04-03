@@ -44,7 +44,7 @@ public sealed class ResendInvitationCommandHandler : ICommandHandler<ResendInvit
         await _invitationRepository.SaveChangesAsync(cancellationToken);
 
         // Send the invitation email with the new token
-        var invitationLink = $"{request.BaseUrl.TrimEnd('/')}/auth/accept-invitation?token={invitation.Token}";
+        var invitationLink = $"{request.BaseUrl.TrimEnd('/')}/auth/accept-invitation?token={invitation.Token}&tenant={request.TenantId}";
         var recipientName = $"{invitation.FirstNameAr} {invitation.LastNameAr}";
 
         var emailSent = await _emailService.SendInvitationEmailAsync(

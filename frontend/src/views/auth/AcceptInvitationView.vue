@@ -35,6 +35,7 @@ const route = useRoute()
 /* ------------------------------------------------------------------ */
 
 const invitationToken = computed(() => (route.query.token as string) || '')
+const tenantId = computed(() => (route.query.tenant as string) || '')
 
 /* ------------------------------------------------------------------ */
 /*  State                                                              */
@@ -136,6 +137,11 @@ onMounted(async () => {
     isTokenValid.value = false
     validationError.value = 'رابط الدعوة غير صالح أو مفقود.'
     return
+  }
+
+  // Set tenant_id in localStorage so httpClient sends X-Tenant-Id header
+  if (tenantId.value) {
+    localStorage.setItem('tenant_id', tenantId.value)
   }
 
   try {

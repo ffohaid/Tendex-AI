@@ -65,7 +65,7 @@ public sealed class SendInvitationCommandHandler : ICommandHandler<SendInvitatio
         await _invitationRepository.SaveChangesAsync(cancellationToken);
 
         // Send the invitation email
-        var invitationLink = $"{request.BaseUrl.TrimEnd('/')}/auth/accept-invitation?token={invitation.Token}";
+        var invitationLink = $"{request.BaseUrl.TrimEnd('/')}/auth/accept-invitation?token={invitation.Token}&tenant={request.TenantId}";
         var recipientName = $"{request.FirstNameAr} {request.LastNameAr}";
 
         var emailSent = await _emailService.SendInvitationEmailAsync(
