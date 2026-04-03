@@ -188,10 +188,34 @@ public sealed class TenantDatabaseProvisioner : ITenantDatabaseProvisioner
         await using var connection = new SqlConnection(connectionString);
         await connection.OpenAsync(cancellationToken);
 
+        // Ensure IsProtected column exists (may not be in migrations yet)
+        await EnsureIsProtectedColumnAsync(connection, cancellationToken);
+
         // Seed default roles
         await SeedDefaultRolesAsync(connection, tenantId, cancellationToken);
 
         _logger.LogInformation("Initial data seeded successfully for tenant {TenantId}.", tenantId);
+    }
+
+    /// <summary>
+    /// Ensures the IsProtected column exists in the Roles table.
+    /// This column may not exist in older migrations.
+    /// </summary>
+    private static async Task EnsureIsProtectedColumnAsync(
+        SqlConnection connection,
+        CancellationToken cancellationToken)
+    {
+        var command = connection.CreateCommand();
+        command.CommandText = """
+            IF NOT EXISTS (
+                SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS
+                WHERE TABLE_SCHEMA = 'identity' AND TABLE_NAME = 'Roles' AND COLUMN_NAME = 'IsProtected'
+            )
+            BEGIN
+                ALTER TABLE [identity].Roles ADD IsProtected BIT NOT NULL DEFAULT 0;
+            END
+            """;
+        await command.ExecuteNonQueryAsync(cancellationToken);
     }
 
     /// <summary>
