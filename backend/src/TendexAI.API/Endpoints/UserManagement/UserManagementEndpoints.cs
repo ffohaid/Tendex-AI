@@ -3,14 +3,19 @@ using MediatR;
 using Microsoft.AspNetCore.Mvc;
 using TendexAI.Application.Features.UserManagement.Commands.AcceptInvitation;
 using TendexAI.Application.Features.UserManagement.Commands.AssignRole;
+using TendexAI.Application.Features.UserManagement.Commands.CreateRole;
 using TendexAI.Application.Features.UserManagement.Commands.RemoveRole;
 using TendexAI.Application.Features.UserManagement.Commands.ResendInvitation;
 using TendexAI.Application.Features.UserManagement.Commands.RevokeInvitation;
 using TendexAI.Application.Features.UserManagement.Commands.SendInvitation;
+using TendexAI.Application.Features.UserManagement.Commands.ToggleRoleStatus;
 using TendexAI.Application.Features.UserManagement.Commands.ToggleUserStatus;
+using TendexAI.Application.Features.UserManagement.Commands.UpdateRole;
 using TendexAI.Application.Features.UserManagement.Commands.UpdateUser;
 using TendexAI.Application.Features.UserManagement.Dtos;
 using TendexAI.Application.Features.UserManagement.Queries.GetInvitations;
+using TendexAI.Application.Features.UserManagement.Queries.GetPermissions;
+using TendexAI.Application.Features.UserManagement.Queries.GetRoleById;
 using TendexAI.Application.Features.UserManagement.Queries.GetRoles;
 using TendexAI.Application.Features.UserManagement.Queries.GetUserById;
 using TendexAI.Application.Features.UserManagement.Queries.GetUsers;
@@ -34,7 +39,7 @@ public static class UserManagementEndpoints
 
         usersGroup.MapGet("/", GetUsersAsync)
             .WithName("GetUsers")
-            .WithSummary("Get paginated list of users for the current tenant")
+            .WithSummary("Get paginated list of users with search and filters")
             .RequireAuthorization()
             .Produces<PaginatedResult<UserDto>>(StatusCodes.Status200OK)
             .Produces<ProblemDetails>(StatusCodes.Status401Unauthorized);
@@ -85,6 +90,44 @@ public static class UserManagementEndpoints
             .RequireAuthorization()
             .Produces<IReadOnlyList<RoleDto>>(StatusCodes.Status200OK);
 
+        rolesGroup.MapGet("/{roleId:guid}", GetRoleByIdAsync)
+            .WithName("GetRoleById")
+            .WithSummary("Get a role with its permissions and users")
+            .RequireAuthorization()
+            .Produces<RoleDetailDto>(StatusCodes.Status200OK)
+            .Produces<ProblemDetails>(StatusCodes.Status404NotFound);
+
+        rolesGroup.MapPost("/", CreateRoleAsync)
+            .WithName("CreateRole")
+            .WithSummary("Create a new custom role")
+            .RequireAuthorization()
+            .Produces<RoleDto>(StatusCodes.Status201Created)
+            .Produces<ProblemDetails>(StatusCodes.Status400BadRequest);
+
+        rolesGroup.MapPut("/{roleId:guid}", UpdateRoleAsync)
+            .WithName("UpdateRole")
+            .WithSummary("Update a role's name, description, and permissions")
+            .RequireAuthorization()
+            .Produces(StatusCodes.Status204NoContent)
+            .Produces<ProblemDetails>(StatusCodes.Status400BadRequest);
+
+        rolesGroup.MapPatch("/{roleId:guid}/status", ToggleRoleStatusAsync)
+            .WithName("ToggleRoleStatus")
+            .WithSummary("Activate or deactivate a role")
+            .RequireAuthorization()
+            .Produces(StatusCodes.Status204NoContent)
+            .Produces<ProblemDetails>(StatusCodes.Status400BadRequest);
+
+        // ----- Permission Endpoints -----
+        var permissionsGroup = app.MapGroup("/api/v1/permissions")
+            .WithTags("Permission Management");
+
+        permissionsGroup.MapGet("/", GetPermissionsAsync)
+            .WithName("GetPermissions")
+            .WithSummary("Get all available permissions grouped by module")
+            .RequireAuthorization()
+            .Produces<IReadOnlyList<PermissionGroupDto>>(StatusCodes.Status200OK);
+
         // ----- Invitation Endpoints -----
         var invitationsGroup = app.MapGroup("/api/v1/invitations")
             .WithTags("Invitation Management");
@@ -131,6 +174,9 @@ public static class UserManagementEndpoints
     private static async Task<IResult> GetUsersAsync(
         [FromQuery] int page,
         [FromQuery] int pageSize,
+        [FromQuery] string? search,
+        [FromQuery] Guid? roleId,
+        [FromQuery] bool? isActive,
         ISender mediator,
         HttpContext httpContext)
     {
@@ -138,7 +184,13 @@ public static class UserManagementEndpoints
         if (tenantId == Guid.Empty)
             return Results.Problem("Tenant ID is required.", statusCode: 400);
 
-        var query = new GetUsersQuery(tenantId, page > 0 ? page : 1, pageSize > 0 ? pageSize : 20);
+        var query = new GetUsersQuery(
+            tenantId,
+            page > 0 ? page : 1,
+            pageSize > 0 ? pageSize : 20,
+            search,
+            roleId,
+            isActive);
         var result = await mediator.Send(query);
 
         return result.IsSuccess
@@ -247,6 +299,103 @@ public static class UserManagementEndpoints
             return Results.Problem("Tenant ID is required.", statusCode: 400);
 
         var query = new GetRolesQuery(tenantId);
+        var result = await mediator.Send(query);
+
+        return result.IsSuccess
+            ? Results.Ok(result.Value)
+            : Results.Problem(result.Error, statusCode: 400);
+    }
+
+    private static async Task<IResult> GetRoleByIdAsync(
+        Guid roleId,
+        ISender mediator,
+        HttpContext httpContext)
+    {
+        var tenantId = GetTenantId(httpContext);
+        if (tenantId == Guid.Empty)
+            return Results.Problem("Tenant ID is required.", statusCode: 400);
+
+        var query = new GetRoleByIdQuery(roleId, tenantId);
+        var result = await mediator.Send(query);
+
+        return result.IsSuccess
+            ? Results.Ok(result.Value)
+            : Results.Problem(result.Error, statusCode: 404);
+    }
+
+    private static async Task<IResult> CreateRoleAsync(
+        [FromBody] CreateRoleRequest request,
+        ISender mediator,
+        HttpContext httpContext)
+    {
+        var tenantId = GetTenantId(httpContext);
+        if (tenantId == Guid.Empty)
+            return Results.Problem("Tenant ID is required.", statusCode: 400);
+
+        var command = new CreateRoleCommand(
+            request.NameAr,
+            request.NameEn,
+            request.DescriptionAr,
+            request.DescriptionEn,
+            tenantId,
+            request.PermissionIds);
+
+        var result = await mediator.Send(command);
+
+        return result.IsSuccess
+            ? Results.Created($"/api/v1/roles/{result.Value!.Id}", result.Value)
+            : Results.Problem(result.Error, statusCode: 400);
+    }
+
+    private static async Task<IResult> UpdateRoleAsync(
+        Guid roleId,
+        [FromBody] UpdateRoleRequest request,
+        ISender mediator,
+        HttpContext httpContext)
+    {
+        var tenantId = GetTenantId(httpContext);
+        if (tenantId == Guid.Empty)
+            return Results.Problem("Tenant ID is required.", statusCode: 400);
+
+        var command = new UpdateRoleCommand(
+            roleId,
+            request.NameAr,
+            request.NameEn,
+            request.Description,
+            tenantId,
+            request.PermissionIds);
+
+        var result = await mediator.Send(command);
+
+        return result.IsSuccess
+            ? Results.NoContent()
+            : Results.Problem(result.Error, statusCode: 400);
+    }
+
+    private static async Task<IResult> ToggleRoleStatusAsync(
+        Guid roleId,
+        [FromBody] ToggleRoleStatusRequest request,
+        ISender mediator,
+        HttpContext httpContext)
+    {
+        var tenantId = GetTenantId(httpContext);
+        if (tenantId == Guid.Empty)
+            return Results.Problem("Tenant ID is required.", statusCode: 400);
+
+        var command = new ToggleRoleStatusCommand(roleId, request.Activate, tenantId);
+        var result = await mediator.Send(command);
+
+        return result.IsSuccess
+            ? Results.NoContent()
+            : Results.Problem(result.Error, statusCode: 400);
+    }
+
+    // ===== Permission Handlers =====
+
+    private static async Task<IResult> GetPermissionsAsync(
+        ISender mediator)
+    {
+        var query = new GetPermissionsQuery();
         var result = await mediator.Send(query);
 
         return result.IsSuccess

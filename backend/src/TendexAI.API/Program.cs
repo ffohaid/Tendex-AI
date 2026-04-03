@@ -167,6 +167,9 @@ app.MapBookletExtractionEndpoints();
 // AI Text Assistant endpoints (general-purpose text generation/improvement)
 app.MapAiTextAssistEndpoints();
 
+// AI User Management Assistant endpoints (role suggestions, permission analysis)
+app.MapAiUserManagementEndpoints();
+
 // Impersonation endpoints (Super Admin only - TASK-603)
 app.MapImpersonationEndpoints();
 

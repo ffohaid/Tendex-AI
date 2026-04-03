@@ -1732,6 +1732,20 @@
         "roleRemoveFailed": "فشل في إزالة الدور",
         "resendFailed": "فشل في إعادة إرسال الدعوة",
         "revokeFailed": "فشل في إلغاء الدعوة"
+      },
+      "searchPlaceholder": "البحث بالاسم أو البريد الإلكتروني...",
+      "allRoles": "جميع الأدوار",
+      "allStatuses": "جميع الحالات",
+      "clearFilters": "مسح الفلاتر",
+      "noSearchResults": "لا توجد نتائج مطابقة للبحث",
+      "userDetailTitle": "تفاصيل المستخدم",
+      "mfaStatus": "المصادقة الثنائية",
+      "mfaEnabled": "مفعلة",
+      "mfaDisabled": "غير مفعلة",
+      "stats": {
+        "totalUsers": "إجمالي المستخدمين",
+        "activeUsers": "المستخدمون النشطون",
+        "inactiveUsers": "المستخدمون المعطلون"
       }
     },
     "roles": {
@@ -1747,18 +1761,39 @@
       "stats": {
         "totalRoles": "إجمالي الأدوار",
         "systemRoles": "أدوار نظامية",
-        "totalUsers": "إجمالي المستخدمين"
+        "totalUsers": "إجمالي المستخدمين",
+        "customRoles": "أدوار مخصصة"
       },
       "fields": {
         "nameAr": "الاسم (عربي)",
         "nameEn": "الاسم (إنجليزي)",
         "description": "الوصف",
         "userCount": "عدد المستخدمين",
-        "createdAt": "تاريخ الإنشاء"
+        "createdAt": "تاريخ الإنشاء",
+        "descriptionAr": "الوصف (عربي)",
+        "descriptionEn": "الوصف (إنجليزي)"
       },
       "errors": {
-        "loadFailed": "فشل في تحميل قائمة الأدوار"
-      }
+        "loadFailed": "فشل في تحميل قائمة الأدوار",
+        "createFailed": "فشل في إنشاء الدور",
+        "updateFailed": "فشل في تحديث الدور",
+        "toggleFailed": "فشل في تغيير حالة الدور"
+      },
+      "createRole": "إنشاء دور جديد",
+      "editRole": "تعديل الدور",
+      "permissionsTitle": "الصلاحيات",
+      "assignedUsers": "المستخدمون المسندون",
+      "noPermissions": "لا توجد صلاحيات مسندة",
+      "noPermissionsAvailable": "لا توجد صلاحيات متاحة",
+      "noUsers": "لا يوجد مستخدمون مسندون",
+      "selectAll": "تحديد الكل",
+      "deselectAll": "إلغاء الكل",
+      "activateRole": "تفعيل الدور",
+      "deactivateRole": "تعطيل الدور",
+      "createSuccess": "تم إنشاء الدور بنجاح",
+      "updateSuccess": "تم تحديث الدور بنجاح",
+      "activateSuccess": "تم تفعيل الدور بنجاح",
+      "deactivateSuccess": "تم تعطيل الدور بنجاح"
     }
   },
   "reports": {
@@ -2043,6 +2078,35 @@
       "structureGenerationFailed": "فشل في توليد هيكل الكراسة. يرجى المحاولة مرة أخرى.",
       "boqGenerationFailed": "فشل في توليد جدول الكميات. يرجى المحاولة مرة أخرى.",
       "evaluationFailed": "فشل في تحليل التقييم. يرجى المحاولة مرة أخرى."
+    },
+    "assistant": {
+      "title": "المساعد الذكي",
+      "subtitle": "مساعد إدارة المستخدمين والأدوار",
+      "tabs": {
+        "chat": "محادثة",
+        "suggest": "اقتراح دور",
+        "analyze": "تحليل الصلاحيات"
+      },
+      "welcomeMessage": "مرحباً! أنا المساعد الذكي لإدارة المستخدمين والأدوار. كيف يمكنني مساعدتك؟",
+      "chatPlaceholder": "اكتب سؤالك هنا...",
+      "suggestDescription": "أدخل المسمى الوظيفي والمسؤوليات للحصول على اقتراح الدور المناسب",
+      "analyzeDescription": "أدخل بيانات الدور لتحليل الصلاحيات والحصول على توصيات أمنية",
+      "suggestButton": "اقتراح الدور المناسب",
+      "analyzeButton": "تحليل الصلاحيات",
+      "errorGeneric": "حدث خطأ أثناء معالجة الطلب. يرجى المحاولة مرة أخرى.",
+      "fields": {
+        "jobTitle": "المسمى الوظيفي",
+        "department": "القسم",
+        "responsibilities": "المسؤوليات",
+        "roleName": "اسم الدور",
+        "currentPermissions": "الصلاحيات الحالية",
+        "userCount": "عدد المستخدمين"
+      },
+      "quickQuestions": {
+        "bestPractices": "أفضل ممارسات تعيين الأدوار والصلاحيات",
+        "secureStructure": "إعداد هيكل صلاحيات آمن للجان",
+        "lifecycleRoles": "الأدوار المطلوبة لدورة حياة المنافسة"
+      }
     }
   },
   "workflow": {

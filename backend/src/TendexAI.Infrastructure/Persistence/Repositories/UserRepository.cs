@@ -81,6 +81,58 @@ public sealed class UserRepository : IUserRepository
             .CountAsync(u => u.TenantId == tenantId, cancellationToken);
     }
 
+    /// <inheritdoc />
+    public async Task<(IReadOnlyList<ApplicationUser> Users, int TotalCount)> GetFilteredByTenantIdAsync(
+        Guid tenantId,
+        int page,
+        int pageSize,
+        string? searchTerm = null,
+        Guid? roleId = null,
+        bool? isActive = null,
+        CancellationToken cancellationToken = default)
+    {
+        var query = _context.Users
+            .Where(u => u.TenantId == tenantId);
+
+        // Apply search filter
+        if (!string.IsNullOrWhiteSpace(searchTerm))
+        {
+            var term = searchTerm.Trim().ToLowerInvariant();
+            query = query.Where(u =>
+                u.FirstName.ToLower().Contains(term) ||
+                u.LastName.ToLower().Contains(term) ||
+                u.Email.ToLower().Contains(term) ||
+                (u.FirstName + " " + u.LastName).ToLower().Contains(term) ||
+                (u.PhoneNumber != null && u.PhoneNumber.Contains(term)));
+        }
+
+        // Apply role filter
+        if (roleId.HasValue)
+        {
+            query = query.Where(u => u.UserRoles.Any(ur => ur.RoleId == roleId.Value));
+        }
+
+        // Apply active status filter
+        if (isActive.HasValue)
+        {
+            query = query.Where(u => u.IsActive == isActive.Value);
+        }
+
+        var totalCount = await query.CountAsync(cancellationToken);
+
+        var users = await query
+            .Include(u => u.UserRoles)
+                .ThenInclude(ur => ur.Role)
+            .OrderByDescending(u => u.CreatedAt)
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .AsSplitQuery()
+            .AsNoTracking()
+            .ToListAsync(cancellationToken);
+
+        return (users, totalCount);
+    }
+
     public async Task<IReadOnlyList<ApplicationUser>> SearchByTenantAsync(
         Guid tenantId,
         string? searchTerm,

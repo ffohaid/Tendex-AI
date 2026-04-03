@@ -57,6 +57,55 @@ export interface RoleDto {
   createdAt: string
 }
 
+/**
+ * Represents a user assigned to a role.
+ */
+export interface RoleUserDto {
+  userId: string
+  assignedAt: string
+  assignedBy: string | null
+}
+
+/**
+ * Represents a role with full details including permissions and users.
+ */
+export interface RoleDetailDto {
+  id: string
+  nameAr: string
+  nameEn: string
+  description: string | null
+  isSystemRole: boolean
+  isActive: boolean
+  userCount: number
+  createdAt: string
+  permissions: PermissionDto[]
+  users: RoleUserDto[]
+}
+
+/* ------------------------------------------------------------------ */
+/*  Permission DTOs                                                    */
+/* ------------------------------------------------------------------ */
+
+/**
+ * Represents a permission.
+ */
+export interface PermissionDto {
+  id: string
+  code: string
+  nameAr: string
+  nameEn: string
+  module: string
+  description: string | null
+}
+
+/**
+ * Represents a group of permissions by module.
+ */
+export interface PermissionGroupDto {
+  module: string
+  permissions: PermissionDto[]
+}
+
 /* ------------------------------------------------------------------ */
 /*  Invitation DTOs                                                    */
 /* ------------------------------------------------------------------ */
@@ -139,6 +188,34 @@ export interface SendInvitationRequest {
   baseUrl?: string | null
 }
 
+/**
+ * Request model for creating a new custom role.
+ */
+export interface CreateRoleRequest {
+  nameAr: string
+  nameEn: string
+  descriptionAr?: string | null
+  descriptionEn?: string | null
+  permissionIds?: string[] | null
+}
+
+/**
+ * Request model for updating an existing role.
+ */
+export interface UpdateRoleRequest {
+  nameAr: string
+  nameEn: string
+  description?: string | null
+  permissionIds?: string[] | null
+}
+
+/**
+ * Request model for activating/deactivating a role.
+ */
+export interface ToggleRoleStatusRequest {
+  activate: boolean
+}
+
 /* ------------------------------------------------------------------ */
 /*  Query Parameters                                                   */
 /* ------------------------------------------------------------------ */
@@ -149,6 +226,9 @@ export interface SendInvitationRequest {
 export interface UserListParams {
   page?: number
   pageSize?: number
+  search?: string
+  roleId?: string
+  isActive?: boolean
 }
 
 /**
@@ -157,4 +237,27 @@ export interface UserListParams {
 export interface InvitationListParams {
   page?: number
   pageSize?: number
+}
+
+/* ------------------------------------------------------------------ */
+/*  AI DTOs                                                            */
+/* ------------------------------------------------------------------ */
+
+/**
+ * AI-generated role suggestion.
+ */
+export interface AiRoleSuggestionDto {
+  suggestedRoleNameAr: string
+  suggestedRoleNameEn: string
+  reason: string
+  suggestedPermissions: string[]
+}
+
+/**
+ * AI-generated user activity analysis.
+ */
+export interface AiUserAnalysisDto {
+  summary: string
+  recommendations: string[]
+  riskLevel: string
 }

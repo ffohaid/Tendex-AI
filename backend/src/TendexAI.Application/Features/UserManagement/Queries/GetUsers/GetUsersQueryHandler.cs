@@ -7,7 +7,7 @@ namespace TendexAI.Application.Features.UserManagement.Queries.GetUsers;
 
 /// <summary>
 /// Handles the <see cref="GetUsersQuery"/>.
-/// Returns a paginated list of users for the specified tenant.
+/// Returns a paginated, searchable, and filterable list of users for the specified tenant.
 /// </summary>
 public sealed class GetUsersQueryHandler : IQueryHandler<GetUsersQuery, PaginatedResult<UserDto>>
 {
@@ -20,8 +20,14 @@ public sealed class GetUsersQueryHandler : IQueryHandler<GetUsersQuery, Paginate
 
     public async Task<Result<PaginatedResult<UserDto>>> Handle(GetUsersQuery request, CancellationToken cancellationToken)
     {
-        var totalCount = await _userRepository.GetCountByTenantIdAsync(request.TenantId, cancellationToken);
-        var users = await _userRepository.GetByTenantIdAsync(request.TenantId, request.Page, request.PageSize, cancellationToken);
+        var (users, totalCount) = await _userRepository.GetFilteredByTenantIdAsync(
+            request.TenantId,
+            request.Page,
+            request.PageSize,
+            request.SearchTerm,
+            request.RoleId,
+            request.IsActive,
+            cancellationToken);
 
         var userDtos = users.Select(u => new UserDto(
             Id: u.Id,

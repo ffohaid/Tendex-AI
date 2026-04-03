@@ -1732,6 +1732,20 @@
         "roleRemoveFailed": "Failed to remove role",
         "resendFailed": "Failed to resend invitation",
         "revokeFailed": "Failed to revoke invitation"
+      },
+      "searchPlaceholder": "Search by name or email...",
+      "allRoles": "All Roles",
+      "allStatuses": "All Statuses",
+      "clearFilters": "Clear Filters",
+      "noSearchResults": "No matching results found",
+      "userDetailTitle": "User Details",
+      "mfaStatus": "Two-Factor Authentication",
+      "mfaEnabled": "Enabled",
+      "mfaDisabled": "Disabled",
+      "stats": {
+        "totalUsers": "Total Users",
+        "activeUsers": "Active Users",
+        "inactiveUsers": "Inactive Users"
       }
     },
     "roles": {
@@ -1747,18 +1761,39 @@
       "stats": {
         "totalRoles": "Total Roles",
         "systemRoles": "System Roles",
-        "totalUsers": "Total Users"
+        "totalUsers": "Total Users",
+        "customRoles": "Custom Roles"
       },
       "fields": {
         "nameAr": "Name (Arabic)",
         "nameEn": "Name (English)",
         "description": "Description",
         "userCount": "User Count",
-        "createdAt": "Created At"
+        "createdAt": "Created At",
+        "descriptionAr": "Description (Arabic)",
+        "descriptionEn": "Description (English)"
       },
       "errors": {
-        "loadFailed": "Failed to load roles"
-      }
+        "loadFailed": "Failed to load roles",
+        "createFailed": "Failed to create role",
+        "updateFailed": "Failed to update role",
+        "toggleFailed": "Failed to toggle role status"
+      },
+      "createRole": "Create New Role",
+      "editRole": "Edit Role",
+      "permissionsTitle": "Permissions",
+      "assignedUsers": "Assigned Users",
+      "noPermissions": "No permissions assigned",
+      "noPermissionsAvailable": "No permissions available",
+      "noUsers": "No users assigned",
+      "selectAll": "Select All",
+      "deselectAll": "Deselect All",
+      "activateRole": "Activate Role",
+      "deactivateRole": "Deactivate Role",
+      "createSuccess": "Role created successfully",
+      "updateSuccess": "Role updated successfully",
+      "activateSuccess": "Role activated successfully",
+      "deactivateSuccess": "Role deactivated successfully"
     }
   },
   "reports": {
@@ -2043,6 +2078,35 @@
       "structureGenerationFailed": "Failed to generate booklet structure. Please try again.",
       "boqGenerationFailed": "Failed to generate BOQ. Please try again.",
       "evaluationFailed": "Failed to analyze evaluation. Please try again."
+    },
+    "assistant": {
+      "title": "AI Assistant",
+      "subtitle": "User & Role Management Assistant",
+      "tabs": {
+        "chat": "Chat",
+        "suggest": "Suggest Role",
+        "analyze": "Analyze Permissions"
+      },
+      "welcomeMessage": "Hello! I'm the AI assistant for user and role management. How can I help you?",
+      "chatPlaceholder": "Type your question here...",
+      "suggestDescription": "Enter the job title and responsibilities to get a role suggestion",
+      "analyzeDescription": "Enter role data to analyze permissions and get security recommendations",
+      "suggestButton": "Suggest Appropriate Role",
+      "analyzeButton": "Analyze Permissions",
+      "errorGeneric": "An error occurred while processing the request. Please try again.",
+      "fields": {
+        "jobTitle": "Job Title",
+        "department": "Department",
+        "responsibilities": "Responsibilities",
+        "roleName": "Role Name",
+        "currentPermissions": "Current Permissions",
+        "userCount": "User Count"
+      },
+      "quickQuestions": {
+        "bestPractices": "Best practices for assigning roles and permissions",
+        "secureStructure": "Setting up a secure permission structure for committees",
+        "lifecycleRoles": "Required roles for the full competition lifecycle"
+      }
     }
   },
   "workflow": {

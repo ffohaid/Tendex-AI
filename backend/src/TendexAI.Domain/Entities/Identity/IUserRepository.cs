@@ -12,6 +12,20 @@ public interface IUserRepository
     Task<bool> ExistsByEmailAsync(string email, CancellationToken cancellationToken = default);
     Task<IReadOnlyList<ApplicationUser>> GetByTenantIdAsync(Guid tenantId, int page, int pageSize, CancellationToken cancellationToken = default);
     Task<int> GetCountByTenantIdAsync(Guid tenantId, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Returns a filtered, paginated list of users for a tenant with total count.
+    /// Supports search by name/email, filter by role and active status.
+    /// </summary>
+    Task<(IReadOnlyList<ApplicationUser> Users, int TotalCount)> GetFilteredByTenantIdAsync(
+        Guid tenantId,
+        int page,
+        int pageSize,
+        string? searchTerm = null,
+        Guid? roleId = null,
+        bool? isActive = null,
+        CancellationToken cancellationToken = default);
+
     Task<IReadOnlyList<ApplicationUser>> SearchByTenantAsync(
         Guid tenantId,
         string? searchTerm,

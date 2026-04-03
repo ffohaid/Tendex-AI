@@ -40,6 +40,47 @@ public sealed record RoleDto(
     DateTime CreatedAt);
 
 /// <summary>
+/// DTO representing a role with full details including permissions and users.
+/// </summary>
+public sealed record RoleDetailDto(
+    Guid Id,
+    string NameAr,
+    string NameEn,
+    string? Description,
+    bool IsSystemRole,
+    bool IsActive,
+    int UserCount,
+    DateTime CreatedAt,
+    IReadOnlyList<PermissionDto> Permissions,
+    IReadOnlyList<RoleUserDto> Users);
+
+/// <summary>
+/// DTO representing a user assigned to a role.
+/// </summary>
+public sealed record RoleUserDto(
+    Guid UserId,
+    DateTime AssignedAt,
+    string? AssignedBy);
+
+/// <summary>
+/// DTO representing a permission.
+/// </summary>
+public sealed record PermissionDto(
+    Guid Id,
+    string Code,
+    string NameAr,
+    string NameEn,
+    string Module,
+    string? Description);
+
+/// <summary>
+/// DTO representing a group of permissions by module.
+/// </summary>
+public sealed record PermissionGroupDto(
+    string Module,
+    IReadOnlyList<PermissionDto> Permissions);
+
+/// <summary>
 /// DTO representing an invitation in list views.
 /// </summary>
 public sealed record InvitationDto(
@@ -72,3 +113,20 @@ public sealed record PaginatedResult<T>(
     public bool HasNextPage => Page < TotalPages;
     public bool HasPreviousPage => Page > 1;
 }
+
+/// <summary>
+/// DTO for AI-generated role suggestion.
+/// </summary>
+public sealed record AiRoleSuggestionDto(
+    string SuggestedRoleNameAr,
+    string SuggestedRoleNameEn,
+    string Reason,
+    IReadOnlyList<string> SuggestedPermissions);
+
+/// <summary>
+/// DTO for AI-generated user activity analysis.
+/// </summary>
+public sealed record AiUserAnalysisDto(
+    string Summary,
+    IReadOnlyList<string> Recommendations,
+    string RiskLevel);

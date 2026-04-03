@@ -39,3 +39,27 @@ public sealed record AcceptInvitationRequest(
     string Password,
     string ConfirmPassword,
     string? PhoneNumber);
+
+/// <summary>
+/// Request model for creating a new custom role.
+/// </summary>
+public sealed record CreateRoleRequest(
+    string NameAr,
+    string NameEn,
+    string? DescriptionAr,
+    string? DescriptionEn,
+    List<Guid>? PermissionIds);
+
+/// <summary>
+/// Request model for updating an existing role.
+/// </summary>
+public sealed record UpdateRoleRequest(
+    string NameAr,
+    string NameEn,
+    string? Description,
+    List<Guid>? PermissionIds);
+
+/// <summary>
+/// Request model for activating/deactivating a role.
+/// </summary>
+public sealed record ToggleRoleStatusRequest(bool Activate);
