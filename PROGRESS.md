@@ -3146,3 +3146,36 @@
   - `frontend/src/components/rfp/Step6Review.vue`
 - **النشر:** ✅ تم النشر بنجاح - الانتقال من Draft إلى PendingApproval يعمل بشكل صحيح
 - **Commit:** `9b10d9b` - fix: resolve status transition and review validation bugs
+
+### 2026-04-03 - Refactor Committee Phases: Multi-Select Checkboxes
+- **الحالة:** ✅ مكتمل
+- **ما تم إنجازه:**
+  - **إعادة هيكلة اختيار المراحل في اللجان:**
+    - استبدال حقول "من مرحلة" و "إلى مرحلة" (Select Dropdowns) بـ Checkboxes لاختيار مراحل متعددة متفرقة
+    - إضافة نموذج نطاق صلاحية اللجنة (ScopeType): شاملة / مراحل محددة لجميع المنافسات / مراحل محددة لمنافسات محددة
+    - إضافة أزرار "تحديد الكل" و "إلغاء الكل" للمراحل
+    - رسالة تحقق "يجب اختيار مرحلة واحدة على الأقل"
+  - **إصلاح الترجمة:**
+    - إزالة جميع النصوص الإنجليزية من حقول المراحل
+    - إضافة مفاتيح ترجمة جديدة للمراحل والنطاقات في ar.json و en.json
+  - **تحديث قاعدة البيانات:**
+    - إنشاء Migration لتحويل أعمدة ActiveFromPhase/ActiveToPhase إلى PhasesString
+    - إضافة عمود ScopeType لجدول Committees
+    - إنشاء جدول CommitteeCompetitions للربط المتعدد بين اللجان والمنافسات
+    - إزالة عمود CompetitionId القديم
+  - **إصلاح أخطاء البناء:**
+    - إضافة CultureInfo.InvariantCulture لـ int.Parse/ToString (CA1305)
+    - إزالة دالة formatPhasesList غير المستخدمة (TS6133)
+- **الملفات المعدلة:**
+  - `frontend/src/views/committees/CommitteesTemporaryView.vue`
+  - `frontend/src/views/committees/CommitteesPermanentView.vue`
+  - `frontend/src/locales/ar.json`
+  - `frontend/src/locales/en.json`
+  - `backend/src/TendexAI.Domain/Entities/Committees/Committee.cs`
+  - `backend/src/TendexAI.Infrastructure/Persistence/Migrations/Tenant/20260403120000_RefactorCommitteePhases.cs`
+  - `backend/src/TendexAI.Infrastructure/Persistence/Migrations/Tenant/TenantDbContextModelSnapshot.cs`
+- **النشر:** ✅ تم النشر بنجاح - جميع الحاويات تعمل وصحية
+- **Commits:**
+  - `0cc3862` - feat: refactor committee phases from range to multi-select checkboxes
+  - `22f3b1b` - fix: add CultureInfo.InvariantCulture to phase serialization (CA1305)
+  - `98bffb7` - fix: remove unused formatPhasesList function (TS6133)
