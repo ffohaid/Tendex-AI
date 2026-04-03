@@ -3179,3 +3179,100 @@
   - `0cc3862` - feat: refactor committee phases from range to multi-select checkboxes
   - `22f3b1b` - fix: add CultureInfo.InvariantCulture to phase serialization (CA1305)
   - `98bffb7` - fix: remove unused formatPhasesList function (TS6133)
+
+### 2026-04-03 - feat: User Management & Roles System Overhaul with AI Integration
+- **الحالة:** ✅ مكتمل
+- **ما تم إنجازه:**
+  - **Backend - Role CRUD:**
+    - Created `CreateRoleCommand/Handler/Validator` for creating custom roles with permissions
+    - Created `UpdateRoleCommand/Handler/Validator` for updating role details and permissions
+    - Created `ToggleRoleStatusCommand/Handler` for activating/deactivating roles
+    - Created `GetRoleByIdQuery/Handler` for fetching role details with permissions
+    - Created `GetPermissionsQuery/Handler` for listing all available permissions grouped by module
+    - Created `IPermissionRepository` and `PermissionRepository` for permission data access
+    - Updated `UserManagementEndpoints` with new role CRUD and permissions endpoints
+  - **Backend - User Search & Filtering:**
+    - Updated `GetUsersQuery` to support search by name/email, filter by role/status, pagination
+    - Updated `GetUsersQueryHandler` with filtering logic
+    - Updated `IUserRepository` with `GetFilteredUsersAsync` method
+    - Updated `UserRepository` with full search/filter implementation
+    - Fixed `SendInvitationCommandValidator` regex to allow hyphens/apostrophes in names
+  - **Backend - AI Endpoints:**
+    - Created `AiUserManagementEndpoints` with role suggestion and permissions analysis endpoints
+    - Registered in `Program.cs`
+  - **Frontend - User Management:**
+    - Rewrote `UsersManagementView.vue` with:
+      - Statistics cards (total, active, inactive users)
+      - Search by name/email
+      - Filter by role and status
+      - Improved edit user dialog with email display and avatar
+      - Improved role management dialog with user info header
+      - Invitation tab with status tracking
+      - AI Assistant floating button
+      - Detailed error messages from API
+  - **Frontend - Roles Management:**
+    - Rewrote `RolesManagementView.vue` with:
+      - Role cards with descriptions, user count, and status badges
+      - Create custom role dialog with permissions checkboxes grouped by module
+      - Role detail dialog showing assigned permissions
+      - Toggle role status functionality
+      - AI Assistant integration
+  - **Frontend - Permissions Matrix:**
+    - Fixed hardcoded English text in `PermissionsMatrixView.vue`
+    - Added Arabic translations for all labels
+  - **Frontend - AI Assistant Component:**
+    - Created `AiUserManagementAssistant.vue` component with:
+      - Role suggestion based on job description
+      - Permissions analysis for existing roles
+      - Floating panel with tabs
+  - **Database - Permissions Seeding:**
+    - Created migration `SeedPermissionsAndUpdateRoles` (58 permissions across 15 modules)
+    - Seeded permissions via SQL script directly on production
+    - Assigned permissions to all 7 system roles with appropriate access levels
+    - Updated role descriptions to Arabic
+  - **Translation Updates:**
+    - Added 100+ Arabic/English translation keys for:
+      - User management (search, filters, stats, dialogs)
+      - Roles management (CRUD, permissions, status)
+      - AI assistant (suggestions, analysis)
+      - Permission modules (13 module names)
+      - Permissions matrix labels
+- **نتائج الاختبار المباشر (Live Testing):**
+  - ✅ User list loads with search and filter functionality
+  - ✅ Edit user dialog shows user details correctly
+  - ✅ Role management dialog shows current roles with add/remove
+  - ✅ Invite user dialog works (SMTP config needed for email delivery)
+  - ✅ Roles page shows all 7 system roles with Arabic descriptions
+  - ✅ Role detail dialog shows 58 permissions grouped by 15 modules
+  - ✅ Create role dialog shows all permissions with checkboxes
+  - ✅ Role filter dropdown shows all available roles
+  - ✅ Status filter works (active/inactive)
+  - ✅ AI Assistant button visible and functional
+  - ✅ Permissions matrix page loads with Arabic labels
+- **الملفات المعدلة:**
+  - `backend/src/TendexAI.Application/Features/UserManagement/Commands/CreateRole/*` (new)
+  - `backend/src/TendexAI.Application/Features/UserManagement/Commands/UpdateRole/*` (new)
+  - `backend/src/TendexAI.Application/Features/UserManagement/Commands/ToggleRoleStatus/*` (new)
+  - `backend/src/TendexAI.Application/Features/UserManagement/Queries/GetRoleById/*` (new)
+  - `backend/src/TendexAI.Application/Features/UserManagement/Queries/GetPermissions/*` (new)
+  - `backend/src/TendexAI.Application/Features/UserManagement/Dtos/UserManagementDtos.cs`
+  - `backend/src/TendexAI.Domain/Entities/Identity/IPermissionRepository.cs` (new)
+  - `backend/src/TendexAI.Domain/Entities/Identity/IUserRepository.cs`
+  - `backend/src/TendexAI.Infrastructure/Persistence/Repositories/PermissionRepository.cs` (new)
+  - `backend/src/TendexAI.Infrastructure/Persistence/Repositories/UserRepository.cs`
+  - `backend/src/TendexAI.Infrastructure/DependencyInjection.cs`
+  - `backend/src/TendexAI.API/Endpoints/UserManagement/UserManagementEndpoints.cs`
+  - `backend/src/TendexAI.API/Endpoints/UserManagement/UserManagementRequestModels.cs`
+  - `backend/src/TendexAI.API/Endpoints/AI/AiUserManagementEndpoints.cs` (new)
+  - `backend/src/TendexAI.API/Program.cs`
+  - `frontend/src/types/userManagement.ts`
+  - `frontend/src/services/userManagementService.ts`
+  - `frontend/src/views/settings/UsersManagementView.vue`
+  - `frontend/src/views/settings/RolesManagementView.vue`
+  - `frontend/src/views/permissions/PermissionsMatrixView.vue`
+  - `frontend/src/components/ai/AiUserManagementAssistant.vue` (new)
+  - `frontend/src/locales/ar.json`
+  - `frontend/src/locales/en.json`
+- **النشر:** ✅ تم النشر بنجاح على https://netaq.pro
+- **Commit:** `feat: overhaul user management & roles system with AI integration`
+
