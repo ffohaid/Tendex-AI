@@ -74,8 +74,25 @@ const priorityColor = (p: string) => ({
 }[p] || 'bg-gray-100 text-gray-700')
 
 const statusLabel = (s: string) => statusOptions.find(o => o.value === s)?.label || s
-const categoryLabel = (c: string) => categoryOptions.find(o => o.value === c)?.label || c
-const priorityLabel = (p: string) => priorityOptions.find(o => o.value === p)?.label || p
+
+// Map enum names from API to Arabic labels
+const categoryNameMap: Record<string, string> = {
+  TechnicalIssue: 'مشكلة تقنية', FeatureRequest: 'طلب ميزة', AccountAccess: 'الوصول للحساب',
+  BillingSubscription: 'الاشتراك والفوترة', TrainingDocumentation: 'التدريب والتوثيق',
+  IntegrationApi: 'التكامل والربط', PerformanceIssue: 'مشكلة أداء', DataReporting: 'البيانات والتقارير',
+  GeneralInquiry: 'استفسار عام',
+}
+const priorityNameMap: Record<string, string> = {
+  Low: 'منخفضة', Medium: 'متوسطة', High: 'عالية', Critical: 'حرجة',
+}
+const categoryLabel = (c: any) => {
+  if (typeof c === 'number') return categoryOptions.find(o => o.value === c)?.label || c
+  return categoryNameMap[c] || categoryOptions.find(o => o.value === c)?.label || c
+}
+const priorityLabel = (p: any) => {
+  if (typeof p === 'number') return priorityOptions.find(o => o.value === p)?.label || p
+  return priorityNameMap[p] || priorityOptions.find(o => o.value === p)?.label || p
+}
 
 const formatTimeAgo = (d: string) => {
   if (!d) return '-'
