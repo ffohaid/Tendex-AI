@@ -1,7 +1,7 @@
 using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using TendexAI.Application.Common.Interfaces;
-using TendexAI.Domain.Entities;
 using TendexAI.Infrastructure.Persistence;
 
 namespace TendexAI.Infrastructure.MultiTenancy;
@@ -10,6 +10,7 @@ namespace TendexAI.Infrastructure.MultiTenancy;
 /// Resolves the current tenant from the HTTP request context.
 /// Tenant identification is performed via the "X-Tenant-Id" header.
 /// The resolved tenant's connection string is cached per-request to avoid repeated DB lookups.
+/// Connection strings are stored encrypted (AES-256) and decrypted in-memory only.
 /// </summary>
 public sealed class TenantProvider : ITenantProvider
 {
@@ -17,6 +18,8 @@ public sealed class TenantProvider : ITenantProvider
 
     private readonly IHttpContextAccessor _httpContextAccessor;
     private readonly MasterPlatformDbContext _masterDb;
+    private readonly IConnectionStringEncryptor _encryptor;
+    private readonly ILogger<TenantProvider> _logger;
 
     private Guid? _cachedTenantId;
     private string? _cachedConnectionString;
@@ -24,10 +27,14 @@ public sealed class TenantProvider : ITenantProvider
 
     public TenantProvider(
         IHttpContextAccessor httpContextAccessor,
-        MasterPlatformDbContext masterDb)
+        MasterPlatformDbContext masterDb,
+        IConnectionStringEncryptor encryptor,
+        ILogger<TenantProvider> logger)
     {
         _httpContextAccessor = httpContextAccessor;
         _masterDb = masterDb;
+        _encryptor = encryptor;
+        _logger = logger;
     }
 
     public Guid? GetCurrentTenantId()
@@ -76,6 +83,19 @@ public sealed class TenantProvider : ITenantProvider
         }
 
         _cachedTenantId = tenant.Id;
-        _cachedConnectionString = tenant.ConnectionString;
+
+        // Decrypt the connection string in-memory (stored encrypted with AES-256)
+        if (!string.IsNullOrWhiteSpace(tenant.ConnectionString))
+        {
+            try
+            {
+                _cachedConnectionString = _encryptor.Decrypt(tenant.ConnectionString);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to decrypt connection string for tenant {TenantId}", tenantId);
+                _cachedConnectionString = null;
+            }
+        }
     }
 }
