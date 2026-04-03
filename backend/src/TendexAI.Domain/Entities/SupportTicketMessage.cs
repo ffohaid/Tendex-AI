@@ -23,6 +23,11 @@ public class SupportTicketMessage
     public string SenderName { get; set; } = string.Empty;
 
     /// <summary>
+    /// Email of the sender.
+    /// </summary>
+    public string SenderEmail { get; set; } = string.Empty;
+
+    /// <summary>
     /// Whether the sender is an operator (true) or tenant user (false).
     /// </summary>
     public bool IsOperatorMessage { get; set; }
@@ -51,6 +56,11 @@ public class SupportTicketMessage
     /// Whether the message has been read by the recipient.
     /// </summary>
     public bool IsRead { get; set; }
+
+    /// <summary>
+    /// Soft delete flag.
+    /// </summary>
+    public bool IsDeleted { get; set; }
 
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 

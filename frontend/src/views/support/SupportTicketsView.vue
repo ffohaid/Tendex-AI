@@ -20,7 +20,7 @@ const statusFilter = ref('')
 
 // Create ticket
 const showCreateModal = ref(false)
-const createForm = ref({ subject: '', description: '', category: 'GeneralInquiry', priority: 'Medium' })
+const createForm = ref({ subject: '', description: '', category: 8, priority: 1 })
 const creating = ref(false)
 
 // Detail
@@ -41,22 +41,22 @@ const statusOptions = [
 ]
 
 const categoryOptions = [
-  { value: 'TechnicalIssue', label: 'مشكلة تقنية' },
-  { value: 'FeatureRequest', label: 'طلب ميزة' },
-  { value: 'AccountAccess', label: 'الوصول للحساب' },
-  { value: 'BillingSubscription', label: 'الاشتراك والفوترة' },
-  { value: 'TrainingDocumentation', label: 'التدريب والتوثيق' },
-  { value: 'IntegrationApi', label: 'التكامل والربط' },
-  { value: 'PerformanceIssue', label: 'مشكلة أداء' },
-  { value: 'DataReporting', label: 'البيانات والتقارير' },
-  { value: 'GeneralInquiry', label: 'استفسار عام' },
+  { value: 0, label: 'مشكلة تقنية' },
+  { value: 1, label: 'طلب ميزة' },
+  { value: 2, label: 'الوصول للحساب' },
+  { value: 3, label: 'الاشتراك والفوترة' },
+  { value: 4, label: 'التدريب والتوثيق' },
+  { value: 5, label: 'التكامل والربط' },
+  { value: 6, label: 'مشكلة أداء' },
+  { value: 7, label: 'البيانات والتقارير' },
+  { value: 8, label: 'استفسار عام' },
 ]
 
 const priorityOptions = [
-  { value: 'Low', label: 'منخفضة' },
-  { value: 'Medium', label: 'متوسطة' },
-  { value: 'High', label: 'عالية' },
-  { value: 'Critical', label: 'حرجة' },
+  { value: 0, label: 'منخفضة' },
+  { value: 1, label: 'متوسطة' },
+  { value: 2, label: 'عالية' },
+  { value: 3, label: 'حرجة' },
 ]
 
 const statusColor = (s: string) => ({
@@ -92,7 +92,7 @@ async function fetchTickets() {
   try {
     const p = new URLSearchParams({ page: page.value.toString(), pageSize: pageSize.value.toString() })
     if (statusFilter.value) p.append('status', statusFilter.value)
-    const r = await http.get(`/api/v1/support-tickets?${p}`)
+    const r = await http.get(`/v1/support-tickets?${p}`)
     tickets.value = r.data.items || []
     totalCount.value = r.data.totalCount || 0
     totalPages.value = r.data.totalPages || 0
@@ -104,9 +104,9 @@ async function createTicket() {
   if (!createForm.value.subject.trim() || !createForm.value.description.trim()) return
   creating.value = true
   try {
-    await http.post('/api/v1/support-tickets', createForm.value)
+    await http.post('/v1/support-tickets', createForm.value)
     showCreateModal.value = false
-    createForm.value = { subject: '', description: '', category: 'GeneralInquiry', priority: 'Medium' }
+    createForm.value = { subject: '', description: '', category: 8, priority: 1 }
     fetchTickets()
   } catch (e) { console.error('Failed to create ticket:', e) }
   finally { creating.value = false }
@@ -115,9 +115,9 @@ async function createTicket() {
 async function openDetail(id: string) {
   detailLoading.value = true; showDetailModal.value = true
   try {
-    const r = await http.get(`/api/v1/support-tickets/${id}`)
+    const r = await http.get(`/v1/support-tickets/${id}`)
     selectedTicket.value = r.data
-    await http.put(`/api/v1/support-tickets/${id}/messages/read`)
+    await http.put(`/v1/support-tickets/${id}/messages/read`)
   } catch {} finally { detailLoading.value = false }
 }
 
@@ -125,7 +125,7 @@ async function sendMsg() {
   if (!newMessage.value.trim() || !selectedTicket.value) return
   sendingMessage.value = true
   try {
-    const r = await http.post(`/api/v1/support-tickets/${selectedTicket.value.id}/messages`, { content: newMessage.value })
+    const r = await http.post(`/v1/support-tickets/${selectedTicket.value.id}/messages`, { content: newMessage.value })
     selectedTicket.value.messages.push(r.data)
     newMessage.value = ''
     fetchTickets()

@@ -156,6 +156,7 @@ public static class SupportTicketEndpoints
             SupportTicketId = ticket.Id,
             SenderUserId = ticket.CreatedByUserId,
             SenderName = ticket.CreatedByUserName,
+            SenderEmail = ticket.CreatedByUserEmail,
             IsOperatorMessage = false,
             Content = request.Description,
             IsAiGenerated = false
@@ -259,6 +260,7 @@ public static class SupportTicketEndpoints
             SupportTicketId = id,
             SenderUserId = currentUser.UserId ?? Guid.Empty,
             SenderName = currentUser.UserName ?? "Unknown",
+            SenderEmail = currentUser.Email ?? "unknown@unknown.com",
             IsOperatorMessage = isOperator,
             Content = request.Content,
             AttachmentUrl = request.AttachmentUrl,
@@ -367,6 +369,7 @@ public static class SupportTicketEndpoints
                 SupportTicketId = id,
                 SenderUserId = currentUser.UserId ?? Guid.Empty,
                 SenderName = "المساعد الذكي",
+                SenderEmail = "ai@tendex.ai",
                 IsOperatorMessage = true,
                 Content = aiReply,
                 IsAiGenerated = true

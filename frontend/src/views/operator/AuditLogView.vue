@@ -86,7 +86,7 @@ async function fetchLogs() {
     if (filterAction.value) p.append('action', filterAction.value)
     if (filterSeverity.value) p.append('severity', filterSeverity.value)
     if (searchQuery.value) p.append('search', searchQuery.value)
-    const r = await http.get(`/api/v1/audit-logs?${p}`)
+    const r = await http.get(`/v1/audit-logs?${p}`)
     logs.value = r.data.items || []
     totalCount.value = r.data.totalCount || 0
     totalPages.value = r.data.totalPages || 0
@@ -96,7 +96,7 @@ async function fetchLogs() {
 
 async function exportLogs() {
   try {
-    const r = await http.get('/api/v1/audit-logs/export', { responseType: 'blob' })
+    const r = await http.get('/v1/audit-logs/export', { responseType: 'blob' })
     const url = window.URL.createObjectURL(new Blob([r.data]))
     const a = document.createElement('a')
     a.href = url

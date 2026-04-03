@@ -116,6 +116,16 @@ public class SupportTicket
     public DateTime? ClosedAt { get; set; }
     public DateTime? FirstResponseAt { get; set; }
 
+    /// <summary>
+    /// Cached tenant name for display purposes.
+    /// </summary>
+    public string? TenantName { get; set; }
+
+    /// <summary>
+    /// Soft delete flag.
+    /// </summary>
+    public bool IsDeleted { get; set; }
+
     // Navigation properties
     public Tenant Tenant { get; set; } = null!;
     public ICollection<SupportTicketMessage> Messages { get; set; } = new List<SupportTicketMessage>();

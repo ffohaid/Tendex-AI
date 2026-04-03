@@ -110,7 +110,7 @@ async function fetchTickets() {
     if (categoryFilter.value) p.append('category', categoryFilter.value)
     if (priorityFilter.value) p.append('priority', priorityFilter.value)
     if (searchQuery.value) p.append('search', searchQuery.value)
-    const r = await http.get(`/api/v1/support-tickets?${p}`)
+    const r = await http.get(`/v1/support-tickets?${p}`)
     tickets.value = r.data.items || []
     totalCount.value = r.data.totalCount || 0
     totalPages.value = r.data.totalPages || 0
@@ -119,15 +119,15 @@ async function fetchTickets() {
 }
 
 async function fetchStats() {
-  try { const r = await http.get('/api/v1/support-tickets/stats'); stats.value = r.data } catch {}
+  try { const r = await http.get('/v1/support-tickets/stats'); stats.value = r.data } catch {}
 }
 
 async function openDetail(id: string) {
   detailLoading.value = true; showDetailModal.value = true
   try {
-    const r = await http.get(`/api/v1/support-tickets/${id}`)
+    const r = await http.get(`/v1/support-tickets/${id}`)
     selectedTicket.value = r.data
-    await http.put(`/api/v1/support-tickets/${id}/messages/read`)
+    await http.put(`/v1/support-tickets/${id}/messages/read`)
   } catch {} finally { detailLoading.value = false }
 }
 
@@ -135,7 +135,7 @@ async function sendMsg() {
   if (!newMessage.value.trim() || !selectedTicket.value) return
   sendingMessage.value = true
   try {
-    const r = await http.post(`/api/v1/support-tickets/${selectedTicket.value.id}/messages`, { content: newMessage.value })
+    const r = await http.post(`/v1/support-tickets/${selectedTicket.value.id}/messages`, { content: newMessage.value })
     selectedTicket.value.messages.push(r.data)
     newMessage.value = ''
     fetchTickets(); fetchStats()
@@ -146,7 +146,7 @@ async function aiAnalyze() {
   if (!selectedTicket.value) return
   aiAnalyzing.value = true
   try {
-    const r = await http.post(`/api/v1/support-tickets/${selectedTicket.value.id}/ai-analyze`)
+    const r = await http.post(`/v1/support-tickets/${selectedTicket.value.id}/ai-analyze`)
     Object.assign(selectedTicket.value, { aiSummary: r.data.summary, aiSentiment: r.data.sentiment, aiSuggestedCategory: r.data.suggestedCategory, aiSuggestedPriority: r.data.suggestedPriority, aiSuggestedResolution: r.data.suggestedResolution })
   } catch {} finally { aiAnalyzing.value = false }
 }
@@ -155,19 +155,19 @@ async function aiReply() {
   if (!selectedTicket.value) return
   aiGeneratingReply.value = true
   try {
-    const r = await http.post(`/api/v1/support-tickets/${selectedTicket.value.id}/ai-reply`, { tone: 'professional', autoSend: false })
+    const r = await http.post(`/v1/support-tickets/${selectedTicket.value.id}/ai-reply`, { tone: 'professional', autoSend: false })
     newMessage.value = r.data.suggestedReply
   } catch {} finally { aiGeneratingReply.value = false }
 }
 
 async function updateStatus(id: string, status: string) {
-  try { await http.put(`/api/v1/support-tickets/${id}/status`, { status }); fetchTickets(); fetchStats(); if (selectedTicket.value?.id === id) selectedTicket.value.status = status } catch {}
+  try { await http.put(`/v1/support-tickets/${id}/status`, { status }); fetchTickets(); fetchStats(); if (selectedTicket.value?.id === id) selectedTicket.value.status = status } catch {}
 }
 
 async function assignTicket() {
   if (!selectedTicket.value || !assignUserName.value) return
   try {
-    await http.put(`/api/v1/support-tickets/${selectedTicket.value.id}/assign`, { userId: '00000000-0000-0000-0000-000000000000', userName: assignUserName.value })
+    await http.put(`/v1/support-tickets/${selectedTicket.value.id}/assign`, { userId: '00000000-0000-0000-0000-000000000000', userName: assignUserName.value })
     selectedTicket.value.assignedToUserName = assignUserName.value
     selectedTicket.value.status = 'InProgress'
     showAssignModal.value = false; assignUserName.value = ''
@@ -177,7 +177,7 @@ async function assignTicket() {
 
 async function resolveTicket() {
   if (!selectedTicket.value) return
-  try { await http.put(`/api/v1/support-tickets/${selectedTicket.value.id}/resolve`, { resolutionNotes: 'تم حل المشكلة بنجاح' }); selectedTicket.value.status = 'Resolved'; fetchTickets(); fetchStats() } catch {}
+  try { await http.put(`/v1/support-tickets/${selectedTicket.value.id}/resolve`, { resolutionNotes: 'تم حل المشكلة بنجاح' }); selectedTicket.value.status = 'Resolved'; fetchTickets(); fetchStats() } catch {}
 }
 
 watch([statusFilter, categoryFilter, priorityFilter, searchQuery], () => { page.value = 1; fetchTickets() })
