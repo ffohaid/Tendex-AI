@@ -161,7 +161,10 @@ async function handleSendInvitation() {
     successMessage.value = t('settings.users.inviteSentSuccess')
     await loadInvitations()
     setTimeout(() => { successMessage.value = '' }, 3000)
-  } catch { error.value = t('settings.users.errors.inviteFailed') }
+  } catch (e: any) {
+    const detail = e?.response?.data?.detail || e?.response?.data?.title || e?.message || ''
+    error.value = detail ? `${t('settings.users.errors.inviteFailed')}: ${detail}` : t('settings.users.errors.inviteFailed')
+  }
   finally { isSubmitting.value = false }
 }
 
@@ -174,7 +177,10 @@ async function handleUpdateUser() {
     successMessage.value = t('settings.users.updateSuccess')
     await loadUsers()
     setTimeout(() => { successMessage.value = '' }, 3000)
-  } catch { error.value = t('settings.users.errors.updateFailed') }
+  } catch (e: any) {
+    const detail = e?.response?.data?.detail || e?.response?.data?.title || e?.message || ''
+    error.value = detail ? `${t('settings.users.errors.updateFailed')}: ${detail}` : t('settings.users.errors.updateFailed')
+  }
   finally { isSubmitting.value = false }
 }
 
@@ -184,7 +190,10 @@ async function handleToggleStatus(user: UserDto) {
     successMessage.value = user.isActive ? t('settings.users.deactivateSuccess') : t('settings.users.activateSuccess')
     await loadUsers()
     setTimeout(() => { successMessage.value = '' }, 3000)
-  } catch { error.value = t('settings.users.errors.toggleStatusFailed') }
+  } catch (e: any) {
+    const detail = e?.response?.data?.detail || e?.response?.data?.title || e?.message || ''
+    error.value = detail ? `${t('settings.users.errors.toggleStatusFailed')}: ${detail}` : t('settings.users.errors.toggleStatusFailed')
+  }
 }
 
 async function handleAssignRole() {
@@ -198,7 +207,10 @@ async function handleAssignRole() {
     selectedRoleId.value = ''
     await loadUsers()
     setTimeout(() => { successMessage.value = '' }, 3000)
-  } catch { error.value = t('settings.users.errors.roleAssignFailed') }
+  } catch (e: any) {
+    const detail = e?.response?.data?.detail || e?.response?.data?.title || e?.message || ''
+    error.value = detail ? `${t('settings.users.errors.roleAssignFailed')}: ${detail}` : t('settings.users.errors.roleAssignFailed')
+  }
   finally { isSubmitting.value = false }
 }
 
@@ -212,7 +224,10 @@ async function handleRemoveRole(userId: string, roleId: string) {
     }
     await loadUsers()
     setTimeout(() => { successMessage.value = '' }, 3000)
-  } catch { error.value = t('settings.users.errors.roleRemoveFailed') }
+  } catch (e: any) {
+    const detail = e?.response?.data?.detail || e?.response?.data?.title || e?.message || ''
+    error.value = detail ? `${t('settings.users.errors.roleRemoveFailed')}: ${detail}` : t('settings.users.errors.roleRemoveFailed')
+  }
 }
 
 async function handleResendInvitation(invitationId: string) {
@@ -221,7 +236,10 @@ async function handleResendInvitation(invitationId: string) {
     successMessage.value = t('settings.users.inviteResendSuccess')
     await loadInvitations()
     setTimeout(() => { successMessage.value = '' }, 3000)
-  } catch { error.value = t('settings.users.errors.resendFailed') }
+  } catch (e: any) {
+    const detail = e?.response?.data?.detail || e?.response?.data?.title || e?.message || ''
+    error.value = detail ? `${t('settings.users.errors.resendFailed')}: ${detail}` : t('settings.users.errors.resendFailed')
+  }
 }
 
 async function handleRevokeInvitation(invitationId: string) {
@@ -230,7 +248,10 @@ async function handleRevokeInvitation(invitationId: string) {
     successMessage.value = t('settings.users.inviteRevokeSuccess')
     await loadInvitations()
     setTimeout(() => { successMessage.value = '' }, 3000)
-  } catch { error.value = t('settings.users.errors.revokeFailed') }
+  } catch (e: any) {
+    const detail = e?.response?.data?.detail || e?.response?.data?.title || e?.message || ''
+    error.value = detail ? `${t('settings.users.errors.revokeFailed')}: ${detail}` : t('settings.users.errors.revokeFailed')
+  }
 }
 
 /* Form Helpers */

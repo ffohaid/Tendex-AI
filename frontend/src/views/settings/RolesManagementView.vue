@@ -73,8 +73,9 @@ async function loadRoles() {
   error.value = ''
   try {
     rolesData.value = await fetchRoles()
-  } catch {
-    error.value = t('settings.roles.errors.loadFailed')
+  } catch (e: any) {
+    const detail = e?.response?.data?.detail || e?.response?.data?.title || e?.message || ''
+    error.value = detail ? `${t('settings.roles.errors.loadFailed')}: ${detail}` : t('settings.roles.errors.loadFailed')
   } finally {
     isLoading.value = false
   }
@@ -128,8 +129,9 @@ async function handleCreateRole() {
     successMessage.value = t('settings.roles.createSuccess')
     await loadRoles()
     setTimeout(() => { successMessage.value = '' }, 3000)
-  } catch {
-    error.value = t('settings.roles.errors.createFailed')
+  } catch (e: any) {
+    const detail = e?.response?.data?.detail || e?.response?.data?.title || e?.message || ''
+    error.value = detail ? `${t('settings.roles.errors.createFailed')}: ${detail}` : t('settings.roles.errors.createFailed')
   } finally {
     isSubmitting.value = false
   }
@@ -147,8 +149,9 @@ async function openEditDialog(role: RoleDto) {
       permissionIds: detail.permissions.map(p => p.id),
     }
     showEditDialog.value = true
-  } catch {
-    error.value = t('settings.roles.errors.loadFailed')
+  } catch (e: any) {
+    const detail = e?.response?.data?.detail || e?.response?.data?.title || e?.message || ''
+    error.value = detail ? `${t('settings.roles.errors.loadFailed')}: ${detail}` : t('settings.roles.errors.loadFailed')
   }
 }
 
@@ -162,8 +165,9 @@ async function handleUpdateRole() {
     successMessage.value = t('settings.roles.updateSuccess')
     await loadRoles()
     setTimeout(() => { successMessage.value = '' }, 3000)
-  } catch {
-    error.value = t('settings.roles.errors.updateFailed')
+  } catch (e: any) {
+    const detail = e?.response?.data?.detail || e?.response?.data?.title || e?.message || ''
+    error.value = detail ? `${t('settings.roles.errors.updateFailed')}: ${detail}` : t('settings.roles.errors.updateFailed')
   } finally {
     isSubmitting.value = false
   }
@@ -178,8 +182,9 @@ async function handleToggleRoleStatus(role: RoleDto) {
       : t('settings.roles.activateSuccess')
     await loadRoles()
     setTimeout(() => { successMessage.value = '' }, 3000)
-  } catch {
-    error.value = t('settings.roles.errors.toggleFailed')
+  } catch (e: any) {
+    const detail = e?.response?.data?.detail || e?.response?.data?.title || e?.message || ''
+    error.value = detail ? `${t('settings.roles.errors.toggleFailed')}: ${detail}` : t('settings.roles.errors.toggleFailed')
   }
 }
 
@@ -188,8 +193,9 @@ async function openDetailDialog(role: RoleDto) {
   try {
     selectedRole.value = await fetchRoleById(role.id)
     showDetailDialog.value = true
-  } catch {
-    error.value = t('settings.roles.errors.loadFailed')
+  } catch (e: any) {
+    const detail = e?.response?.data?.detail || e?.response?.data?.title || e?.message || ''
+    error.value = detail ? `${t('settings.roles.errors.loadFailed')}: ${detail}` : t('settings.roles.errors.loadFailed')
   }
 }
 

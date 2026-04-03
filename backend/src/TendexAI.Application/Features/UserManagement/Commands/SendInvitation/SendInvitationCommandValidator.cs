@@ -26,12 +26,12 @@ public sealed class SendInvitationCommandValidator : AbstractValidator<SendInvit
 
         RuleFor(x => x.FirstNameEn)
             .MaximumLength(100).WithMessage("English first name must not exceed 100 characters.")
-            .Matches(@"^[a-zA-Z\s]*$").WithMessage("English first name must contain only English characters.")
+            .Matches(@"^[a-zA-Z\s\-'\.]+$").WithMessage("English first name must contain only English characters, spaces, hyphens, or apostrophes.")
             .When(x => !string.IsNullOrEmpty(x.FirstNameEn));
 
         RuleFor(x => x.LastNameEn)
             .MaximumLength(100).WithMessage("English last name must not exceed 100 characters.")
-            .Matches(@"^[a-zA-Z\s]*$").WithMessage("English last name must contain only English characters.")
+            .Matches(@"^[a-zA-Z\s\-'\.]+$").WithMessage("English last name must contain only English characters, spaces, hyphens, or apostrophes.")
             .When(x => !string.IsNullOrEmpty(x.LastNameEn));
 
         RuleFor(x => x.TenantId)
