@@ -6,8 +6,6 @@
 --              migrate CompetitionId data, and clean up old column.
 -- ============================================================
 
-BEGIN TRANSACTION;
-
 -- Step 1: Add ScopeType column to Committees
 IF NOT EXISTS (
     SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS
@@ -21,6 +19,7 @@ ELSE
 BEGIN
     PRINT 'ScopeType column already exists';
 END
+GO
 
 -- Step 2: Create CommitteeCompetitions table
 IF NOT EXISTS (
@@ -57,6 +56,7 @@ ELSE
 BEGIN
     PRINT 'CommitteeCompetitions table already exists';
 END
+GO
 
 -- Step 3: Migrate existing CompetitionId data to CommitteeCompetitions
 INSERT INTO [committees].[CommitteeCompetitions] ([Id], [CommitteeId], [CompetitionId], [AssignedAt], [AssignedBy], [CreatedAt], [CreatedBy])
@@ -77,79 +77,85 @@ AND NOT EXISTS (
 
 DECLARE @MigratedCount INT = @@ROWCOUNT;
 PRINT 'Migrated ' + CAST(@MigratedCount AS VARCHAR(10)) + ' competition links';
+GO
 
 -- Step 4: Update ScopeType for committees based on existing data
 UPDATE [committees].[Committees]
 SET [ScopeType] = CASE
     WHEN [ActiveFromPhase] IS NOT NULL AND [ActiveToPhase] IS NOT NULL AND [CompetitionId] IS NOT NULL
-        THEN 3 -- SpecificPhasesSpecificCompetitions
+        THEN 3
     WHEN [ActiveFromPhase] IS NOT NULL AND [ActiveToPhase] IS NOT NULL
-        THEN 2 -- SpecificPhasesAllCompetitions
-    ELSE 1 -- Comprehensive
+        THEN 2
+    ELSE 1
 END;
 
 PRINT 'Updated ScopeType for existing committees';
+GO
 
--- Step 5: Drop CompetitionId column (data migrated to CommitteeCompetitions)
+-- Step 5: Drop CompetitionId column
+-- 5a: Drop FK constraint
+DECLARE @fkName NVARCHAR(256);
+SELECT @fkName = fk.name
+FROM sys.foreign_keys fk
+JOIN sys.foreign_key_columns fkc ON fk.object_id = fkc.constraint_object_id
+JOIN sys.columns c ON fkc.parent_object_id = c.object_id AND fkc.parent_column_id = c.column_id
+WHERE OBJECT_NAME(fk.parent_object_id) = 'Committees'
+  AND SCHEMA_NAME(fk.schema_id) = 'committees'
+  AND c.name = 'CompetitionId';
+
+IF @fkName IS NOT NULL
+BEGIN
+    EXEC('ALTER TABLE [committees].[Committees] DROP CONSTRAINT [' + @fkName + ']');
+    PRINT 'Dropped FK constraint: ' + @fkName;
+END
+GO
+
+-- 5b: Drop index
+DECLARE @idxName NVARCHAR(256);
+SELECT @idxName = i.name
+FROM sys.indexes i
+JOIN sys.index_columns ic ON i.object_id = ic.object_id AND i.index_id = ic.index_id
+JOIN sys.columns c ON ic.object_id = c.object_id AND ic.column_id = c.column_id
+WHERE OBJECT_NAME(i.object_id) = 'Committees'
+  AND OBJECT_SCHEMA_NAME(i.object_id) = 'committees'
+  AND c.name = 'CompetitionId'
+  AND i.is_primary_key = 0;
+
+IF @idxName IS NOT NULL
+BEGIN
+    EXEC('DROP INDEX [' + @idxName + '] ON [committees].[Committees]');
+    PRINT 'Dropped index: ' + @idxName;
+END
+GO
+
+-- 5c: Drop default constraint
+DECLARE @dfName NVARCHAR(256);
+SELECT @dfName = dc.name
+FROM sys.default_constraints dc
+JOIN sys.columns c ON dc.parent_object_id = c.object_id AND dc.parent_column_id = c.column_id
+WHERE OBJECT_NAME(dc.parent_object_id) = 'Committees'
+  AND OBJECT_SCHEMA_NAME(dc.parent_object_id) = 'committees'
+  AND c.name = 'CompetitionId';
+
+IF @dfName IS NOT NULL
+BEGIN
+    EXEC('ALTER TABLE [committees].[Committees] DROP CONSTRAINT [' + @dfName + ']');
+    PRINT 'Dropped default constraint: ' + @dfName;
+END
+GO
+
+-- 5d: Drop the column
 IF EXISTS (
     SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS
     WHERE TABLE_SCHEMA = 'committees' AND TABLE_NAME = 'Committees' AND COLUMN_NAME = 'CompetitionId'
 )
 BEGIN
-    -- Drop any existing foreign key constraints on CompetitionId
-    DECLARE @fkName NVARCHAR(256);
-    SELECT @fkName = fk.name
-    FROM sys.foreign_keys fk
-    JOIN sys.foreign_key_columns fkc ON fk.object_id = fkc.constraint_object_id
-    JOIN sys.columns c ON fkc.parent_object_id = c.object_id AND fkc.parent_column_id = c.column_id
-    WHERE OBJECT_NAME(fk.parent_object_id) = 'Committees'
-      AND SCHEMA_NAME(fk.schema_id) = 'committees'
-      AND c.name = 'CompetitionId';
-
-    IF @fkName IS NOT NULL
-    BEGIN
-        EXEC('ALTER TABLE [committees].[Committees] DROP CONSTRAINT [' + @fkName + ']');
-        PRINT 'Dropped FK constraint: ' + @fkName;
-    END
-
-    -- Drop any existing indexes on CompetitionId
-    DECLARE @idxName NVARCHAR(256);
-    SELECT @idxName = i.name
-    FROM sys.indexes i
-    JOIN sys.index_columns ic ON i.object_id = ic.object_id AND i.index_id = ic.index_id
-    JOIN sys.columns c ON ic.object_id = c.object_id AND ic.column_id = c.column_id
-    WHERE OBJECT_NAME(i.object_id) = 'Committees'
-      AND OBJECT_SCHEMA_NAME(i.object_id) = 'committees'
-      AND c.name = 'CompetitionId'
-      AND i.is_primary_key = 0;
-
-    IF @idxName IS NOT NULL
-    BEGIN
-        EXEC('DROP INDEX [' + @idxName + '] ON [committees].[Committees]');
-        PRINT 'Dropped index: ' + @idxName;
-    END
-
-    -- Drop default constraint if exists
-    DECLARE @dfName NVARCHAR(256);
-    SELECT @dfName = dc.name
-    FROM sys.default_constraints dc
-    JOIN sys.columns c ON dc.parent_object_id = c.object_id AND dc.parent_column_id = c.column_id
-    WHERE OBJECT_NAME(dc.parent_object_id) = 'Committees'
-      AND OBJECT_SCHEMA_NAME(dc.parent_object_id) = 'committees'
-      AND c.name = 'CompetitionId';
-
-    IF @dfName IS NOT NULL
-    BEGIN
-        EXEC('ALTER TABLE [committees].[Committees] DROP CONSTRAINT [' + @dfName + ']');
-        PRINT 'Dropped default constraint: ' + @dfName;
-    END
-
     ALTER TABLE [committees].[Committees] DROP COLUMN [CompetitionId];
     PRINT 'Dropped CompetitionId column from Committees';
 END
-
-COMMIT TRANSACTION;
+GO
 
 PRINT '';
 PRINT '=== Committee Redesign Migration Complete ===';
 PRINT '';
+GO
