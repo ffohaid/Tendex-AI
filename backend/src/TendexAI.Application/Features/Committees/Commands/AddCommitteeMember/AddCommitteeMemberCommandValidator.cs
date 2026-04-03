@@ -15,10 +15,6 @@ public sealed class AddCommitteeMemberCommandValidator : AbstractValidator<AddCo
         RuleFor(x => x.UserId)
             .NotEmpty().WithMessage("User ID is required.");
 
-        RuleFor(x => x.UserFullName)
-            .NotEmpty().WithMessage("User full name is required.")
-            .MaximumLength(300).WithMessage("User full name must not exceed 300 characters.");
-
         RuleFor(x => x.Role)
             .IsInEnum().WithMessage("Invalid committee member role.");
     }
