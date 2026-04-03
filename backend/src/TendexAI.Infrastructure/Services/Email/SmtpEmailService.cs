@@ -1,14 +1,16 @@
-using System.Net;
-using System.Net.Mail;
+using MailKit.Net.Smtp;
+using MailKit.Security;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using MimeKit;
 using TendexAI.Application.Common.Interfaces;
 
 namespace TendexAI.Infrastructure.Services.Email;
 
 /// <summary>
-/// SMTP-based implementation of <see cref="IEmailService"/>.
+/// MailKit-based implementation of <see cref="IEmailService"/>.
 /// Sends emails using the configured SMTP server (Hostinger).
+/// Supports both implicit SSL (port 465) and STARTTLS (port 587).
 /// Email credentials are loaded from configuration, not hardcoded.
 /// </summary>
 public sealed class SmtpEmailService : IEmailService
@@ -46,17 +48,41 @@ public sealed class SmtpEmailService : IEmailService
     {
         try
         {
-            using var client = CreateSmtpClient();
-            using var message = new MailMessage
-            {
-                From = new MailAddress(_settings.FromEmail, _settings.FromName),
-                Subject = subject,
-                Body = htmlBody,
-                IsBodyHtml = true
-            };
-            message.To.Add(new MailAddress(toEmail));
+            _logger.LogInformation(
+                "Attempting to send email to {ToEmail} via {Host}:{Port} (SSL={EnableSsl})",
+                toEmail, _settings.Host, _settings.Port, _settings.EnableSsl);
 
-            await client.SendMailAsync(message, cancellationToken);
+            var message = new MimeMessage();
+            message.From.Add(new MailboxAddress(_settings.FromName, _settings.FromEmail));
+            message.To.Add(new MailboxAddress(string.Empty, toEmail));
+            message.Subject = subject;
+
+            var bodyBuilder = new BodyBuilder
+            {
+                HtmlBody = htmlBody
+            };
+            message.Body = bodyBuilder.ToMessageBody();
+
+            using var client = new SmtpClient();
+
+            // Determine the secure socket option based on port
+            var secureSocketOptions = _settings.Port == 465
+                ? SecureSocketOptions.SslOnConnect   // Implicit SSL for port 465
+                : SecureSocketOptions.StartTls;       // STARTTLS for port 587
+
+            await client.ConnectAsync(
+                _settings.Host,
+                _settings.Port,
+                secureSocketOptions,
+                cancellationToken);
+
+            await client.AuthenticateAsync(
+                _settings.Username,
+                _settings.Password,
+                cancellationToken);
+
+            await client.SendAsync(message, cancellationToken);
+            await client.DisconnectAsync(true, cancellationToken);
 
             _logger.LogInformation("Email sent successfully to {ToEmail}", toEmail);
             return true;
@@ -66,19 +92,6 @@ public sealed class SmtpEmailService : IEmailService
             _logger.LogError(ex, "Failed to send email to {ToEmail}", toEmail);
             return false;
         }
-    }
-
-    private SmtpClient CreateSmtpClient()
-    {
-        var client = new SmtpClient(_settings.Host, _settings.Port)
-        {
-            Credentials = new NetworkCredential(_settings.Username, _settings.Password),
-            EnableSsl = _settings.EnableSsl,
-            DeliveryMethod = SmtpDeliveryMethod.Network,
-            Timeout = 30000 // 30 seconds
-        };
-
-        return client;
     }
 
     /// <summary>
