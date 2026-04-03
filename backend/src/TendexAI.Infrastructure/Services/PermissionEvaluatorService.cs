@@ -59,6 +59,13 @@ public sealed class PermissionEvaluatorService : IPermissionEvaluator
         Guid? committeeId = null,
         CancellationToken cancellationToken = default)
     {
+        // Step 0: Check if user has a protected admin role (bypass all permission checks)
+        if (await IsProtectedAdminAsync(userId, cancellationToken))
+        {
+            _logger.LogDebug("User {UserId} has protected admin role — granting FullAccess", userId);
+            return PermissionAction.FullAccess;
+        }
+
         // Step 1: Get the user's system roles (from UserRoles table)
         var userRoleIds = await GetUserRoleIdsAsync(userId, cancellationToken);
         if (userRoleIds.Count == 0)
@@ -453,6 +460,60 @@ public sealed class PermissionEvaluatorService : IPermissionEvaluator
         CompetitionPhase.ContractSigning => "Contract Signing",
         _ => phase.ToString()
     };
+
+    // ═══════════════════════════════════════════════════════════════
+    //  Protected Admin Bypass
+    // ═══════════════════════════════════════════════════════════════
+
+    /// <summary>
+    /// Checks if the user holds a protected admin role (TenantPrimaryAdmin).
+    /// Protected admins bypass all permission matrix checks and get FullAccess.
+    /// OperatorPrimaryAdmin is handled at the API gateway level (not tenant-scoped).
+    /// </summary>
+    private async Task<bool> IsProtectedAdminAsync(
+        string userId, CancellationToken cancellationToken)
+    {
+        if (!Guid.TryParse(userId, out var userGuid))
+            return false;
+
+        var cacheKey = $"perm_protected_admin:{userId}";
+
+        try
+        {
+            var cached = await _cache.GetStringAsync(cacheKey, cancellationToken);
+            if (cached != null)
+                return bool.Parse(cached);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Failed to read protected admin cache for user {UserId}", userId);
+        }
+
+        // Check if any of the user's roles are marked as IsProtected
+        var isProtected = await _tenantDb.UserRoles
+            .AsNoTracking()
+            .Where(ur => ur.UserId == userGuid)
+            .Join(_tenantDb.Roles,
+                ur => ur.RoleId,
+                r => r.Id,
+                (ur, r) => r)
+            .AnyAsync(r => r.IsProtected, cancellationToken);
+
+        // Cache the result for 10 minutes
+        try
+        {
+            await _cache.SetStringAsync(cacheKey,
+                isProtected.ToString(),
+                new DistributedCacheEntryOptions { AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(10) },
+                cancellationToken);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Failed to cache protected admin status for user {UserId}", userId);
+        }
+
+        return isProtected;
+    }
 }
 
 /// <summary>

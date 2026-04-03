@@ -64,7 +64,7 @@ public static class DefaultWorkflowDefinitionSeeder
 
         bookletApproval.AddStep(
             stepOrder: 2,
-            requiredSystemRole: SystemRole.Owner,
+            requiredSystemRole: SystemRole.TenantPrimaryAdmin,
             requiredCommitteeRole: CommitteeRole.None,
             stepNameAr: "اعتماد صاحب الصلاحية",
             stepNameEn: "Authority Owner Approval",
@@ -138,7 +138,7 @@ public static class DefaultWorkflowDefinitionSeeder
 
         awardApproval.AddStep(
             stepOrder: 1,
-            requiredSystemRole: SystemRole.Owner,
+            requiredSystemRole: SystemRole.TenantPrimaryAdmin,
             requiredCommitteeRole: CommitteeRole.None,
             stepNameAr: "اعتماد صاحب الصلاحية",
             stepNameEn: "Authority Owner Approval",
@@ -168,7 +168,7 @@ public static class DefaultWorkflowDefinitionSeeder
 
         contractApproval.AddStep(
             stepOrder: 2,
-            requiredSystemRole: SystemRole.Owner,
+            requiredSystemRole: SystemRole.TenantPrimaryAdmin,
             requiredCommitteeRole: CommitteeRole.None,
             stepNameAr: "اعتماد صاحب الصلاحية",
             stepNameEn: "Authority Owner Approval",
@@ -190,7 +190,7 @@ public static class DefaultWorkflowDefinitionSeeder
 
         contractSigning.AddStep(
             stepOrder: 1,
-            requiredSystemRole: SystemRole.Owner,
+            requiredSystemRole: SystemRole.TenantPrimaryAdmin,
             requiredCommitteeRole: CommitteeRole.None,
             stepNameAr: "توقيع صاحب الصلاحية",
             stepNameEn: "Authority Owner Signature",

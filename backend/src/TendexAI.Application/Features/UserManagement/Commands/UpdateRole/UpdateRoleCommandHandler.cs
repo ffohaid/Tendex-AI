@@ -35,6 +35,12 @@ public sealed class UpdateRoleCommandHandler : ICommandHandler<UpdateRoleCommand
             return Result.Failure("Role does not belong to the current tenant.");
         }
 
+        // Protected roles (OperatorPrimaryAdmin, TenantPrimaryAdmin) cannot be modified
+        if (role.IsProtected)
+        {
+            return Result.Failure("Protected governance roles cannot be modified.");
+        }
+
         // System roles can only have their description updated
         if (!role.IsSystemRole)
         {

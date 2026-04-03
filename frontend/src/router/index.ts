@@ -13,7 +13,9 @@ import { createRouter, createWebHistory, type RouteRecordRaw } from 'vue-router'
  * - `meta.requiresAuth`: requires authentication
  * - `meta.requiredPermission`: requires specific permission code(s)
  * - `meta.requiredRoles`: requires specific system role(s)
- * - Owner and Admin roles bypass all permission checks
+ * - OperatorPrimaryAdmin: sees ONLY operator panel routes
+ * - TenantPrimaryAdmin: bypasses all permission checks within their tenant
+ * - All other roles: controlled by permission matrix
  */
 const routes: RouteRecordRaw[] = [
   {
@@ -163,25 +165,25 @@ const routes: RouteRecordRaw[] = [
         path: 'operator',
         name: 'OperatorDashboard',
         component: () => import('@/views/operator/OperatorDashboardView.vue'),
-        meta: { title: 'Tendex AI - Operator Dashboard', requiresAuth: true, requiredRoles: ['SuperAdmin', 'Operator'] },
+        meta: { title: 'Tendex AI - Operator Dashboard', requiresAuth: true, requiredRoles: ['OperatorPrimaryAdmin'] },
       },
       {
         path: 'operator/tenants',
         name: 'TenantList',
         component: () => import('@/views/tenants/TenantListView.vue'),
-        meta: { title: 'Tendex AI - Tenants', requiresAuth: true, requiredRoles: ['SuperAdmin', 'Operator'] },
+        meta: { title: 'Tendex AI - Tenants', requiresAuth: true, requiredRoles: ['OperatorPrimaryAdmin'] },
       },
       {
         path: 'operator/tenants/create',
         name: 'TenantCreate',
         component: () => import('@/views/tenants/TenantCreateView.vue'),
-        meta: { title: 'Tendex AI - Create Tenant', requiresAuth: true, requiredRoles: ['SuperAdmin', 'Operator'] },
+        meta: { title: 'Tendex AI - Create Tenant', requiresAuth: true, requiredRoles: ['OperatorPrimaryAdmin'] },
       },
       {
         path: 'operator/tenants/:id',
         name: 'TenantDetail',
         component: () => import('@/views/tenants/TenantDetailView.vue'),
-        meta: { title: 'Tendex AI - Tenant Detail', requiresAuth: true, requiredRoles: ['SuperAdmin', 'Operator'] },
+        meta: { title: 'Tendex AI - Tenant Detail', requiresAuth: true, requiredRoles: ['OperatorPrimaryAdmin'] },
         props: true,
       },
       {
@@ -230,7 +232,7 @@ const routes: RouteRecordRaw[] = [
         meta: {
           title: 'Tendex AI - Tenant Feature Flags',
           requiresAuth: true,
-          requiredRoles: ['SuperAdmin', 'Operator'],
+          requiredRoles: ['OperatorPrimaryAdmin'],
         },
         props: true,
       },
@@ -241,7 +243,7 @@ const routes: RouteRecordRaw[] = [
         meta: {
           title: 'Tendex AI - Tenant Branding',
           requiresAuth: true,
-          requiredRoles: ['SuperAdmin', 'Operator'],
+          requiredRoles: ['OperatorPrimaryAdmin'],
         },
         props: true,
       },
@@ -253,7 +255,7 @@ const routes: RouteRecordRaw[] = [
         meta: {
           title: 'Tendex AI - User Impersonation',
           requiresAuth: true,
-          requiredRoles: ['SuperAdmin', 'SupportAdmin'],
+          requiredRoles: ['OperatorPrimaryAdmin'],
         },
       },
       /* ── TASK-1001: New Routes ── */
@@ -340,7 +342,7 @@ const routes: RouteRecordRaw[] = [
         meta: {
           title: 'Tendex AI - AI Settings',
           requiresAuth: true,
-          requiredRoles: ['SuperAdmin', 'Operator'],
+          requiredRoles: ['OperatorPrimaryAdmin'],
         },
       },
       {
@@ -350,7 +352,7 @@ const routes: RouteRecordRaw[] = [
         meta: {
           title: 'Tendex AI - System Health',
           requiresAuth: true,
-          requiredRoles: ['SuperAdmin', 'Operator'],
+          requiredRoles: ['OperatorPrimaryAdmin'],
         },
       },
       {
@@ -360,7 +362,7 @@ const routes: RouteRecordRaw[] = [
         meta: {
           title: 'Tendex AI - Consumption',
           requiresAuth: true,
-          requiredRoles: ['SuperAdmin', 'Operator'],
+          requiredRoles: ['OperatorPrimaryAdmin'],
         },
       },
       {
@@ -370,7 +372,7 @@ const routes: RouteRecordRaw[] = [
         meta: {
           title: 'Tendex AI - Subscriptions',
           requiresAuth: true,
-          requiredRoles: ['SuperAdmin', 'Operator'],
+          requiredRoles: ['OperatorPrimaryAdmin'],
         },
       },
     ],
@@ -438,7 +440,9 @@ const router = createRouter({
  * - Redirects authenticated users away from guest-only pages.
  * - Enforces permission-based access control using requiredPermission meta.
  * - Enforces role-based access control using requiredRoles meta.
- * - Owner and Admin roles bypass all permission/role checks.
+ * - OperatorPrimaryAdmin: can only access operator panel routes.
+ * - TenantPrimaryAdmin: bypasses all permission checks within their tenant.
+ * - All other roles: controlled by permission matrix.
  */
 router.beforeEach((to, _from, next) => {
   /* Update document title */
@@ -487,12 +491,30 @@ router.beforeEach((to, _from, next) => {
       // Ignore parse errors
     }
 
-    // Owner and Admin bypass all checks
-    const isPrivileged = userRoles.some(r =>
-      ['Owner', 'Tenant Owner', 'System Administrator', 'Super Admin', 'SuperAdmin', 'Operator', 'مدير النظام'].includes(r)
-    )
+    const isOperatorAdmin = userRoles.includes('OperatorPrimaryAdmin')
+    const isTenantAdmin = userRoles.includes('TenantPrimaryAdmin')
 
-    if (!isPrivileged) {
+    // ── OperatorPrimaryAdmin: can ONLY access operator routes ──
+    if (isOperatorAdmin) {
+      const isOperatorRoute = to.path.startsWith('/operator') || to.name === 'Dashboard'
+      const requiredRoles = to.meta.requiredRoles as string[] | undefined
+      const isAllowed = isOperatorRoute || requiredRoles?.includes('OperatorPrimaryAdmin')
+      if (!isAllowed) {
+        next({ name: 'OperatorDashboard' })
+        return
+      }
+    }
+    // ── TenantPrimaryAdmin: bypasses permission checks, but NOT operator routes ──
+    else if (isTenantAdmin) {
+      const requiredRoles = to.meta.requiredRoles as string[] | undefined
+      if (requiredRoles?.includes('OperatorPrimaryAdmin')) {
+        next({ name: 'AccessDenied' })
+        return
+      }
+      // TenantPrimaryAdmin bypasses all other permission/role checks
+    }
+    // ── Regular users: enforce requiredRoles and requiredPermission ──
+    else {
       // Check requiredRoles
       const requiredRoles = to.meta.requiredRoles as string[] | undefined
       if (requiredRoles && requiredRoles.length > 0) {

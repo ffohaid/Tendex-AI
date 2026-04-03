@@ -13,7 +13,7 @@ public sealed class UserSystemRoleProvider : IUserSystemRoleProvider
         string userId,
         CancellationToken cancellationToken = default)
     {
-        // Default to SystemRole.Admin for now until user management is fully integrated
-        return Task.FromResult(SystemRole.Admin);
+        // Default to SystemRole.TenantPrimaryAdmin for now until user management is fully integrated
+        return Task.FromResult(SystemRole.TenantPrimaryAdmin);
     }
 }

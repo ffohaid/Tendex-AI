@@ -3,21 +3,36 @@ import type { NavigationItem } from '@/types/navigation'
 /**
  * Main sidebar navigation items.
  *
- * Each item can have:
- * - `permission`: a permission code string; the item is hidden if the user lacks this permission.
- * - `requiredRoles`: an array of role names; the item is hidden if the user has none of these roles.
- * - Owner and Admin users bypass all permission/role checks.
+ * Governance Role Hierarchy (immutable, cannot be deleted or modified):
+ * ─────────────────────────────────────────────────────────────────────
+ * 1. OperatorPrimaryAdmin  → Operator panel only (create/manage tenants)
+ * 2. TenantPrimaryAdmin    → Full tenant admin (users, roles, permissions,
+ *                            committees, workflows, knowledge base, reports,
+ *                            organization settings, dashboard)
+ *
+ * All other roles are flexible and controlled by the permission matrix
+ * configured per-tenant by the TenantPrimaryAdmin.
+ *
+ * Rules:
+ * - `requiredRoles`: array of role NameEn values; item hidden if user has none.
+ * - `permission`: permission code; item hidden if user lacks this permission.
+ * - TenantPrimaryAdmin bypasses all permission checks within their tenant.
+ * - OperatorPrimaryAdmin sees ONLY the operator panel, nothing else.
  *
  * IMPORTANT: Route names MUST exactly match the `name` property
  * defined in `@/router/index.ts`. Any mismatch will break navigation.
  */
 export const sidebarNavigation: NavigationItem[] = [
+  /* ── Dashboard ── */
   {
     key: 'dashboard',
     labelKey: 'nav.dashboard',
     icon: 'pi pi-home',
     route: 'Dashboard',
+    requiredRoles: ['TenantPrimaryAdmin'],
   },
+
+  /* ── RFP / Competitions ── */
   {
     key: 'rfp',
     labelKey: 'nav.rfp.title',
@@ -54,28 +69,30 @@ export const sidebarNavigation: NavigationItem[] = [
       },
     ],
   },
+
+  /* ── Committees (TenantPrimaryAdmin only for management) ── */
   {
     key: 'committees',
     labelKey: 'nav.committees.title',
     icon: 'pi pi-users',
-    permission: 'committees.view',
+    requiredRoles: ['TenantPrimaryAdmin'],
     children: [
       {
         key: 'committees-permanent',
         labelKey: 'nav.committees.permanent',
         icon: 'pi pi-shield',
         route: 'CommitteesPermanent',
-        permission: 'committees.view',
       },
       {
         key: 'committees-temporary',
         labelKey: 'nav.committees.temporary',
         icon: 'pi pi-clock',
         route: 'CommitteesTemporary',
-        permission: 'committees.view',
       },
     ],
   },
+
+  /* ── Evaluation ── */
   {
     key: 'evaluation',
     labelKey: 'nav.evaluation.title',
@@ -112,13 +129,17 @@ export const sidebarNavigation: NavigationItem[] = [
       },
     ],
   },
+
+  /* ── Knowledge Base (TenantPrimaryAdmin only) ── */
   {
     key: 'knowledge-base',
     labelKey: 'nav.knowledgeBase',
     icon: 'pi pi-book',
     route: 'KnowledgeBase',
-    permission: 'knowledgebase.view',
+    requiredRoles: ['TenantPrimaryAdmin'],
   },
+
+  /* ── AI Assistant ── */
   {
     key: 'ai-assistant',
     labelKey: 'nav.aiAssistant',
@@ -126,49 +147,48 @@ export const sidebarNavigation: NavigationItem[] = [
     route: 'AiAssistant',
     permission: 'ai.view',
   },
+
+  /* ── Settings (TenantPrimaryAdmin only) ── */
   {
     key: 'settings',
     labelKey: 'nav.settings.title',
     icon: 'pi pi-cog',
+    requiredRoles: ['TenantPrimaryAdmin'],
     children: [
       {
         key: 'settings-organization',
         labelKey: 'nav.settings.organization',
         icon: 'pi pi-building',
         route: 'SettingsOrganization',
-        permission: 'organization.view',
       },
       {
         key: 'settings-users',
         labelKey: 'nav.settings.users',
         icon: 'pi pi-user',
         route: 'SettingsUsers',
-        permission: 'users.view',
       },
       {
         key: 'settings-roles',
         labelKey: 'nav.settings.roles',
         icon: 'pi pi-key',
         route: 'SettingsRoles',
-        permission: 'roles.view',
       },
       {
         key: 'settings-permissions-matrix',
         labelKey: 'nav.settings.permissionsMatrix',
         icon: 'pi pi-th-large',
         route: 'PermissionsMatrix',
-        permission: 'matrix.view',
       },
       {
         key: 'settings-workflows',
         labelKey: 'nav.settings.workflows',
         icon: 'pi pi-sitemap',
         route: 'WorkflowList',
-        permission: 'workflow.view',
       },
     ],
   },
-  /* ── Advanced features (accessible from sidebar) ── */
+
+  /* ── Task Center (all authenticated users with permission) ── */
   {
     key: 'task-center',
     labelKey: 'nav.taskCenter',
@@ -176,6 +196,8 @@ export const sidebarNavigation: NavigationItem[] = [
     route: 'TaskCenter',
     permission: 'tasks.view',
   },
+
+  /* ── Inquiries ── */
   {
     key: 'inquiries',
     labelKey: 'nav.inquiries',
@@ -183,34 +205,35 @@ export const sidebarNavigation: NavigationItem[] = [
     route: 'Inquiries',
     permission: 'inquiries.view',
   },
+
+  /* ── Reports (TenantPrimaryAdmin only) ── */
   {
     key: 'reports',
     labelKey: 'nav.reports',
     icon: 'pi pi-chart-line',
-    permission: 'reports.view',
+    requiredRoles: ['TenantPrimaryAdmin'],
     children: [
       {
         key: 'reports-analytics',
         labelKey: 'nav.reports',
         icon: 'pi pi-chart-bar',
         route: 'Reports',
-        permission: 'reports.view',
       },
       {
         key: 'reports-export',
         labelKey: 'nav.reportGenerator',
         icon: 'pi pi-download',
         route: 'ReportGenerator',
-        permission: 'reports.export',
       },
     ],
   },
-  /* ── Operator Portal (SuperAdmin / Operator only) ── */
+
+  /* ── Operator Portal (OperatorPrimaryAdmin ONLY) ── */
   {
     key: 'operator',
     labelKey: 'nav.operator.title',
     icon: 'pi pi-shield',
-    requiredRoles: ['SuperAdmin', 'Operator'],
+    requiredRoles: ['OperatorPrimaryAdmin'],
     children: [
       {
         key: 'operator-dashboard',
@@ -259,7 +282,6 @@ export const sidebarNavigation: NavigationItem[] = [
         labelKey: 'nav.operator.impersonation',
         icon: 'pi pi-user-edit',
         route: 'OperatorImpersonation',
-        requiredRoles: ['SuperAdmin', 'SupportAdmin'],
       },
     ],
   },

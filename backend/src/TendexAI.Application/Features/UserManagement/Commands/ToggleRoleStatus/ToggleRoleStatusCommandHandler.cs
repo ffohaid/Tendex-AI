@@ -35,6 +35,12 @@ public sealed class ToggleRoleStatusCommandHandler : ICommandHandler<ToggleRoleS
             return Result.Failure("Role does not belong to the current tenant.");
         }
 
+        // Protected roles (OperatorPrimaryAdmin, TenantPrimaryAdmin) cannot be toggled
+        if (role.IsProtected)
+        {
+            return Result.Failure("Protected governance roles cannot be deactivated.");
+        }
+
         if (role.IsSystemRole && !request.Activate)
         {
             return Result.Failure("System roles cannot be deactivated.");

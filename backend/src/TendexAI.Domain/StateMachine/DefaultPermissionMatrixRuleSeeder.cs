@@ -55,7 +55,7 @@ public static class DefaultPermissionMatrixRuleSeeder
         List<PermissionMatrixRule> rules, Guid tenantId, Dictionary<SystemRole, Guid> roleMap)
     {
         // ── Owner: Full access to everything ──
-        if (roleMap.TryGetValue(SystemRole.Owner, out var ownerId))
+        if (roleMap.TryGetValue(SystemRole.TenantPrimaryAdmin, out var ownerId))
         {
             AddGlobal(rules, tenantId, ownerId, ResourceType.Organization, PermissionAction.FullAccess);
             AddGlobal(rules, tenantId, ownerId, ResourceType.Users, PermissionAction.FullAccess);
@@ -76,7 +76,7 @@ public static class DefaultPermissionMatrixRuleSeeder
         }
 
         // ── Admin: Full access except approval tasks ──
-        if (roleMap.TryGetValue(SystemRole.Admin, out var adminId))
+        if (roleMap.TryGetValue(SystemRole.TenantPrimaryAdmin, out var adminId))
         {
             AddGlobal(rules, tenantId, adminId, ResourceType.Organization, PermissionAction.Read | PermissionAction.Update);
             AddGlobal(rules, tenantId, adminId, ResourceType.Users, PermissionAction.FullAccess);
@@ -97,7 +97,7 @@ public static class DefaultPermissionMatrixRuleSeeder
         }
 
         // ── SectorRep: Manage users in their sector, view reports ──
-        if (roleMap.TryGetValue(SystemRole.SectorRep, out var sectorRepId))
+        if (roleMap.TryGetValue(SystemRole.SectorRepresentative, out var sectorRepId))
         {
             AddGlobal(rules, tenantId, sectorRepId, ResourceType.Organization, PermissionAction.Read);
             AddGlobal(rules, tenantId, sectorRepId, ResourceType.Users, PermissionAction.Read | PermissionAction.Create | PermissionAction.Update);
@@ -202,7 +202,7 @@ public static class DefaultPermissionMatrixRuleSeeder
         foreach (var phase in Enum.GetValues<CompetitionPhase>())
         {
             // ── Owner: Read all + approve/reject in key phases ──
-            if (roleMap.TryGetValue(SystemRole.Owner, out var ownerId))
+            if (roleMap.TryGetValue(SystemRole.TenantPrimaryAdmin, out var ownerId))
             {
                 var ownerActions = phase switch
                 {
@@ -217,14 +217,14 @@ public static class DefaultPermissionMatrixRuleSeeder
             }
 
             // ── Admin: Read all phases ──
-            if (roleMap.TryGetValue(SystemRole.Admin, out var adminId))
+            if (roleMap.TryGetValue(SystemRole.TenantPrimaryAdmin, out var adminId))
             {
                 foreach (var rt in competitionResources)
                     AddCompetition(rules, tenantId, adminId, rt, phase, null, PermissionAction.Read);
             }
 
             // ── SectorRep: Create/edit in preparation, read elsewhere ──
-            if (roleMap.TryGetValue(SystemRole.SectorRep, out var sectorRepId))
+            if (roleMap.TryGetValue(SystemRole.SectorRepresentative, out var sectorRepId))
             {
                 var sectorActions = phase switch
                 {
@@ -408,21 +408,21 @@ public static class DefaultPermissionMatrixRuleSeeder
         };
 
         // Owner: Full access to committees
-        if (roleMap.TryGetValue(SystemRole.Owner, out var ownerId))
+        if (roleMap.TryGetValue(SystemRole.TenantPrimaryAdmin, out var ownerId))
         {
             foreach (var rt in committeeResources)
                 AddCommittee(rules, tenantId, ownerId, rt, PermissionAction.FullAccess);
         }
 
         // Admin: Full access to committees
-        if (roleMap.TryGetValue(SystemRole.Admin, out var adminId))
+        if (roleMap.TryGetValue(SystemRole.TenantPrimaryAdmin, out var adminId))
         {
             foreach (var rt in committeeResources)
                 AddCommittee(rules, tenantId, adminId, rt, PermissionAction.FullAccess);
         }
 
         // SectorRep: Create and manage committees
-        if (roleMap.TryGetValue(SystemRole.SectorRep, out var sectorRepId))
+        if (roleMap.TryGetValue(SystemRole.SectorRepresentative, out var sectorRepId))
         {
             AddCommittee(rules, tenantId, sectorRepId, ResourceType.Committee, PermissionAction.Read | PermissionAction.Create | PermissionAction.Update);
             AddCommittee(rules, tenantId, sectorRepId, ResourceType.CommitteeMembers, PermissionAction.Read | PermissionAction.Create | PermissionAction.Update | PermissionAction.Delete);

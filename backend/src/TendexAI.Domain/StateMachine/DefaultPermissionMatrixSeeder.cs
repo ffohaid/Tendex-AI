@@ -42,7 +42,7 @@ public static class DefaultPermissionMatrixSeeder
             PermissionAction.Read));
 
         entries.Add(CreateEntry(tenantId, CompetitionPhase.BookletPreparation,
-            CommitteeRole.None, SystemRole.Owner,
+            CommitteeRole.None, SystemRole.TenantPrimaryAdmin,
             PermissionAction.None));
 
         // ── Phase 2: Booklet Approval ──
@@ -63,7 +63,7 @@ public static class DefaultPermissionMatrixSeeder
             PermissionAction.Read | PermissionAction.Approve));
 
         entries.Add(CreateEntry(tenantId, CompetitionPhase.BookletApproval,
-            CommitteeRole.None, SystemRole.Owner,
+            CommitteeRole.None, SystemRole.TenantPrimaryAdmin,
             PermissionAction.Approve | PermissionAction.Reject));
 
         // ── Phase 3: Publishing & Inquiries ──
@@ -88,7 +88,7 @@ public static class DefaultPermissionMatrixSeeder
             PermissionAction.Read));
 
         entries.Add(CreateEntry(tenantId, CompetitionPhase.BookletPublishing,
-            CommitteeRole.None, SystemRole.Owner,
+            CommitteeRole.None, SystemRole.TenantPrimaryAdmin,
             PermissionAction.Read));
 
         // ── Phase 4: Offer Reception ──
@@ -105,7 +105,7 @@ public static class DefaultPermissionMatrixSeeder
             PermissionAction.Read));
 
         entries.Add(CreateEntry(tenantId, CompetitionPhase.OfferReception,
-            CommitteeRole.None, SystemRole.Owner,
+            CommitteeRole.None, SystemRole.TenantPrimaryAdmin,
             PermissionAction.Read));
 
         // ── Phase 5: Technical Analysis ──
@@ -126,7 +126,7 @@ public static class DefaultPermissionMatrixSeeder
             PermissionAction.Read));
 
         entries.Add(CreateEntry(tenantId, CompetitionPhase.TechnicalAnalysis,
-            CommitteeRole.None, SystemRole.Owner,
+            CommitteeRole.None, SystemRole.TenantPrimaryAdmin,
             PermissionAction.Read));
 
         // ── Phase 6: Financial Analysis ──
@@ -147,7 +147,7 @@ public static class DefaultPermissionMatrixSeeder
             PermissionAction.Read | PermissionAction.Approve));
 
         entries.Add(CreateEntry(tenantId, CompetitionPhase.FinancialAnalysis,
-            CommitteeRole.None, SystemRole.Owner,
+            CommitteeRole.None, SystemRole.TenantPrimaryAdmin,
             PermissionAction.Read));
 
         // ── Phase 7: Award Notification ──
@@ -160,7 +160,7 @@ public static class DefaultPermissionMatrixSeeder
             PermissionAction.Read));
 
         entries.Add(CreateEntry(tenantId, CompetitionPhase.AwardNotification,
-            CommitteeRole.None, SystemRole.Owner,
+            CommitteeRole.None, SystemRole.TenantPrimaryAdmin,
             PermissionAction.Read | PermissionAction.Approve | PermissionAction.Reject));
 
         // ── Phase 8: Contract Approval ──
@@ -173,7 +173,7 @@ public static class DefaultPermissionMatrixSeeder
             PermissionAction.Read | PermissionAction.Approve));
 
         entries.Add(CreateEntry(tenantId, CompetitionPhase.ContractApproval,
-            CommitteeRole.None, SystemRole.Owner,
+            CommitteeRole.None, SystemRole.TenantPrimaryAdmin,
             PermissionAction.Read | PermissionAction.Approve | PermissionAction.Reject));
 
         // ── Phase 9: Contract Signing ──
@@ -186,7 +186,7 @@ public static class DefaultPermissionMatrixSeeder
             PermissionAction.Read));
 
         entries.Add(CreateEntry(tenantId, CompetitionPhase.ContractSigning,
-            CommitteeRole.None, SystemRole.Owner,
+            CommitteeRole.None, SystemRole.TenantPrimaryAdmin,
             PermissionAction.Read | PermissionAction.Sign));
 
         // ═══════════════════════════════════════════════════════════════
@@ -195,7 +195,7 @@ public static class DefaultPermissionMatrixSeeder
         foreach (var phase in Enum.GetValues<CompetitionPhase>())
         {
             entries.Add(CreateEntry(tenantId, phase,
-                CommitteeRole.None, SystemRole.Admin,
+                CommitteeRole.None, SystemRole.TenantPrimaryAdmin,
                 PermissionAction.Read));
         }
 
@@ -213,13 +213,13 @@ public static class DefaultPermissionMatrixSeeder
         //  SECTOR REP role — read + create across preparation phases
         // ═══════════════════════════════════════════════════════════════
         entries.Add(CreateEntry(tenantId, CompetitionPhase.BookletPreparation,
-            CommitteeRole.None, SystemRole.SectorRep,
+            CommitteeRole.None, SystemRole.SectorRepresentative,
             PermissionAction.Read | PermissionAction.Create | PermissionAction.Update));
 
         foreach (var phase in Enum.GetValues<CompetitionPhase>().Where(p => p != CompetitionPhase.BookletPreparation))
         {
             entries.Add(CreateEntry(tenantId, phase,
-                CommitteeRole.None, SystemRole.SectorRep,
+                CommitteeRole.None, SystemRole.SectorRepresentative,
                 PermissionAction.Read));
         }
 

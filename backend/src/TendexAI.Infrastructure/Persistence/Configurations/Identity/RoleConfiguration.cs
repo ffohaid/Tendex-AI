@@ -31,6 +31,10 @@ public sealed class RoleConfiguration : IEntityTypeConfiguration<Role>
         builder.Property(r => r.Description)
             .HasMaxLength(500);
 
+        builder.Property(r => r.IsProtected)
+            .IsRequired()
+            .HasDefaultValue(false);
+
         builder.Property(r => r.ConcurrencyStamp)
             .IsConcurrencyToken()
             .HasMaxLength(64);

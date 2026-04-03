@@ -39,7 +39,7 @@ public static class ApprovalWorkflowTemplate
         [
             new(1, SystemRole.FinancialController, CommitteeRole.None,
                 "مراجعة المراقب المالي", "Financial Controller Review"),
-            new(2, SystemRole.Owner, CommitteeRole.None,
+            new(2, SystemRole.TenantPrimaryAdmin, CommitteeRole.None,
                 "اعتماد صاحب الصلاحية", "Authority Owner Approval"),
         ],
 
@@ -62,7 +62,7 @@ public static class ApprovalWorkflowTemplate
         // ── Stage 7: Award approval ──
         [(CompetitionStatus.AwardNotification, CompetitionStatus.AwardApproved)] =
         [
-            new(1, SystemRole.Owner, CommitteeRole.None,
+            new(1, SystemRole.TenantPrimaryAdmin, CommitteeRole.None,
                 "اعتماد صاحب الصلاحية لإشعار الترسية", "Authority Owner Award Approval"),
         ],
 
@@ -71,14 +71,14 @@ public static class ApprovalWorkflowTemplate
         [
             new(1, SystemRole.FinancialController, CommitteeRole.None,
                 "إجازة المراقب المالي للعقد", "Financial Controller Contract Approval"),
-            new(2, SystemRole.Owner, CommitteeRole.None,
+            new(2, SystemRole.TenantPrimaryAdmin, CommitteeRole.None,
                 "الإجازة النهائية من صاحب الصلاحية", "Authority Owner Final Contract Approval"),
         ],
 
         // ── Stage 9: Contract signing ──
         [(CompetitionStatus.ContractApproved, CompetitionStatus.ContractSigned)] =
         [
-            new(1, SystemRole.Owner, CommitteeRole.None,
+            new(1, SystemRole.TenantPrimaryAdmin, CommitteeRole.None,
                 "توقيع العقد من صاحب الصلاحية", "Authority Owner Contract Signing"),
         ],
     };

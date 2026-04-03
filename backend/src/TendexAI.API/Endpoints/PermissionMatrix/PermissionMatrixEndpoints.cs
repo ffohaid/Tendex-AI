@@ -145,12 +145,20 @@ public static class PermissionMatrixEndpoints
         [FromRoute] Guid roleId,
         [FromBody] BulkUpdateRulesRequest request,
         [FromServices] IPermissionMatrixRepository repository,
+        [FromServices] IRoleRepository roleRepository,
         HttpContext httpContext,
         CancellationToken cancellationToken)
     {
         var tenantId = GetTenantId(httpContext);
         if (tenantId == Guid.Empty)
             return Results.Unauthorized();
+
+        // Prevent modifying permission matrix for protected roles
+        var role = await roleRepository.GetByIdAsync(roleId, cancellationToken);
+        if (role is not null && role.IsProtected)
+            return Results.Problem(
+                "Protected governance roles have full access and their permissions cannot be modified.",
+                statusCode: 403);
 
         var userId = GetCurrentUserId(httpContext);
 
@@ -345,13 +353,17 @@ public static class PermissionMatrixEndpoints
         var roleMap = new Dictionary<SystemRole, Guid>();
         var normalizedNameToSystemRole = new Dictionary<string, SystemRole>(StringComparer.OrdinalIgnoreCase)
         {
-            ["TENANT_OWNER"] = SystemRole.Owner,
-            ["TENANT_ADMIN"] = SystemRole.Admin,
-            ["SUPER_ADMIN"] = SystemRole.Admin,
-            ["PROCUREMENT_MANAGER"] = SystemRole.SectorRep,
+            ["OPERATOR_SUPER_ADMIN"] = SystemRole.OperatorSuperAdmin,
+            ["TENANT_PRIMARY_ADMIN"] = SystemRole.TenantPrimaryAdmin,
+            ["TENANT_OWNER"] = SystemRole.TenantPrimaryAdmin,
+            ["TENANT_ADMIN"] = SystemRole.TenantPrimaryAdmin,
+            ["SUPER_ADMIN"] = SystemRole.TenantPrimaryAdmin,
+            ["PROCUREMENT_MANAGER"] = SystemRole.ProcurementManager,
             ["FINANCIAL_CONTROLLER"] = SystemRole.FinancialController,
-            ["COMMITTEE_MEMBER"] = SystemRole.Member,
-            ["COMMITTEE_CHAIR"] = SystemRole.Member,
+            ["SECTOR_REPRESENTATIVE"] = SystemRole.SectorRepresentative,
+            ["COMMITTEE_CHAIR"] = SystemRole.CommitteeChair,
+            ["COMMITTEE_MEMBER"] = SystemRole.CommitteeMember,
+            ["MEMBER"] = SystemRole.Member,
             ["VIEWER"] = SystemRole.Viewer
         };
 

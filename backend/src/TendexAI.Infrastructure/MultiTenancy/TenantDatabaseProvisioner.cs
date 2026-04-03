@@ -209,31 +209,43 @@ public sealed class TenantDatabaseProvisioner : ITenantDatabaseProvisioner
         Guid tenantId,
         CancellationToken cancellationToken)
     {
-        var roles = new[]
+        // Governance roles structure:
+        // - Tier 2 (Protected): TenantPrimaryAdmin — immutable, full tenant authority
+        // - Tier 3 (Flexible): All other roles — customizable per tenant via Permission Matrix
+        // Note: Tier 1 (OperatorSuperAdmin) lives in the master/platform database, not tenant DB.
+        var roles = new (string Key, string NameAr, string NameEn, bool IsProtected)[]
         {
-            ("tenant_owner", "مالك الجهة", "Tenant Owner"),
-            ("tenant_admin", "مدير النظام", "Tenant Admin"),
-            ("procurement_manager", "مدير المشتريات", "Procurement Manager"),
-            ("committee_chair", "رئيس اللجنة", "Committee Chair"),
-            ("committee_member", "عضو اللجنة", "Committee Member"),
-            ("viewer", "مستعرض", "Viewer")
+            // Tier 2 — Protected (cannot be edited, deleted, or have permissions modified)
+            ("tenant_primary_admin", "المسؤول الأول بالجهة", "Tenant Primary Admin", true),
+
+            // Tier 3 — Flexible (managed via Permission Matrix, customizable per tenant)
+            ("procurement_manager", "مدير المشتريات", "Procurement Manager", false),
+            ("financial_controller", "المراقب المالي", "Financial Controller", false),
+            ("sector_representative", "ممثل القطاع", "Sector Representative", false),
+            ("committee_chair", "رئيس اللجنة", "Committee Chair", false),
+            ("committee_member", "عضو اللجنة", "Committee Member", false),
+            ("member", "عضو", "Member", false),
+            ("viewer", "مستعرض", "Viewer", false)
         };
 
-        foreach (var (key, nameAr, nameEn) in roles)
+        foreach (var (key, nameAr, nameEn, isProtected) in roles)
         {
             var command = connection.CreateCommand();
             command.CommandText = """
-                IF NOT EXISTS (SELECT 1 FROM Roles WHERE RoleKey = @RoleKey)
+                IF NOT EXISTS (SELECT 1 FROM [identity].Roles WHERE NormalizedName = @NormalizedName)
                 BEGIN
-                    INSERT INTO Roles (Id, RoleKey, NameAr, NameEn, IsSystemRole, CreatedAt)
-                    VALUES (@Id, @RoleKey, @NameAr, @NameEn, 1, @CreatedAt)
+                    INSERT INTO [identity].Roles (Id, NameAr, NameEn, NormalizedName, TenantId, IsSystemRole, IsProtected, IsActive, ConcurrencyStamp, CreatedAt)
+                    VALUES (@Id, @NameAr, @NameEn, @NormalizedName, @TenantId, 1, @IsProtected, 1, @ConcurrencyStamp, @CreatedAt)
                 END
                 """;
 
             command.Parameters.Add(new SqlParameter("@Id", Guid.NewGuid()));
-            command.Parameters.Add(new SqlParameter("@RoleKey", key));
             command.Parameters.Add(new SqlParameter("@NameAr", nameAr));
             command.Parameters.Add(new SqlParameter("@NameEn", nameEn));
+            command.Parameters.Add(new SqlParameter("@NormalizedName", nameEn.ToUpperInvariant()));
+            command.Parameters.Add(new SqlParameter("@TenantId", tenantId));
+            command.Parameters.Add(new SqlParameter("@IsProtected", isProtected));
+            command.Parameters.Add(new SqlParameter("@ConcurrencyStamp", Guid.NewGuid().ToString("N")));
             command.Parameters.Add(new SqlParameter("@CreatedAt", DateTime.UtcNow));
 
             await command.ExecuteNonQueryAsync(cancellationToken);

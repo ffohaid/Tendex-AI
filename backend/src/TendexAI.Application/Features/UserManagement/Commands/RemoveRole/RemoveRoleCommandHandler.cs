@@ -12,13 +12,16 @@ namespace TendexAI.Application.Features.UserManagement.Commands.RemoveRole;
 public sealed class RemoveRoleCommandHandler : ICommandHandler<RemoveRoleCommand>
 {
     private readonly IUserRepository _userRepository;
+    private readonly IRoleRepository _roleRepository;
     private readonly ILogger<RemoveRoleCommandHandler> _logger;
 
     public RemoveRoleCommandHandler(
         IUserRepository userRepository,
+        IRoleRepository roleRepository,
         ILogger<RemoveRoleCommandHandler> logger)
     {
         _userRepository = userRepository;
+        _roleRepository = roleRepository;
         _logger = logger;
     }
 
@@ -30,6 +33,11 @@ public sealed class RemoveRoleCommandHandler : ICommandHandler<RemoveRoleCommand
 
         if (user.TenantId != request.TenantId)
             return Result.Failure("User does not belong to the current tenant.");
+
+        // Check if the role is protected (cannot be removed from users)
+        var role = await _roleRepository.GetByIdAsync(request.RoleId, cancellationToken);
+        if (role is not null && role.IsProtected)
+            return Result.Failure("Protected governance roles cannot be removed from users.");
 
         var hasRole = await _userRepository.HasRoleAsync(request.UserId, request.RoleId, cancellationToken);
         if (!hasRole)

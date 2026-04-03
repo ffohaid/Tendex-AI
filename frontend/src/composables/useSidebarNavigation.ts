@@ -5,12 +5,18 @@ import { useAuthStore } from '@/stores/auth'
 /**
  * Composable for managing sidebar navigation state.
  *
+ * Governance Role Hierarchy:
+ * ─────────────────────────────────────────────────────────────────
+ * 1. OperatorPrimaryAdmin  → Sees ONLY the operator panel
+ * 2. TenantPrimaryAdmin    → Sees everything within their tenant
+ *                            (bypasses all permission checks)
+ * 3. All other roles       → Controlled by permission matrix
+ *
  * Implements:
  * - Accordion behavior: when a parent menu item is expanded,
  *   all other expanded parent items are automatically collapsed.
  * - Permission-based filtering: items with `permission` or `requiredRoles`
  *   are hidden if the user lacks the required access.
- * - Owner and Admin users bypass all permission checks.
  */
 export function useSidebarNavigation(items: NavigationItem[]) {
   const authStore = useAuthStore()
@@ -19,29 +25,47 @@ export function useSidebarNavigation(items: NavigationItem[]) {
   const expandedKey = ref<string | null>(null)
 
   /**
-   * Check if the current user is privileged (Owner/Admin) and bypasses checks.
+   * Check if the current user is the Operator Primary Admin.
+   * This user sees ONLY the operator panel.
    */
-  const isPrivileged = computed(() => {
-    const roles = authStore.userRoles
-    return roles.some((r: string) =>
-      ['Owner', 'Tenant Owner', 'System Administrator', 'Super Admin', 'SuperAdmin', 'Operator', 'مدير النظام'].includes(r)
-    )
+  const isOperatorAdmin = computed(() => {
+    return authStore.userRoles.includes('OperatorPrimaryAdmin')
+  })
+
+  /**
+   * Check if the current user is the Tenant Primary Admin.
+   * This user bypasses all permission checks within their tenant.
+   */
+  const isTenantAdmin = computed(() => {
+    return authStore.userRoles.includes('TenantPrimaryAdmin')
   })
 
   /**
    * Check if a single navigation item is accessible to the current user.
    */
   function isItemAccessible(item: NavigationItem): boolean {
-    // Privileged users can see everything
-    if (isPrivileged.value) return true
+    // ── Operator Primary Admin: ONLY sees operator panel ──
+    if (isOperatorAdmin.value) {
+      return item.key === 'operator' ||
+        (item.requiredRoles?.includes('OperatorPrimaryAdmin') ?? false)
+    }
 
-    // Check requiredRoles
+    // ── Tenant Primary Admin: sees everything EXCEPT operator panel ──
+    if (isTenantAdmin.value) {
+      // Block operator panel for tenant admins
+      if (item.requiredRoles?.includes('OperatorPrimaryAdmin')) return false
+      return true
+    }
+
+    // ── Regular users: check requiredRoles and permissions ──
+
+    // If item requires specific roles, check them
     if (item.requiredRoles && item.requiredRoles.length > 0) {
       const hasRole = item.requiredRoles.some((r: string) => authStore.hasRole(r))
       if (!hasRole) return false
     }
 
-    // Check permission
+    // If item requires a permission, check it
     if (item.permission) {
       if (!authStore.hasPermission(item.permission)) return false
     }
@@ -115,6 +139,8 @@ export function useSidebarNavigation(items: NavigationItem[]) {
     expandedKey,
     flatItems,
     filteredNavigation,
+    isOperatorAdmin,
+    isTenantAdmin,
     toggleExpand,
     isExpanded,
     collapseAll,
