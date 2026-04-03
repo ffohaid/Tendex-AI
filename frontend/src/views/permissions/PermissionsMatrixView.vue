@@ -122,6 +122,22 @@ const selectedCommitteeRole = ref<number | null>(null)
 // Track pending changes: ruleId -> new allowedActions
 const pendingChanges = ref<Map<string, number>>(new Map())
 
+/* ── Scope/Phase/Committee change handlers (fix string-to-number conversion) ── */
+function onScopeChange(event: Event) {
+  const val = (event.target as HTMLSelectElement).value
+  selectedScope.value = val === '' ? null : Number(val)
+}
+
+function onPhaseChange(event: Event) {
+  const val = (event.target as HTMLSelectElement).value
+  selectedPhase.value = val === '' ? null : Number(val)
+}
+
+function onCommitteeRoleChange(event: Event) {
+  const val = (event.target as HTMLSelectElement).value
+  selectedCommitteeRole.value = val === '' ? null : Number(val)
+}
+
 /* ── Computed ── */
 const hasRules = computed(() => allRules.value.length > 0)
 const hasChanges = computed(() => pendingChanges.value.size > 0)
@@ -514,19 +530,20 @@ watch(availableRoles, (newRoles) => {
             </select>
           </div>
 
-          <!-- Scope selector -->
+          <!-- Scope selector (using @change handler for proper number conversion) -->
           <div class="flex-1 min-w-[180px]">
             <label class="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">
               {{ t('permissions.scope') }}
             </label>
             <select
-              v-model="selectedScope"
+              :value="selectedScope === null ? '' : selectedScope"
+              @change="onScopeChange"
               class="w-full px-3 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg text-sm text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
             >
-              <option :value="null">{{ t('permissions.allScopes') }}</option>
-              <option :value="0">{{ t('permissions.scopes.global') }}</option>
-              <option :value="1">{{ t('permissions.scopes.competition') }}</option>
-              <option :value="2">{{ t('permissions.scopes.committee') }}</option>
+              <option value="">{{ t('permissions.allScopes') }}</option>
+              <option value="0">{{ t('permissions.scopes.global') }}</option>
+              <option value="1">{{ t('permissions.scopes.competition') }}</option>
+              <option value="2">{{ t('permissions.scopes.committee') }}</option>
             </select>
           </div>
 
@@ -536,11 +553,12 @@ watch(availableRoles, (newRoles) => {
               {{ t('permissions.phase') }}
             </label>
             <select
-              v-model="selectedPhase"
+              :value="selectedPhase === null ? '' : selectedPhase"
+              @change="onPhaseChange"
               class="w-full px-3 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg text-sm text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
             >
-              <option :value="null">{{ t('permissions.allPhases') }}</option>
-              <option v-for="(key, val) in COMPETITION_PHASES" :key="val" :value="Number(val)">
+              <option value="">{{ t('permissions.allPhases') }}</option>
+              <option v-for="(key, val) in COMPETITION_PHASES" :key="val" :value="val">
                 {{ t(`permissions.phases.${key}`) }}
               </option>
             </select>
@@ -552,11 +570,12 @@ watch(availableRoles, (newRoles) => {
               {{ t('permissions.committee') }}
             </label>
             <select
-              v-model="selectedCommitteeRole"
+              :value="selectedCommitteeRole === null ? '' : selectedCommitteeRole"
+              @change="onCommitteeRoleChange"
               class="w-full px-3 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg text-sm text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
             >
-              <option :value="null">{{ t('permissions.allCommitteeRoles') }}</option>
-              <option v-for="(key, val) in COMMITTEE_ROLES" :key="val" :value="Number(val)">
+              <option value="">{{ t('permissions.allCommitteeRoles') }}</option>
+              <option v-for="(key, val) in COMMITTEE_ROLES" :key="val" :value="val">
                 {{ t(`permissions.committeeRoles.${key}`) }}
               </option>
             </select>
