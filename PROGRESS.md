@@ -16,13 +16,48 @@
 | Sprint 7: الاختبار والنشر | ✅ مكتمل | 100% | تم إنجاز TASK-701, TASK-702, TASK-703, TASK-704 |
 | Sprint 8: النشر والتشغيل | ✅ مكتمل | 100% | تم إنجاز TASK-801, TASK-802, TASK-803 |
 | Sprint 9: إصلاحات التشغيل الفعلي | ✅ مكتمل | 100% | تم إنجاز TASK-901 إلى TASK-911. |
-| Sprint 10: التحول الجذري واستكمال المتطلبات | 🔄 قيد التنفيذ | 90% | TASK-1001 Frontend overhaul, TASK-1002 QA, TASK-1003 RFP Wizard fixes, TASK-1004 Templates & AI Assistant, TASK-1005 EXPRO Booklet Templates, TASK-1006 Approval Workflow Engine completed. |
+| Sprint 10: التحول الجذري واستكمال المتطلبات | ✅ مكتمل | 100% | TASK-1001 Frontend overhaul, TASK-1002 QA, TASK-1003 RFP Wizard fixes, TASK-1004 Templates & AI Assistant, TASK-1005 EXPRO Booklet Templates, TASK-1006 Approval Workflow Engine completed. |
+| Sprint 11: تحسين منصة المشغل | ✅ مكتمل | 100% | Audit Log UI fix, CSV export, tenant activity monitoring, support ticket rating, test fixes. |
 
 ---
 
 ## سجل المهام المنجزة (Completed Tasks Log)
 
 *يرجى إضافة أحدث مهمة منجزة في أعلى هذه القائمة.*
+
+### 2026-04-04 - feat: Operator Platform Enhancements & Test Fixes
+- **الحالة:** ✅ مكتمل
+- **ما تم إنجازه:**
+  - **إصلاح واجهة سجل التدقيق (AuditLogView):** أعيدت كتابة الواجهة بالكامل لتتوافق مع البيانات الفعلية من الـ API (actionType, entityType, entityId بدلاً من severity/action/details)
+  - **إضافة endpoint تصدير CSV:** endpoint جديد `GET /api/audit-trail/export` لتصدير سجلات التدقيق بصيغة CSV مع فلاتر التاريخ والنوع
+  - **تحسين واجهة تذاكر الدعم للمستأجر:** إضافة نظام تقييم التذاكر المحلولة (1-5 نجوم) مع تعليقات اختيارية
+  - **تحسين لوحة تحكم المشغل:** إضافة أزرار وصول سريع لتذاكر الدعم وسجل التدقيق
+  - **إضافة تبويبات جديدة لتفاصيل الجهة:** تبويب النشاط (Activity) وتبويب الدعم (Support) في صفحة تفاصيل الجهة
+  - **إصلاح جميع ملفات الاختبار (Unit Tests):**
+    - CommitteeTests.cs: إصلاح AddMember signature (6 → 4 params) + CommitteeScopeType + CompetitionId
+    - CommitteeValidatorTests.cs: إصلاح CreateCommitteeCommand + AddCommitteeMemberCommand signatures
+    - ConflictOfInterestRulesTests.cs: إصلاح ValidatePhaseScope signature (3 → 2 params)
+    - PermissionMatrixAndPrerequisiteTests.cs: إصلاح SystemRole.Owner → TenantPrimaryAdmin
+    - TokenServiceTests.cs: إضافة OpenIddictKeyManager dependency
+    - CreateTenantCommandHandlerTests.cs: إضافة IConfiguration dependency
+    - AssignRoleCommandHandlerTests.cs: إزالة IUnitOfWork الزائد
+    - AcceptInvitationCommandHandlerTests.cs: إزالة IUnitOfWork الزائد
+    - SendInvitationCommandHandlerTests.cs: إزالة IUnitOfWork الزائد
+  - **ترجمة i18n:** إضافة مفاتيح ترجمة جديدة للتبويبات (activity, support) بالعربية والإنجليزية
+- **نتائج البناء:**
+  - ✅ Backend: Build succeeded (0 errors, 0 warnings)
+  - ✅ Frontend: Build succeeded (vite build)
+  - ✅ Tests: Build succeeded (all test projects compile)
+- **الملفات المعدلة:**
+  - `frontend/src/views/operator/AuditLogView.vue` - إعادة كتابة كاملة
+  - `frontend/src/views/support/SupportTicketsView.vue` - إضافة نظام التقييم
+  - `frontend/src/views/operator/OperatorDashboardView.vue` - إضافة أزرار وصول سريع
+  - `frontend/src/views/tenants/TenantDetailView.vue` - إضافة تبويبات النشاط والدعم
+  - `frontend/src/locales/ar.json` - إضافة ترجمات جديدة
+  - `frontend/src/locales/en.json` - إضافة ترجمات جديدة
+  - `backend/src/TendexAI.API/Endpoints/AuditTrailEndpoints.cs` - إضافة endpoint التصدير
+  - 9 ملفات اختبار تم إصلاحها
+- **Commit:** `feat: operator platform enhancements - audit log UI, CSV export, ticket rating, test fixes`
 
 ### 2026-04-03 - fix: Permissions Matrix Filter Fix & Live Testing
 - **الحالة:** ✅ مكتمل

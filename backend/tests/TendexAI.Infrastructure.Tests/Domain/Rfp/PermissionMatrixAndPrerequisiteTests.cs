@@ -129,7 +129,7 @@ public sealed class PermissionMatrixAndPrerequisiteTests
     {
         var entries = DefaultPermissionMatrixSeeder.GenerateDefaultMatrix(Guid.NewGuid());
         var ownerApproval = entries.FirstOrDefault(e =>
-            e.SystemRole == SystemRole.Owner &&
+            e.SystemRole == SystemRole.TenantPrimaryAdmin &&
             e.Phase == CompetitionPhase.BookletApproval);
 
         ownerApproval.Should().NotBeNull();
@@ -167,7 +167,7 @@ public sealed class PermissionMatrixAndPrerequisiteTests
     {
         var entries = DefaultPermissionMatrixSeeder.GenerateDefaultMatrix(Guid.NewGuid());
         var ownerSign = entries.FirstOrDefault(e =>
-            e.SystemRole == SystemRole.Owner &&
+            e.SystemRole == SystemRole.TenantPrimaryAdmin &&
             e.Phase == CompetitionPhase.ContractSigning);
 
         ownerSign.Should().NotBeNull();
@@ -288,7 +288,7 @@ public sealed class PermissionMatrixAndPrerequisiteTests
             Guid.NewGuid(), Guid.NewGuid(),
             CompetitionStatus.PendingApproval,
             CompetitionStatus.Approved,
-            1, SystemRole.Owner);
+            1, SystemRole.TenantPrimaryAdmin);
 
         var result = step.Approve("owner-1", "Looks good");
 
@@ -305,7 +305,7 @@ public sealed class PermissionMatrixAndPrerequisiteTests
             Guid.NewGuid(), Guid.NewGuid(),
             CompetitionStatus.PendingApproval,
             CompetitionStatus.Approved,
-            1, SystemRole.Owner);
+            1, SystemRole.TenantPrimaryAdmin);
 
         var result = step.Reject("owner-1", "");
 
@@ -320,7 +320,7 @@ public sealed class PermissionMatrixAndPrerequisiteTests
             Guid.NewGuid(), Guid.NewGuid(),
             CompetitionStatus.PendingApproval,
             CompetitionStatus.Approved,
-            1, SystemRole.Owner);
+            1, SystemRole.TenantPrimaryAdmin);
 
         var result = step.Reject("owner-1", "Incomplete documentation");
 
@@ -335,7 +335,7 @@ public sealed class PermissionMatrixAndPrerequisiteTests
             Guid.NewGuid(), Guid.NewGuid(),
             CompetitionStatus.PendingApproval,
             CompetitionStatus.Approved,
-            1, SystemRole.Owner);
+            1, SystemRole.TenantPrimaryAdmin);
         step.Approve("owner-1");
 
         var result = step.Approve("owner-2");
@@ -350,7 +350,7 @@ public sealed class PermissionMatrixAndPrerequisiteTests
             Guid.NewGuid(), Guid.NewGuid(),
             CompetitionStatus.PendingApproval,
             CompetitionStatus.Approved,
-            1, SystemRole.Owner);
+            1, SystemRole.TenantPrimaryAdmin);
         step.Approve("owner-1");
 
         step.Reset();
@@ -371,7 +371,7 @@ public sealed class PermissionMatrixAndPrerequisiteTests
 
         templates.Should().HaveCount(2);
         templates[0].RequiredRole.Should().Be(SystemRole.FinancialController);
-        templates[1].RequiredRole.Should().Be(SystemRole.Owner);
+        templates[1].RequiredRole.Should().Be(SystemRole.TenantPrimaryAdmin);
     }
 
     [Fact]
@@ -403,7 +403,7 @@ public sealed class PermissionMatrixAndPrerequisiteTests
 
         templates.Should().HaveCount(2);
         templates[0].RequiredRole.Should().Be(SystemRole.FinancialController);
-        templates[1].RequiredRole.Should().Be(SystemRole.Owner);
+        templates[1].RequiredRole.Should().Be(SystemRole.TenantPrimaryAdmin);
     }
 
     [Fact]

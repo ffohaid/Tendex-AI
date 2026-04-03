@@ -874,7 +874,9 @@
       "info": "المعلومات الأساسية",
       "branding": "الهوية البصرية",
       "status": "إدارة الحالة",
-      "provisioning": "التهيئة"
+      "provisioning": "التهيئة",
+      "activity": "سجل النشاط",
+      "support": "الدعم الفني"
     },
     "quickActions": {
       "featureFlags": "الميزات المتاحة",

@@ -23,12 +23,11 @@ public sealed class CommitteeTests
             nameEn: "Technical Evaluation Committee",
             type: type,
             isPermanent: isPermanent,
+            scopeType: CommitteeScopeType.SpecificPhasesSpecificCompetitions,
             description: "Test committee",
             startDate: DateTime.UtcNow,
             endDate: DateTime.UtcNow.AddMonths(6),
-            competitionId: isPermanent ? null : _competitionId,
-            activeFromPhase: CompetitionPhase.TechnicalAnalysis,
-            activeToPhase: CompetitionPhase.TechnicalAnalysis,
+            phases: new List<CompetitionPhase> { CompetitionPhase.TechnicalAnalysis },
             createdBy: _createdBy);
     }
 
@@ -50,20 +49,19 @@ public sealed class CommitteeTests
         Assert.Equal(CommitteeType.TechnicalEvaluation, committee.Type);
         Assert.False(committee.IsPermanent);
         Assert.Equal(CommitteeStatus.Active, committee.Status);
-        Assert.Equal(_competitionId, committee.CompetitionId);
+        Assert.Equal(CommitteeScopeType.SpecificPhasesSpecificCompetitions, committee.ScopeType);
         Assert.Equal(_createdBy, committee.CreatedBy);
         Assert.Empty(committee.Members);
     }
 
     [Fact]
-    public void Constructor_PermanentCommittee_ShouldHaveNoCompetitionId()
+    public void Constructor_PermanentCommittee_ShouldHaveNoPermanentFlag()
     {
         // Act
         var committee = CreateTestCommittee(isPermanent: true);
 
         // Assert
         Assert.True(committee.IsPermanent);
-        Assert.Null(committee.CompetitionId);
     }
 
     // ═════════════════════════════════════════════════════════════
@@ -80,7 +78,7 @@ public sealed class CommitteeTests
         // Act
         var result = committee.AddMember(
             userId, "Ahmed Ali", CommitteeMemberRole.Member,
-            null, null, _createdBy);
+            _createdBy);
 
         // Assert
         Assert.True(result.IsSuccess);
@@ -98,7 +96,7 @@ public sealed class CommitteeTests
         // Act
         var result = committee.AddMember(
             Guid.NewGuid(), "Ahmed Ali", CommitteeMemberRole.Member,
-            null, null, _createdBy);
+            _createdBy);
 
         // Assert
         Assert.True(result.IsFailure);
@@ -111,11 +109,11 @@ public sealed class CommitteeTests
         // Arrange
         var committee = CreateTestCommittee();
         var userId = Guid.NewGuid();
-        committee.AddMember(userId, "Ahmed Ali", CommitteeMemberRole.Member, null, null, _createdBy);
+        committee.AddMember(userId, "Ahmed Ali", CommitteeMemberRole.Member, _createdBy);
 
         // Act
         var result = committee.AddMember(
-            userId, "Ahmed Ali", CommitteeMemberRole.Secretary, null, null, _createdBy);
+            userId, "Ahmed Ali", CommitteeMemberRole.Secretary, _createdBy);
 
         // Assert
         Assert.True(result.IsFailure);
@@ -127,11 +125,11 @@ public sealed class CommitteeTests
     {
         // Arrange
         var committee = CreateTestCommittee();
-        committee.AddMember(Guid.NewGuid(), "Chair 1", CommitteeMemberRole.Chair, null, null, _createdBy);
+        committee.AddMember(Guid.NewGuid(), "Chair 1", CommitteeMemberRole.Chair, _createdBy);
 
         // Act
         var result = committee.AddMember(
-            Guid.NewGuid(), "Chair 2", CommitteeMemberRole.Chair, null, null, _createdBy);
+            Guid.NewGuid(), "Chair 2", CommitteeMemberRole.Chair, _createdBy);
 
         // Assert
         Assert.True(result.IsFailure);
@@ -144,7 +142,7 @@ public sealed class CommitteeTests
         // Arrange
         var committee = CreateTestCommittee();
         var userId = Guid.NewGuid();
-        committee.AddMember(userId, "Ahmed Ali", CommitteeMemberRole.Member, null, null, _createdBy);
+        committee.AddMember(userId, "Ahmed Ali", CommitteeMemberRole.Member, _createdBy);
 
         // Act
         var result = committee.RemoveMember(userId, _createdBy, "No longer available");
@@ -160,7 +158,7 @@ public sealed class CommitteeTests
         // Arrange
         var committee = CreateTestCommittee();
         var userId = Guid.NewGuid();
-        committee.AddMember(userId, "Ahmed Ali", CommitteeMemberRole.Member, null, null, _createdBy);
+        committee.AddMember(userId, "Ahmed Ali", CommitteeMemberRole.Member, _createdBy);
 
         // Act
         var result = committee.RemoveMember(userId, _createdBy, "");
@@ -190,7 +188,7 @@ public sealed class CommitteeTests
         // Arrange
         var committee = CreateTestCommittee();
         var userId = Guid.NewGuid();
-        committee.AddMember(userId, "Ahmed Ali", CommitteeMemberRole.Member, null, null, _createdBy);
+        committee.AddMember(userId, "Ahmed Ali", CommitteeMemberRole.Member, _createdBy);
 
         // Act & Assert
         Assert.True(committee.HasActiveMember(userId));
@@ -202,7 +200,7 @@ public sealed class CommitteeTests
         // Arrange
         var committee = CreateTestCommittee();
         var userId = Guid.NewGuid();
-        committee.AddMember(userId, "Chair", CommitteeMemberRole.Chair, null, null, _createdBy);
+        committee.AddMember(userId, "Chair", CommitteeMemberRole.Chair, _createdBy);
 
         // Act & Assert
         Assert.True(committee.IsChair(userId));
@@ -261,9 +259,9 @@ public sealed class CommitteeTests
     {
         // Arrange
         var committee = CreateTestCommittee();
-        committee.AddMember(Guid.NewGuid(), "Member 1", CommitteeMemberRole.Chair, null, null, _createdBy);
-        committee.AddMember(Guid.NewGuid(), "Member 2", CommitteeMemberRole.Member, null, null, _createdBy);
-        committee.AddMember(Guid.NewGuid(), "Member 3", CommitteeMemberRole.Secretary, null, null, _createdBy);
+        committee.AddMember(Guid.NewGuid(), "Member 1", CommitteeMemberRole.Chair, _createdBy);
+        committee.AddMember(Guid.NewGuid(), "Member 2", CommitteeMemberRole.Member, _createdBy);
+        committee.AddMember(Guid.NewGuid(), "Member 3", CommitteeMemberRole.Secretary, _createdBy);
 
         // Act
         var result = committee.Dissolve(_createdBy, "Competition cancelled");

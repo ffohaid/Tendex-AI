@@ -1,3 +1,5 @@
+using System.Globalization;
+using System.Text;
 using MediatR;
 using TendexAI.Application.AuditTrail.Queries;
 using TendexAI.Domain.Enums;
@@ -24,6 +26,12 @@ public static class AuditTrailEndpoints
             .WithName("GetAuditLogs")
             .WithSummary("Retrieves paginated audit log entries with optional filters.")
             .Produces<GetAuditLogsResult>(StatusCodes.Status200OK);
+
+        // GET /api/v1/audit-logs/export
+        group.MapGet("/export", ExportAuditLogs)
+            .WithName("ExportAuditLogs")
+            .WithSummary("Exports audit log entries as CSV file.")
+            .Produces(StatusCodes.Status200OK);
 
         // GET /api/v1/audit-logs/{id}
         group.MapGet("/{id:guid}", GetAuditLogById)
@@ -75,6 +83,58 @@ public static class AuditTrailEndpoints
 
         var result = await mediator.Send(query);
         return Results.Ok(result);
+    }
+
+    /// <summary>
+    /// Exports audit log entries as a CSV file.
+    /// </summary>
+    private static async Task<IResult> ExportAuditLogs(
+        ISender mediator,
+        Guid? tenantId = null,
+        Guid? userId = null,
+        AuditActionType? actionType = null,
+        string? entityType = null,
+        string? entityId = null,
+        DateTime? fromUtc = null,
+        DateTime? toUtc = null)
+    {
+        // Fetch up to 10000 records for export
+        var query = new GetAuditLogsQuery(
+            TenantId: tenantId,
+            UserId: userId,
+            ActionType: actionType,
+            EntityType: entityType,
+            EntityId: entityId,
+            FromUtc: fromUtc,
+            ToUtc: toUtc,
+            Page: 1,
+            PageSize: 10000);
+
+        var result = await mediator.Send(query);
+
+        var sb = new StringBuilder();
+        // CSV Header with BOM for Arabic support
+        sb.AppendLine("Id,Timestamp,UserName,UserId,ActionType,EntityType,EntityId,IpAddress,Reason,TenantId,SessionId");
+
+        foreach (var entry in result.Items)
+        {
+            var reason = (entry.Reason ?? "").Replace("\"", "\"\"");
+            sb.AppendLine(CultureInfo.InvariantCulture,
+                $"\"{entry.Id}\"," +
+                $"\"{entry.TimestampUtc:yyyy-MM-dd HH:mm:ss}\"," +
+                $"\"{entry.UserName}\"," +
+                $"\"{entry.UserId}\"," +
+                $"\"{entry.ActionType}\"," +
+                $"\"{entry.EntityType}\"," +
+                $"\"{entry.EntityId}\"," +
+                $"\"{entry.IpAddress ?? ""}\"," +
+                $"\"{reason}\"," +
+                $"\"{entry.TenantId?.ToString() ?? ""}\"," +
+                $"\"{entry.SessionId ?? ""}\"");
+        }
+
+        var bytes = Encoding.UTF8.GetPreamble().Concat(Encoding.UTF8.GetBytes(sb.ToString())).ToArray();
+        return Results.File(bytes, "text/csv; charset=utf-8", $"audit-log-{DateTime.UtcNow:yyyy-MM-dd}.csv");
     }
 
     /// <summary>

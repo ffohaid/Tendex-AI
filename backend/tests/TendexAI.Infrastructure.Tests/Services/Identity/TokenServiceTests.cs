@@ -1,6 +1,8 @@
 using FluentAssertions;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Logging.Abstractions;
 using TendexAI.Domain.Entities.Identity;
+using TendexAI.Infrastructure.Security;
 using TendexAI.Infrastructure.Services.Identity;
 
 namespace TendexAI.Infrastructure.Tests.Services.Identity;
@@ -20,11 +22,13 @@ public sealed class TokenServiceTests
             {
                 ["Authentication:SigningKey"] = TestSigningKey,
                 ["Authentication:Issuer"] = "https://test.tendex-ai.com",
-                ["Authentication:Audience"] = "test-client"
+                ["Authentication:Audience"] = "test-client",
+                ["OpenIddict:KeyDirectory"] = Path.Combine(Path.GetTempPath(), "tendex-test-keys-" + Guid.NewGuid().ToString("N"))
             })
             .Build();
 
-        _sut = new TokenService(configuration);
+        var keyManager = new OpenIddictKeyManager(configuration, NullLogger<OpenIddictKeyManager>.Instance);
+        _sut = new TokenService(configuration, keyManager);
     }
 
     private static ApplicationUser CreateTestUser()

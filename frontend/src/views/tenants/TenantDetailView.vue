@@ -31,7 +31,17 @@ const { currentTenant, isLoading, isSubmitting, error, successMessage } =
   storeToRefs(tenantStore)
 
 /** Active tab */
-const activeTab = ref<'info' | 'branding' | 'status' | 'provisioning'>('info')
+const activeTab = ref<'info' | 'branding' | 'status' | 'provisioning' | 'activity' | 'support'>('info')
+
+/** Activity data */
+const activityLogs = ref<any[]>([])
+const activityLoading = ref(false)
+const activityPage = ref(1)
+const activityTotal = ref(0)
+
+/** Support tickets data */
+const tenantTickets = ref<any[]>([])
+const ticketsLoading = ref(false)
 
 /** Edit mode */
 const isEditing = ref(false)
@@ -221,8 +231,45 @@ watch(currentTenant, () => {
   populateBrandingForm()
 })
 
+/** Load activity data when tab changes */
+async function loadActivityLogs() {
+  activityLoading.value = true
+  try {
+    const r = await import('@/services/http').then(m => m.default.get(`/v1/audit-logs?tenantId=${tenantId.value}&page=${activityPage.value}&pageSize=20`))
+    activityLogs.value = r.data.items || []
+    activityTotal.value = r.data.totalCount || 0
+  } catch { activityLogs.value = [] }
+  finally { activityLoading.value = false }
+}
+
+async function loadTenantTickets() {
+  ticketsLoading.value = true
+  try {
+    const r = await import('@/services/http').then(m => m.default.get(`/v1/support-tickets?tenantId=${tenantId.value}&page=1&pageSize=20`))
+    tenantTickets.value = r.data.items || []
+  } catch { tenantTickets.value = [] }
+  finally { ticketsLoading.value = false }
+}
+
+const actionTypeLabel = (at: any) => {
+  const map: Record<string, string> = { Create: '\u0625\u0646\u0634\u0627\u0621', Update: '\u062a\u062d\u062f\u064a\u062b', Delete: '\u062d\u0630\u0641', Approve: '\u0627\u0639\u062a\u0645\u0627\u062f', Reject: '\u0631\u0641\u0636', Login: '\u062f\u062e\u0648\u0644', Logout: '\u062e\u0631\u0648\u062c', Access: '\u0648\u0635\u0648\u0644', Export: '\u062a\u0635\u062f\u064a\u0631', Impersonate: '\u0627\u0646\u062a\u062d\u0627\u0644', StateTransition: '\u0627\u0646\u062a\u0642\u0627\u0644' }
+  return map[at] || String(at)
+}
+
+const entityTypeLabel = (et: string) => {
+  const map: Record<string, string> = { Tenant: '\u062c\u0647\u0629', User: '\u0645\u0633\u062a\u062e\u062f\u0645', Role: '\u062f\u0648\u0631', Rfp: '\u0643\u0631\u0627\u0633\u0629', Committee: '\u0644\u062c\u0646\u0629', SupportTicket: '\u062a\u0630\u0643\u0631\u0629' }
+  return map[et] || et
+}
+
+const ticketStatusLabel = (s: string) => {
+  const map: Record<string, string> = { Open: '\u0645\u0641\u062a\u0648\u062d\u0629', InProgress: '\u0642\u064a\u062f \u0627\u0644\u0645\u0639\u0627\u0644\u062c\u0629', WaitingForCustomer: '\u0628\u0627\u0646\u062a\u0638\u0627\u0631 \u0627\u0644\u0639\u0645\u064a\u0644', WaitingForOperator: '\u0628\u0627\u0646\u062a\u0638\u0627\u0631 \u0627\u0644\u062f\u0639\u0645', Resolved: '\u062a\u0645 \u0627\u0644\u062d\u0644', Closed: '\u0645\u063a\u0644\u0642\u0629' }
+  return map[s] || s
+}
+
 /** Clear messages on tab change */
-watch(activeTab, () => {
+watch(activeTab, (newTab) => {
+  if (newTab === 'activity') loadActivityLogs()
+  if (newTab === 'support') loadTenantTickets()
   tenantStore.clearMessages()
 })
 </script>
@@ -368,6 +415,8 @@ watch(activeTab, () => {
               { key: 'branding', labelKey: 'tenants.tabs.branding', icon: 'pi pi-palette' },
               { key: 'status', labelKey: 'tenants.tabs.status', icon: 'pi pi-sync' },
               { key: 'provisioning', labelKey: 'tenants.tabs.provisioning', icon: 'pi pi-server' },
+              { key: 'activity', labelKey: 'tenants.tabs.activity', icon: 'pi pi-history' },
+              { key: 'support', labelKey: 'tenants.tabs.support', icon: 'pi pi-ticket' },
             ]"
             :key="tab.key"
             type="button"
@@ -616,6 +665,70 @@ watch(activeTab, () => {
                 <i v-else class="pi pi-server text-sm"></i>
                 {{ t('tenants.actions.provision') }}
               </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Tab: Activity -->
+        <div v-if="activeTab === 'activity'" class="rounded-lg border border-surface-dim bg-white p-6">
+          <h2 class="mb-6 text-lg font-semibold text-secondary">سجل نشاط الجهة</h2>
+          <div v-if="activityLoading" class="flex items-center justify-center py-8">
+            <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+          </div>
+          <div v-else-if="activityLogs.length === 0" class="text-center py-8">
+            <i class="pi pi-history text-4xl text-tertiary mb-3"></i>
+            <p class="text-sm text-tertiary">لا توجد سجلات نشاط لهذه الجهة</p>
+          </div>
+          <div v-else class="space-y-3">
+            <div class="mb-4 flex items-center justify-between">
+              <p class="text-sm text-tertiary">إجمالي السجلات: {{ activityTotal }}</p>
+            </div>
+            <div v-for="log in activityLogs" :key="log.id" class="flex items-start gap-3 rounded-lg border border-surface-dim p-3 hover:bg-surface-muted/50 transition-colors">
+              <div class="mt-0.5 flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full" :class="log.actionType === 'Create' || log.actionType === 1 ? 'bg-green-100 text-green-600' : log.actionType === 'Delete' || log.actionType === 3 ? 'bg-red-100 text-red-600' : log.actionType === 'Login' || log.actionType === 6 ? 'bg-indigo-100 text-indigo-600' : 'bg-blue-100 text-blue-600'">
+                <i :class="log.actionType === 'Create' || log.actionType === 1 ? 'pi pi-plus' : log.actionType === 'Delete' || log.actionType === 3 ? 'pi pi-trash' : log.actionType === 'Login' || log.actionType === 6 ? 'pi pi-sign-in' : 'pi pi-pencil'" class="text-xs"></i>
+              </div>
+              <div class="flex-1 min-w-0">
+                <div class="flex items-center gap-2 flex-wrap">
+                  <span class="text-sm font-medium text-secondary">{{ actionTypeLabel(log.actionType) }}</span>
+                  <span class="text-xs px-1.5 py-0.5 rounded bg-surface-muted text-tertiary">{{ entityTypeLabel(log.entityType) }}</span>
+                </div>
+                <div class="flex items-center gap-2 mt-1">
+                  <span class="text-xs text-tertiary">{{ log.userName }}</span>
+                  <span class="text-xs text-tertiary">&middot;</span>
+                  <span class="text-xs text-tertiary">{{ formatDate(log.timestampUtc) }}</span>
+                </div>
+                <p v-if="log.reason" class="text-xs text-tertiary mt-1">{{ log.reason }}</p>
+              </div>
+            </div>
+            <div v-if="activityTotal > 20" class="flex justify-center gap-2 pt-4">
+              <button @click="activityPage--; loadActivityLogs()" :disabled="activityPage <= 1" class="px-3 py-1 text-sm border rounded-lg disabled:opacity-50">السابق</button>
+              <span class="px-3 py-1 text-sm text-tertiary">{{ activityPage }}</span>
+              <button @click="activityPage++; loadActivityLogs()" :disabled="activityPage * 20 >= activityTotal" class="px-3 py-1 text-sm border rounded-lg disabled:opacity-50">التالي</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Tab: Support -->
+        <div v-if="activeTab === 'support'" class="rounded-lg border border-surface-dim bg-white p-6">
+          <h2 class="mb-6 text-lg font-semibold text-secondary">تذاكر الدعم الفني</h2>
+          <div v-if="ticketsLoading" class="flex items-center justify-center py-8">
+            <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+          </div>
+          <div v-else-if="tenantTickets.length === 0" class="text-center py-8">
+            <i class="pi pi-ticket text-4xl text-tertiary mb-3"></i>
+            <p class="text-sm text-tertiary">لا توجد تذاكر دعم فني لهذه الجهة</p>
+          </div>
+          <div v-else class="space-y-3">
+            <div v-for="tk in tenantTickets" :key="tk.id" class="flex items-center justify-between rounded-lg border border-surface-dim p-4 hover:bg-surface-muted/50 transition-colors">
+              <div class="flex-1">
+                <div class="flex items-center gap-2 flex-wrap">
+                  <span class="text-xs font-mono text-primary">{{ tk.ticketNumber }}</span>
+                  <span class="px-2 py-0.5 rounded text-xs font-medium" :class="tk.status === 'Open' ? 'bg-blue-100 text-blue-700' : tk.status === 'InProgress' ? 'bg-yellow-100 text-yellow-700' : tk.status === 'Resolved' ? 'bg-green-100 text-green-700' : tk.status === 'Closed' ? 'bg-gray-100 text-gray-700' : 'bg-orange-100 text-orange-700'">{{ ticketStatusLabel(tk.status) }}</span>
+                </div>
+                <h3 class="text-sm font-medium text-secondary mt-1">{{ tk.subject }}</h3>
+                <p class="text-xs text-tertiary mt-0.5">{{ formatDate(tk.createdAt) }}</p>
+              </div>
+              <button @click="router.push({ name: 'OperatorSupportTickets' })" class="text-xs text-primary hover:underline">عرض</button>
             </div>
           </div>
         </div>

@@ -11,7 +11,6 @@ public sealed class AssignRoleCommandHandlerTests
 {
     private readonly Mock<IUserRepository> _userRepoMock;
     private readonly Mock<IRoleRepository> _roleRepoMock;
-    private readonly Mock<IUnitOfWork> _unitOfWorkMock;
     private readonly Mock<ILogger<AssignRoleCommandHandler>> _loggerMock;
     private readonly AssignRoleCommandHandler _handler;
     private readonly Guid _tenantId = Guid.NewGuid();
@@ -20,13 +19,11 @@ public sealed class AssignRoleCommandHandlerTests
     {
         _userRepoMock = new Mock<IUserRepository>();
         _roleRepoMock = new Mock<IRoleRepository>();
-        _unitOfWorkMock = new Mock<IUnitOfWork>();
         _loggerMock = new Mock<ILogger<AssignRoleCommandHandler>>();
 
         _handler = new AssignRoleCommandHandler(
             _userRepoMock.Object,
             _roleRepoMock.Object,
-            _unitOfWorkMock.Object,
             _loggerMock.Object);
     }
 
@@ -51,9 +48,6 @@ public sealed class AssignRoleCommandHandlerTests
             .ReturnsAsync(role);
         _userRepoMock.Setup(r => r.HasRoleAsync(userId, roleId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(false);
-        _unitOfWorkMock.Setup(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()))
-            .ReturnsAsync(1);
-
         // Act
         var result = await _handler.Handle(command, CancellationToken.None);
 

@@ -220,8 +220,7 @@ public sealed class ConflictOfInterestRulesTests
         // Act
         var result = ConflictOfInterestRules.ValidatePhaseScope(
             CommitteeType.TechnicalEvaluation,
-            CompetitionPhase.TechnicalAnalysis,
-            CompetitionPhase.TechnicalAnalysis);
+            new List<CompetitionPhase> { CompetitionPhase.TechnicalAnalysis });
 
         // Assert
         Assert.True(result.IsSuccess);
@@ -233,8 +232,7 @@ public sealed class ConflictOfInterestRulesTests
         // Act: Technical committee active only in Financial phase
         var result = ConflictOfInterestRules.ValidatePhaseScope(
             CommitteeType.TechnicalEvaluation,
-            CompetitionPhase.FinancialAnalysis,
-            CompetitionPhase.FinancialAnalysis);
+            new List<CompetitionPhase> { CompetitionPhase.FinancialAnalysis });
 
         // Assert
         Assert.True(result.IsFailure);
@@ -247,8 +245,7 @@ public sealed class ConflictOfInterestRulesTests
         // Act: Financial committee active only in Technical phase
         var result = ConflictOfInterestRules.ValidatePhaseScope(
             CommitteeType.FinancialEvaluation,
-            CompetitionPhase.BookletPreparation,
-            CompetitionPhase.TechnicalAnalysis);
+            new List<CompetitionPhase> { CompetitionPhase.BookletPreparation, CompetitionPhase.TechnicalAnalysis });
 
         // Assert
         Assert.True(result.IsFailure);
@@ -261,8 +258,7 @@ public sealed class ConflictOfInterestRulesTests
         // Act: Booklet preparation has no phase restrictions
         var result = ConflictOfInterestRules.ValidatePhaseScope(
             CommitteeType.BookletPreparation,
-            CompetitionPhase.BookletPreparation,
-            CompetitionPhase.BookletApproval);
+            new List<CompetitionPhase> { CompetitionPhase.BookletPreparation, CompetitionPhase.BookletApproval });
 
         // Assert
         Assert.True(result.IsSuccess);
@@ -274,7 +270,6 @@ public sealed class ConflictOfInterestRulesTests
         // Act: Null phases mean active for all phases
         var result = ConflictOfInterestRules.ValidatePhaseScope(
             CommitteeType.TechnicalEvaluation,
-            null,
             null);
 
         // Assert

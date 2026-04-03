@@ -13,7 +13,6 @@ public sealed class AcceptInvitationCommandHandlerTests
     private readonly Mock<IUserInvitationRepository> _invitationRepoMock;
     private readonly Mock<IUserRepository> _userRepoMock;
     private readonly Mock<IPasswordHasher> _passwordHasherMock;
-    private readonly Mock<IUnitOfWork> _unitOfWorkMock;
     private readonly Mock<ILogger<AcceptInvitationCommandHandler>> _loggerMock;
     private readonly AcceptInvitationCommandHandler _handler;
 
@@ -22,14 +21,12 @@ public sealed class AcceptInvitationCommandHandlerTests
         _invitationRepoMock = new Mock<IUserInvitationRepository>();
         _userRepoMock = new Mock<IUserRepository>();
         _passwordHasherMock = new Mock<IPasswordHasher>();
-        _unitOfWorkMock = new Mock<IUnitOfWork>();
         _loggerMock = new Mock<ILogger<AcceptInvitationCommandHandler>>();
 
         _handler = new AcceptInvitationCommandHandler(
             _invitationRepoMock.Object,
             _userRepoMock.Object,
             _passwordHasherMock.Object,
-            _unitOfWorkMock.Object,
             _loggerMock.Object);
     }
 
@@ -61,9 +58,6 @@ public sealed class AcceptInvitationCommandHandlerTests
             .ReturnsAsync(false);
         _passwordHasherMock.Setup(h => h.HashPassword(command.Password))
             .Returns("hashed_password");
-        _unitOfWorkMock.Setup(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()))
-            .ReturnsAsync(1);
-
         // Act
         var result = await _handler.Handle(command, CancellationToken.None);
 

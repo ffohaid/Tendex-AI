@@ -78,6 +78,22 @@ function goToCreatePo(): void {
   router.push({ name: 'PurchaseOrderCreate' })
 }
 
+function goToSupportTickets(): void {
+  router.push({ name: 'OperatorSupportTickets' })
+}
+
+function goToAuditLog(): void {
+  router.push({ name: 'OperatorAuditLog' })
+}
+
+function goToAiSettings(): void {
+  router.push({ name: 'OperatorAiSettings' })
+}
+
+function goToSystemHealth(): void {
+  router.push({ name: 'OperatorSystemHealth' })
+}
+
 /** Manual refresh handler. */
 async function handleRefresh(): Promise<void> {
   await store.loadAll()
@@ -210,7 +226,7 @@ onUnmounted(() => {
         <h2 class="mb-4 text-lg font-semibold text-secondary">
           {{ t('operatorDashboard.quickActions.title') }}
         </h2>
-        <div class="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        <div class="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
           <button
             type="button"
             class="flex items-center gap-3 rounded-lg border border-surface-dim p-4 text-start transition-colors hover:bg-surface-muted"
@@ -280,6 +296,62 @@ onUnmounted(() => {
               <p class="text-xs text-tertiary">
                 {{ t('operatorDashboard.quickActions.viewPOsDesc') }}
               </p>
+            </div>
+          </button>
+
+          <button
+            type="button"
+            class="flex items-center gap-3 rounded-lg border border-surface-dim p-4 text-start transition-colors hover:bg-surface-muted"
+            @click="goToSupportTickets"
+          >
+            <div class="flex h-10 w-10 items-center justify-center rounded-lg bg-orange-50">
+              <i class="pi pi-ticket text-sm text-orange-600"></i>
+            </div>
+            <div>
+              <p class="text-sm font-medium text-secondary">الدعم الفني</p>
+              <p class="text-xs text-tertiary">إدارة تذاكر الدعم الفني</p>
+            </div>
+          </button>
+
+          <button
+            type="button"
+            class="flex items-center gap-3 rounded-lg border border-surface-dim p-4 text-start transition-colors hover:bg-surface-muted"
+            @click="goToAuditLog"
+          >
+            <div class="flex h-10 w-10 items-center justify-center rounded-lg bg-amber-50">
+              <i class="pi pi-history text-sm text-amber-600"></i>
+            </div>
+            <div>
+              <p class="text-sm font-medium text-secondary">سجل التدقيق</p>
+              <p class="text-xs text-tertiary">مراجعة جميع أنشطة المنصة</p>
+            </div>
+          </button>
+
+          <button
+            type="button"
+            class="flex items-center gap-3 rounded-lg border border-surface-dim p-4 text-start transition-colors hover:bg-surface-muted"
+            @click="goToAiSettings"
+          >
+            <div class="flex h-10 w-10 items-center justify-center rounded-lg bg-violet-50">
+              <i class="pi pi-sparkles text-sm text-violet-600"></i>
+            </div>
+            <div>
+              <p class="text-sm font-medium text-secondary">إعدادات الذكاء الاصطناعي</p>
+              <p class="text-xs text-tertiary">تكوين مزودي الذكاء الاصطناعي</p>
+            </div>
+          </button>
+
+          <button
+            type="button"
+            class="flex items-center gap-3 rounded-lg border border-surface-dim p-4 text-start transition-colors hover:bg-surface-muted"
+            @click="goToSystemHealth"
+          >
+            <div class="flex h-10 w-10 items-center justify-center rounded-lg bg-teal-50">
+              <i class="pi pi-server text-sm text-teal-600"></i>
+            </div>
+            <div>
+              <p class="text-sm font-medium text-secondary">صحة النظام</p>
+              <p class="text-xs text-tertiary">مراقبة حالة الخدمات</p>
             </div>
           </button>
         </div>

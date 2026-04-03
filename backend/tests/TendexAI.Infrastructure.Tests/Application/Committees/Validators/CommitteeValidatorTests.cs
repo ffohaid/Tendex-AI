@@ -26,12 +26,12 @@ public sealed class CommitteeValidatorTests
             NameEn: "Technical Evaluation Committee",
             Type: CommitteeType.TechnicalEvaluation,
             IsPermanent: false,
+            ScopeType: CommitteeScopeType.SpecificPhasesSpecificCompetitions,
             Description: "Test",
             StartDate: DateTime.UtcNow,
             EndDate: DateTime.UtcNow.AddMonths(6),
-            CompetitionId: Guid.NewGuid(),
-            ActiveFromPhase: null,
-            ActiveToPhase: null);
+            CompetitionIds: new List<Guid> { Guid.NewGuid() },
+            Phases: new List<CompetitionPhase> { CompetitionPhase.TechnicalAnalysis });
 
         var result = _createValidator.TestValidate(command);
         result.ShouldNotHaveAnyValidationErrors();
@@ -45,12 +45,12 @@ public sealed class CommitteeValidatorTests
             NameEn: "Technical Evaluation Committee",
             Type: CommitteeType.TechnicalEvaluation,
             IsPermanent: false,
+            ScopeType: CommitteeScopeType.SpecificPhasesSpecificCompetitions,
             Description: null,
             StartDate: DateTime.UtcNow,
             EndDate: DateTime.UtcNow.AddMonths(6),
-            CompetitionId: Guid.NewGuid(),
-            ActiveFromPhase: null,
-            ActiveToPhase: null);
+            CompetitionIds: new List<Guid> { Guid.NewGuid() },
+            Phases: null);
 
         var result = _createValidator.TestValidate(command);
         result.ShouldHaveValidationErrorFor(x => x.NameAr);
@@ -64,12 +64,12 @@ public sealed class CommitteeValidatorTests
             NameEn: "",
             Type: CommitteeType.TechnicalEvaluation,
             IsPermanent: false,
+            ScopeType: CommitteeScopeType.SpecificPhasesSpecificCompetitions,
             Description: null,
             StartDate: DateTime.UtcNow,
             EndDate: DateTime.UtcNow.AddMonths(6),
-            CompetitionId: Guid.NewGuid(),
-            ActiveFromPhase: null,
-            ActiveToPhase: null);
+            CompetitionIds: new List<Guid> { Guid.NewGuid() },
+            Phases: null);
 
         var result = _createValidator.TestValidate(command);
         result.ShouldHaveValidationErrorFor(x => x.NameEn);
@@ -83,34 +83,15 @@ public sealed class CommitteeValidatorTests
             NameEn: "Technical Evaluation Committee",
             Type: CommitteeType.TechnicalEvaluation,
             IsPermanent: false,
+            ScopeType: CommitteeScopeType.SpecificPhasesSpecificCompetitions,
             Description: null,
             StartDate: DateTime.UtcNow.AddMonths(6),
             EndDate: DateTime.UtcNow,
-            CompetitionId: Guid.NewGuid(),
-            ActiveFromPhase: null,
-            ActiveToPhase: null);
+            CompetitionIds: new List<Guid> { Guid.NewGuid() },
+            Phases: null);
 
         var result = _createValidator.TestValidate(command);
         result.ShouldHaveValidationErrorFor(x => x.EndDate);
-    }
-
-    [Fact]
-    public void CreateCommittee_ShouldFail_WhenTemporaryWithoutCompetitionId()
-    {
-        var command = new CreateCommitteeCommand(
-            NameAr: "لجنة الفحص الفني",
-            NameEn: "Technical Evaluation Committee",
-            Type: CommitteeType.TechnicalEvaluation,
-            IsPermanent: false,
-            Description: null,
-            StartDate: DateTime.UtcNow,
-            EndDate: DateTime.UtcNow.AddMonths(6),
-            CompetitionId: null,
-            ActiveFromPhase: null,
-            ActiveToPhase: null);
-
-        var result = _createValidator.TestValidate(command);
-        result.ShouldHaveValidationErrorFor(x => x.CompetitionId);
     }
 
     // ═════════════════════════════════════════════════════════════
@@ -125,10 +106,7 @@ public sealed class CommitteeValidatorTests
         var command = new AddCommitteeMemberCommand(
             CommitteeId: Guid.NewGuid(),
             UserId: Guid.NewGuid(),
-            UserFullName: "Ahmed Ali",
-            Role: CommitteeMemberRole.Member,
-            ActiveFromPhase: null,
-            ActiveToPhase: null);
+            Role: CommitteeMemberRole.Member);
 
         var result = _addMemberValidator.TestValidate(command);
         result.ShouldNotHaveAnyValidationErrors();
@@ -140,28 +118,22 @@ public sealed class CommitteeValidatorTests
         var command = new AddCommitteeMemberCommand(
             CommitteeId: Guid.Empty,
             UserId: Guid.NewGuid(),
-            UserFullName: "Ahmed Ali",
-            Role: CommitteeMemberRole.Member,
-            ActiveFromPhase: null,
-            ActiveToPhase: null);
+            Role: CommitteeMemberRole.Member);
 
         var result = _addMemberValidator.TestValidate(command);
         result.ShouldHaveValidationErrorFor(x => x.CommitteeId);
     }
 
     [Fact]
-    public void AddMember_ShouldFail_WhenUserFullNameIsEmpty()
+    public void AddMember_ShouldFail_WhenUserIdIsEmpty()
     {
         var command = new AddCommitteeMemberCommand(
             CommitteeId: Guid.NewGuid(),
-            UserId: Guid.NewGuid(),
-            UserFullName: "",
-            Role: CommitteeMemberRole.Member,
-            ActiveFromPhase: null,
-            ActiveToPhase: null);
+            UserId: Guid.Empty,
+            Role: CommitteeMemberRole.Member);
 
         var result = _addMemberValidator.TestValidate(command);
-        result.ShouldHaveValidationErrorFor(x => x.UserFullName);
+        result.ShouldHaveValidationErrorFor(x => x.UserId);
     }
 
     // ═════════════════════════════════════════════════════════════

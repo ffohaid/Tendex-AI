@@ -13,7 +13,6 @@ public sealed class SendInvitationCommandHandlerTests
     private readonly Mock<IUserInvitationRepository> _invitationRepoMock;
     private readonly Mock<IUserRepository> _userRepoMock;
     private readonly Mock<IEmailService> _emailServiceMock;
-    private readonly Mock<IUnitOfWork> _unitOfWorkMock;
     private readonly Mock<ILogger<SendInvitationCommandHandler>> _loggerMock;
     private readonly SendInvitationCommandHandler _handler;
 
@@ -22,14 +21,12 @@ public sealed class SendInvitationCommandHandlerTests
         _invitationRepoMock = new Mock<IUserInvitationRepository>();
         _userRepoMock = new Mock<IUserRepository>();
         _emailServiceMock = new Mock<IEmailService>();
-        _unitOfWorkMock = new Mock<IUnitOfWork>();
         _loggerMock = new Mock<ILogger<SendInvitationCommandHandler>>();
 
         _handler = new SendInvitationCommandHandler(
             _invitationRepoMock.Object,
             _userRepoMock.Object,
             _emailServiceMock.Object,
-            _unitOfWorkMock.Object,
             _loggerMock.Object);
     }
 
@@ -62,9 +59,6 @@ public sealed class SendInvitationCommandHandlerTests
             It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(),
             It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(true);
-        _unitOfWorkMock.Setup(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()))
-            .ReturnsAsync(1);
-
         // Act
         var result = await _handler.Handle(command, CancellationToken.None);
 
@@ -72,7 +66,6 @@ public sealed class SendInvitationCommandHandlerTests
         result.IsSuccess.Should().BeTrue();
         result.Value.Should().NotBeEmpty();
         _invitationRepoMock.Verify(r => r.AddAsync(It.IsAny<UserInvitation>(), It.IsAny<CancellationToken>()), Times.Once);
-        _unitOfWorkMock.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
         _emailServiceMock.Verify(e => e.SendInvitationEmailAsync(
             command.Email, It.IsAny<string>(), It.IsAny<string>(),
             command.TenantName, command.InviterName, It.IsAny<CancellationToken>()), Times.Once);

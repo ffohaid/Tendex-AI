@@ -1,4 +1,5 @@
 using FluentAssertions;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Moq;
 using TendexAI.Application.Common.Interfaces;
@@ -19,6 +20,7 @@ public sealed class CreateTenantCommandHandlerTests
     private readonly Mock<ITenantFeatureFlagRepository> _featureFlagRepoMock = new();
     private readonly Mock<IUnitOfWork> _unitOfWorkMock = new();
     private readonly Mock<IConnectionStringEncryptor> _encryptorMock = new();
+    private readonly Mock<IConfiguration> _configMock = new();
     private readonly Mock<ILogger<CreateTenantCommandHandler>> _loggerMock = new();
     private readonly CreateTenantCommandHandler _handler;
 
@@ -39,6 +41,7 @@ public sealed class CreateTenantCommandHandlerTests
             _featureFlagRepoMock.Object,
             _unitOfWorkMock.Object,
             _encryptorMock.Object,
+            _configMock.Object,
             _loggerMock.Object);
     }
 

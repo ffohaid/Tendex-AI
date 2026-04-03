@@ -874,7 +874,9 @@
       "info": "Basic Info",
       "branding": "Branding",
       "status": "Status Management",
-      "provisioning": "Provisioning"
+      "provisioning": "Provisioning",
+      "activity": "Activity Log",
+      "support": "Support Tickets"
     },
     "quickActions": {
       "featureFlags": "Feature Flags",
