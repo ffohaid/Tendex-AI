@@ -1,3 +1,5 @@
+using Microsoft.Data.SqlClient;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using TendexAI.Application.Common.Interfaces;
 using TendexAI.Application.Common.Messaging;
@@ -20,6 +22,7 @@ public sealed class CreateTenantCommandHandler : ICommandHandler<CreateTenantCom
     private readonly ITenantFeatureFlagRepository _featureFlagRepository;
     private readonly IUnitOfWork _unitOfWork;
     private readonly IConnectionStringEncryptor _connectionStringEncryptor;
+    private readonly IConfiguration _configuration;
     private readonly ILogger<CreateTenantCommandHandler> _logger;
 
     public CreateTenantCommandHandler(
@@ -28,6 +31,7 @@ public sealed class CreateTenantCommandHandler : ICommandHandler<CreateTenantCom
         ITenantFeatureFlagRepository featureFlagRepository,
         IUnitOfWork unitOfWork,
         IConnectionStringEncryptor connectionStringEncryptor,
+        IConfiguration configuration,
         ILogger<CreateTenantCommandHandler> logger)
     {
         _tenantRepository = tenantRepository;
@@ -35,6 +39,7 @@ public sealed class CreateTenantCommandHandler : ICommandHandler<CreateTenantCom
         _featureFlagRepository = featureFlagRepository;
         _unitOfWork = unitOfWork;
         _connectionStringEncryptor = connectionStringEncryptor;
+        _configuration = configuration;
         _logger = logger;
     }
 
@@ -125,11 +130,19 @@ public sealed class CreateTenantCommandHandler : ICommandHandler<CreateTenantCom
         return Result.Success(MapToDto(tenant));
     }
 
-    private static string GenerateConnectionString(string databaseName)
+    private string GenerateConnectionString(string databaseName)
     {
-        // The actual server details will be resolved from configuration
-        // This generates a template that will be used by the provisioning service
-        return $"Server=tendex-sqlserver;Database={databaseName};User Id=sa;TrustServerCertificate=True;";
+        // Build tenant connection string from the master platform connection string
+        // replacing only the database name to point to the new tenant database
+        var masterConnectionString = _configuration.GetConnectionString("MasterPlatform")
+            ?? throw new InvalidOperationException("MasterPlatform connection string is not configured.");
+
+        var builder = new SqlConnectionStringBuilder(masterConnectionString)
+        {
+            InitialCatalog = databaseName
+        };
+
+        return builder.ConnectionString;
     }
 
     private static TenantDto MapToDto(Tenant tenant)
