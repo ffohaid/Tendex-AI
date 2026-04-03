@@ -12,16 +12,13 @@ namespace TendexAI.Application.Features.UserManagement.Commands.RemoveRole;
 public sealed class RemoveRoleCommandHandler : ICommandHandler<RemoveRoleCommand>
 {
     private readonly IUserRepository _userRepository;
-    private readonly IUnitOfWork _unitOfWork;
     private readonly ILogger<RemoveRoleCommandHandler> _logger;
 
     public RemoveRoleCommandHandler(
         IUserRepository userRepository,
-        IUnitOfWork unitOfWork,
         ILogger<RemoveRoleCommandHandler> logger)
     {
         _userRepository = userRepository;
-        _unitOfWork = unitOfWork;
         _logger = logger;
     }
 
@@ -39,7 +36,7 @@ public sealed class RemoveRoleCommandHandler : ICommandHandler<RemoveRoleCommand
             return Result.Failure("User does not have this role assigned.");
 
         await _userRepository.RemoveUserRoleAsync(request.UserId, request.RoleId, cancellationToken);
-        await _unitOfWork.SaveChangesAsync(cancellationToken);
+        await _userRepository.SaveChangesAsync(cancellationToken);
 
         _logger.LogInformation("Role {RoleId} removed from user {UserId}", request.RoleId, request.UserId);
         return Result.Success();

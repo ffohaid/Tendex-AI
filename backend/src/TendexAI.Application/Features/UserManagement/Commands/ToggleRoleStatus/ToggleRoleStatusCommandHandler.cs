@@ -12,16 +12,13 @@ namespace TendexAI.Application.Features.UserManagement.Commands.ToggleRoleStatus
 public sealed class ToggleRoleStatusCommandHandler : ICommandHandler<ToggleRoleStatusCommand>
 {
     private readonly IRoleRepository _roleRepository;
-    private readonly IUnitOfWork _unitOfWork;
     private readonly ILogger<ToggleRoleStatusCommandHandler> _logger;
 
     public ToggleRoleStatusCommandHandler(
         IRoleRepository roleRepository,
-        IUnitOfWork unitOfWork,
         ILogger<ToggleRoleStatusCommandHandler> logger)
     {
         _roleRepository = roleRepository;
-        _unitOfWork = unitOfWork;
         _logger = logger;
     }
 
@@ -53,7 +50,8 @@ public sealed class ToggleRoleStatusCommandHandler : ICommandHandler<ToggleRoleS
         }
 
         _roleRepository.Update(role);
-        await _unitOfWork.SaveChangesAsync(cancellationToken);
+        // CRITICAL FIX: Use repository's SaveChangesAsync which operates on TenantDbContext
+        await _roleRepository.SaveChangesAsync(cancellationToken);
 
         _logger.LogInformation("Role '{RoleId}' {Action} for tenant {TenantId}",
             request.RoleId, request.Activate ? "activated" : "deactivated", request.TenantId);

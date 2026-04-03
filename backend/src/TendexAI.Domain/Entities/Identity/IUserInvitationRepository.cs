@@ -14,4 +14,5 @@ public interface IUserInvitationRepository
     Task<bool> HasPendingInvitationAsync(string email, Guid tenantId, CancellationToken cancellationToken = default);
     Task AddAsync(UserInvitation invitation, CancellationToken cancellationToken = default);
     void Update(UserInvitation invitation);
+    Task SaveChangesAsync(CancellationToken cancellationToken = default);
 }

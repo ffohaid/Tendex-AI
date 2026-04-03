@@ -13,16 +13,13 @@ namespace TendexAI.Application.Features.UserManagement.Commands.CreateRole;
 public sealed class CreateRoleCommandHandler : ICommandHandler<CreateRoleCommand, RoleDto>
 {
     private readonly IRoleRepository _roleRepository;
-    private readonly IUnitOfWork _unitOfWork;
     private readonly ILogger<CreateRoleCommandHandler> _logger;
 
     public CreateRoleCommandHandler(
         IRoleRepository roleRepository,
-        IUnitOfWork unitOfWork,
         ILogger<CreateRoleCommandHandler> logger)
     {
         _roleRepository = roleRepository;
-        _unitOfWork = unitOfWork;
         _logger = logger;
     }
 
@@ -63,7 +60,8 @@ public sealed class CreateRoleCommandHandler : ICommandHandler<CreateRoleCommand
         }
 
         await _roleRepository.AddAsync(role, cancellationToken);
-        await _unitOfWork.SaveChangesAsync(cancellationToken);
+        // CRITICAL FIX: Use repository's SaveChangesAsync which operates on TenantDbContext
+        await _roleRepository.SaveChangesAsync(cancellationToken);
 
         _logger.LogInformation("Created custom role '{RoleName}' for tenant {TenantId}", request.NameEn, request.TenantId);
 

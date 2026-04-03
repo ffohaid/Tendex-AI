@@ -14,18 +14,15 @@ public sealed class ResendInvitationCommandHandler : ICommandHandler<ResendInvit
 {
     private readonly IUserInvitationRepository _invitationRepository;
     private readonly IEmailService _emailService;
-    private readonly IUnitOfWork _unitOfWork;
     private readonly ILogger<ResendInvitationCommandHandler> _logger;
 
     public ResendInvitationCommandHandler(
         IUserInvitationRepository invitationRepository,
         IEmailService emailService,
-        IUnitOfWork unitOfWork,
         ILogger<ResendInvitationCommandHandler> logger)
     {
         _invitationRepository = invitationRepository;
         _emailService = emailService;
-        _unitOfWork = unitOfWork;
         _logger = logger;
     }
 
@@ -43,7 +40,8 @@ public sealed class ResendInvitationCommandHandler : ICommandHandler<ResendInvit
             return resendResult;
 
         _invitationRepository.Update(invitation);
-        await _unitOfWork.SaveChangesAsync(cancellationToken);
+        // CRITICAL FIX: Use repository's SaveChangesAsync which operates on TenantDbContext
+        await _invitationRepository.SaveChangesAsync(cancellationToken);
 
         // Send the invitation email with the new token
         var invitationLink = $"{request.BaseUrl.TrimEnd('/')}/auth/accept-invitation?token={invitation.Token}";

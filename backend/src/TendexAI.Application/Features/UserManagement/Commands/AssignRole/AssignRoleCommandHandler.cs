@@ -13,18 +13,15 @@ public sealed class AssignRoleCommandHandler : ICommandHandler<AssignRoleCommand
 {
     private readonly IUserRepository _userRepository;
     private readonly IRoleRepository _roleRepository;
-    private readonly IUnitOfWork _unitOfWork;
     private readonly ILogger<AssignRoleCommandHandler> _logger;
 
     public AssignRoleCommandHandler(
         IUserRepository userRepository,
         IRoleRepository roleRepository,
-        IUnitOfWork unitOfWork,
         ILogger<AssignRoleCommandHandler> logger)
     {
         _userRepository = userRepository;
         _roleRepository = roleRepository;
-        _unitOfWork = unitOfWork;
         _logger = logger;
     }
 
@@ -53,7 +50,8 @@ public sealed class AssignRoleCommandHandler : ICommandHandler<AssignRoleCommand
 
         var userRole = new UserRole(request.UserId, request.RoleId, request.AssignedBy);
         await _userRepository.AddUserRoleAsync(userRole, cancellationToken);
-        await _unitOfWork.SaveChangesAsync(cancellationToken);
+        // CRITICAL FIX: Use repository's SaveChangesAsync which operates on TenantDbContext
+        await _userRepository.SaveChangesAsync(cancellationToken);
 
         _logger.LogInformation("Role {RoleId} assigned to user {UserId} by {AssignedBy}",
             request.RoleId, request.UserId, request.AssignedBy);

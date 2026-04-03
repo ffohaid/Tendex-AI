@@ -15,20 +15,17 @@ public sealed class AcceptInvitationCommandHandler : ICommandHandler<AcceptInvit
     private readonly IUserInvitationRepository _invitationRepository;
     private readonly IUserRepository _userRepository;
     private readonly IPasswordHasher _passwordHasher;
-    private readonly IUnitOfWork _unitOfWork;
     private readonly ILogger<AcceptInvitationCommandHandler> _logger;
 
     public AcceptInvitationCommandHandler(
         IUserInvitationRepository invitationRepository,
         IUserRepository userRepository,
         IPasswordHasher passwordHasher,
-        IUnitOfWork unitOfWork,
         ILogger<AcceptInvitationCommandHandler> logger)
     {
         _invitationRepository = invitationRepository;
         _userRepository = userRepository;
         _passwordHasher = passwordHasher;
-        _unitOfWork = unitOfWork;
         _logger = logger;
     }
 
@@ -93,7 +90,8 @@ public sealed class AcceptInvitationCommandHandler : ICommandHandler<AcceptInvit
         }
 
         _invitationRepository.Update(invitation);
-        await _unitOfWork.SaveChangesAsync(cancellationToken);
+        // CRITICAL FIX: Use repository's SaveChangesAsync which operates on TenantDbContext
+        await _userRepository.SaveChangesAsync(cancellationToken);
 
         _logger.LogInformation("User {UserId} created from invitation {InvitationId} for tenant {TenantId}",
             user.Id, invitation.Id, invitation.TenantId);

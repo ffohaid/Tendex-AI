@@ -12,16 +12,13 @@ namespace TendexAI.Application.Features.UserManagement.Commands.UpdateUser;
 public sealed class UpdateUserCommandHandler : ICommandHandler<UpdateUserCommand>
 {
     private readonly IUserRepository _userRepository;
-    private readonly IUnitOfWork _unitOfWork;
     private readonly ILogger<UpdateUserCommandHandler> _logger;
 
     public UpdateUserCommandHandler(
         IUserRepository userRepository,
-        IUnitOfWork unitOfWork,
         ILogger<UpdateUserCommandHandler> logger)
     {
         _userRepository = userRepository;
-        _unitOfWork = unitOfWork;
         _logger = logger;
     }
 
@@ -42,7 +39,8 @@ public sealed class UpdateUserCommandHandler : ICommandHandler<UpdateUserCommand
 
         user.UpdateProfile(request.FirstName, request.LastName, request.PhoneNumber);
         _userRepository.Update(user);
-        await _unitOfWork.SaveChangesAsync(cancellationToken);
+        // CRITICAL FIX: Use repository's SaveChangesAsync which operates on TenantDbContext
+        await _userRepository.SaveChangesAsync(cancellationToken);
 
         _logger.LogInformation("User {UserId} profile updated", request.UserId);
         return Result.Success();

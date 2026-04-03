@@ -1,5 +1,4 @@
 using Microsoft.Extensions.Logging;
-using TendexAI.Application.Common.Interfaces;
 using TendexAI.Application.Common.Messaging;
 using TendexAI.Domain.Common;
 using TendexAI.Domain.Entities.Identity;
@@ -15,20 +14,17 @@ public sealed class SendInvitationCommandHandler : ICommandHandler<SendInvitatio
     private readonly IUserInvitationRepository _invitationRepository;
     private readonly IUserRepository _userRepository;
     private readonly IEmailService _emailService;
-    private readonly IUnitOfWork _unitOfWork;
     private readonly ILogger<SendInvitationCommandHandler> _logger;
 
     public SendInvitationCommandHandler(
         IUserInvitationRepository invitationRepository,
         IUserRepository userRepository,
         IEmailService emailService,
-        IUnitOfWork unitOfWork,
         ILogger<SendInvitationCommandHandler> logger)
     {
         _invitationRepository = invitationRepository;
         _userRepository = userRepository;
         _emailService = emailService;
-        _unitOfWork = unitOfWork;
         _logger = logger;
     }
 
@@ -63,7 +59,9 @@ public sealed class SendInvitationCommandHandler : ICommandHandler<SendInvitatio
             lastNameEn: request.LastNameEn);
 
         await _invitationRepository.AddAsync(invitation, cancellationToken);
-        await _unitOfWork.SaveChangesAsync(cancellationToken);
+        // CRITICAL FIX: Use repository's SaveChangesAsync which operates on TenantDbContext
+        // instead of IUnitOfWork which points to MasterPlatformDbContext
+        await _invitationRepository.SaveChangesAsync(cancellationToken);
 
         // Send the invitation email
         var invitationLink = $"{request.BaseUrl.TrimEnd('/')}/auth/accept-invitation?token={invitation.Token}";

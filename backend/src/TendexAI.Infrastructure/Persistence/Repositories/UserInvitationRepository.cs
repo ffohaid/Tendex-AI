@@ -83,4 +83,9 @@ public sealed class UserInvitationRepository : IUserInvitationRepository
     {
         _context.UserInvitations.Update(invitation);
     }
+
+    public async Task SaveChangesAsync(CancellationToken cancellationToken = default)
+    {
+        await _context.SaveChangesAsync(cancellationToken);
+    }
 }

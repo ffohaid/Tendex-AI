@@ -12,16 +12,13 @@ namespace TendexAI.Application.Features.UserManagement.Commands.ToggleUserStatus
 public sealed class ToggleUserStatusCommandHandler : ICommandHandler<ToggleUserStatusCommand>
 {
     private readonly IUserRepository _userRepository;
-    private readonly IUnitOfWork _unitOfWork;
     private readonly ILogger<ToggleUserStatusCommandHandler> _logger;
 
     public ToggleUserStatusCommandHandler(
         IUserRepository userRepository,
-        IUnitOfWork unitOfWork,
         ILogger<ToggleUserStatusCommandHandler> logger)
     {
         _userRepository = userRepository;
-        _unitOfWork = unitOfWork;
         _logger = logger;
     }
 
@@ -46,7 +43,8 @@ public sealed class ToggleUserStatusCommandHandler : ICommandHandler<ToggleUserS
             user.Deactivate();
 
         _userRepository.Update(user);
-        await _unitOfWork.SaveChangesAsync(cancellationToken);
+        // CRITICAL FIX: Use repository's SaveChangesAsync which operates on TenantDbContext
+        await _userRepository.SaveChangesAsync(cancellationToken);
 
         _logger.LogInformation("User {UserId} status changed to {Status}", request.UserId, request.Activate ? "Active" : "Inactive");
         return Result.Success();

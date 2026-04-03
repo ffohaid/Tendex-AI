@@ -12,16 +12,13 @@ namespace TendexAI.Application.Features.UserManagement.Commands.UpdateRole;
 public sealed class UpdateRoleCommandHandler : ICommandHandler<UpdateRoleCommand>
 {
     private readonly IRoleRepository _roleRepository;
-    private readonly IUnitOfWork _unitOfWork;
     private readonly ILogger<UpdateRoleCommandHandler> _logger;
 
     public UpdateRoleCommandHandler(
         IRoleRepository roleRepository,
-        IUnitOfWork unitOfWork,
         ILogger<UpdateRoleCommandHandler> logger)
     {
         _roleRepository = roleRepository;
-        _unitOfWork = unitOfWork;
         _logger = logger;
     }
 
@@ -69,7 +66,8 @@ public sealed class UpdateRoleCommandHandler : ICommandHandler<UpdateRoleCommand
         }
 
         _roleRepository.Update(role);
-        await _unitOfWork.SaveChangesAsync(cancellationToken);
+        // CRITICAL FIX: Use repository's SaveChangesAsync which operates on TenantDbContext
+        await _roleRepository.SaveChangesAsync(cancellationToken);
 
         _logger.LogInformation("Updated role '{RoleId}' for tenant {TenantId}", request.RoleId, request.TenantId);
 

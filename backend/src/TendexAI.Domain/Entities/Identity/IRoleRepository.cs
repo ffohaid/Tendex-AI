@@ -12,4 +12,5 @@ public interface IRoleRepository
     Task<bool> ExistsByNameAsync(string normalizedName, Guid tenantId, CancellationToken cancellationToken = default);
     Task AddAsync(Role role, CancellationToken cancellationToken = default);
     void Update(Role role);
+    Task SaveChangesAsync(CancellationToken cancellationToken = default);
 }
