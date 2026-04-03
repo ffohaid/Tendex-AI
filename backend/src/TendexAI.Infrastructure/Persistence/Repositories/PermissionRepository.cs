@@ -36,10 +36,10 @@ public sealed class PermissionRepository : IPermissionRepository
             .FirstOrDefaultAsync(p => p.Code == code, cancellationToken);
     }
 
-    public async Task<IReadOnlyList<Permission>> GetByModuleAsync(string module, CancellationToken cancellationToken = default)
+    public async Task<IReadOnlyList<Permission>> GetByModuleAsync(string moduleName, CancellationToken cancellationToken = default)
     {
         return await _context.Permissions
-            .Where(p => p.Module == module)
+            .Where(p => p.Module == moduleName)
             .OrderBy(p => p.Code)
             .AsNoTracking()
             .ToListAsync(cancellationToken);
