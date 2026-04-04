@@ -26,6 +26,25 @@
 
 *يرجى إضافة أحدث مهمة منجزة في أعلى هذه القائمة.*
 
+### 2026-04-04 - feat: MOMRAH Tenant Full Provisioning & Admin Setup
+- **الحالة:** ✅ مكتمل
+- **الوصف:** Fully provisioned the Ministry of Municipal, Rural Affairs and Housing (MOMRAH) as a new government tenant on the Tendex AI platform.
+- **التغييرات:**
+  1. **Connection String Encryption:** Generated AES-256 encrypted connection string for MOMRAH tenant database (`tendex_tenant_momrah_001`) and updated the `master_platform.Tenants` table.
+  2. **Database Provisioning:** Used the platform's provisioning API (`POST /api/v1/tenants/{id}/provision`) to automatically create the MOMRAH tenant database with all 59 tables across 6 schemas (dbo, identity, rfp, evaluation, audit, workflow, committees, inquiries). All EF Core migrations applied successfully.
+  3. **Schema Fix:** Added missing `AvatarUrl` column to `[identity].Users` table in the MOMRAH database (column was added in a recent code update but not included in the provisioning migrations).
+  4. **Admin User Creation:** Created the MOMRAH primary admin user (`admin@momrah.gov.sa` / `Admin@123`) with bcrypt-hashed password, assigned the `Tenant Primary Admin` role.
+  5. **RBAC Permissions:** Assigned all 58 permissions to the `Tenant Primary Admin` role in the MOMRAH database, ensuring full administrative access.
+  6. **Tenant Activation:** Updated MOMRAH tenant status from `PendingProvisioning (0)` to `Active (4)` with `IsProvisioned = 1` in the master platform database.
+  7. **Login Verification:** Successfully tested login via API with full token generation, role resolution (`Tenant Primary Admin`), and all 58 permissions included in the JWT claims.
+- **بيانات الجهة:**
+  - Tenant ID: `0AF69929-A87C-428E-BA23-D3113397816C`
+  - Subdomain: `momrah`
+  - Database: `tendex_tenant_momrah_001`
+  - Admin Email: `admin@momrah.gov.sa`
+  - Admin Password: `Admin@123`
+- **النتيجة:** MOMRAH tenant is fully operational. Login tested successfully with HTTP 200, access token generated with all 58 permissions. Ready for UI testing via `momrah.netaq.pro`.
+
 ### 2026-04-04 - fix: Auto-refresh optimization, session token configuration, sidebar RBAC fix & comprehensive live testing
 - **الحالة:** ✅ مكتمل
 - **الوصف:** Fixed aggressive 30-second auto-refresh across all pages, configured session token lifetimes from appsettings, fixed sidebar navigation for operator admin, and performed comprehensive live testing of all features.
