@@ -97,6 +97,7 @@ export function useSidebarNavigation(items: NavigationItem[]) {
     // ── Operator Admin ONLY: sees ONLY operator panel ──
     if (isOperatorAdmin.value && !isTenantAdmin.value) {
       return item.key === 'operator' ||
+        item.key.startsWith('operator-') ||
         (item.requiredRoles?.some(r => isOperatorRole(r)) ?? false)
     }
 
