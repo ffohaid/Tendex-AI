@@ -17,6 +17,8 @@ public sealed record ProfileDto(
     IReadOnlyList<string> Roles,
     IReadOnlyList<string> Permissions,
     Guid TenantId,
+    string? TenantName,
+    bool IsActive,
     DateTime CreatedAt,
     DateTime? LastModifiedAt);
 

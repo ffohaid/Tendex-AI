@@ -55,6 +55,8 @@ public sealed class GetProfileQueryHandler : IRequestHandler<GetProfileQuery, Re
             Roles: roles,
             Permissions: permissions,
             TenantId: user.TenantId,
+            TenantName: null, // Resolved at API layer if needed
+            IsActive: user.IsActive,
             CreatedAt: user.CreatedAt,
             LastModifiedAt: user.LastModifiedAt);
 
