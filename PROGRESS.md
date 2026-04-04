@@ -26,6 +26,21 @@
 
 *يرجى إضافة أحدث مهمة منجزة في أعلى هذه القائمة.*
 
+### 2026-04-04 - feat: User Profile, Logout, Per-Tenant AI Settings & Active Directory Integration
+- **الحالة:** ✅ مكتمل
+- **الوصف:** Implemented comprehensive user profile management, logout functionality, per-tenant AI configuration, and optional Active Directory integration.
+- **التغييرات:**
+  1. **Backend - User Profile (ProfileEndpoints):** Added GET /api/v1/profile, PUT /api/v1/profile, POST /api/v1/profile/change-password, POST /api/v1/profile/avatar endpoints. Added AvatarUrl property to ApplicationUser entity.
+  2. **Backend - Active Directory (ActiveDirectoryEndpoints):** Added full CRUD endpoints for per-tenant AD configuration: GET/PUT/PATCH/POST for /api/v1/settings/active-directory/{tenantId}. Created ActiveDirectoryConfiguration entity with encrypted credentials.
+  3. **Backend - AI Configuration Enhancement:** Added AiDeploymentType enum (PublicCloud, PrivateCloud, OnPremise, Hybrid) and Description field to AiConfiguration entity.
+  4. **Frontend - User Menu & Logout:** Created UserMenu component with profile link, settings access, and logout with confirmation dialog. Integrated into AppHeader.
+  5. **Frontend - Profile Page (UserProfileView):** Full profile management page with personal info display/edit, avatar upload, password change, account info (roles, status, tenant, member since, last login).
+  6. **Frontend - Active Directory Settings (ActiveDirectorySettingsView):** Per-tenant AD configuration page with LDAP/AD settings, group mapping, connection testing, and enable/disable toggle.
+  7. **Frontend - Tenant AI Settings (TenantAiSettingsView):** Per-tenant AI model configuration page supporting local, public cloud, private cloud, and hybrid deployment types.
+  8. **Database Migration:** Added AvatarUrl column to Users tables, DeploymentType and Description columns to AiConfigurations, created ActiveDirectoryConfigurations table.
+  9. **Router & Navigation:** Added profile, AD settings, and tenant AI settings routes. Fixed navigation guard to allow profile access for operator admin.
+- **النتيجة:** All features deployed and tested successfully on production. User can now manage their profile, change password, upload avatar, and logout. Tenant-specific AI and AD settings are available in the settings section.
+
 ### 2026-04-04 - fix: Operator Admin RBAC - Tenant Resolution & Role Separation
 - **الحالة:** ✅ مكتمل
 - **الوصف:** Fixed critical RBAC issue where Operator Admin (admin@netaq.pro) was seeing both operator and tenant panels.
