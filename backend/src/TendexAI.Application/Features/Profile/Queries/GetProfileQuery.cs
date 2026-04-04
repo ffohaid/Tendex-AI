@@ -30,14 +30,14 @@ public sealed class GetProfileQueryHandler : IRequestHandler<GetProfileQuery, Re
 
         var roles = user.UserRoles
             .Where(ur => ur.Role is not null)
-            .Select(ur => ur.Role!.Name)
+            .Select(ur => ur.Role!.NameEn)
             .ToList();
 
         var permissions = user.UserRoles
             .Where(ur => ur.Role?.RolePermissions is not null)
             .SelectMany(ur => ur.Role!.RolePermissions)
             .Where(rp => rp.Permission is not null)
-            .Select(rp => rp.Permission!.Key)
+            .Select(rp => rp.Permission!.Code)
             .Distinct()
             .ToList();
 
