@@ -58,9 +58,9 @@ const form = reactive({
 const providers = [
   { value: 0, label: 'OpenAI' },
   { value: 1, label: 'Azure OpenAI' },
-  { value: 2, label: 'Anthropic' },
-  { value: 3, label: 'Google AI' },
-  { value: 4, label: 'Custom / Self-Hosted' },
+  { value: 2, label: 'Google AI' },
+  { value: 3, label: 'Anthropic' },
+  { value: 99, label: 'Custom / Self-Hosted' },
 ]
 
 const deploymentTypes = computed(() => [
