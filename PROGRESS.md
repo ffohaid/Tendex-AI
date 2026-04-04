@@ -26,6 +26,16 @@
 
 *يرجى إضافة أحدث مهمة منجزة في أعلى هذه القائمة.*
 
+### 2026-04-04 - fix: Auto-refresh optimization, session token configuration, sidebar RBAC fix & comprehensive live testing
+- **الحالة:** ✅ مكتمل
+- **الوصف:** Fixed aggressive 30-second auto-refresh across all pages, configured session token lifetimes from appsettings, fixed sidebar navigation for operator admin, and performed comprehensive live testing of all features.
+- **التغييرات:**
+  1. **Auto-refresh Fix:** Reduced polling intervals across all views - DashboardView (30s→5min), ApprovalsView (30s→5min), OperatorDashboardView (30s→5min), NotificationBell (30s→5min), SystemHealthView (15s→60s).
+  2. **Session Token Configuration:** Made Access Token (60 min) and Refresh Token (8 hrs) lifetimes configurable via appsettings.json instead of hardcoded values. Updated TokenService, LoginCommandHandler, and RefreshTokenCommandHandler.
+  3. **Sidebar RBAC Fix:** Fixed useSidebarNavigation composable to properly show operator children items when user is operator-only (not dual-role). The isItemAccessible function now correctly handles operator section children.
+  4. **Comprehensive Live Testing:** Performed 20 live tests covering: login/logout flow, user menu dropdown, profile page (view/edit/password change), sidebar navigation (all 10 operator items), language switching (AR/EN), all operator pages (Dashboard, Entities, Purchase Orders, AI Settings, System Health, Consumption, Subscriptions, Support, Audit Log, User Impersonation), auto-refresh verification (no requests for 90 seconds).
+- **النتيجة:** All 20 tests PASSED. Platform is stable with no aggressive polling, proper session management, and correct RBAC for operator admin.
+
 ### 2026-04-04 - feat: User Profile, Logout, Per-Tenant AI Settings & Active Directory Integration
 - **الحالة:** ✅ مكتمل
 - **الوصف:** Implemented comprehensive user profile management, logout functionality, per-tenant AI configuration, and optional Active Directory integration.
