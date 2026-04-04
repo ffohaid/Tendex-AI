@@ -177,6 +177,9 @@ app.MapImpersonationEndpoints();
 // Operator Dashboard endpoints (Super Admin only - TASK-602)
 app.MapOperatorDashboardEndpoints();
 
+// Operator AI Management endpoints (provider CRUD, RAG config, feature flags)
+app.MapOperatorAiEndpoints();
+
 // Dashboard endpoints (Tenant user dashboard - TASK-901)
 app.MapDashboardEndpoints();
 

@@ -172,7 +172,7 @@ public static class DependencyInjection
         services.AddAuthorization(options =>
         {
             options.AddPolicy("SuperAdminPolicy", policy =>
-                policy.RequireRole("SuperAdmin", "SupportAdmin"));
+                policy.RequireRole("SuperAdmin", "SupportAdmin", "Operator Super Admin", "OperatorPrimaryAdmin", "OperatorSuperAdmin"));
         });
 
         // ----- Identity Services -----

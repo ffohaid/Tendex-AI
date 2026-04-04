@@ -22,7 +22,7 @@ const store = useImpersonationStore()
 
 /* ---- Access Control ---- */
 const hasAccess = computed(
-  () => authStore.hasRole('SuperAdmin') || authStore.hasRole('SupportAdmin'),
+  () => authStore.hasRole('Operator Super Admin') || authStore.hasRole('SuperAdmin') || authStore.hasRole('SupportAdmin') || authStore.hasPermission('users.impersonate'),
 )
 
 /* ---- Tab Management ---- */

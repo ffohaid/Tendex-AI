@@ -65,12 +65,12 @@ const ragConfig = reactive<RagConfig>({
 })
 
 const featureFlags = ref<FeatureFlag[]>([
-  { key: 'ai_spec_generation', label: 'AI Spec Generation', enabled: true, description: 'Generate specifications using AI' },
-  { key: 'ai_evaluation', label: 'AI Evaluation Assist', enabled: true, description: 'AI-assisted offer evaluation' },
-  { key: 'ai_inquiry_response', label: 'AI Inquiry Response', enabled: true, description: 'AI-powered inquiry responses' },
-  { key: 'ai_document_analysis', label: 'AI Document Analysis', enabled: true, description: 'Analyze uploaded documents with AI' },
-  { key: 'ai_semantic_search', label: 'Semantic Search', enabled: true, description: 'AI-powered semantic search in knowledge base' },
-  { key: 'ai_arabic_generation', label: 'Arabic Text Generation', enabled: true, description: 'Generate Arabic text content' },
+  { key: 'ai_spec_generation', label: locale.value === 'ar' ? 'توليد كراسات الشروط بالذكاء الاصطناعي' : 'AI Spec Generation', enabled: true, description: locale.value === 'ar' ? 'توليد كراسات الشروط والمواصفات باستخدام الذكاء الاصطناعي' : 'Generate specifications using AI' },
+  { key: 'ai_evaluation', label: locale.value === 'ar' ? 'المساعد الذكي للتقييم' : 'AI Evaluation Assist', enabled: true, description: locale.value === 'ar' ? 'تقييم العروض بمساعدة الذكاء الاصطناعي' : 'AI-assisted offer evaluation' },
+  { key: 'ai_inquiry_response', label: locale.value === 'ar' ? 'الرد الذكي على الاستفسارات' : 'AI Inquiry Response', enabled: true, description: locale.value === 'ar' ? 'الرد على الاستفسارات باستخدام الذكاء الاصطناعي' : 'AI-powered inquiry responses' },
+  { key: 'ai_document_analysis', label: locale.value === 'ar' ? 'تحليل المستندات بالذكاء الاصطناعي' : 'AI Document Analysis', enabled: true, description: locale.value === 'ar' ? 'تحليل المستندات المرفوعة باستخدام الذكاء الاصطناعي' : 'Analyze uploaded documents with AI' },
+  { key: 'ai_semantic_search', label: locale.value === 'ar' ? 'البحث الدلالي الذكي' : 'Semantic Search', enabled: true, description: locale.value === 'ar' ? 'البحث الدلالي في قاعدة المعرفة باستخدام الذكاء الاصطناعي' : 'AI-powered semantic search in knowledge base' },
+  { key: 'ai_arabic_generation', label: locale.value === 'ar' ? 'توليد النصوص العربية' : 'Arabic Text Generation', enabled: true, description: locale.value === 'ar' ? 'توليد محتوى نصي باللغة العربية' : 'Generate Arabic text content' },
 ])
 
 const showAddProvider = ref(false)
