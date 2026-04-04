@@ -300,7 +300,7 @@ public static class TenantEndpoints
     /// <summary>
     /// Resolves a tenant by hostname. Supports:
     /// 1. Subdomain matching (e.g., "mof.netaq.pro" → subdomain "mof")
-    /// 2. Main domain matching (e.g., "netaq.pro" → returns default/first active tenant)
+    /// 2. Base domain matching (e.g., "netaq.pro" → returns Platform Operator tenant)
     /// This endpoint is public (AllowAnonymous) so the frontend can auto-detect
     /// the tenant before the user logs in.
     /// </summary>
@@ -333,7 +333,17 @@ public static class TenantEndpoints
             }
         }
 
-        // If no subdomain match, return the first active tenant (default tenant)
+        // If no subdomain match (base domain like netaq.pro or localhost),
+        // return the Platform Operator tenant by matching the base domain name
+        // against the subdomain field (e.g., "netaq" for netaq.pro)
+        if (tenant is null)
+        {
+            // Extract base domain name (e.g., "netaq" from "netaq.pro")
+            var baseDomainName = parts.Length >= 2 ? parts[0] : hostname;
+            tenant = await tenantRepository.GetBySubdomainAsync(baseDomainName);
+        }
+
+        // Final fallback: return the first active tenant
         if (tenant is null)
         {
             var activeTenants = await tenantRepository.GetByStatusAsync(TenantStatus.Active);

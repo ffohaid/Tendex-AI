@@ -26,6 +26,15 @@
 
 *يرجى إضافة أحدث مهمة منجزة في أعلى هذه القائمة.*
 
+### 2026-04-04 - fix: Operator Admin RBAC - Tenant Resolution & Role Separation
+- **الحالة:** ✅ مكتمل
+- **الوصف:** Fixed critical RBAC issue where Operator Admin (admin@netaq.pro) was seeing both operator and tenant panels.
+- **التغييرات:**
+  1. **Backend (TenantEndpoints.cs):** Fixed `ResolveTenantByHostname` to return Platform Operator tenant when accessing from base domain (netaq.pro) by matching the base domain name against the subdomain field, instead of returning the first active tenant.
+  2. **Database:** Removed the "Tenant Primary Admin" role from the operator admin user (admin@netaq.pro). The user now only has the "Operator Super Admin" role.
+  3. **Backend rebuild & deployment:** Rebuilt and deployed the backend Docker image with the resolve fix.
+- **النتيجة:** Operator Admin now correctly sees only the operator panel (dashboard, tenants, purchase orders, AI settings, system health, consumption, subscriptions, support, audit log, impersonation) without any tenant-specific items (RFP, committees, evaluation, etc.).
+
 ### 2026-04-04 - fix: Comprehensive Platform Testing & Critical Bug Fixes
 - **الحالة:** ✅ مكتمل
 - **ما تم إنجازه:**
