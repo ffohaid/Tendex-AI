@@ -81,7 +81,7 @@ export const useOperatorDashboardStore = defineStore('operatorDashboard', () => 
     try {
       summary.value = await dashboardService.fetchDashboardSummary()
     } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : 'تعذر تحميل ملخص لوحة التحكم'
+      const message = err instanceof Error ? err.message : 'تعذر تحميل ملخص لوحة المعلومات'
       error.value = message
       console.error('[OperatorDashboard] loadSummary error:', err)
     } finally {

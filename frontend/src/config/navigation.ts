@@ -21,18 +21,40 @@ import type { NavigationItem } from '@/types/navigation'
  *
  * IMPORTANT: Route names MUST exactly match the `name` property
  * defined in `@/router/index.ts`. Any mismatch will break navigation.
+ *
+ * Menu Order Rationale (optimized for government procurement workflow):
+ * ────────────────────────────────────────────────────────────────────
+ * 1. Information Dashboard – overview & KPIs (first thing users see)
+ * 2. Task Center – daily tasks & pending approvals (most used daily)
+ * 3. RFP / Specifications Books – core workflow entry point
+ * 4. Committees – committee management tied to competitions
+ * 5. Evaluation – technical & financial evaluation of offers
+ * 6. Inquiries – supplier questions management
+ * 7. AI Assistant – AI-powered assistance across modules
+ * 8. Knowledge Base – reference documents & regulations
+ * 9. Reports – analytics & export (periodic use)
+ * 10. Support – help & tickets (occasional use)
+ * 11. Settings – admin configuration (least frequent)
  */
 export const sidebarNavigation: NavigationItem[] = [
-  /* ── Dashboard ── */
+  /* ── 1. Information Dashboard (visible to all authenticated tenant users) ── */
   {
     key: 'dashboard',
     labelKey: 'nav.dashboard',
     icon: 'pi pi-home',
     route: 'Dashboard',
-    requiredRoles: ['TenantPrimaryAdmin'],
   },
 
-  /* ── RFP / Competitions ── */
+  /* ── 2. Task Center (most used daily – pending approvals & tasks) ── */
+  {
+    key: 'task-center',
+    labelKey: 'nav.taskCenter',
+    icon: 'pi pi-check-square',
+    route: 'TaskCenter',
+    permission: 'tasks.view',
+  },
+
+  /* ── 3. RFP / Specifications Books ── */
   {
     key: 'rfp',
     labelKey: 'nav.rfp.title',
@@ -70,12 +92,12 @@ export const sidebarNavigation: NavigationItem[] = [
     ],
   },
 
-  /* ── Committees (TenantPrimaryAdmin only for management) ── */
+  /* ── 4. Committees (permission-based, not role-locked) ── */
   {
     key: 'committees',
     labelKey: 'nav.committees.title',
     icon: 'pi pi-users',
-    requiredRoles: ['TenantPrimaryAdmin'],
+    permission: 'committees.view',
     children: [
       {
         key: 'committees-permanent',
@@ -92,7 +114,7 @@ export const sidebarNavigation: NavigationItem[] = [
     ],
   },
 
-  /* ── Evaluation ── */
+  /* ── 5. Evaluation ── */
   {
     key: 'evaluation',
     labelKey: 'nav.evaluation.title',
@@ -130,16 +152,16 @@ export const sidebarNavigation: NavigationItem[] = [
     ],
   },
 
-  /* ── Knowledge Base (TenantPrimaryAdmin only) ── */
+  /* ── 6. Inquiries (supplier questions – tied to active competitions) ── */
   {
-    key: 'knowledge-base',
-    labelKey: 'nav.knowledgeBase',
-    icon: 'pi pi-book',
-    route: 'KnowledgeBase',
-    requiredRoles: ['TenantPrimaryAdmin'],
+    key: 'inquiries',
+    labelKey: 'nav.inquiries',
+    icon: 'pi pi-comments',
+    route: 'Inquiries',
+    permission: 'inquiries.view',
   },
 
-  /* ── AI Assistant ── */
+  /* ── 7. AI Assistant ── */
   {
     key: 'ai-assistant',
     labelKey: 'nav.aiAssistant',
@@ -148,7 +170,47 @@ export const sidebarNavigation: NavigationItem[] = [
     permission: 'ai.view',
   },
 
-  /* ── Settings (TenantPrimaryAdmin only) ── */
+  /* ── 8. Knowledge Base (permission-based) ── */
+  {
+    key: 'knowledge-base',
+    labelKey: 'nav.knowledgeBase',
+    icon: 'pi pi-book',
+    route: 'KnowledgeBase',
+    permission: 'knowledge.view',
+  },
+
+  /* ── 9. Reports (permission-based) ── */
+  {
+    key: 'reports',
+    labelKey: 'nav.reports',
+    icon: 'pi pi-chart-line',
+    permission: 'reports.view',
+    children: [
+      {
+        key: 'reports-analytics',
+        labelKey: 'nav.reports',
+        icon: 'pi pi-chart-bar',
+        route: 'Reports',
+      },
+      {
+        key: 'reports-export',
+        labelKey: 'nav.reportGenerator',
+        icon: 'pi pi-download',
+        route: 'ReportGenerator',
+      },
+    ],
+  },
+
+  /* ── 10. Support Tickets ── */
+  {
+    key: 'support',
+    labelKey: 'nav.support',
+    icon: 'pi pi-ticket',
+    route: 'SupportTickets',
+    permission: 'support.view',
+  },
+
+  /* ── 11. Settings (admin – least frequent, always last) ── */
   {
     key: 'settings',
     labelKey: 'nav.settings.title',
@@ -196,55 +258,6 @@ export const sidebarNavigation: NavigationItem[] = [
         labelKey: 'activeDirectory.title',
         icon: 'pi pi-microsoft',
         route: 'ActiveDirectorySettings',
-      },
-    ],
-  },
-
-  /* ── Task Center (all authenticated users with permission) ── */
-  {
-    key: 'task-center',
-    labelKey: 'nav.taskCenter',
-    icon: 'pi pi-check-square',
-    route: 'TaskCenter',
-    permission: 'tasks.view',
-  },
-
-  /* ── Inquiries ── */
-  {
-    key: 'inquiries',
-    labelKey: 'nav.inquiries',
-    icon: 'pi pi-comments',
-    route: 'Inquiries',
-    permission: 'inquiries.view',
-  },
-
-  /* ── Support Tickets (all authenticated users) ── */
-  {
-    key: 'support',
-    labelKey: 'nav.support',
-    icon: 'pi pi-ticket',
-    route: 'SupportTickets',
-    permission: 'support.view',
-  },
-
-  /* ── Reports (TenantPrimaryAdmin only) ── */
-  {
-    key: 'reports',
-    labelKey: 'nav.reports',
-    icon: 'pi pi-chart-line',
-    requiredRoles: ['TenantPrimaryAdmin'],
-    children: [
-      {
-        key: 'reports-analytics',
-        labelKey: 'nav.reports',
-        icon: 'pi pi-chart-bar',
-        route: 'Reports',
-      },
-      {
-        key: 'reports-export',
-        labelKey: 'nav.reportGenerator',
-        icon: 'pi pi-download',
-        route: 'ReportGenerator',
       },
     ],
   },

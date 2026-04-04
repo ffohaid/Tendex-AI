@@ -74,7 +74,8 @@ const deploymentTypes = computed(() => [
 async function loadModels(): Promise<void> {
   isLoading.value = true
   try {
-    const response = await httpClient.get('/v1/ai-configurations')
+    const tenantId = localStorage.getItem('tenant_id') || ''
+    const response = await httpClient.get(`/v1/ai/configurations/${tenantId}`)
     models.value = response.data ?? []
   } catch {
     errorMessage.value = t('tenantAiSettings.noModels')
@@ -141,7 +142,9 @@ async function saveModel(): Promise<void> {
   isSaving.value = true
   clearMessages()
   try {
+    const tenantId = localStorage.getItem('tenant_id') || ''
     const payload = {
+      tenantId,
       provider: form.provider,
       modelName: form.modelName,
       endpoint: form.endpoint || null,
@@ -155,9 +158,9 @@ async function saveModel(): Promise<void> {
     }
 
     if (editingId.value) {
-      await httpClient.put(`/v1/ai-configurations/${editingId.value}`, payload)
+      await httpClient.put(`/v1/ai/configurations/${editingId.value}`, payload)
     } else {
-      await httpClient.post('/v1/ai-configurations', payload)
+      await httpClient.post('/v1/ai/configurations', payload)
     }
 
     await loadModels()
@@ -182,7 +185,7 @@ function confirmDelete(id: string): void {
 async function deleteModel(): Promise<void> {
   if (!deletingId.value) return
   try {
-    await httpClient.delete(`/v1/ai-configurations/${deletingId.value}`)
+    await httpClient.delete(`/v1/ai/configurations/${deletingId.value}`)
     await loadModels()
     showDeleteConfirm.value = false
     deletingId.value = null

@@ -5,6 +5,7 @@ using TendexAI.Domain.Common;
 using TendexAI.Domain.Entities.Rfp;
 using TendexAI.Domain.Entities.Committees;
 using TendexAI.Domain.Entities.Inquiries;
+using TendexAI.Domain.Entities.Identity;
 using TendexAI.Domain.Enums;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
@@ -15,7 +16,8 @@ namespace TendexAI.Application.Features.Dashboard.Queries.GetPendingTasks;
 /// Handles retrieval of pending tasks for the current user from the unified task center.
 /// Aggregates tasks from multiple sources:
 /// 1. Competitions in evaluation/approval phases where the user is a committee member.
-/// 2. Inquiries pending response or approval.
+/// 2. Approval workflow steps assigned to the user's role.
+/// 3. Inquiries pending response or approval.
 /// Includes AI-powered recommendations for task prioritization and SLA compliance tracking.
 /// </summary>
 public sealed class GetPendingTasksQueryHandler
@@ -51,24 +53,30 @@ public sealed class GetPendingTasksQueryHandler
         var dbContext = _dbContextFactory.CreateDbContext();
         var tasks = new List<PendingTaskDto>();
 
-        // ── 1. Gather Competition Tasks ──
+        // ── 1. Gather Competition Tasks (committee-based) ──
         await GatherCompetitionTasks(dbContext, userId.Value, tenantId.Value, tasks, cancellationToken);
 
-        // ── 2. Gather Inquiry Tasks ──
+        // ── 2. Gather Approval Workflow Tasks (role-based) ──
+        await GatherApprovalWorkflowTasks(dbContext, userId.Value, tenantId.Value, tasks, cancellationToken);
+
+        // ── 3. Gather Inquiry Tasks ──
         await GatherInquiryTasks(dbContext, tenantId.Value, tasks, cancellationToken);
 
-        // ── 3. Calculate Statistics (before filtering) ──
+        // ── 4. Deduplicate tasks (same competition may appear from both committee and workflow) ──
+        tasks = DeduplicateTasks(tasks);
+
+        // ── 5. Calculate Statistics (before filtering) ──
         var stats = CalculateStatistics(tasks);
 
-        // ── 4. Apply Filters ──
+        // ── 6. Apply Filters ──
         var filtered = ApplyFilters(tasks, request);
 
-        // ── 5. Apply Sorting ──
+        // ── 7. Apply Sorting ──
         filtered = ApplySorting(filtered, request.SortBy);
 
         var totalCount = filtered.Count;
 
-        // ── 6. Apply Pagination ──
+        // ── 8. Apply Pagination ──
         var pagedTasks = filtered
             .Skip((request.PageNumber - 1) * request.PageSize)
             .Take(request.PageSize)
@@ -81,7 +89,7 @@ public sealed class GetPendingTasksQueryHandler
     }
 
     // ═══════════════════════════════════════════════════════════════
-    //  Competition Tasks
+    //  Competition Tasks (committee-based)
     // ═══════════════════════════════════════════════════════════════
 
     private async Task GatherCompetitionTasks(
@@ -173,6 +181,143 @@ public sealed class GetPendingTasksQueryHandler
     }
 
     // ═══════════════════════════════════════════════════════════════
+    //  Approval Workflow Tasks (role-based)
+    // ═══════════════════════════════════════════════════════════════
+
+    private async Task GatherApprovalWorkflowTasks(
+        ITenantDbContext dbContext,
+        Guid userId,
+        Guid tenantId,
+        List<PendingTaskDto> tasks,
+        CancellationToken cancellationToken)
+    {
+        try
+        {
+            var approvalSteps = dbContext.GetDbSet<ApprovalWorkflowStep>();
+            var competitions = dbContext.GetDbSet<Competition>();
+            var userRoles = dbContext.GetDbSet<UserRole>();
+            var roles = dbContext.GetDbSet<Role>();
+
+            // 1. Get the user's system role(s) by matching NormalizedName to SystemRole enum
+            var userRoleNames = await userRoles
+                .AsNoTracking()
+                .Where(ur => ur.UserId == userId)
+                .Join(
+                    roles.AsNoTracking(),
+                    ur => ur.RoleId,
+                    r => r.Id,
+                    (ur, r) => r.NameEn)
+                .ToListAsync(cancellationToken);
+
+            // Map role names to SystemRole enum values
+            var userSystemRoles = new List<SystemRole>();
+            foreach (var roleName in userRoleNames)
+            {
+                var systemRole = MapRoleNameToSystemRole(roleName);
+                if (systemRole.HasValue)
+                    userSystemRoles.Add(systemRole.Value);
+            }
+
+            if (userSystemRoles.Count == 0) return;
+
+            // 2. Get pending approval steps that match the user's role(s)
+            var pendingSteps = await approvalSteps
+                .AsNoTracking()
+                .Where(s => s.TenantId == tenantId
+                    && (s.Status == ApprovalStepStatus.Pending || s.Status == ApprovalStepStatus.InProgress))
+                .ToListAsync(cancellationToken);
+
+            // Filter steps matching the user's roles
+            var matchingSteps = pendingSteps
+                .Where(s => userSystemRoles.Contains(s.RequiredRole))
+                .ToList();
+
+            // For sequential workflows, only show the CURRENT step (lowest pending StepOrder per competition)
+            var currentSteps = matchingSteps
+                .GroupBy(s => new { s.CompetitionId, s.FromStatus, s.ToStatus })
+                .SelectMany(g =>
+                {
+                    var allPendingForGroup = pendingSteps
+                        .Where(s => s.CompetitionId == g.Key.CompetitionId
+                            && s.FromStatus == g.Key.FromStatus
+                            && s.ToStatus == g.Key.ToStatus
+                            && (s.Status == ApprovalStepStatus.Pending || s.Status == ApprovalStepStatus.InProgress))
+                        .ToList();
+
+                    var minOrder = allPendingForGroup.Min(s => s.StepOrder);
+                    return g.Where(s => s.StepOrder == minOrder);
+                })
+                .ToList();
+
+            if (currentSteps.Count == 0) return;
+
+            // 3. Get competition details for the matching steps
+            var competitionIds = currentSteps.Select(s => s.CompetitionId).Distinct().ToList();
+            var competitionLookup = await competitions
+                .AsNoTracking()
+                .Where(c => competitionIds.Contains(c.Id) && !c.IsDeleted)
+                .ToDictionaryAsync(c => c.Id, cancellationToken);
+
+            // 4. Create task DTOs
+            foreach (var step in currentSteps)
+            {
+                var competition = competitionLookup.GetValueOrDefault(step.CompetitionId);
+                if (competition is null) continue;
+
+                var slaDeadline = step.SlaDeadline ?? DateTime.UtcNow.AddDays(3);
+                var remainingSeconds = (long)Math.Max(0, (slaDeadline - DateTime.UtcNow).TotalSeconds);
+                var slaStatus = DetermineSlaStatus(slaDeadline);
+                var priority = step.IsSlaExceeded ? "critical" : DeterminePriority(slaDeadline);
+
+                tasks.Add(new PendingTaskDto(
+                    Id: $"wf-{step.Id}",
+                    SourceType: "competition",
+                    Type: "approval",
+                    TitleAr: step.StepNameAr,
+                    TitleEn: step.StepNameEn,
+                    DescriptionAr: $"مطلوب {step.StepNameAr} لمشروع {competition.ProjectNameAr}",
+                    DescriptionEn: $"{step.StepNameEn} required for {competition.ProjectNameEn}",
+                    CompetitionTitleAr: competition.ProjectNameAr,
+                    CompetitionTitleEn: competition.ProjectNameEn,
+                    CompetitionReferenceNumber: competition.ReferenceNumber,
+                    AssignedAt: step.CreatedAt.ToString("o"),
+                    SlaDeadline: slaDeadline.ToString("o"),
+                    SlaStatus: slaStatus,
+                    RemainingTimeSeconds: remainingSeconds,
+                    Priority: priority,
+                    ActionRequired: "review_and_approve",
+                    ActionUrl: $"/competitions/{competition.Id}",
+                    AiRecommendationAr: GetAiRecommendationAr("approve_request", priority, slaStatus),
+                    AiRecommendationEn: GetAiRecommendationEn("approve_request", priority, slaStatus),
+                    AiConfidence: 0.90));
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Failed to gather approval workflow tasks for task center");
+        }
+    }
+
+    /// <summary>
+    /// Maps a role English name to the SystemRole enum value.
+    /// </summary>
+    private static SystemRole? MapRoleNameToSystemRole(string roleNameEn)
+    {
+        return roleNameEn switch
+        {
+            "Tenant Primary Admin" => SystemRole.TenantPrimaryAdmin,
+            "Procurement Manager" => SystemRole.ProcurementManager,
+            "Financial Controller" => SystemRole.FinancialController,
+            "Sector Representative" => SystemRole.SectorRepresentative,
+            "Committee Chair" => SystemRole.CommitteeChair,
+            "Committee Member" => SystemRole.CommitteeMember,
+            "Member" => SystemRole.Member,
+            "Viewer" => SystemRole.Viewer,
+            _ => null
+        };
+    }
+
+    // ═══════════════════════════════════════════════════════════════
     //  Inquiry Tasks
     // ═══════════════════════════════════════════════════════════════
 
@@ -232,7 +377,7 @@ public sealed class GetPendingTasksQueryHandler
                     DescriptionEn: questionPreview,
                     CompetitionTitleAr: competition?.ProjectNameAr ?? "غير محدد",
                     CompetitionTitleEn: competition?.ProjectNameEn ?? "Not specified",
-                    CompetitionReferenceNumber: competition?.ReferenceNumber ?? inquiry.ReferenceNumber,
+                    CompetitionReferenceNumber: competition?.ReferenceNumber ?? "N/A",
                     AssignedAt: inquiry.CreatedAt.ToString("o"),
                     SlaDeadline: slaDeadline.ToString("o"),
                     SlaStatus: slaStatus,
@@ -249,6 +394,47 @@ public sealed class GetPendingTasksQueryHandler
         {
             _logger.LogWarning(ex, "Failed to gather inquiry tasks for task center");
         }
+    }
+
+    // ═══════════════════════════════════════════════════════════════
+    //  Deduplication
+    // ═══════════════════════════════════════════════════════════════
+
+    /// <summary>
+    /// Removes duplicate tasks for the same competition.
+    /// Prefers workflow-based tasks (more specific) over committee-based tasks.
+    /// </summary>
+    private static List<PendingTaskDto> DeduplicateTasks(List<PendingTaskDto> tasks)
+    {
+        var result = new List<PendingTaskDto>();
+        var seenCompetitionIds = new HashSet<string>();
+
+        // First pass: add workflow-based tasks (they have "wf-" prefix in Id)
+        foreach (var task in tasks.Where(t => t.Id.StartsWith("wf-", StringComparison.Ordinal)))
+        {
+            // Extract competition ID from the ActionUrl
+            var competitionId = task.ActionUrl.Replace("/competitions/", "");
+            seenCompetitionIds.Add(competitionId);
+            result.Add(task);
+        }
+
+        // Second pass: add committee-based and inquiry tasks that aren't duplicates
+        foreach (var task in tasks.Where(t => !t.Id.StartsWith("wf-", StringComparison.Ordinal)))
+        {
+            if (task.SourceType == "inquiry")
+            {
+                result.Add(task);
+                continue;
+            }
+
+            // For competition tasks, skip if we already have a workflow task for this competition
+            if (!seenCompetitionIds.Contains(task.Id))
+            {
+                result.Add(task);
+            }
+        }
+
+        return result;
     }
 
     // ═══════════════════════════════════════════════════════════════
@@ -514,7 +700,7 @@ public sealed class GetPendingTasksQueryHandler
 
         return taskType switch
         {
-            "approve_request" or "approve_inquiry_response" =>
+            "approve_request" or "approve_inquiry_response" or "approval" =>
                 "يُنصح بمراجعة جميع المستندات المرفقة والتأكد من استيفاء المتطلبات قبل الاعتماد.",
             "evaluate_offer" =>
                 "يُنصح بمراجعة معايير التقييم المعتمدة والتأكد من تطبيقها بشكل موحد على جميع العروض.",
@@ -535,7 +721,7 @@ public sealed class GetPendingTasksQueryHandler
 
         return taskType switch
         {
-            "approve_request" or "approve_inquiry_response" =>
+            "approve_request" or "approve_inquiry_response" or "approval" =>
                 "Review all attached documents and ensure requirements are met before approval.",
             "evaluate_offer" =>
                 "Review approved evaluation criteria and apply them uniformly to all offers.",

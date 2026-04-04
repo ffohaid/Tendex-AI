@@ -32,9 +32,9 @@ public sealed class AddCommitteeMemberCommandHandler : ICommandHandler<AddCommit
     /// </summary>
     private static readonly Dictionary<CommitteeMemberRole, HashSet<string>> RoleCompatibilityMatrix = new()
     {
-        [CommitteeMemberRole.Chair] = ["OWNER", "ADMIN", "SECTORREP"],
-        [CommitteeMemberRole.Member] = ["OWNER", "ADMIN", "SECTORREP", "FINANCIALCONTROLLER", "MEMBER"],
-        [CommitteeMemberRole.Secretary] = ["ADMIN", "SECTORREP", "MEMBER"]
+        [CommitteeMemberRole.Chair] = ["TENANT PRIMARY ADMIN", "PROCUREMENT MANAGER", "SECTOR REPRESENTATIVE", "COMMITTEE CHAIR"],
+        [CommitteeMemberRole.Member] = ["TENANT PRIMARY ADMIN", "PROCUREMENT MANAGER", "SECTOR REPRESENTATIVE", "FINANCIAL CONTROLLER", "COMMITTEE MEMBER", "COMMITTEE CHAIR", "MEMBER"],
+        [CommitteeMemberRole.Secretary] = ["TENANT PRIMARY ADMIN", "PROCUREMENT MANAGER", "SECTOR REPRESENTATIVE", "MEMBER", "COMMITTEE MEMBER"]
     };
 
     public AddCommitteeMemberCommandHandler(

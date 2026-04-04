@@ -26,12 +26,32 @@ public sealed class GetEligibleUsersQueryHandler
 
     /// <summary>
     /// Role compatibility matrix: maps CommitteeMemberRole to allowed SystemRole normalized names.
+    /// Uses the actual NormalizedName values stored in the database Roles table.
     /// </summary>
     private static readonly Dictionary<CommitteeMemberRole, HashSet<string>> RoleCompatibilityMatrix = new()
     {
-        [CommitteeMemberRole.Chair] = ["OWNER", "ADMIN", "SECTORREP"],
-        [CommitteeMemberRole.Member] = ["OWNER", "ADMIN", "SECTORREP", "FINANCIALCONTROLLER", "MEMBER"],
-        [CommitteeMemberRole.Secretary] = ["ADMIN", "SECTORREP", "MEMBER"]
+        [CommitteeMemberRole.Chair] = [
+            "TENANT PRIMARY ADMIN",
+            "PROCUREMENT MANAGER",
+            "COMMITTEE CHAIR",
+            "SECTOR REPRESENTATIVE"
+        ],
+        [CommitteeMemberRole.Member] = [
+            "TENANT PRIMARY ADMIN",
+            "PROCUREMENT MANAGER",
+            "COMMITTEE CHAIR",
+            "COMMITTEE MEMBER",
+            "SECTOR REPRESENTATIVE",
+            "FINANCIAL CONTROLLER",
+            "MEMBER"
+        ],
+        [CommitteeMemberRole.Secretary] = [
+            "TENANT PRIMARY ADMIN",
+            "PROCUREMENT MANAGER",
+            "COMMITTEE MEMBER",
+            "SECTOR REPRESENTATIVE",
+            "MEMBER"
+        ]
     };
 
     public GetEligibleUsersQueryHandler(
