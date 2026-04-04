@@ -48,11 +48,29 @@ builder.Services.AddOpenApi();
 var allowedOrigins = builder.Configuration.GetSection("Cors:AllowedOrigins")
     .Get<string[]>() ?? ["http://localhost:5173", "http://localhost:3000"];
 
+// Base domain for dynamic subdomain matching (tenant subdomains)
+var baseDomain = builder.Configuration.GetValue<string>("Cors:BaseDomain") ?? "netaq.pro";
+
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("TendexCorsPolicy", policy =>
     {
-        policy.WithOrigins(allowedOrigins)
+        policy.SetIsOriginAllowed(origin =>
+            {
+                // Allow explicitly configured origins
+                if (allowedOrigins.Contains(origin, StringComparer.OrdinalIgnoreCase))
+                    return true;
+
+                // Allow any subdomain of the base domain (for tenant subdomains)
+                if (Uri.TryCreate(origin, UriKind.Absolute, out var uri))
+                {
+                    var host = uri.Host;
+                    return host.Equals(baseDomain, StringComparison.OrdinalIgnoreCase)
+                        || host.EndsWith($".{baseDomain}", StringComparison.OrdinalIgnoreCase);
+                }
+
+                return false;
+            })
             .AllowAnyHeader()
             .AllowAnyMethod()
             .AllowCredentials()
