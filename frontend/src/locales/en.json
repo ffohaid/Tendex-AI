@@ -823,6 +823,10 @@
       "active": "Active",
       "suspended": "Suspended",
       "pendingProvisioning": "Pending Provisioning",
+      "environmentSetup": "Environment Setup",
+      "training": "Training",
+      "finalAcceptance": "Final Acceptance",
+      "renewalWindow": "Renewal Window",
       "cancelled": "Cancelled",
       "archived": "Archived"
     },

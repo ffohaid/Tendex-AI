@@ -823,6 +823,10 @@
       "active": "نشطة",
       "suspended": "معلقة",
       "pendingProvisioning": "قيد التجهيز",
+      "environmentSetup": "تجهيز البيئة",
+      "training": "التدريب",
+      "finalAcceptance": "الاستلام النهائي",
+      "renewalWindow": "فترة التجديد",
       "cancelled": "ملغاة",
       "archived": "مؤرشفة"
     },
