@@ -339,6 +339,8 @@
     },
     "competitionStatus": {
       "draft": "مسودة",
+      "pending_approval": "بانتظار الاعتماد",
+      "approved": "معتمدة",
       "published": "منشورة",
       "receiving_offers": "استقبال العروض",
       "technical_evaluation": "تقييم فني",

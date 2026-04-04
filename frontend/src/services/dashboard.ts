@@ -40,19 +40,20 @@ export async function fetchDashboardStats(): Promise<DashboardStats> {
 
 /**
  * Maps backend integer competition status to frontend string.
- * Backend: Draft=0, UnderReview=1, Approved=2, Published=3, InquiriesOpen=4, InquiriesClosed=5,
- * ReceivingOffers=6, OffersClosed=7, TechnicalAnalysis=8, TechnicalAnalysisCompleted=9,
- * FinancialAnalysis=10, FinancialAnalysisCompleted=11, AwardNotification=12, AwardApproved=13,
- * ContractApproval=14, ContractApproved=15, ContractSigned=16, Rejected=90, Cancelled=91, Suspended=92
+ * Backend: Draft=0, UnderPreparation=1, PendingApproval=2, Approved=3,
+ * Published=4, InquiriesOpen=5, InquiriesClosed=6,
+ * ReceivingOffers=7, OffersClosed=8, TechnicalAnalysis=9, TechnicalAnalysisCompleted=10,
+ * FinancialAnalysis=11, FinancialAnalysisCompleted=12, AwardNotification=13, AwardApproved=14,
+ * ContractApproval=15, ContractApproved=16, ContractSigned=17, Rejected=90, Cancelled=91, Suspended=92
  */
 function mapCompetitionStatus(status: number | string): string {
   if (typeof status === 'string') return status
   const statusMap: Record<number, string> = {
-    0: 'draft', 1: 'draft', 2: 'draft', 3: 'published',
+    0: 'draft', 1: 'draft', 2: 'pending_approval', 3: 'approved',
     4: 'published', 5: 'published', 6: 'receiving_offers', 7: 'receiving_offers',
     8: 'technical_evaluation', 9: 'technical_evaluation',
     10: 'financial_evaluation', 11: 'financial_evaluation',
-    12: 'awarding', 13: 'awarding', 14: 'awarding', 15: 'completed', 16: 'completed',
+    12: 'awarding', 13: 'awarding', 14: 'awarding', 15: 'awarding', 16: 'completed',
     90: 'cancelled', 91: 'cancelled', 92: 'cancelled',
   }
   return statusMap[status] ?? 'draft'

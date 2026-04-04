@@ -44,10 +44,10 @@ function getGreeting(): string {
 interface KpiCard { key: string; icon: string; iconBg: string; iconColor: string; value: number; labelKey: string; trend: string; trendUp: boolean }
 
 const kpiCards = computed<KpiCard[]>(() => [
-  { key: 'activeRfps', icon: 'pi-file-edit', iconBg: 'bg-interactive-50', iconColor: 'text-interactive', value: stats.value.activeCompetitions, labelKey: 'dashboard.stats.activeCompetitions', trend: '+12%', trendUp: true },
-  { key: 'totalOffers', icon: 'pi-send', iconBg: 'bg-accent-50', iconColor: 'text-accent-dark', value: stats.value.totalOffers, labelKey: 'dashboard.stats.totalOffers', trend: '+8%', trendUp: true },
+  { key: 'activeRfps', icon: 'pi-file-edit', iconBg: 'bg-interactive-50', iconColor: 'text-interactive', value: stats.value.activeCompetitions, labelKey: 'dashboard.stats.activeCompetitions', trend: '', trendUp: false },
+  { key: 'totalOffers', icon: 'pi-send', iconBg: 'bg-accent-50', iconColor: 'text-accent-dark', value: stats.value.totalOffers, labelKey: 'dashboard.stats.totalOffers', trend: '', trendUp: false },
   { key: 'pendingReviews', icon: 'pi-clock', iconBg: 'bg-warning-50', iconColor: 'text-warning', value: stats.value.pendingEvaluations, labelKey: 'dashboard.stats.pendingEvaluations', trend: '', trendUp: false },
-  { key: 'completed', icon: 'pi-check-circle', iconBg: 'bg-success-50', iconColor: 'text-success', value: stats.value.completedCompetitions, labelKey: 'dashboard.stats.completedCompetitions', trend: '+5%', trendUp: true },
+  { key: 'completed', icon: 'pi-check-circle', iconBg: 'bg-success-50', iconColor: 'text-success', value: stats.value.completedCompetitions, labelKey: 'dashboard.stats.completedCompetitions', trend: '', trendUp: false },
 ])
 
 interface QuickAction { key: string; icon: string; labelKey: string; subtitleKey: string; route: string; isAi?: boolean; bgClass: string; iconColor: string }
@@ -214,9 +214,10 @@ function getActivityColor(type: string): string {
                   class="shrink-0 rounded-full px-2.5 py-1 text-[10px] font-semibold"
                   :class="{
                     'bg-interactive-50 text-interactive': comp.status === 'published' || comp.status === 'receiving_offers',
-                    'bg-warning-50 text-warning': comp.status === 'technical_evaluation' || comp.status === 'financial_evaluation',
-                    'bg-success-50 text-success': comp.status === 'completed',
+                    'bg-warning-50 text-warning': comp.status === 'pending_approval' || comp.status === 'technical_evaluation' || comp.status === 'financial_evaluation',
+                    'bg-success-50 text-success': comp.status === 'completed' || comp.status === 'approved',
                     'bg-secondary-100 text-secondary-500': comp.status === 'draft',
+                    'bg-info-50 text-info': comp.status === 'awarding',
                   }"
                 >
                   {{ t(`dashboard.competitionStatus.${comp.status}`) }}

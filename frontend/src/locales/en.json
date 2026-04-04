@@ -339,6 +339,8 @@
     },
     "competitionStatus": {
       "draft": "Draft",
+      "pending_approval": "Pending Approval",
+      "approved": "Approved",
       "published": "Published",
       "receiving_offers": "Receiving Offers",
       "technical_evaluation": "Technical Evaluation",
