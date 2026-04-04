@@ -250,24 +250,23 @@ public sealed class GetPendingTasksQueryHandler
 
             _logger.LogInformation("GatherApprovalWorkflowTasks: {Count} steps match user roles", matchingSteps.Count);
 
-            // For sequential workflows, only show the CURRENT step (lowest pending StepOrder per competition)
-            var currentSteps = matchingSteps
-                .GroupBy(s => new { s.CompetitionId, s.FromStatus, s.ToStatus })
-                .SelectMany(g =>
-                {
-                    var allPendingForGroup = pendingSteps
-                        .Where(s => s.CompetitionId == g.Key.CompetitionId
-                            && s.FromStatus == g.Key.FromStatus
-                            && s.ToStatus == g.Key.ToStatus
-                            && (s.Status == ApprovalStepStatus.Pending || s.Status == ApprovalStepStatus.InProgress))
-                        .ToList();
+            // Show ALL pending steps that match the user's role.
+            // For sequential workflows, mark steps as "waiting" if a prior step hasn't been completed yet.
+            // This gives users visibility into all their pending approvals.
+            var currentSteps = matchingSteps;
 
-                    var minOrder = allPendingForGroup.Min(s => s.StepOrder);
-                    return g.Where(s => s.StepOrder == minOrder);
-                })
-                .ToList();
+            _logger.LogInformation("GatherApprovalWorkflowTasks: {Count} current steps to display", currentSteps.Count);
 
             if (currentSteps.Count == 0) return;
+
+            // Determine which steps are currently actionable (lowest pending order per competition)
+            var actionableStepIds = new HashSet<Guid>();
+            foreach (var group in pendingSteps.GroupBy(s => new { s.CompetitionId, s.FromStatus, s.ToStatus }))
+            {
+                var minOrder = group.Min(s => s.StepOrder);
+                foreach (var step in group.Where(s => s.StepOrder == minOrder))
+                    actionableStepIds.Add(step.Id);
+            }
 
             // 3. Get competition details for the matching steps
             var competitionIds = currentSteps.Select(s => s.CompetitionId).Distinct().ToList();
@@ -303,7 +302,7 @@ public sealed class GetPendingTasksQueryHandler
                     SlaStatus: slaStatus,
                     RemainingTimeSeconds: remainingSeconds,
                     Priority: priority,
-                    ActionRequired: "review_and_approve",
+                    ActionRequired: actionableStepIds.Contains(step.Id) ? "review_and_approve" : "waiting_for_prior_step",
                     ActionUrl: $"/competitions/{competition.Id}",
                     AiRecommendationAr: GetAiRecommendationAr("approve_request", priority, slaStatus),
                     AiRecommendationEn: GetAiRecommendationEn("approve_request", priority, slaStatus),
