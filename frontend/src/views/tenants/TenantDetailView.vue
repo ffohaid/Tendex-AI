@@ -104,6 +104,24 @@ function getStatusBadge(status: TenantStatus) {
       textClass: 'text-amber-700',
       icon: 'pi pi-clock',
     },
+    [TenantStatus.EnvironmentSetup]: {
+      labelKey: 'tenants.statuses.environmentSetup',
+      bgClass: 'bg-blue-50',
+      textClass: 'text-blue-700',
+      icon: 'pi pi-cog',
+    },
+    [TenantStatus.Training]: {
+      labelKey: 'tenants.statuses.training',
+      bgClass: 'bg-indigo-50',
+      textClass: 'text-indigo-700',
+      icon: 'pi pi-book',
+    },
+    [TenantStatus.FinalAcceptance]: {
+      labelKey: 'tenants.statuses.finalAcceptance',
+      bgClass: 'bg-cyan-50',
+      textClass: 'text-cyan-700',
+      icon: 'pi pi-verified',
+    },
     [TenantStatus.Active]: {
       labelKey: 'tenants.statuses.active',
       bgClass: 'bg-emerald-50',
@@ -115,6 +133,12 @@ function getStatusBadge(status: TenantStatus) {
       bgClass: 'bg-orange-50',
       textClass: 'text-orange-700',
       icon: 'pi pi-pause-circle',
+    },
+    [TenantStatus.RenewalWindow]: {
+      labelKey: 'tenants.statuses.renewalWindow',
+      bgClass: 'bg-yellow-50',
+      textClass: 'text-yellow-700',
+      icon: 'pi pi-bell',
     },
     [TenantStatus.Cancelled]: {
       labelKey: 'tenants.statuses.cancelled',
@@ -144,6 +168,18 @@ const availableTransitions = computed(() => {
   if (!currentTenant.value) return []
   const transitions: Record<number, { value: TenantStatus; labelKey: string }[]> = {
     [TenantStatus.PendingProvisioning]: [
+      { value: TenantStatus.EnvironmentSetup, labelKey: 'tenants.statuses.environmentSetup' },
+      { value: TenantStatus.Cancelled, labelKey: 'tenants.statuses.cancelled' },
+    ],
+    [TenantStatus.EnvironmentSetup]: [
+      { value: TenantStatus.Training, labelKey: 'tenants.statuses.training' },
+      { value: TenantStatus.Cancelled, labelKey: 'tenants.statuses.cancelled' },
+    ],
+    [TenantStatus.Training]: [
+      { value: TenantStatus.FinalAcceptance, labelKey: 'tenants.statuses.finalAcceptance' },
+      { value: TenantStatus.Cancelled, labelKey: 'tenants.statuses.cancelled' },
+    ],
+    [TenantStatus.FinalAcceptance]: [
       { value: TenantStatus.Active, labelKey: 'tenants.statuses.active' },
       { value: TenantStatus.Cancelled, labelKey: 'tenants.statuses.cancelled' },
     ],

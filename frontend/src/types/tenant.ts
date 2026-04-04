@@ -12,10 +12,14 @@
 
 export const TenantStatus = {
   PendingProvisioning: 0,
-  Active: 1,
-  Suspended: 2,
-  Cancelled: 3,
-  Archived: 4,
+  EnvironmentSetup: 1,
+  Training: 2,
+  FinalAcceptance: 3,
+  Active: 4,
+  RenewalWindow: 5,
+  Suspended: 6,
+  Cancelled: 7,
+  Archived: 8,
 } as const
 export type TenantStatus = (typeof TenantStatus)[keyof typeof TenantStatus]
 

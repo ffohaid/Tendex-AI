@@ -39,11 +39,35 @@ function getStatusBadge(status: TenantStatus) {
       textClass: 'text-amber-700',
       icon: 'pi pi-clock',
     },
+    [TenantStatus.EnvironmentSetup]: {
+      labelKey: 'tenants.statuses.environmentSetup',
+      bgClass: 'bg-blue-50',
+      textClass: 'text-blue-700',
+      icon: 'pi pi-cog',
+    },
+    [TenantStatus.Training]: {
+      labelKey: 'tenants.statuses.training',
+      bgClass: 'bg-indigo-50',
+      textClass: 'text-indigo-700',
+      icon: 'pi pi-book',
+    },
+    [TenantStatus.FinalAcceptance]: {
+      labelKey: 'tenants.statuses.finalAcceptance',
+      bgClass: 'bg-cyan-50',
+      textClass: 'text-cyan-700',
+      icon: 'pi pi-verified',
+    },
     [TenantStatus.Active]: {
       labelKey: 'tenants.statuses.active',
       bgClass: 'bg-emerald-50',
       textClass: 'text-emerald-700',
       icon: 'pi pi-check-circle',
+    },
+    [TenantStatus.RenewalWindow]: {
+      labelKey: 'tenants.statuses.renewalWindow',
+      bgClass: 'bg-yellow-50',
+      textClass: 'text-yellow-700',
+      icon: 'pi pi-bell',
     },
     [TenantStatus.Suspended]: {
       labelKey: 'tenants.statuses.suspended',
@@ -78,7 +102,11 @@ function getStatusBadge(status: TenantStatus) {
 const statusFilterOptions = [
   { value: null, labelKey: 'tenants.filters.allStatuses' },
   { value: TenantStatus.PendingProvisioning, labelKey: 'tenants.statuses.pendingProvisioning' },
+  { value: TenantStatus.EnvironmentSetup, labelKey: 'tenants.statuses.environmentSetup' },
+  { value: TenantStatus.Training, labelKey: 'tenants.statuses.training' },
+  { value: TenantStatus.FinalAcceptance, labelKey: 'tenants.statuses.finalAcceptance' },
   { value: TenantStatus.Active, labelKey: 'tenants.statuses.active' },
+  { value: TenantStatus.RenewalWindow, labelKey: 'tenants.statuses.renewalWindow' },
   { value: TenantStatus.Suspended, labelKey: 'tenants.statuses.suspended' },
   { value: TenantStatus.Cancelled, labelKey: 'tenants.statuses.cancelled' },
   { value: TenantStatus.Archived, labelKey: 'tenants.statuses.archived' },
