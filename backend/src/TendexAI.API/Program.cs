@@ -87,10 +87,11 @@ app.UseAuthentication();
 app.UseAuthorization();
 
 // Serve uploaded files (avatars, etc.) from /uploads directory
+var uploadsPath = Path.Combine(builder.Environment.ContentRootPath, "uploads");
+Directory.CreateDirectory(uploadsPath);
 app.UseStaticFiles(new StaticFileOptions
 {
-    FileProvider = new Microsoft.Extensions.FileProviders.PhysicalFileProvider(
-        Path.Combine(builder.Environment.ContentRootPath, "uploads")),
+    FileProvider = new Microsoft.Extensions.FileProviders.PhysicalFileProvider(uploadsPath),
     RequestPath = "/uploads"
 });
 
