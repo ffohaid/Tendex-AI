@@ -539,7 +539,13 @@ router.beforeEach((to, _from, next) => {
     }
     // ── OperatorPrimaryAdmin ONLY: can ONLY access operator routes ──
     else if (isOperatorAdmin && !isTenantAdmin) {
-      const isOperatorRoute = to.path.startsWith('/operator') || to.name === 'Dashboard'
+      // Operator admin visiting root Dashboard should be redirected to Operator Dashboard
+      if (to.name === 'Dashboard' || to.path === '/') {
+        next({ name: 'OperatorDashboard' })
+        return
+      }
+      // Only allow routes under /operator path or routes with operator required roles
+      const isOperatorRoute = to.path.startsWith('/operator')
       const requiredRoles = to.meta.requiredRoles as string[] | undefined
       const isAllowed = isOperatorRoute || requiredRoles?.some(r => OPERATOR_ALIASES.includes(r))
       if (!isAllowed) {

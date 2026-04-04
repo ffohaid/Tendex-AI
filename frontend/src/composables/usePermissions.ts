@@ -147,6 +147,14 @@ export const SYSTEM_ROLES = {
   VIEWER: 'Viewer',
 } as const
 
+/* ── Operator Role Aliases (these users must NOT access tenant features) ── */
+const OPERATOR_ROLE_ALIASES = [
+  'OperatorPrimaryAdmin',
+  'Operator Super Admin',
+  'OperatorSuperAdmin',
+  'SuperAdmin',
+] as const
+
 /* ── Route Permission Map ── */
 export const ROUTE_PERMISSIONS: Record<string, string | string[]> = {
   // Settings
@@ -222,11 +230,22 @@ export function usePermissions() {
   const authStore = useAuthStore()
 
   /**
+   * Check if the current user is an Operator Admin.
+   * Operator admins must NOT have access to tenant-specific features
+   * (RFP, committees, evaluation, knowledge base, task center, etc.).
+   * They can only access the operator panel.
+   */
+  const isOperatorAdmin = computed(() =>
+    authStore.userRoles.some(r => (OPERATOR_ROLE_ALIASES as readonly string[]).includes(r))
+  )
+
+  /**
    * Check if the current user has a specific permission.
-   * Owners and Admins bypass all permission checks.
+   * Owners and Tenant Admins bypass all permission checks.
+   * Operator Admins do NOT get tenant permission bypass.
    */
   function can(permission: string): boolean {
-    // Owners and Admins have full access
+    if (isOperatorAdmin.value) return false
     if (isOwner.value || isAdmin.value) return true
     return authStore.hasPermission(permission)
   }
@@ -235,6 +254,7 @@ export function usePermissions() {
    * Check if the current user has ANY of the specified permissions.
    */
   function canAny(permissions: string[]): boolean {
+    if (isOperatorAdmin.value) return false
     if (isOwner.value || isAdmin.value) return true
     return permissions.some(p => authStore.hasPermission(p))
   }
@@ -243,6 +263,7 @@ export function usePermissions() {
    * Check if the current user has ALL of the specified permissions.
    */
   function canAll(permissions: string[]): boolean {
+    if (isOperatorAdmin.value) return false
     if (isOwner.value || isAdmin.value) return true
     return permissions.every(p => authStore.hasPermission(p))
   }
@@ -251,6 +272,7 @@ export function usePermissions() {
    * Check if the user can access a specific route by name.
    */
   function canAccessRoute(routeName: string): boolean {
+    if (isOperatorAdmin.value) return false
     if (isOwner.value || isAdmin.value) return true
     const required = ROUTE_PERMISSIONS[routeName]
     if (!required) return true // No permission required
@@ -261,11 +283,13 @@ export function usePermissions() {
   const isOwner = computed(() =>
     authStore.hasRole(SYSTEM_ROLES.OWNER) || authStore.hasRole(SYSTEM_ROLES.OWNER_ALT)
   )
-  const isAdmin = computed(() =>
-    authStore.hasRole(SYSTEM_ROLES.ADMIN) ||
-    authStore.hasRole(SYSTEM_ROLES.ADMIN_ALT) ||
-    isOwner.value
-  )
+  const isAdmin = computed(() => {
+    // Operator admins are NOT tenant admins - they should not bypass tenant permissions
+    if (isOperatorAdmin.value) return false
+    return authStore.hasRole(SYSTEM_ROLES.ADMIN) ||
+      authStore.hasRole(SYSTEM_ROLES.ADMIN_ALT) ||
+      isOwner.value
+  })
   const isSectorRep = computed(() => authStore.hasRole(SYSTEM_ROLES.SECTOR_REP))
   const isFinancialController = computed(() => authStore.hasRole(SYSTEM_ROLES.FINANCIAL_CONTROLLER))
   const isAuditor = computed(() => authStore.hasRole(SYSTEM_ROLES.AUDITOR))
@@ -283,6 +307,7 @@ export function usePermissions() {
     canAccessRoute,
 
     // Role checks
+    isOperatorAdmin,
     isOwner,
     isAdmin,
     isSectorRep,
