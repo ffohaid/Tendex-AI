@@ -6,10 +6,7 @@
  * All data is fetched dynamically from the API — NO mock data.
  */
 import { onMounted, ref, watch } from 'vue'
-import { useI18n } from 'vue-i18n'
 import http from '@/services/http'
-
-const { t } = useI18n()
 
 const tickets = ref<any[]>([])
 const loading = ref(false)

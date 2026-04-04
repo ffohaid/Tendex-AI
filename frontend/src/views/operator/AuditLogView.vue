@@ -7,10 +7,7 @@
  * ipAddress, actionType, entityType, entityId, oldValues, newValues, reason, sessionId, tenantId.
  */
 import { onMounted, ref, watch } from 'vue'
-import { useI18n } from 'vue-i18n'
 import http from '@/services/http'
-
-const { t } = useI18n()
 
 const logs = ref<any[]>([])
 const loading = ref(false)

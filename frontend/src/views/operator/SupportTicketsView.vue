@@ -4,11 +4,8 @@
  * Displays all support tickets from all tenants for the operator to manage.
  * All data is fetched dynamically from the API — NO mock data.
  */
-import { onMounted, ref, computed, watch } from 'vue'
-import { useI18n } from 'vue-i18n'
+import { onMounted, ref, watch } from 'vue'
 import http from '@/services/http'
-
-const { t } = useI18n()
 
 // State
 const tickets = ref<any[]>([])
