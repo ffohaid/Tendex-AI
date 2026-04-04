@@ -193,6 +193,7 @@ public sealed class GetPendingTasksQueryHandler
     {
         try
         {
+            _logger.LogInformation("GatherApprovalWorkflowTasks: Starting for userId={UserId}, tenantId={TenantId}", userId, tenantId);
             var approvalSteps = dbContext.GetDbSet<ApprovalWorkflowStep>();
             var competitions = dbContext.GetDbSet<Competition>();
             var userRoles = dbContext.GetDbSet<UserRole>();
@@ -209,6 +210,8 @@ public sealed class GetPendingTasksQueryHandler
                     (ur, r) => r.NameEn)
                 .ToListAsync(cancellationToken);
 
+            _logger.LogInformation("GatherApprovalWorkflowTasks: User role names: [{Roles}]", string.Join(", ", userRoleNames));
+
             // Map role names to SystemRole enum values
             var userSystemRoles = new List<SystemRole>();
             foreach (var roleName in userRoleNames)
@@ -218,7 +221,13 @@ public sealed class GetPendingTasksQueryHandler
                     userSystemRoles.Add(systemRole.Value);
             }
 
-            if (userSystemRoles.Count == 0) return;
+            _logger.LogInformation("GatherApprovalWorkflowTasks: Mapped system roles: [{Roles}]", string.Join(", ", userSystemRoles));
+
+            if (userSystemRoles.Count == 0)
+            {
+                _logger.LogInformation("GatherApprovalWorkflowTasks: No matching system roles found, returning early");
+                return;
+            }
 
             // 2. Get pending approval steps that match the user's role(s)
             var pendingSteps = await approvalSteps
@@ -227,10 +236,19 @@ public sealed class GetPendingTasksQueryHandler
                     && (s.Status == ApprovalStepStatus.Pending || s.Status == ApprovalStepStatus.InProgress))
                 .ToListAsync(cancellationToken);
 
+            _logger.LogInformation("GatherApprovalWorkflowTasks: Found {Count} pending steps in DB", pendingSteps.Count);
+            foreach (var ps in pendingSteps)
+            {
+                _logger.LogInformation("  Step: Id={Id}, CompId={CompId}, RequiredRole={Role}, Status={Status}, StepOrder={Order}",
+                    ps.Id, ps.CompetitionId, ps.RequiredRole, ps.Status, ps.StepOrder);
+            }
+
             // Filter steps matching the user's roles
             var matchingSteps = pendingSteps
                 .Where(s => userSystemRoles.Contains(s.RequiredRole))
                 .ToList();
+
+            _logger.LogInformation("GatherApprovalWorkflowTasks: {Count} steps match user roles", matchingSteps.Count);
 
             // For sequential workflows, only show the CURRENT step (lowest pending StepOrder per competition)
             var currentSteps = matchingSteps
