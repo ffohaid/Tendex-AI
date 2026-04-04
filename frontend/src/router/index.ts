@@ -570,8 +570,10 @@ router.beforeEach((to, _from, next) => {
     else if (isOperatorAdmin && !isTenantAdmin) {
       // Operator admin visiting root Dashboard should be redirected to Operator Dashboard
       // Allow profile page for all authenticated users
-      if (to.name === 'UserProfile') {
-        // Profile is accessible by all users
+      if (to.name === 'UserProfile' || to.name === 'TenantAiSettings' || to.name === 'ActiveDirectorySettings') {
+        // Profile and settings pages are accessible by all authenticated users
+        next()
+        return
       } else if (to.name === 'Dashboard' || to.path === '/') {
         next({ name: 'OperatorDashboard' })
         return

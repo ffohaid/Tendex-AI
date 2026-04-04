@@ -62,6 +62,7 @@ COPY --from=publish /app/publish .
 # Create keys directory for OpenIddict persistent RSA keys
 # This directory should be mounted as a Docker volume for persistence
 RUN mkdir -p /app/keys && chown tendex:tendex /app/keys && chmod 700 /app/keys
+RUN mkdir -p /app/uploads && chown tendex:tendex /app/uploads && chmod 755 /app/uploads
 
 # Set environment variables
 ENV ASPNETCORE_URLS=http://+:8080
