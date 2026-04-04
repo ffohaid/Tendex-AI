@@ -22,6 +22,8 @@ export interface DashboardStats {
  * ──────────────────────────────────────────── */
 export type CompetitionStatus =
   | 'draft'
+  | 'pending_approval'
+  | 'approved'
   | 'published'
   | 'receiving_offers'
   | 'technical_evaluation'
