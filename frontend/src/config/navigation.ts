@@ -185,6 +185,18 @@ export const sidebarNavigation: NavigationItem[] = [
         icon: 'pi pi-sitemap',
         route: 'WorkflowList',
       },
+      {
+        key: 'settings-ai',
+        labelKey: 'nav.aiSettings',
+        icon: 'pi pi-sparkles',
+        route: 'TenantAiSettings',
+      },
+      {
+        key: 'settings-active-directory',
+        labelKey: 'activeDirectory.title',
+        icon: 'pi pi-microsoft',
+        route: 'ActiveDirectorySettings',
+      },
     ],
   },
 

@@ -99,6 +99,9 @@ public sealed class ApplicationUser : AggregateRoot<Guid>
     /// <summary>IP address of the last successful login.</summary>
     public string? LastLoginIp { get; private set; }
 
+    /// <summary>URL or path to the user's avatar image.</summary>
+    public string? AvatarUrl { get; private set; }
+
     /// <summary>Navigation property: roles assigned to this user.</summary>
     public ICollection<UserRole> UserRoles { get; private set; } = [];
 
@@ -190,6 +193,26 @@ public sealed class ApplicationUser : AggregateRoot<Guid>
         FirstName = firstName;
         LastName = lastName;
         PhoneNumber = phoneNumber;
+        LastModifiedAt = DateTime.UtcNow;
+    }
+
+    /// <summary>Updates the user's email address (requires re-verification).</summary>
+    public void UpdateEmail(string newEmail)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(newEmail);
+        Email = newEmail;
+        NormalizedEmail = newEmail.ToUpperInvariant();
+        UserName = newEmail;
+        NormalizedUserName = newEmail.ToUpperInvariant();
+        EmailConfirmed = false; // Require re-confirmation
+        SecurityStamp = Guid.NewGuid().ToString("N");
+        LastModifiedAt = DateTime.UtcNow;
+    }
+
+    /// <summary>Sets the user's avatar URL.</summary>
+    public void SetAvatarUrl(string? avatarUrl)
+    {
+        AvatarUrl = avatarUrl;
         LastModifiedAt = DateTime.UtcNow;
     }
 

@@ -44,7 +44,9 @@ public sealed class CreateAiConfigurationCommandHandler
                 qdrantCollectionName: request.QdrantCollectionName,
                 maxTokens: request.MaxTokens,
                 temperature: request.Temperature,
-                priority: request.Priority);
+                priority: request.Priority,
+                deploymentType: request.DeploymentType,
+                description: request.Description);
 
             await _repository.AddAsync(configuration, cancellationToken);
 

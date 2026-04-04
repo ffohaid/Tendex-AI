@@ -21,7 +21,9 @@ public sealed class AiConfiguration : BaseEntity<Guid>
         string? qdrantCollectionName = null,
         int maxTokens = 4096,
         double temperature = 0.3,
-        int priority = 0)
+        int priority = 0,
+        AiDeploymentType deploymentType = AiDeploymentType.PublicCloud,
+        string? description = null)
     {
         Id = Guid.NewGuid();
         TenantId = tenantId;
@@ -33,6 +35,8 @@ public sealed class AiConfiguration : BaseEntity<Guid>
         MaxTokens = maxTokens;
         Temperature = temperature;
         Priority = priority;
+        DeploymentType = deploymentType;
+        Description = description;
         IsActive = true;
         CreatedAt = DateTime.UtcNow;
     }
@@ -69,6 +73,12 @@ public sealed class AiConfiguration : BaseEntity<Guid>
     /// Higher value = higher priority. Used for dynamic model switching.
     /// </summary>
     public int Priority { get; private set; }
+
+    /// <summary>Deployment type: PublicCloud, PrivateCloud, or OnPremise.</summary>
+    public AiDeploymentType DeploymentType { get; private set; }
+
+    /// <summary>Optional description or notes about this configuration.</summary>
+    public string? Description { get; private set; }
 
     /// <summary>Whether this configuration is currently active.</summary>
     public bool IsActive { get; private set; }
@@ -112,7 +122,9 @@ public sealed class AiConfiguration : BaseEntity<Guid>
         string? endpoint,
         int maxTokens,
         double temperature,
-        int priority)
+        int priority,
+        AiDeploymentType? deploymentType = null,
+        string? description = null)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(modelName);
 
@@ -127,6 +139,8 @@ public sealed class AiConfiguration : BaseEntity<Guid>
         MaxTokens = maxTokens;
         Temperature = temperature;
         Priority = priority;
+        if (deploymentType.HasValue) DeploymentType = deploymentType.Value;
+        Description = description;
         LastModifiedAt = DateTime.UtcNow;
     }
 

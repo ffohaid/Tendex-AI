@@ -396,6 +396,35 @@ const routes: RouteRecordRaw[] = [
           requiredRoles: ['OperatorPrimaryAdmin'],
         },
       },
+      /* User Profile (accessible by all authenticated users) */
+      {
+        path: 'profile',
+        name: 'UserProfile',
+        component: () => import('@/views/profile/UserProfileView.vue'),
+        meta: { title: 'Tendex AI - Profile', requiresAuth: true },
+      },
+      /* Per-Tenant AI Settings (TASK: tenant-specific AI models) */
+      {
+        path: 'settings/ai',
+        name: 'TenantAiSettings',
+        component: () => import('@/views/settings/TenantAiSettingsView.vue'),
+        meta: {
+          title: 'Tendex AI - AI Settings',
+          requiresAuth: true,
+          requiredPermission: 'ai.settings',
+        },
+      },
+      /* Active Directory Integration Settings */
+      {
+        path: 'settings/active-directory',
+        name: 'ActiveDirectorySettings',
+        component: () => import('@/views/settings/ActiveDirectorySettingsView.vue'),
+        meta: {
+          title: 'Tendex AI - Active Directory',
+          requiresAuth: true,
+          requiredPermission: 'organization.manage',
+        },
+      },
       /* Tenant Support Tickets */
       {
         path: 'support',
@@ -540,7 +569,10 @@ router.beforeEach((to, _from, next) => {
     // ── OperatorPrimaryAdmin ONLY: can ONLY access operator routes ──
     else if (isOperatorAdmin && !isTenantAdmin) {
       // Operator admin visiting root Dashboard should be redirected to Operator Dashboard
-      if (to.name === 'Dashboard' || to.path === '/') {
+      // Allow profile page for all authenticated users
+      if (to.name === 'UserProfile') {
+        // Profile is accessible by all users
+      } else if (to.name === 'Dashboard' || to.path === '/') {
         next({ name: 'OperatorDashboard' })
         return
       }

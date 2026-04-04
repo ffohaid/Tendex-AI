@@ -45,6 +45,8 @@ public sealed class MasterPlatformDbContext : DbContext, IMasterPlatformDbContex
 
     public DbSet<SupportTicketMessage> SupportTicketMessages => Set<SupportTicketMessage>();
 
+    public DbSet<ActiveDirectoryConfiguration> ActiveDirectoryConfigurations => Set<ActiveDirectoryConfiguration>();
+
     // ----- Model Configuration -----
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)

@@ -7,7 +7,7 @@
  * - Sidebar toggle
  * - Tenant selector for Super Admin
  * - Search bar
- * - Notifications, language switcher, user avatar
+ * - Notifications, language switcher, user menu with logout
  */
 import { computed, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
@@ -15,6 +15,7 @@ import { useAppStore } from '@/stores/app'
 import { useAuthStore } from '@/stores/auth'
 import { useBrandingStore } from '@/stores/branding'
 import TenantSelector from '@/components/operator/TenantSelector.vue'
+import UserMenu from '@/components/layout/UserMenu.vue'
 
 const { t, locale } = useI18n()
 const appStore = useAppStore()
@@ -176,14 +177,8 @@ onMounted(async () => {
         <span class="hidden sm:inline">{{ t('header.switchLanguage') }}</span>
       </button>
 
-      <!-- User avatar -->
-      <button
-        type="button"
-        class="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-secondary to-secondary-light text-sm font-bold text-white ring-2 ring-secondary-200 transition-all hover:ring-primary/50"
-        :aria-label="t('common.profile')"
-      >
-        <i class="pi pi-user"></i>
-      </button>
+      <!-- User Menu with Logout -->
+      <UserMenu />
     </div>
   </header>
 </template>

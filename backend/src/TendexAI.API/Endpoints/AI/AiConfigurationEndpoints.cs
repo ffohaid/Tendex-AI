@@ -50,7 +50,9 @@ public static class AiConfigurationEndpoints
                 QdrantCollectionName = request.QdrantCollectionName,
                 MaxTokens = request.MaxTokens,
                 Temperature = request.Temperature,
-                Priority = request.Priority
+                Priority = request.Priority,
+                DeploymentType = request.DeploymentType,
+                Description = request.Description
             };
 
             var result = await mediator.Send(command, ct);
@@ -78,7 +80,9 @@ public static class AiConfigurationEndpoints
                 Endpoint = request.Endpoint,
                 MaxTokens = request.MaxTokens,
                 Temperature = request.Temperature,
-                Priority = request.Priority
+                Priority = request.Priority,
+                DeploymentType = request.DeploymentType,
+                Description = request.Description
             };
 
             var success = await mediator.Send(command, ct);
@@ -131,6 +135,8 @@ public sealed record CreateAiConfigurationRequest
     public int MaxTokens { get; init; } = 4096;
     public double Temperature { get; init; } = 0.3;
     public int Priority { get; init; }
+    public AiDeploymentType DeploymentType { get; init; } = AiDeploymentType.PublicCloud;
+    public string? Description { get; init; }
 }
 
 public sealed record UpdateAiConfigurationRequest
@@ -140,6 +146,8 @@ public sealed record UpdateAiConfigurationRequest
     public int MaxTokens { get; init; } = 4096;
     public double Temperature { get; init; } = 0.3;
     public int Priority { get; init; }
+    public AiDeploymentType? DeploymentType { get; init; }
+    public string? Description { get; init; }
 }
 
 public sealed record RotateApiKeyRequest

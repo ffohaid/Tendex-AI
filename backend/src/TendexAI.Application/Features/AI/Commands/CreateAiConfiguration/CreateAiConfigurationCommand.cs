@@ -18,6 +18,8 @@ public sealed record CreateAiConfigurationCommand : IRequest<CreateAiConfigurati
     public int MaxTokens { get; init; } = 4096;
     public double Temperature { get; init; } = 0.3;
     public int Priority { get; init; }
+    public AiDeploymentType DeploymentType { get; init; } = AiDeploymentType.PublicCloud;
+    public string? Description { get; init; }
 }
 
 public sealed record CreateAiConfigurationResult

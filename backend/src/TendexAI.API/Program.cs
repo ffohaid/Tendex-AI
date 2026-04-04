@@ -17,6 +17,8 @@ using TendexAI.API.Endpoints.Reports;
 using TendexAI.API.Endpoints.Inquiries;
 using TendexAI.API.Endpoints.Workflow;
 using TendexAI.API.Endpoints.PermissionMatrix;
+using TendexAI.API.Endpoints.Profile;
+using TendexAI.API.Endpoints.ActiveDirectory;
 
 // Enable PII logging for debugging JWT validation issues (TEMPORARY)
 IdentityModelEventSource.ShowPII = true;
@@ -84,6 +86,14 @@ app.UseCors("TendexCorsPolicy");
 app.UseAuthentication();
 app.UseAuthorization();
 
+// Serve uploaded files (avatars, etc.) from /uploads directory
+app.UseStaticFiles(new StaticFileOptions
+{
+    FileProvider = new Microsoft.Extensions.FileProviders.PhysicalFileProvider(
+        Path.Combine(builder.Environment.ContentRootPath, "uploads")),
+    RequestPath = "/uploads"
+});
+
 // ---------------------------------------------------------------------------
 // Health Check Endpoints
 // ---------------------------------------------------------------------------
@@ -116,6 +126,12 @@ app.MapAuditTrailEndpoints();
 
 // File management endpoints
 app.MapFileEndpoints();
+
+// User profile endpoints (self-service)
+app.MapProfileEndpoints();
+
+// Active Directory integration settings endpoints
+app.MapActiveDirectoryEndpoints();
 
 // User management endpoints
 app.MapUserManagementEndpoints();

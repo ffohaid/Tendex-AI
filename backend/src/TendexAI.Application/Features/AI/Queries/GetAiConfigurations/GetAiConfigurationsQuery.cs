@@ -26,6 +26,9 @@ public sealed record AiConfigurationDto
     public int MaxTokens { get; init; }
     public double Temperature { get; init; }
     public int Priority { get; init; }
+    public AiDeploymentType DeploymentType { get; init; }
+    public string DeploymentTypeName { get; init; } = null!;
+    public string? Description { get; init; }
     public bool IsActive { get; init; }
     public bool HasApiKey { get; init; }
     public DateTime CreatedAt { get; init; }

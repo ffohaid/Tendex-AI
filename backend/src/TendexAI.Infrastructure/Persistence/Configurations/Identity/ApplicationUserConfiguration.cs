@@ -60,6 +60,9 @@ public sealed class ApplicationUserConfiguration : IEntityTypeConfiguration<Appl
         builder.Property(u => u.LastLoginIp)
             .HasMaxLength(45); // IPv6 max length
 
+        builder.Property(u => u.AvatarUrl)
+            .HasMaxLength(500);
+
         // Indexes
         builder.HasIndex(u => u.NormalizedEmail)
             .IsUnique()

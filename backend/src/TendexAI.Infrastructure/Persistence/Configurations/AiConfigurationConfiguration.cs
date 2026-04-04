@@ -62,6 +62,16 @@ public sealed class AiConfigurationConfiguration : IEntityTypeConfiguration<AiCo
             .IsRequired()
             .HasDefaultValue(0);
 
+        // DeploymentType
+        builder.Property(a => a.DeploymentType)
+            .IsRequired()
+            .HasConversion<int>()
+            .HasDefaultValue(AiDeploymentType.PublicCloud);
+
+        // Description
+        builder.Property(a => a.Description)
+            .HasMaxLength(1000);
+
         // IsActive
         builder.Property(a => a.IsActive)
             .IsRequired()

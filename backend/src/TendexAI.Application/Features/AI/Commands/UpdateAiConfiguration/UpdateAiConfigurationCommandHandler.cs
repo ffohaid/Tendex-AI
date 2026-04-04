@@ -40,7 +40,9 @@ public sealed class UpdateAiConfigurationCommandHandler
             endpoint: request.Endpoint,
             maxTokens: request.MaxTokens,
             temperature: request.Temperature,
-            priority: request.Priority);
+            priority: request.Priority,
+            deploymentType: request.DeploymentType,
+            description: request.Description);
 
         await _repository.UpdateAsync(config, cancellationToken);
 

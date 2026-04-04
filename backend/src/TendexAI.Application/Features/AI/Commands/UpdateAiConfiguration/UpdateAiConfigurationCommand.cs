@@ -1,4 +1,5 @@
 using MediatR;
+using TendexAI.Domain.Enums;
 
 namespace TendexAI.Application.Features.AI.Commands.UpdateAiConfiguration;
 
@@ -13,4 +14,6 @@ public sealed record UpdateAiConfigurationCommand : IRequest<bool>
     public int MaxTokens { get; init; } = 4096;
     public double Temperature { get; init; } = 0.3;
     public int Priority { get; init; }
+    public AiDeploymentType? DeploymentType { get; init; }
+    public string? Description { get; init; }
 }
