@@ -125,7 +125,7 @@ function getUsageColor(percent: number): string {
 
 onMounted(() => {
   loadHealth()
-  refreshTimer = setInterval(loadHealth, 15000)
+  refreshTimer = setInterval(loadHealth, 60_000) // Refresh every 60 seconds
 })
 
 onUnmounted(() => {

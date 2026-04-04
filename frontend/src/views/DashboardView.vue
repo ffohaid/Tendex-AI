@@ -22,7 +22,7 @@ const {
   recentActivities,
 } = storeToRefs(dashboardStore)
 
-const AUTO_REFRESH_INTERVAL = 30_000
+const AUTO_REFRESH_INTERVAL = 5 * 60 * 1000 // 5 minutes
 let refreshTimer: ReturnType<typeof setInterval> | null = null
 
 onMounted(async () => {

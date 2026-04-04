@@ -84,8 +84,8 @@ function handleOutsideClick(e: MouseEvent): void {
 
 onMounted(() => {
   loadPreview()
-  /* Poll every 30 seconds for new notifications */
-  const timer = setInterval(loadPreview, 30000)
+  /* Poll every 5 minutes for new notifications */
+  const timer = setInterval(loadPreview, 300_000) /* Poll every 5 minutes */
   document.addEventListener('click', handleOutsideClick)
   onUnmounted(() => {
     clearInterval(timer)

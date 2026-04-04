@@ -38,7 +38,7 @@ const priorityFilter = ref('')
 
 /* Auto-refresh timer */
 let refreshTimer: ReturnType<typeof setInterval> | null = null
-const AUTO_REFRESH_INTERVAL = 30_000
+const AUTO_REFRESH_INTERVAL = 5 * 60 * 1000 // 5 minutes
 
 /* ------------------------------------------------------------------ */
 /*  Computed                                                           */

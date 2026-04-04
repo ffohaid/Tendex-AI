@@ -146,11 +146,14 @@ public sealed class LoginCommandHandler : IRequestHandler<LoginCommand, Result<A
         var accessToken = _tokenService.GenerateAccessToken(user, roles, permissions, tenantId);
 
         // Generate refresh token
+        var refreshTokenLifetimeHours = _configuration.GetValue<int>("Authentication:RefreshTokenLifetimeHours", 8);
+        var accessTokenLifetimeMinutes = _configuration.GetValue<int>("Authentication:AccessTokenLifetimeMinutes", 60);
+
         var refreshTokenValue = _tokenService.GenerateRefreshToken();
         var refreshToken = new RefreshToken(
             user.Id,
             refreshTokenValue,
-            DateTime.UtcNow.AddHours(8), // 8-hour refresh token
+            DateTime.UtcNow.AddHours(refreshTokenLifetimeHours),
             ipAddress,
             userAgent);
 
@@ -172,7 +175,7 @@ public sealed class LoginCommandHandler : IRequestHandler<LoginCommand, Result<A
             IpAddress = ipAddress,
             UserAgent = userAgent,
             CreatedAt = DateTime.UtcNow,
-            ExpiresAt = DateTime.UtcNow.AddHours(8),
+            ExpiresAt = DateTime.UtcNow.AddHours(refreshTokenLifetimeHours),
             MfaVerified = !user.MfaEnabled,
             Roles = roles
         };
@@ -190,7 +193,7 @@ public sealed class LoginCommandHandler : IRequestHandler<LoginCommand, Result<A
             AccessToken: accessToken,
             RefreshToken: refreshTokenValue,
             TokenType: "Bearer",
-            ExpiresIn: 3600, // 60 minutes in seconds
+            ExpiresIn: accessTokenLifetimeMinutes * 60,
             SessionId: sessionId,
             User: new UserInfoDto(
                 user.Id, user.Email, user.FirstName, user.LastName,

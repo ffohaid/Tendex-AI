@@ -1,4 +1,5 @@
 using MediatR;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using TendexAI.Application.Common.Interfaces.Identity;
 using TendexAI.Application.Features.Auth.Dtos;
@@ -18,6 +19,7 @@ public sealed class RefreshTokenCommandHandler : IRequestHandler<RefreshTokenCom
     private readonly IAuditLogRepository _auditLogRepository;
     private readonly ITokenService _tokenService;
     private readonly ISessionStore _sessionStore;
+    private readonly IConfiguration _configuration;
     private readonly ILogger<RefreshTokenCommandHandler> _logger;
 
     public RefreshTokenCommandHandler(
@@ -26,6 +28,7 @@ public sealed class RefreshTokenCommandHandler : IRequestHandler<RefreshTokenCom
         IAuditLogRepository auditLogRepository,
         ITokenService tokenService,
         ISessionStore sessionStore,
+        IConfiguration configuration,
         ILogger<RefreshTokenCommandHandler> logger)
     {
         _refreshTokenRepository = refreshTokenRepository;
@@ -33,6 +36,7 @@ public sealed class RefreshTokenCommandHandler : IRequestHandler<RefreshTokenCom
         _auditLogRepository = auditLogRepository;
         _tokenService = tokenService;
         _sessionStore = sessionStore;
+        _configuration = configuration;
         _logger = logger;
     }
 
@@ -81,10 +85,13 @@ public sealed class RefreshTokenCommandHandler : IRequestHandler<RefreshTokenCom
         existingToken.Revoke("TokenRotation", newRefreshTokenValue);
         _refreshTokenRepository.Update(existingToken);
 
+        var refreshTokenLifetimeHours = _configuration.GetValue<int>("Authentication:RefreshTokenLifetimeHours", 8);
+        var accessTokenLifetimeMinutes = _configuration.GetValue<int>("Authentication:AccessTokenLifetimeMinutes", 60);
+
         var newRefreshToken = new RefreshToken(
             user.Id,
             newRefreshTokenValue,
-            DateTime.UtcNow.AddHours(8),
+            DateTime.UtcNow.AddHours(refreshTokenLifetimeHours),
             request.IpAddress,
             request.UserAgent);
 
@@ -115,7 +122,7 @@ public sealed class RefreshTokenCommandHandler : IRequestHandler<RefreshTokenCom
             IpAddress = request.IpAddress,
             UserAgent = request.UserAgent,
             CreatedAt = DateTime.UtcNow,
-            ExpiresAt = DateTime.UtcNow.AddHours(8),
+            ExpiresAt = DateTime.UtcNow.AddHours(refreshTokenLifetimeHours),
             MfaVerified = true,
             Roles = roles
         };
@@ -134,7 +141,7 @@ public sealed class RefreshTokenCommandHandler : IRequestHandler<RefreshTokenCom
             AccessToken: accessToken,
             RefreshToken: newRefreshTokenValue,
             TokenType: "Bearer",
-            ExpiresIn: 3600,
+            ExpiresIn: accessTokenLifetimeMinutes * 60,
             SessionId: sessionId,
             User: new UserInfoDto(
                 user.Id, user.Email, user.FirstName, user.LastName,

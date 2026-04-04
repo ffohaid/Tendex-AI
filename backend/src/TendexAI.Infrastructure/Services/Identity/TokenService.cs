@@ -61,10 +61,12 @@ public sealed class TokenService : ITokenService
         var issuer = _configuration["Authentication:Issuer"] ?? "https://tendex-ai.com";
         var audience = _configuration["Authentication:Audience"] ?? "tendex-ai-client";
 
+        var accessTokenLifetimeMinutes = _configuration.GetValue<int>("Authentication:AccessTokenLifetimeMinutes", 60);
+
         var tokenDescriptor = new SecurityTokenDescriptor
         {
             Subject = new ClaimsIdentity(claims),
-            Expires = DateTime.UtcNow.AddMinutes(60), // 60-minute access token
+            Expires = DateTime.UtcNow.AddMinutes(accessTokenLifetimeMinutes),
             Issuer = issuer,
             Audience = audience,
             SigningCredentials = credentials,
