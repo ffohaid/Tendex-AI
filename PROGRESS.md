@@ -26,6 +26,30 @@
 
 *يرجى إضافة أحدث مهمة منجزة في أعلى هذه القائمة.*
 
+### 2026-04-05 - feat: Redesign Permission Matrix as True Dynamic Grid Table
+- **الحالة:** ✅ مكتمل
+- **الوصف:** إعادة تصميم مصفوفة الصلاحيات بالكامل لتكون جدول شبكي ديناميكي حقيقي
+- **التغييرات:**
+  - **Backend:** إضافة نقطة نهاية `/api/permission-matrix/grid` (GET) لجلب المصفوفة الشبكية الكاملة (أعمدة = أدوار، صفوف = موارد مجمعة حسب النطاق)
+  - **Backend:** إضافة نقطة نهاية `/api/permission-matrix/grid/bulk-update` (PUT) لتحديث خلايا متعددة دفعة واحدة
+  - **Backend:** إضافة DTOs جديدة: PermissionMatrixGridResponse, GridRoleColumn, GridScopeGroup, GridResourceRow, GridCell, GridActionMeta
+  - **Frontend:** إعادة بناء PermissionsMatrixView.vue كجدول شبكي حقيقي:
+    - الصفوف = الموارد (مجمعة حسب النطاق: عام، منافسات، لجان) مع أكورديون
+    - الأعمدة = جميع أدوار الجهة (بما في ذلك أدوار اللجان)
+    - الخلايا = شارات قابلة للنقر تعرض عدد الإجراءات المفعلة مع نافذة منبثقة لتبديل كل إجراء
+    - عمود اسم المورد ثابت (sticky) عند التمرير الأفقي
+    - أزرار منح/سحب الكل لكل عمود دور
+    - تتبع التغييرات المعلقة مع مؤشرات بصرية
+    - الأدوار المحمية تُعرض للقراءة فقط
+    - فقط المسؤول الأول (Owner/Admin) يمكنه التعديل
+    - دعم كامل RTL/LTR
+  - **i18n:** إضافة مفتاح ترجمة 'adminOnly' للعربية والإنجليزية
+- **الملفات المعدلة:**
+  - `backend/src/TendexAI.API/Endpoints/PermissionMatrix/PermissionMatrixEndpoints.cs`
+  - `frontend/src/views/permissions/PermissionsMatrixView.vue`
+  - `frontend/src/locales/ar.json`
+  - `frontend/src/locales/en.json`
+
 ### 2026-04-04 - feat: MOMRAH Tenant Full Provisioning & Admin Setup
 - **الحالة:** ✅ مكتمل
 - **الوصف:** Fully provisioned the Ministry of Municipal, Rural Affairs and Housing (MOMRAH) as a new government tenant on the Tendex AI platform.
