@@ -2597,7 +2597,7 @@
     "templates": "Permission Templates",
     "noRolesForStage": "No roles found for this stage",
     "selectCompetitionAndStage": "Select a competition and stage to view permissions",
-    "adminOnly": "This page is only available to system administrators",
+    "adminOnly": "This page is read-only. Only the primary administrator can modify the permission matrix.",
     "view": "View",
     "edit": "Edit",
     "approve": "Approve",

@@ -1,62 +1,84 @@
 <script setup lang="ts">
 /**
- * PermissionsMatrixView - Flexible Multi-Dimensional Permission Matrix
+ * PermissionsMatrixView — True Dynamic Grid/Table
  *
- * Provides a comprehensive UI for managing the permission matrix per tenant.
- * Dimensions:
- *   1. Role (system role or custom role)
- *   2. Scope (Global / Competition / Committee)
- *   3. ResourceType (Organization, Users, Competition, Offers, etc.)
- *   4. CompetitionPhase (optional, for competition-scoped resources)
- *   5. CommitteeRole (optional, for committee-scoped resources)
- *   6. PermissionAction flags (Read, Create, Update, Delete, Approve, Reject, Submit, Upload, Score, Sign)
+ * Redesigned permission matrix that displays as a proper grid:
+ *   - Rows = Resources (grouped by scope: Global, Competition, Committee)
+ *   - Columns = Roles (all tenant roles including committee roles)
+ *   - Cells = Toggle switches for each action (Read, Create, Update, Delete, etc.)
  *
  * Features:
- *   - Scope-based tabs (Global, Competition, Committee)
- *   - Role selector dropdown
- *   - Phase & committee role filters for scoped resources
- *   - Interactive checkbox grid for each action per resource
- *   - Bulk grant/revoke per role
- *   - Customization indicator (shows which rules differ from defaults)
+ *   - True matrix layout (all roles visible simultaneously as columns)
+ *   - Scope-based accordion sections
+ *   - Expandable action detail per cell (click to see individual action toggles)
+ *   - Protected roles shown but not editable
+ *   - Only primary admin (المسؤول الأول) can edit
+ *   - Bulk operations: grant all / revoke all per role
  *   - Reset to defaults
- *   - Seed default rules for new tenants
- *   - RTL/LTR support
+ *   - Full RTL/LTR support with logical properties
+ *   - Responsive horizontal scroll for many roles
  *
- * All data fetched dynamically from APIs - NO mock data.
+ * All data fetched dynamically from /api/permission-matrix/grid — NO mock data.
  */
-import { ref, computed, onMounted, watch } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { httpGet, httpPut, httpPost } from '@/services/http'
+import { usePermissions } from '@/composables/usePermissions'
 
 const { t, locale } = useI18n()
 const isArabic = computed(() => locale.value === 'ar')
+const { isOwner, isAdmin } = usePermissions()
 
 /* ── Types ── */
-interface PermissionRule {
-  id: string
-  roleId: string
-  roleName: string
-  roleNameEn: string
-  scope: number
-  scopeNameAr: string
-  scopeNameEn: string
+interface GridCell {
+  ruleId: string | null
+  allowedActions: number
+  isCustomized: boolean
+}
+
+interface GridResourceRow {
   resourceType: number
   resourceTypeNameAr: string
   resourceTypeNameEn: string
   committeeRole: number | null
+  committeeRoleNameAr: string | null
+  committeeRoleNameEn: string | null
   competitionPhase: number | null
-  allowedActions: number
-  isCustomized: boolean
-  isActive: boolean
+  competitionPhaseNameAr: string | null
+  competitionPhaseNameEn: string | null
+  cells: Record<string, GridCell>
 }
 
-interface RoleOption {
+interface GridScopeGroup {
+  scope: number
+  scopeNameAr: string
+  scopeNameEn: string
+  resources: GridResourceRow[]
+}
+
+interface GridRoleColumn {
   id: string
+  nameAr: string
+  nameEn: string
+  normalizedName: string
+  isProtected: boolean
+  isSystemRole: boolean
+}
+
+interface GridActionMeta {
+  key: string
+  flag: number
   nameAr: string
   nameEn: string
 }
 
-/* ── Permission Action Flags (must match backend PermissionAction enum) ── */
+interface GridResponse {
+  roles: GridRoleColumn[]
+  scopes: GridScopeGroup[]
+  actions: GridActionMeta[]
+}
+
+/* ── Permission Action Flags ── */
 const ACTION_FLAGS: Record<string, number> = {
   read: 1,
   create: 2,
@@ -70,40 +92,6 @@ const ACTION_FLAGS: Record<string, number> = {
   sign: 512,
 }
 
-/* ── Scope enum values ── */
-const SCOPES = {
-  Global: 0,
-  Competition: 1,
-  Committee: 2,
-}
-
-/* ── Competition Phase enum values ── */
-const COMPETITION_PHASES: Record<number, string> = {
-  0: 'bookletPreparation',
-  1: 'bookletApproval',
-  2: 'bookletPublishing',
-  3: 'offerReception',
-  4: 'technicalAnalysis',
-  5: 'financialAnalysis',
-  6: 'awardNotification',
-  7: 'contractApproval',
-  8: 'contractSigning',
-}
-
-/* ── Committee Role enum values ── */
-const COMMITTEE_ROLES: Record<number, string> = {
-  0: 'none',
-  1: 'preparationChair',
-  2: 'preparationMember',
-  3: 'technicalChair',
-  4: 'technicalMember',
-  5: 'financialChair',
-  6: 'financialMember',
-  7: 'inquiryChair',
-  8: 'inquiryMember',
-  9: 'secretary',
-}
-
 /* ── Reactive State ── */
 const loading = ref(false)
 const saving = ref(false)
@@ -111,229 +99,291 @@ const seeding = ref(false)
 const errorMessage = ref('')
 const successMessage = ref('')
 
-const allRules = ref<PermissionRule[]>([])
-const roles = ref<RoleOption[]>([])
+const gridData = ref<GridResponse | null>(null)
+const expandedScopes = ref<Set<number>>(new Set([0, 1, 2]))
+const expandedCell = ref<string | null>(null) // "scopeIdx-resourceIdx-roleId"
 
-const selectedRoleId = ref<string>('')
-const selectedScope = ref<number | null>(null)
-const selectedPhase = ref<number | null>(null)
-const selectedCommitteeRole = ref<number | null>(null)
-
-// Track pending changes: ruleId -> new allowedActions
+// Track pending changes: "scopeIdx-resourceIdx-roleId" -> new allowedActions
 const pendingChanges = ref<Map<string, number>>(new Map())
 
-/* ── Scope/Phase/Committee change handlers (fix string-to-number conversion) ── */
-function onScopeChange(event: Event) {
-  const val = (event.target as HTMLSelectElement).value
-  selectedScope.value = val === '' ? null : Number(val)
-}
-
-function onPhaseChange(event: Event) {
-  const val = (event.target as HTMLSelectElement).value
-  selectedPhase.value = val === '' ? null : Number(val)
-}
-
-function onCommitteeRoleChange(event: Event) {
-  const val = (event.target as HTMLSelectElement).value
-  selectedCommitteeRole.value = val === '' ? null : Number(val)
-}
-
 /* ── Computed ── */
-const hasRules = computed(() => allRules.value.length > 0)
+const hasData = computed(() => gridData.value !== null && gridData.value.scopes.length > 0)
+const roles = computed(() => gridData.value?.roles ?? [])
+const scopes = computed(() => gridData.value?.scopes ?? [])
+const actions = computed(() => gridData.value?.actions ?? [])
 const hasChanges = computed(() => pendingChanges.value.size > 0)
 const changesCount = computed(() => pendingChanges.value.size)
 
-// Extract unique roles from rules
-const availableRoles = computed(() => {
-  if (roles.value.length > 0) return roles.value
-  const roleMap = new Map<string, RoleOption>()
-  allRules.value.forEach(r => {
-    if (!roleMap.has(r.roleId)) {
-      roleMap.set(r.roleId, {
-        id: r.roleId,
-        nameAr: r.roleName,
-        nameEn: r.roleNameEn,
-      })
+const canEdit = computed(() => isOwner.value || isAdmin.value)
+
+const totalRules = computed(() => {
+  if (!gridData.value) return 0
+  let count = 0
+  for (const scope of gridData.value.scopes) {
+    for (const resource of scope.resources) {
+      for (const cell of Object.values(resource.cells)) {
+        if (cell.ruleId) count++
+      }
     }
-  })
-  return Array.from(roleMap.values())
+  }
+  return count
 })
 
-// Filter rules based on selected filters
-const filteredRules = computed(() => {
-  let rules = allRules.value
-
-  if (selectedRoleId.value) {
-    rules = rules.filter(r => r.roleId === selectedRoleId.value)
+const customizedCount = computed(() => {
+  if (!gridData.value) return 0
+  let count = 0
+  for (const scope of gridData.value.scopes) {
+    for (const resource of scope.resources) {
+      for (const cell of Object.values(resource.cells)) {
+        if (cell.isCustomized) count++
+      }
+    }
   }
-
-  if (selectedScope.value !== null) {
-    rules = rules.filter(r => r.scope === selectedScope.value)
-  }
-
-  if (selectedPhase.value !== null) {
-    rules = rules.filter(r => r.competitionPhase === selectedPhase.value || r.competitionPhase === null)
-  }
-
-  if (selectedCommitteeRole.value !== null) {
-    rules = rules.filter(r => r.committeeRole === selectedCommitteeRole.value || r.committeeRole === null)
-  }
-
-  return rules
+  return count
 })
 
-// Group filtered rules by scope for display
-const groupedByScope = computed(() => {
-  const groups: Record<number, PermissionRule[]> = {}
-  filteredRules.value.forEach(r => {
-    if (!groups[r.scope]) groups[r.scope] = []
-    groups[r.scope].push(r)
-  })
-  return groups
-})
+/* ── Scope Icons ── */
+const scopeIcons: Record<number, string> = {
+  0: 'M12 6.042A8.967 8.967 0 006 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 016 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 016-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0018 18a8.967 8.967 0 00-6 2.292m0-14.25v14.25',
+  1: 'M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z',
+  2: 'M18 18.72a9.094 9.094 0 003.741-.479 3 3 0 00-4.682-2.72m.94 3.198l.001.031c0 .225-.012.447-.037.666A11.944 11.944 0 0112 21c-2.17 0-4.207-.576-5.963-1.584A6.062 6.062 0 016 18.719m12 0a5.971 5.971 0 00-.941-3.197m0 0A5.995 5.995 0 0012 12.75a5.995 5.995 0 00-5.058 2.772m0 0a3 3 0 00-4.681 2.72 8.986 8.986 0 003.74.477m.94-3.197a5.971 5.971 0 00-.94 3.197M15 6.75a3 3 0 11-6 0 3 3 0 016 0zm6 3a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0zm-13.5 0a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0z',
+}
 
-// Stats
-const totalRules = computed(() => allRules.value.length)
-const customizedRulesCount = computed(() => allRules.value.filter(r => r.isCustomized).length)
+/* ── Scope Colors ── */
+const scopeColors: Record<number, { bg: string; border: string; text: string; badge: string }> = {
+  0: { bg: 'bg-blue-50 dark:bg-blue-900/20', border: 'border-blue-200 dark:border-blue-800', text: 'text-blue-700 dark:text-blue-300', badge: 'bg-blue-100 text-blue-700 dark:bg-blue-800 dark:text-blue-200' },
+  1: { bg: 'bg-emerald-50 dark:bg-emerald-900/20', border: 'border-emerald-200 dark:border-emerald-800', text: 'text-emerald-700 dark:text-emerald-300', badge: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-800 dark:text-emerald-200' },
+  2: { bg: 'bg-purple-50 dark:bg-purple-900/20', border: 'border-purple-200 dark:border-purple-800', text: 'text-purple-700 dark:text-purple-300', badge: 'bg-purple-100 text-purple-700 dark:bg-purple-800 dark:text-purple-200' },
+}
 
-// Determine which action columns are relevant for a scope
-function getActionsForScope(scope: number): string[] {
-  if (scope === SCOPES.Global) {
-    return ['read', 'create', 'update', 'delete']
-  } else if (scope === SCOPES.Competition) {
-    return ['read', 'create', 'update', 'delete', 'approve', 'reject', 'submit', 'upload', 'score', 'sign']
-  } else {
-    return ['read', 'create', 'update', 'delete', 'approve']
+/* ── Helper Methods ── */
+function getResourceName(resource: GridResourceRow): string {
+  return isArabic.value ? resource.resourceTypeNameAr : resource.resourceTypeNameEn
+}
+
+function getResourceSubtext(resource: GridResourceRow): string {
+  const parts: string[] = []
+  if (resource.competitionPhase !== null) {
+    parts.push(isArabic.value ? (resource.competitionPhaseNameAr || '') : (resource.competitionPhaseNameEn || ''))
   }
-}
-
-/* ── Methods ── */
-function hasAction(rule: PermissionRule, actionKey: string): boolean {
-  const flag = ACTION_FLAGS[actionKey]
-  const currentActions = pendingChanges.value.has(rule.id)
-    ? pendingChanges.value.get(rule.id)!
-    : rule.allowedActions
-  return (currentActions & flag) !== 0
-}
-
-function toggleAction(rule: PermissionRule, actionKey: string) {
-  const flag = ACTION_FLAGS[actionKey]
-  const currentActions = pendingChanges.value.has(rule.id)
-    ? pendingChanges.value.get(rule.id)!
-    : rule.allowedActions
-
-  const newActions = (currentActions & flag) !== 0
-    ? currentActions & ~flag  // Remove flag
-    : currentActions | flag   // Add flag
-
-  if (newActions === rule.allowedActions) {
-    // No change from original - remove from pending
-    pendingChanges.value.delete(rule.id)
-  } else {
-    pendingChanges.value.set(rule.id, newActions)
+  if (resource.committeeRole !== null) {
+    parts.push(isArabic.value ? (resource.committeeRoleNameAr || '') : (resource.committeeRoleNameEn || ''))
   }
+  return parts.join(' — ')
 }
 
-function grantAllForRole() {
-  if (!selectedRoleId.value) return
-  const roleRules = allRules.value.filter(r => r.roleId === selectedRoleId.value)
-  const fullAccess = 1023 // All 10 flags set
-  roleRules.forEach(r => {
-    if (r.allowedActions !== fullAccess) {
-      pendingChanges.value.set(r.id, fullAccess)
-    }
-  })
-}
-
-function revokeAllForRole() {
-  if (!selectedRoleId.value) return
-  const roleRules = allRules.value.filter(r => r.roleId === selectedRoleId.value)
-  roleRules.forEach(r => {
-    if (r.allowedActions !== 0) {
-      pendingChanges.value.set(r.id, 0)
-    }
-  })
-}
-
-function getResourceName(rule: PermissionRule): string {
-  return isArabic.value ? rule.resourceTypeNameAr : rule.resourceTypeNameEn
-}
-
-function getScopeName(scope: number): string {
-  const key = scope === 0 ? 'global' : scope === 1 ? 'competition' : 'committee'
-  return t(`permissions.scopes.${key}`)
-}
-
-function getPhaseName(phase: number | null): string {
-  if (phase === null) return ''
-  const key = COMPETITION_PHASES[phase]
-  return key ? t(`permissions.phases.${key}`) : ''
-}
-
-function getCommitteeRoleName(role: number | null): string {
-  if (role === null) return ''
-  const key = COMMITTEE_ROLES[role]
-  return key ? t(`permissions.committeeRoles.${key}`) : ''
-}
-
-function getRoleName(role: RoleOption): string {
+function getRoleName(role: GridRoleColumn): string {
   return isArabic.value ? role.nameAr : role.nameEn
 }
 
+function getScopeName(scope: GridScopeGroup): string {
+  return isArabic.value ? scope.scopeNameAr : scope.scopeNameEn
+}
+
+function getActionName(action: GridActionMeta): string {
+  return isArabic.value ? action.nameAr : action.nameEn
+}
+
+function getCellKey(scopeIdx: number, resourceIdx: number, roleId: string): string {
+  return `${scopeIdx}-${resourceIdx}-${roleId}`
+}
+
+function getCellActions(scopeIdx: number, resourceIdx: number, roleId: string): number {
+  const key = getCellKey(scopeIdx, resourceIdx, roleId)
+  if (pendingChanges.value.has(key)) {
+    return pendingChanges.value.get(key)!
+  }
+  const scope = scopes.value[scopeIdx]
+  if (!scope) return 0
+  const resource = scope.resources[resourceIdx]
+  if (!resource) return 0
+  const cell = resource.cells[roleId]
+  return cell ? cell.allowedActions : 0
+}
+
+function isCellModified(scopeIdx: number, resourceIdx: number, roleId: string): boolean {
+  return pendingChanges.value.has(getCellKey(scopeIdx, resourceIdx, roleId))
+}
+
+function hasAction(scopeIdx: number, resourceIdx: number, roleId: string, actionFlag: number): boolean {
+  const cellActions = getCellActions(scopeIdx, resourceIdx, roleId)
+  return (cellActions & actionFlag) !== 0
+}
+
+function getActiveActionsCount(scopeIdx: number, resourceIdx: number, roleId: string): number {
+  const cellActions = getCellActions(scopeIdx, resourceIdx, roleId)
+  let count = 0
+  for (const flag of Object.values(ACTION_FLAGS)) {
+    if ((cellActions & flag) !== 0) count++
+  }
+  return count
+}
+
+function getRelevantActions(scope: number): GridActionMeta[] {
+  if (scope === 0) {
+    return actions.value.filter(a => ['read', 'create', 'update', 'delete'].includes(a.key))
+  }
+  return actions.value
+}
+
+function toggleAction(scopeIdx: number, resourceIdx: number, roleId: string, actionFlag: number) {
+  if (!canEdit.value) return
+  const role = roles.value.find(r => r.id === roleId)
+  if (role?.isProtected) return
+
+  const currentActions = getCellActions(scopeIdx, resourceIdx, roleId)
+  const newActions = (currentActions & actionFlag) !== 0
+    ? currentActions & ~actionFlag
+    : currentActions | actionFlag
+
+  const key = getCellKey(scopeIdx, resourceIdx, roleId)
+  const scope = scopes.value[scopeIdx]
+  const resource = scope.resources[resourceIdx]
+  const originalCell = resource.cells[roleId]
+  const originalActions = originalCell ? originalCell.allowedActions : 0
+
+  if (newActions === originalActions) {
+    pendingChanges.value.delete(key)
+  } else {
+    pendingChanges.value.set(key, newActions)
+  }
+}
+
+function toggleAllActionsForCell(scopeIdx: number, resourceIdx: number, roleId: string) {
+  if (!canEdit.value) return
+  const role = roles.value.find(r => r.id === roleId)
+  if (role?.isProtected) return
+
+  const currentActions = getCellActions(scopeIdx, resourceIdx, roleId)
+  const relevantActions = getRelevantActions(scopes.value[scopeIdx].scope)
+  const allFlags = relevantActions.reduce((acc, a) => acc | a.flag, 0)
+  const hasAll = (currentActions & allFlags) === allFlags
+
+  const newActions = hasAll ? (currentActions & ~allFlags) : (currentActions | allFlags)
+
+  const key = getCellKey(scopeIdx, resourceIdx, roleId)
+  const scope = scopes.value[scopeIdx]
+  const resource = scope.resources[resourceIdx]
+  const originalCell = resource.cells[roleId]
+  const originalActions = originalCell ? originalCell.allowedActions : 0
+
+  if (newActions === originalActions) {
+    pendingChanges.value.delete(key)
+  } else {
+    pendingChanges.value.set(key, newActions)
+  }
+}
+
+function toggleExpandedCell(scopeIdx: number, resourceIdx: number, roleId: string) {
+  const key = getCellKey(scopeIdx, resourceIdx, roleId)
+  expandedCell.value = expandedCell.value === key ? null : key
+}
+
+function toggleScope(scope: number) {
+  if (expandedScopes.value.has(scope)) {
+    expandedScopes.value.delete(scope)
+  } else {
+    expandedScopes.value.add(scope)
+  }
+}
+
+function grantAllForRole(roleId: string) {
+  if (!canEdit.value) return
+  const role = roles.value.find(r => r.id === roleId)
+  if (role?.isProtected) return
+
+  scopes.value.forEach((scope, scopeIdx) => {
+    scope.resources.forEach((resource, resourceIdx) => {
+      const key = getCellKey(scopeIdx, resourceIdx, roleId)
+      const originalCell = resource.cells[roleId]
+      const originalActions = originalCell ? originalCell.allowedActions : 0
+      const fullAccess = 1023
+      if (originalActions !== fullAccess) {
+        pendingChanges.value.set(key, fullAccess)
+      }
+    })
+  })
+}
+
+function revokeAllForRole(roleId: string) {
+  if (!canEdit.value) return
+  const role = roles.value.find(r => r.id === roleId)
+  if (role?.isProtected) return
+
+  scopes.value.forEach((scope, scopeIdx) => {
+    scope.resources.forEach((resource, resourceIdx) => {
+      const key = getCellKey(scopeIdx, resourceIdx, roleId)
+      const originalCell = resource.cells[roleId]
+      const originalActions = originalCell ? originalCell.allowedActions : 0
+      if (originalActions !== 0) {
+        pendingChanges.value.set(key, 0)
+      }
+    })
+  })
+}
+
+function discardChanges() {
+  pendingChanges.value.clear()
+}
+
 /* ── API Calls ── */
-async function loadMatrix() {
+async function loadGrid() {
   loading.value = true
   errorMessage.value = ''
   try {
-    const data = await httpGet<PermissionRule[]>('/permission-matrix')
-    allRules.value = data || []
+    const data = await httpGet<GridResponse>('/permission-matrix/grid')
+    gridData.value = data
     pendingChanges.value.clear()
+    expandedCell.value = null
   } catch (err: any) {
     errorMessage.value = t('permissions.loadError')
-    console.error('Failed to load permission matrix:', err)
+    console.error('Failed to load permission matrix grid:', err)
   } finally {
     loading.value = false
   }
 }
 
-async function loadRoles() {
-  try {
-    const data = await httpGet<any[]>('/user-management/roles')
-    if (Array.isArray(data)) {
-      roles.value = data.map((r: any) => ({
-        id: r.id,
-        nameAr: r.nameAr || r.name || '',
-        nameEn: r.nameEn || r.name || '',
-      }))
-    }
-  } catch (err) {
-    console.error('Failed to load roles:', err)
-  }
-}
-
 async function saveChanges() {
-  if (!hasChanges.value) return
+  if (!hasChanges.value || !canEdit.value) return
   saving.value = true
   errorMessage.value = ''
   successMessage.value = ''
 
   try {
-    // Save each changed rule individually
-    const promises = Array.from(pendingChanges.value.entries()).map(([ruleId, actions]) =>
-      httpPut(`/permission-matrix/rules/${ruleId}`, { allowedActions: actions })
-    )
-    await Promise.all(promises)
+    const cells: Array<{
+      ruleId: string | null
+      roleId: string
+      scope: number
+      resourceType: number
+      committeeRole: number | null
+      competitionPhase: number | null
+      allowedActions: number
+    }> = []
 
-    // Update local state
-    pendingChanges.value.forEach((actions, ruleId) => {
-      const rule = allRules.value.find(r => r.id === ruleId)
-      if (rule) {
-        rule.allowedActions = actions
-        rule.isCustomized = true
-      }
-    })
-    pendingChanges.value.clear()
+    for (const [key, newActions] of pendingChanges.value.entries()) {
+      const parts = key.split('-')
+      const scopeIdx = parseInt(parts[0])
+      const resourceIdx = parseInt(parts[1])
+      const roleId = parts.slice(2).join('-') // roleId may contain dashes (GUID)
+      const scope = scopes.value[scopeIdx]
+      const resource = scope.resources[resourceIdx]
+      const originalCell = resource.cells[roleId]
+
+      cells.push({
+        ruleId: originalCell?.ruleId || null,
+        roleId,
+        scope: scope.scope,
+        resourceType: resource.resourceType,
+        committeeRole: resource.committeeRole,
+        competitionPhase: resource.competitionPhase,
+        allowedActions: newActions,
+      })
+    }
+
+    await httpPut('/permission-matrix/grid/bulk-update', { cells })
+
     successMessage.value = t('permissions.saveSuccess')
+    await loadGrid()
     setTimeout(() => { successMessage.value = '' }, 3000)
   } catch (err: any) {
     errorMessage.value = t('permissions.saveError')
@@ -349,7 +399,7 @@ async function seedDefaultRules() {
   try {
     await httpPost('/permission-matrix/seed', {})
     successMessage.value = t('permissions.seedSuccess')
-    await loadMatrix()
+    await loadGrid()
     setTimeout(() => { successMessage.value = '' }, 3000)
   } catch (err: any) {
     errorMessage.value = err?.response?.data?.message || 'Failed to seed default rules'
@@ -366,7 +416,7 @@ async function resetToDefaults() {
   try {
     await httpPost('/permission-matrix/reset', {})
     successMessage.value = t('permissions.seedSuccess')
-    await loadMatrix()
+    await loadGrid()
     setTimeout(() => { successMessage.value = '' }, 3000)
   } catch (err: any) {
     errorMessage.value = err?.response?.data?.message || 'Failed to reset matrix'
@@ -378,102 +428,100 @@ async function resetToDefaults() {
 
 /* ── Lifecycle ── */
 onMounted(async () => {
-  await Promise.all([loadMatrix(), loadRoles()])
-  // Auto-select first role if available
-  if (availableRoles.value.length > 0 && !selectedRoleId.value) {
-    selectedRoleId.value = availableRoles.value[0].id
-  }
-})
-
-// Auto-select first role when roles change
-watch(availableRoles, (newRoles) => {
-  if (newRoles.length > 0 && !selectedRoleId.value) {
-    selectedRoleId.value = newRoles[0].id
-  }
+  await loadGrid()
 })
 </script>
 
 <template>
   <div class="min-h-screen bg-gray-50 dark:bg-gray-900">
-    <!-- Header -->
+    <!-- ═══════════════════ Header ═══════════════════ -->
     <div class="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-6 py-5">
       <div class="flex items-center justify-between flex-wrap gap-4">
         <div>
-          <h1 class="text-2xl font-bold text-gray-900 dark:text-white">
+          <h1 class="text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-3">
+            <svg class="h-7 w-7 text-primary" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285z" />
+            </svg>
             {{ t('permissions.title') }}
           </h1>
           <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
             {{ t('permissions.subtitle') }}
           </p>
         </div>
+
         <div class="flex items-center gap-3 flex-wrap">
-          <!-- Stats badges -->
-          <div v-if="hasRules" class="flex items-center gap-4 me-4">
+          <!-- Stats -->
+          <div v-if="hasData" class="flex items-center gap-4 me-4">
             <div class="text-center">
               <div class="text-lg font-semibold text-blue-600">{{ totalRules }}</div>
               <div class="text-xs text-gray-500">{{ t('permissions.totalRules') }}</div>
             </div>
             <div class="text-center">
-              <div class="text-lg font-semibold text-amber-600">{{ customizedRulesCount }}</div>
+              <div class="text-lg font-semibold text-amber-600">{{ customizedCount }}</div>
               <div class="text-xs text-gray-500">{{ t('permissions.customizedRules') }}</div>
+            </div>
+            <div class="text-center">
+              <div class="text-lg font-semibold text-emerald-600">{{ roles.length }}</div>
+              <div class="text-xs text-gray-500">{{ isArabic ? 'الأدوار' : 'Roles' }}</div>
             </div>
           </div>
 
-          <!-- Seed button (only when no rules) -->
-          <button
-            v-if="!hasRules && !loading"
-            @click="seedDefaultRules"
-            :disabled="seeding"
-            class="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-colors"
-          >
-            <svg v-if="seeding" class="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24">
-              <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
-              <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-            </svg>
-            <svg v-else class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-            </svg>
-            {{ seeding ? t('permissions.seeding') : t('permissions.seedRules') }}
-          </button>
+          <!-- Action Buttons -->
+          <template v-if="canEdit">
+            <button
+              v-if="!hasData"
+              @click="seedDefaultRules"
+              :disabled="seeding"
+              class="px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 disabled:opacity-50 text-sm font-medium flex items-center gap-2 transition-colors"
+            >
+              <svg v-if="seeding" class="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+              </svg>
+              <span>{{ seeding ? t('permissions.seeding') : t('permissions.seedRules') }}</span>
+            </button>
 
-          <!-- Reset button -->
-          <button
-            v-if="hasRules"
-            @click="resetToDefaults"
-            class="inline-flex items-center gap-2 px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
-          >
-            <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-            </svg>
-            {{ t('permissions.resetToDefaults') }}
-          </button>
+            <button
+              v-if="hasData"
+              @click="resetToDefaults"
+              class="px-3 py-2 text-gray-600 dark:text-gray-300 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 text-sm font-medium transition-colors"
+            >
+              {{ t('permissions.resetToDefaults') }}
+            </button>
 
-          <!-- Save button -->
-          <button
-            v-if="hasRules"
-            @click="saveChanges"
-            :disabled="!hasChanges || saving"
-            class="inline-flex items-center gap-2 px-4 py-2 rounded-lg transition-colors"
-            :class="hasChanges
-              ? 'bg-green-600 text-white hover:bg-green-700'
-              : 'bg-gray-200 text-gray-500 cursor-not-allowed dark:bg-gray-700 dark:text-gray-400'"
-          >
-            <svg v-if="saving" class="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24">
-              <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
-              <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-            </svg>
-            <svg v-else class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
-            </svg>
-            <span v-if="saving">{{ t('permissions.saving') }}</span>
-            <span v-else-if="hasChanges">{{ t('permissions.saveChanges') }} ({{ changesCount }})</span>
-            <span v-else>{{ t('permissions.noChanges') }}</span>
-          </button>
+            <button
+              v-if="hasChanges"
+              @click="discardChanges"
+              class="px-3 py-2 text-red-600 border border-red-300 dark:border-red-700 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 text-sm font-medium transition-colors"
+            >
+              {{ isArabic ? 'تجاهل التغييرات' : 'Discard' }}
+            </button>
+
+            <button
+              @click="saveChanges"
+              :disabled="!hasChanges || saving"
+              class="px-4 py-2 rounded-lg text-sm font-medium flex items-center gap-2 transition-colors"
+              :class="hasChanges
+                ? 'bg-primary text-white hover:bg-primary-dark shadow-sm'
+                : 'bg-gray-200 dark:bg-gray-700 text-gray-400 dark:text-gray-500 cursor-not-allowed'"
+            >
+              <svg v-if="saving" class="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+              </svg>
+              <svg v-else class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
+              </svg>
+              <span v-if="saving">{{ t('permissions.saving') }}</span>
+              <span v-else-if="hasChanges">{{ t('permissions.saveChanges') }} ({{ changesCount }})</span>
+              <span v-else>{{ t('permissions.noChanges') }}</span>
+            </button>
+          </template>
         </div>
       </div>
     </div>
 
-    <!-- Messages -->
+    <!-- ═══════════════════ Messages ═══════════════════ -->
     <div v-if="errorMessage" class="mx-6 mt-4 p-3 bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 rounded-lg text-red-700 dark:text-red-300 text-sm flex items-center gap-2">
       <svg class="h-5 w-5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
         <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" />
@@ -487,10 +535,18 @@ watch(availableRoles, (newRoles) => {
       {{ successMessage }}
     </div>
 
-    <!-- Loading state -->
+    <!-- Not editable notice for non-admins -->
+    <div v-if="!canEdit && hasData" class="mx-6 mt-4 p-3 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg text-amber-700 dark:text-amber-300 text-sm flex items-center gap-2">
+      <svg class="h-5 w-5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+        <path fill-rule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clip-rule="evenodd" />
+      </svg>
+      {{ t('permissions.adminOnly') }}
+    </div>
+
+    <!-- ═══════════════════ Loading ═══════════════════ -->
     <div v-if="loading" class="flex items-center justify-center py-20">
       <div class="text-center">
-        <svg class="animate-spin h-10 w-10 text-blue-600 mx-auto mb-4" fill="none" viewBox="0 0 24 24">
+        <svg class="animate-spin h-10 w-10 text-primary mx-auto mb-4" fill="none" viewBox="0 0 24 24">
           <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
           <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
         </svg>
@@ -498,8 +554,8 @@ watch(availableRoles, (newRoles) => {
       </div>
     </div>
 
-    <!-- Empty state -->
-    <div v-else-if="!hasRules" class="flex items-center justify-center py-20">
+    <!-- ═══════════════════ Empty State ═══════════════════ -->
+    <div v-else-if="!hasData" class="flex items-center justify-center py-20">
       <div class="text-center max-w-md">
         <svg class="h-16 w-16 text-gray-300 dark:text-gray-600 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
@@ -509,227 +565,237 @@ watch(availableRoles, (newRoles) => {
       </div>
     </div>
 
-    <!-- Main Content -->
-    <div v-else class="p-6 space-y-6">
-      <!-- Filters Bar -->
-      <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-4">
-        <div class="flex flex-wrap items-center gap-4">
-          <!-- Role selector -->
-          <div class="flex-1 min-w-[200px]">
-            <label class="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">
-              {{ t('permissions.role') }}
-            </label>
-            <select
-              v-model="selectedRoleId"
-              class="w-full px-3 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg text-sm text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-            >
-              <option value="">{{ t('permissions.selectRole') }}</option>
-              <option v-for="role in availableRoles" :key="role.id" :value="role.id">
-                {{ getRoleName(role) }}
-              </option>
-            </select>
-          </div>
+    <!-- ═══════════════════ Matrix Grid ═══════════════════ -->
+    <div v-else class="p-6 space-y-4">
 
-          <!-- Scope selector (using @change handler for proper number conversion) -->
-          <div class="flex-1 min-w-[180px]">
-            <label class="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">
-              {{ t('permissions.scope') }}
-            </label>
-            <select
-              :value="selectedScope === null ? '' : selectedScope"
-              @change="onScopeChange"
-              class="w-full px-3 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg text-sm text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-            >
-              <option value="">{{ t('permissions.allScopes') }}</option>
-              <option value="0">{{ t('permissions.scopes.global') }}</option>
-              <option value="1">{{ t('permissions.scopes.competition') }}</option>
-              <option value="2">{{ t('permissions.scopes.committee') }}</option>
-            </select>
-          </div>
+      <!-- ── Scope Accordion Sections ── -->
+      <template v-for="(scope, scopeIdx) in scopes" :key="scope.scope">
+        <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden shadow-sm">
 
-          <!-- Phase filter (only for competition scope) -->
-          <div v-if="selectedScope === 1 || selectedScope === null" class="flex-1 min-w-[180px]">
-            <label class="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">
-              {{ t('permissions.phase') }}
-            </label>
-            <select
-              :value="selectedPhase === null ? '' : selectedPhase"
-              @change="onPhaseChange"
-              class="w-full px-3 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg text-sm text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-            >
-              <option value="">{{ t('permissions.allPhases') }}</option>
-              <option v-for="(key, val) in COMPETITION_PHASES" :key="val" :value="val">
-                {{ t(`permissions.phases.${key}`) }}
-              </option>
-            </select>
-          </div>
+          <!-- Scope Header (Accordion Toggle) -->
+          <button
+            @click="toggleScope(scope.scope)"
+            class="w-full flex items-center justify-between px-5 py-4 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors"
+          >
+            <div class="flex items-center gap-3">
+              <div :class="[scopeColors[scope.scope]?.bg, scopeColors[scope.scope]?.border, 'p-2 rounded-lg border']">
+                <svg class="h-5 w-5" :class="scopeColors[scope.scope]?.text" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" :d="scopeIcons[scope.scope]" />
+                </svg>
+              </div>
+              <div class="text-start">
+                <h3 class="text-base font-semibold text-gray-900 dark:text-white">
+                  {{ getScopeName(scope) }}
+                </h3>
+                <p class="text-xs text-gray-500 dark:text-gray-400">
+                  {{ scope.resources.length }} {{ isArabic ? 'مورد' : 'resources' }}
+                </p>
+              </div>
+            </div>
+            <div class="flex items-center gap-3">
+              <span :class="[scopeColors[scope.scope]?.badge, 'text-xs px-2.5 py-1 rounded-full font-medium']">
+                {{ scope.resources.length }}
+              </span>
+              <svg
+                class="h-5 w-5 text-gray-400 transition-transform duration-200"
+                :class="{ 'rotate-180': expandedScopes.has(scope.scope) }"
+                fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"
+              >
+                <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
+              </svg>
+            </div>
+          </button>
 
-          <!-- Committee Role filter (only for committee scope) -->
-          <div v-if="selectedScope === 2 || selectedScope === null" class="flex-1 min-w-[180px]">
-            <label class="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">
-              {{ t('permissions.committee') }}
-            </label>
-            <select
-              :value="selectedCommitteeRole === null ? '' : selectedCommitteeRole"
-              @change="onCommitteeRoleChange"
-              class="w-full px-3 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg text-sm text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-            >
-              <option value="">{{ t('permissions.allCommitteeRoles') }}</option>
-              <option v-for="(key, val) in COMMITTEE_ROLES" :key="val" :value="val">
-                {{ t(`permissions.committeeRoles.${key}`) }}
-              </option>
-            </select>
-          </div>
-
-          <!-- Bulk actions -->
-          <div v-if="selectedRoleId" class="flex items-end gap-2 pt-5">
-            <button
-              @click="grantAllForRole"
-              class="px-3 py-2 text-xs font-medium bg-green-50 dark:bg-green-900/30 text-green-700 dark:text-green-300 border border-green-200 dark:border-green-800 rounded-lg hover:bg-green-100 dark:hover:bg-green-900/50 transition-colors"
-            >
-              {{ t('permissions.grantAll') }}
-            </button>
-            <button
-              @click="revokeAllForRole"
-              class="px-3 py-2 text-xs font-medium bg-red-50 dark:bg-red-900/30 text-red-700 dark:text-red-300 border border-red-200 dark:border-red-800 rounded-lg hover:bg-red-100 dark:hover:bg-red-900/50 transition-colors"
-            >
-              {{ t('permissions.revokeAll') }}
-            </button>
-          </div>
-        </div>
-      </div>
-
-      <!-- Permission Matrix Tables - one per scope -->
-      <template v-for="scope in [0, 1, 2]" :key="scope">
-        <div
-          v-if="groupedByScope[scope] && groupedByScope[scope].length > 0"
-          class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden"
-        >
-          <!-- Scope Header -->
-          <div class="px-5 py-3 border-b border-gray-200 dark:border-gray-700 flex items-center gap-3"
-               :class="{
-                 'bg-blue-50 dark:bg-blue-900/20': scope === 0,
-                 'bg-amber-50 dark:bg-amber-900/20': scope === 1,
-                 'bg-purple-50 dark:bg-purple-900/20': scope === 2,
-               }">
-            <div class="w-2 h-2 rounded-full"
-                 :class="{
-                   'bg-blue-500': scope === 0,
-                   'bg-amber-500': scope === 1,
-                   'bg-purple-500': scope === 2,
-                 }"></div>
-            <h2 class="text-base font-semibold"
-                :class="{
-                  'text-blue-800 dark:text-blue-300': scope === 0,
-                  'text-amber-800 dark:text-amber-300': scope === 1,
-                  'text-purple-800 dark:text-purple-300': scope === 2,
-                }">
-              {{ getScopeName(scope) }}
-            </h2>
-            <span class="text-xs px-2 py-0.5 rounded-full"
-                  :class="{
-                    'bg-blue-100 text-blue-700 dark:bg-blue-800 dark:text-blue-200': scope === 0,
-                    'bg-amber-100 text-amber-700 dark:bg-amber-800 dark:text-amber-200': scope === 1,
-                    'bg-purple-100 text-purple-700 dark:bg-purple-800 dark:text-purple-200': scope === 2,
-                  }">
-              {{ (groupedByScope[scope] || []).length }}
-            </span>
-          </div>
-
-          <!-- Matrix Table -->
-          <div class="overflow-x-auto">
-            <table class="w-full text-sm">
-              <thead>
-                <tr class="bg-gray-50 dark:bg-gray-900/50">
-                  <th class="text-start px-4 py-3 font-medium text-gray-600 dark:text-gray-300 min-w-[200px] sticky start-0 bg-gray-50 dark:bg-gray-900/50 z-10">
-                    {{ t('permissions.resource') }}
-                  </th>
-                  <th v-if="scope === 1" class="text-start px-3 py-3 font-medium text-gray-600 dark:text-gray-300 min-w-[120px]">
-                    {{ t('permissions.phase') }}
-                  </th>
-                  <th v-if="scope === 2" class="text-start px-3 py-3 font-medium text-gray-600 dark:text-gray-300 min-w-[140px]">
-                    {{ t('permissions.committee') }}
-                  </th>
-                  <th
-                    v-for="action in getActionsForScope(scope)"
-                    :key="action"
-                    class="text-center px-2 py-3 font-medium text-gray-600 dark:text-gray-300 min-w-[70px]"
-                  >
-                    {{ t(`permissions.actions.${action}`) }}
-                  </th>
-                  <th class="text-center px-3 py-3 font-medium text-gray-600 dark:text-gray-300 min-w-[80px]">
-                    {{ t('permissions.customized') }}
-                  </th>
-                </tr>
-              </thead>
-              <tbody class="divide-y divide-gray-100 dark:divide-gray-700">
-                <tr
-                  v-for="rule in (groupedByScope[scope] || [])"
-                  :key="rule.id"
-                  class="hover:bg-gray-50 dark:hover:bg-gray-900/30 transition-colors"
-                  :class="{ 'bg-amber-50/50 dark:bg-amber-900/10': pendingChanges.has(rule.id) }"
-                >
-                  <!-- Resource Name -->
-                  <td class="px-4 py-3 sticky start-0 bg-white dark:bg-gray-800 z-10"
-                      :class="{ '!bg-amber-50/50 dark:!bg-amber-900/10': pendingChanges.has(rule.id) }">
-                    <span class="font-medium text-gray-900 dark:text-white">{{ getResourceName(rule) }}</span>
-                  </td>
-
-                  <!-- Phase (for competition scope) -->
-                  <td v-if="scope === 1" class="px-3 py-3 text-xs text-gray-500 dark:text-gray-400">
-                    {{ getPhaseName(rule.competitionPhase) || '—' }}
-                  </td>
-
-                  <!-- Committee Role (for committee scope) -->
-                  <td v-if="scope === 2" class="px-3 py-3 text-xs text-gray-500 dark:text-gray-400">
-                    {{ getCommitteeRoleName(rule.committeeRole) || '—' }}
-                  </td>
-
-                  <!-- Action checkboxes -->
-                  <td
-                    v-for="action in getActionsForScope(scope)"
-                    :key="action"
-                    class="text-center px-2 py-3"
-                  >
-                    <label class="inline-flex items-center justify-center cursor-pointer">
-                      <input
-                        type="checkbox"
-                        :checked="hasAction(rule, action)"
-                        @change="toggleAction(rule, action)"
-                        class="w-4 h-4 rounded border-gray-300 dark:border-gray-600 text-blue-600 focus:ring-blue-500 dark:focus:ring-blue-400 dark:bg-gray-700 cursor-pointer"
-                      />
-                    </label>
-                  </td>
-
-                  <!-- Customized indicator -->
-                  <td class="text-center px-3 py-3">
-                    <span
-                      v-if="rule.isCustomized"
-                      class="text-[10px] px-2 py-1 rounded-full font-medium bg-amber-100 text-amber-700 dark:bg-amber-800 dark:text-amber-200"
+          <!-- Scope Content (Grid Table) -->
+          <div v-if="expandedScopes.has(scope.scope)" class="border-t border-gray-200 dark:border-gray-700">
+            <div class="overflow-x-auto">
+              <table class="w-full text-sm">
+                <thead>
+                  <tr class="bg-gray-50 dark:bg-gray-900/50">
+                    <!-- Resource Name Column (sticky) -->
+                    <th class="text-start px-4 py-3 font-semibold text-gray-700 dark:text-gray-200 min-w-[220px] sticky start-0 bg-gray-50 dark:bg-gray-900/50 z-20 border-e border-gray-200 dark:border-gray-700">
+                      {{ t('permissions.resource') }}
+                    </th>
+                    <!-- Role Columns -->
+                    <th
+                      v-for="role in roles"
+                      :key="role.id"
+                      class="text-center px-2 py-3 min-w-[120px] relative group"
                     >
-                      {{ t('permissions.customized') }}
-                    </span>
-                    <span
-                      v-else
-                      class="text-[10px] px-2 py-1 rounded-full font-medium bg-gray-100 text-gray-500 dark:bg-gray-700 dark:text-gray-400"
+                      <div class="flex flex-col items-center gap-1">
+                        <span
+                          class="text-xs font-semibold leading-tight"
+                          :class="role.isProtected ? 'text-amber-600 dark:text-amber-400' : 'text-gray-700 dark:text-gray-200'"
+                        >
+                          {{ getRoleName(role) }}
+                        </span>
+                        <span v-if="role.isProtected" class="text-[10px] text-amber-500 dark:text-amber-400 font-medium">
+                          {{ isArabic ? 'محمي' : 'Protected' }}
+                        </span>
+                        <!-- Role actions dropdown -->
+                        <div v-if="canEdit && !role.isProtected" class="flex gap-1 mt-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                          <button
+                            @click.stop="grantAllForRole(role.id)"
+                            class="text-[9px] px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-700 dark:bg-emerald-800 dark:text-emerald-200 hover:bg-emerald-200 dark:hover:bg-emerald-700 transition-colors"
+                            :title="t('permissions.grantAll')"
+                          >
+                            {{ isArabic ? 'منح' : 'All' }}
+                          </button>
+                          <button
+                            @click.stop="revokeAllForRole(role.id)"
+                            class="text-[9px] px-1.5 py-0.5 rounded bg-red-100 text-red-700 dark:bg-red-800 dark:text-red-200 hover:bg-red-200 dark:hover:bg-red-700 transition-colors"
+                            :title="t('permissions.revokeAll')"
+                          >
+                            {{ isArabic ? 'سحب' : 'None' }}
+                          </button>
+                        </div>
+                      </div>
+                    </th>
+                  </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-100 dark:divide-gray-700/50">
+                  <tr
+                    v-for="(resource, resourceIdx) in scope.resources"
+                    :key="`${resource.resourceType}-${resource.competitionPhase}-${resource.committeeRole}`"
+                    class="hover:bg-gray-50/50 dark:hover:bg-gray-800/50 transition-colors"
+                  >
+                    <!-- Resource Name (sticky) -->
+                    <td class="px-4 py-3 sticky start-0 bg-white dark:bg-gray-800 z-10 border-e border-gray-200 dark:border-gray-700">
+                      <div>
+                        <span class="font-medium text-gray-900 dark:text-white text-sm">
+                          {{ getResourceName(resource) }}
+                        </span>
+                        <span
+                          v-if="getResourceSubtext(resource)"
+                          class="block text-[11px] text-gray-400 dark:text-gray-500 mt-0.5"
+                        >
+                          {{ getResourceSubtext(resource) }}
+                        </span>
+                      </div>
+                    </td>
+
+                    <!-- Role Cells -->
+                    <td
+                      v-for="role in roles"
+                      :key="role.id"
+                      class="text-center px-2 py-2 relative"
+                      :class="{
+                        'bg-amber-50/60 dark:bg-amber-900/10': isCellModified(scopeIdx, resourceIdx, role.id),
+                      }"
                     >
-                      {{ t('permissions.default') }}
-                    </span>
-                  </td>
-                </tr>
-              </tbody>
-            </table>
+                      <!-- Compact Cell: Show action count badge + click to expand -->
+                      <div class="flex flex-col items-center gap-1">
+                        <!-- Action count indicator -->
+                        <button
+                          @click="toggleExpandedCell(scopeIdx, resourceIdx, role.id)"
+                          class="relative inline-flex items-center justify-center w-9 h-9 rounded-lg transition-all duration-150"
+                          :class="[
+                            getActiveActionsCount(scopeIdx, resourceIdx, role.id) > 0
+                              ? 'bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-200 dark:hover:bg-emerald-800/60'
+                              : 'bg-gray-100 dark:bg-gray-700/50 text-gray-400 dark:text-gray-500 hover:bg-gray-200 dark:hover:bg-gray-600/50',
+                            role.isProtected ? 'cursor-default' : 'cursor-pointer',
+                            isCellModified(scopeIdx, resourceIdx, role.id) ? 'ring-2 ring-amber-400 dark:ring-amber-500' : ''
+                          ]"
+                        >
+                          <span class="text-xs font-bold">
+                            {{ getActiveActionsCount(scopeIdx, resourceIdx, role.id) }}
+                          </span>
+                        </button>
+
+                        <!-- Expanded: Individual action toggles (popup) -->
+                        <div
+                          v-if="expandedCell === getCellKey(scopeIdx, resourceIdx, role.id)"
+                          class="absolute top-full start-1/2 -translate-x-1/2 z-30 mt-1 bg-white dark:bg-gray-800 rounded-xl shadow-xl border border-gray-200 dark:border-gray-700 p-3 min-w-[180px]"
+                          @click.stop
+                        >
+                          <div class="flex items-center justify-between mb-2 pb-2 border-b border-gray-100 dark:border-gray-700">
+                            <span class="text-xs font-semibold text-gray-700 dark:text-gray-200">
+                              {{ isArabic ? 'الإجراءات' : 'Actions' }}
+                            </span>
+                            <button
+                              v-if="canEdit && !role.isProtected"
+                              @click="toggleAllActionsForCell(scopeIdx, resourceIdx, role.id)"
+                              class="text-[10px] px-2 py-0.5 rounded bg-blue-100 text-blue-700 dark:bg-blue-800 dark:text-blue-200 hover:bg-blue-200 transition-colors"
+                            >
+                              {{ isArabic ? 'تبديل الكل' : 'Toggle All' }}
+                            </button>
+                          </div>
+                          <div class="space-y-1.5">
+                            <label
+                              v-for="action in getRelevantActions(scope.scope)"
+                              :key="action.key"
+                              class="flex items-center justify-between gap-3 py-1 px-1 rounded hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors"
+                              :class="canEdit && !role.isProtected ? 'cursor-pointer' : 'cursor-default opacity-70'"
+                            >
+                              <span class="text-xs text-gray-700 dark:text-gray-300">{{ getActionName(action) }}</span>
+                              <!-- Toggle Switch -->
+                              <button
+                                @click.prevent="toggleAction(scopeIdx, resourceIdx, role.id, action.flag)"
+                                :disabled="!canEdit || role.isProtected"
+                                class="relative inline-flex h-5 w-9 flex-shrink-0 rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none"
+                                :class="[
+                                  hasAction(scopeIdx, resourceIdx, role.id, action.flag)
+                                    ? 'bg-emerald-500'
+                                    : 'bg-gray-300 dark:bg-gray-600',
+                                  canEdit && !role.isProtected ? 'cursor-pointer' : 'cursor-not-allowed opacity-60'
+                                ]"
+                              >
+                                <span
+                                  class="pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out"
+                                  :class="hasAction(scopeIdx, resourceIdx, role.id, action.flag) ? 'translate-x-4 rtl:-translate-x-4' : 'translate-x-0'"
+                                />
+                              </button>
+                            </label>
+                          </div>
+                          <!-- Close button -->
+                          <button
+                            @click="expandedCell = null"
+                            class="mt-2 w-full text-center text-[10px] text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 py-1 transition-colors"
+                          >
+                            {{ isArabic ? 'إغلاق' : 'Close' }}
+                          </button>
+                        </div>
+                      </div>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
           </div>
         </div>
       </template>
 
-      <!-- No results for current filters -->
-      <div v-if="filteredRules.length === 0 && hasRules" class="text-center py-12">
-        <svg class="h-12 w-12 text-gray-300 dark:text-gray-600 mx-auto mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-        </svg>
-        <p class="text-gray-500 dark:text-gray-400">{{ t('permissions.noRolesForStage') }}</p>
+      <!-- Legend -->
+      <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-4">
+        <h4 class="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-3">
+          {{ isArabic ? 'دليل الألوان' : 'Legend' }}
+        </h4>
+        <div class="flex flex-wrap gap-4 text-xs">
+          <div class="flex items-center gap-2">
+            <div class="w-8 h-8 rounded-lg bg-emerald-100 dark:bg-emerald-900/40 flex items-center justify-center text-emerald-700 dark:text-emerald-300 font-bold text-xs">5</div>
+            <span class="text-gray-600 dark:text-gray-400">{{ isArabic ? 'صلاحيات مفعلة' : 'Active permissions' }}</span>
+          </div>
+          <div class="flex items-center gap-2">
+            <div class="w-8 h-8 rounded-lg bg-gray-100 dark:bg-gray-700/50 flex items-center justify-center text-gray-400 dark:text-gray-500 font-bold text-xs">0</div>
+            <span class="text-gray-600 dark:text-gray-400">{{ isArabic ? 'بدون صلاحيات' : 'No permissions' }}</span>
+          </div>
+          <div class="flex items-center gap-2">
+            <div class="w-8 h-8 rounded-lg bg-emerald-100 dark:bg-emerald-900/40 ring-2 ring-amber-400 flex items-center justify-center text-emerald-700 dark:text-emerald-300 font-bold text-xs">3</div>
+            <span class="text-gray-600 dark:text-gray-400">{{ isArabic ? 'تم التعديل (غير محفوظ)' : 'Modified (unsaved)' }}</span>
+          </div>
+          <div class="flex items-center gap-2">
+            <span class="text-amber-600 dark:text-amber-400 font-semibold">{{ isArabic ? 'محمي' : 'Protected' }}</span>
+            <span class="text-gray-600 dark:text-gray-400">{{ isArabic ? 'دور محمي لا يمكن تعديله' : 'Protected role (read-only)' }}</span>
+          </div>
+        </div>
       </div>
     </div>
+
+    <!-- Click-away overlay for expanded cells -->
+    <div
+      v-if="expandedCell"
+      class="fixed inset-0 z-20"
+      @click="expandedCell = null"
+    />
   </div>
 </template>

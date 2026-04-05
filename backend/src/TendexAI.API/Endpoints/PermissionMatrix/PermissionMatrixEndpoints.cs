@@ -77,6 +77,16 @@ public static class PermissionMatrixEndpoints
         group.MapPost("/seed", SeedDefaultRulesAsync)
             .WithName("SeedDefaultPermissionRules")
             .WithDescription("Seeds default permission matrix rules for the current tenant");
+
+        // Get the full permission matrix as a grid (rows = resources, columns = roles)
+        group.MapGet("/grid", GetMatrixGridAsync)
+            .WithName("GetPermissionMatrixGrid")
+            .WithDescription("Gets the full permission matrix in grid format with roles as columns and resources as rows");
+
+        // Bulk update multiple cells in the grid
+        group.MapPut("/grid/bulk-update", BulkUpdateGridCellsAsync)
+            .WithName("BulkUpdateGridCells")
+            .WithDescription("Bulk updates permission matrix cells from the grid view");
     }
 
     private static async Task<IResult> GetMatrixAsync(
@@ -327,6 +337,215 @@ public static class PermissionMatrixEndpoints
         return Results.Ok(new { message = "Default rules seeded successfully", rulesCount = defaultRules.Count });
     }
 
+    /// <summary>
+    /// Returns the full permission matrix in grid format.
+    /// Rows = resources (grouped by scope), Columns = roles.
+    /// Each cell contains the ruleId, allowedActions bitmask, and isCustomized flag.
+    /// </summary>
+    private static async Task<IResult> GetMatrixGridAsync(
+        [FromServices] IPermissionMatrixRepository repository,
+        [FromServices] IRoleRepository roleRepository,
+        HttpContext httpContext,
+        CancellationToken cancellationToken)
+    {
+        var tenantId = GetTenantId(httpContext);
+        if (tenantId == Guid.Empty)
+            return Results.Unauthorized();
+
+        // 1. Fetch all roles for this tenant
+        var roles = await roleRepository.GetByTenantIdAsync(tenantId, cancellationToken);
+        var activeRoles = roles
+            .Where(r => r.IsActive)
+            .OrderByDescending(r => r.IsProtected)
+            .ThenBy(r => r.NameEn)
+            .Select(r => new GridRoleColumn
+            {
+                Id = r.Id,
+                NameAr = r.NameAr,
+                NameEn = r.NameEn,
+                NormalizedName = r.NormalizedName,
+                IsProtected = r.IsProtected,
+                IsSystemRole = r.IsSystemRole
+            })
+            .ToList();
+
+        // 2. Fetch all rules for this tenant
+        var allRules = await repository.GetAllByTenantAsync(tenantId, cancellationToken);
+
+        // 3. Build a lookup: (roleId, scope, resourceType, committeeRole, competitionPhase) -> rule
+        var ruleLookup = allRules.ToDictionary(
+            r => (r.RoleId, r.Scope, r.ResourceType, r.CommitteeRole, r.CompetitionPhase),
+            r => r);
+
+        // 4. Determine all unique resource rows from existing rules
+        var resourceRows = allRules
+            .Select(r => (r.Scope, r.ResourceType, r.CommitteeRole, r.CompetitionPhase))
+            .Distinct()
+            .OrderBy(r => r.Scope)
+            .ThenBy(r => r.ResourceType)
+            .ThenBy(r => r.CompetitionPhase)
+            .ThenBy(r => r.CommitteeRole)
+            .ToList();
+
+        // 5. Group by scope
+        var scopeGroups = new List<GridScopeGroup>();
+        foreach (var scopeValue in new[] { ResourceScope.Global, ResourceScope.Competition, ResourceScope.Committee })
+        {
+            var scopeRows = resourceRows.Where(r => r.Scope == scopeValue).ToList();
+            if (scopeRows.Count == 0) continue;
+
+            var resources = new List<GridResourceRow>();
+            foreach (var row in scopeRows)
+            {
+                var cells = new Dictionary<string, GridCell>();
+                foreach (var role in activeRoles)
+                {
+                    var key = (role.Id, row.Scope, row.ResourceType, row.CommitteeRole, row.CompetitionPhase);
+                    if (ruleLookup.TryGetValue(key, out var rule))
+                    {
+                        cells[role.Id.ToString()] = new GridCell
+                        {
+                            RuleId = rule.Id,
+                            AllowedActions = (int)rule.AllowedActions,
+                            IsCustomized = rule.IsCustomized
+                        };
+                    }
+                    else
+                    {
+                        // No rule exists for this combination — empty cell (no access)
+                        cells[role.Id.ToString()] = new GridCell
+                        {
+                            RuleId = null,
+                            AllowedActions = 0,
+                            IsCustomized = false
+                        };
+                    }
+                }
+
+                resources.Add(new GridResourceRow
+                {
+                    ResourceType = (int)row.ResourceType,
+                    ResourceTypeNameAr = GetResourceTypeNameAr(row.ResourceType),
+                    ResourceTypeNameEn = GetResourceTypeNameEn(row.ResourceType),
+                    CommitteeRole = row.CommitteeRole.HasValue ? (int?)row.CommitteeRole.Value : null,
+                    CommitteeRoleNameAr = row.CommitteeRole.HasValue ? GetCommitteeRoleNameAr(row.CommitteeRole.Value) : null,
+                    CommitteeRoleNameEn = row.CommitteeRole.HasValue ? row.CommitteeRole.Value.ToString() : null,
+                    CompetitionPhase = row.CompetitionPhase.HasValue ? (int?)row.CompetitionPhase.Value : null,
+                    CompetitionPhaseNameAr = row.CompetitionPhase.HasValue ? GetCompetitionPhaseNameAr(row.CompetitionPhase.Value) : null,
+                    CompetitionPhaseNameEn = row.CompetitionPhase.HasValue ? row.CompetitionPhase.Value.ToString() : null,
+                    Cells = cells
+                });
+            }
+
+            scopeGroups.Add(new GridScopeGroup
+            {
+                Scope = (int)scopeValue,
+                ScopeNameAr = GetScopeNameAr(scopeValue),
+                ScopeNameEn = scopeValue.ToString(),
+                Resources = resources
+            });
+        }
+
+        // 6. Build actions metadata
+        var actions = new[]
+        {
+            new GridActionMeta { Key = "read", Flag = 1, NameAr = "عرض", NameEn = "Read" },
+            new GridActionMeta { Key = "create", Flag = 2, NameAr = "إنشاء", NameEn = "Create" },
+            new GridActionMeta { Key = "update", Flag = 4, NameAr = "تعديل", NameEn = "Update" },
+            new GridActionMeta { Key = "delete", Flag = 8, NameAr = "حذف", NameEn = "Delete" },
+            new GridActionMeta { Key = "approve", Flag = 16, NameAr = "اعتماد", NameEn = "Approve" },
+            new GridActionMeta { Key = "reject", Flag = 32, NameAr = "رفض", NameEn = "Reject" },
+            new GridActionMeta { Key = "submit", Flag = 64, NameAr = "إرسال", NameEn = "Submit" },
+            new GridActionMeta { Key = "upload", Flag = 128, NameAr = "رفع", NameEn = "Upload" },
+            new GridActionMeta { Key = "score", Flag = 256, NameAr = "تقييم", NameEn = "Score" },
+            new GridActionMeta { Key = "sign", Flag = 512, NameAr = "توقيع", NameEn = "Sign" }
+        };
+
+        return Results.Ok(new PermissionMatrixGridResponse
+        {
+            Roles = activeRoles,
+            Scopes = scopeGroups,
+            Actions = actions.ToList()
+        });
+    }
+
+    /// <summary>
+    /// Bulk updates multiple cells in the permission matrix grid.
+    /// Creates new rules for cells that don't have existing rules.
+    /// </summary>
+    private static async Task<IResult> BulkUpdateGridCellsAsync(
+        [FromBody] GridBulkUpdateRequest request,
+        [FromServices] IPermissionMatrixRepository repository,
+        [FromServices] IRoleRepository roleRepository,
+        HttpContext httpContext,
+        CancellationToken cancellationToken)
+    {
+        var tenantId = GetTenantId(httpContext);
+        if (tenantId == Guid.Empty)
+            return Results.Unauthorized();
+
+        var userId = GetCurrentUserId(httpContext);
+        var updatedCount = 0;
+        var createdCount = 0;
+
+        foreach (var cell in request.Cells)
+        {
+            // Prevent modifying protected roles
+            var role = await roleRepository.GetByIdAsync(cell.RoleId, cancellationToken);
+            if (role is not null && role.IsProtected)
+                continue;
+
+            if (cell.RuleId.HasValue && cell.RuleId.Value != Guid.Empty)
+            {
+                // Update existing rule
+                var existingRule = await repository.GetByIdAsync(cell.RuleId.Value, cancellationToken);
+                if (existingRule != null)
+                {
+                    existingRule.UpdateAllowedActions((PermissionAction)cell.AllowedActions, userId);
+                    updatedCount++;
+                }
+            }
+            else
+            {
+                // Create new rule for this combination
+                var scope = (ResourceScope)cell.Scope;
+                var resourceType = (ResourceType)cell.ResourceType;
+                var committeeRole = cell.CommitteeRole.HasValue ? (CommitteeRole?)cell.CommitteeRole.Value : null;
+                var competitionPhase = cell.CompetitionPhase.HasValue ? (CompetitionPhase?)cell.CompetitionPhase.Value : null;
+
+                // Check if a rule already exists for this exact combination
+                var existing = await repository.GetRuleAsync(
+                    cell.RoleId, scope, resourceType, committeeRole, competitionPhase, cancellationToken);
+
+                if (existing != null)
+                {
+                    existing.UpdateAllowedActions((PermissionAction)cell.AllowedActions, userId);
+                    updatedCount++;
+                }
+                else
+                {
+                    var newRule = PermissionMatrixRule.Create(
+                        tenantId, cell.RoleId, scope, resourceType,
+                        (PermissionAction)cell.AllowedActions,
+                        committeeRole, competitionPhase,
+                        isCustomized: true, createdBy: userId);
+                    await repository.AddAsync(newRule, cancellationToken);
+                    createdCount++;
+                }
+            }
+        }
+
+        await repository.SaveChangesAsync(cancellationToken);
+
+        return Results.Ok(new
+        {
+            message = "Grid cells updated successfully",
+            updatedCount,
+            createdCount,
+            totalProcessed = updatedCount + createdCount
+        });
+    }
+
     // ═══════════════════════════════════════════════════════════════
     //  Helper Methods
     // ═══════════════════════════════════════════════════════════════
@@ -458,6 +677,35 @@ public static class PermissionMatrixEndpoints
         _ => type.ToString()
     };
 
+    private static string GetCommitteeRoleNameAr(CommitteeRole role) => role switch
+    {
+        CommitteeRole.None => "بدون لجنة",
+        CommitteeRole.PreparationCommitteeChair => "رئيس لجنة الإعداد",
+        CommitteeRole.PreparationCommitteeMember => "عضو لجنة الإعداد",
+        CommitteeRole.TechnicalExamCommitteeChair => "رئيس لجنة الفحص الفني",
+        CommitteeRole.TechnicalExamCommitteeMember => "عضو لجنة الفحص الفني",
+        CommitteeRole.FinancialExamCommitteeChair => "رئيس لجنة الفحص المالي",
+        CommitteeRole.FinancialExamCommitteeMember => "عضو لجنة الفحص المالي",
+        CommitteeRole.InquiryReviewCommitteeChair => "رئيس لجنة الاستفسارات",
+        CommitteeRole.InquiryReviewCommitteeMember => "عضو لجنة الاستفسارات",
+        CommitteeRole.CommitteeSecretary => "سكرتير اللجنة",
+        _ => role.ToString()
+    };
+
+    private static string GetCompetitionPhaseNameAr(CompetitionPhase phase) => phase switch
+    {
+        CompetitionPhase.BookletPreparation => "إعداد الكراسة",
+        CompetitionPhase.BookletApproval => "اعتماد الكراسة",
+        CompetitionPhase.BookletPublishing => "طرح الكراسة",
+        CompetitionPhase.OfferReception => "استقبال العروض",
+        CompetitionPhase.TechnicalAnalysis => "التحليل الفني",
+        CompetitionPhase.FinancialAnalysis => "التحليل المالي",
+        CompetitionPhase.AwardNotification => "إشعار الترسية",
+        CompetitionPhase.ContractApproval => "إجازة العقد",
+        CompetitionPhase.ContractSigning => "توقيع العقد",
+        _ => phase.ToString()
+    };
+
     private static string GetResourceTypeNameEn(ResourceType type) => type switch
     {
         ResourceType.Organization => "Organization",
@@ -532,3 +780,86 @@ public sealed record BulkRuleUpdate(
     CommitteeRole? CommitteeRole,
     CompetitionPhase? CompetitionPhase,
     PermissionAction AllowedActions);
+
+// ═══════════════════════════════════════════════════════════════
+//  Grid View DTOs
+// ═══════════════════════════════════════════════════════════════
+
+/// <summary>Full grid response: roles as columns, resources as rows grouped by scope.</summary>
+public sealed class PermissionMatrixGridResponse
+{
+    public List<GridRoleColumn> Roles { get; set; } = [];
+    public List<GridScopeGroup> Scopes { get; set; } = [];
+    public List<GridActionMeta> Actions { get; set; } = [];
+}
+
+/// <summary>A role column in the grid.</summary>
+public sealed class GridRoleColumn
+{
+    public Guid Id { get; set; }
+    public string NameAr { get; set; } = "";
+    public string NameEn { get; set; } = "";
+    public string NormalizedName { get; set; } = "";
+    public bool IsProtected { get; set; }
+    public bool IsSystemRole { get; set; }
+}
+
+/// <summary>A scope group containing resource rows.</summary>
+public sealed class GridScopeGroup
+{
+    public int Scope { get; set; }
+    public string ScopeNameAr { get; set; } = "";
+    public string ScopeNameEn { get; set; } = "";
+    public List<GridResourceRow> Resources { get; set; } = [];
+}
+
+/// <summary>A resource row in the grid with cells for each role.</summary>
+public sealed class GridResourceRow
+{
+    public int ResourceType { get; set; }
+    public string ResourceTypeNameAr { get; set; } = "";
+    public string ResourceTypeNameEn { get; set; } = "";
+    public int? CommitteeRole { get; set; }
+    public string? CommitteeRoleNameAr { get; set; }
+    public string? CommitteeRoleNameEn { get; set; }
+    public int? CompetitionPhase { get; set; }
+    public string? CompetitionPhaseNameAr { get; set; }
+    public string? CompetitionPhaseNameEn { get; set; }
+    /// <summary>Dictionary: roleId (string) -> cell data.</summary>
+    public Dictionary<string, GridCell> Cells { get; set; } = new();
+}
+
+/// <summary>A single cell in the grid (intersection of resource row and role column).</summary>
+public sealed class GridCell
+{
+    public Guid? RuleId { get; set; }
+    public int AllowedActions { get; set; }
+    public bool IsCustomized { get; set; }
+}
+
+/// <summary>Action metadata for the grid UI.</summary>
+public sealed class GridActionMeta
+{
+    public string Key { get; set; } = "";
+    public int Flag { get; set; }
+    public string NameAr { get; set; } = "";
+    public string NameEn { get; set; } = "";
+}
+
+/// <summary>Request to bulk update grid cells.</summary>
+public sealed class GridBulkUpdateRequest
+{
+    public List<GridCellUpdate> Cells { get; set; } = [];
+}
+
+/// <summary>A single cell update in the grid.</summary>
+public sealed class GridCellUpdate
+{
+    public Guid? RuleId { get; set; }
+    public Guid RoleId { get; set; }
+    public int Scope { get; set; }
+    public int ResourceType { get; set; }
+    public int? CommitteeRole { get; set; }
+    public int? CompetitionPhase { get; set; }
+    public int AllowedActions { get; set; }
+}
