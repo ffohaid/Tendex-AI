@@ -300,19 +300,23 @@ const routes: RouteRecordRaw[] = [
         component: () => import('@/views/knowledge-base/KnowledgeBaseView.vue'),
         meta: { title: 'Tendex AI - Knowledge Base', requiresAuth: true, requiredPermission: 'knowledgebase.view' },
       },
-      /* Competition Templates */
+      /* Unified Template Library (replaces separate RfpTemplates & BookletTemplates) */
+      {
+        path: 'rfp/template-library',
+        name: 'TemplateLibrary',
+        component: () => import('@/views/rfp/TemplateLibraryView.vue'),
+        meta: { title: 'Tendex AI - Template Library', requiresAuth: true, requiredPermission: 'templates.view' },
+      },
+      /* Legacy routes - redirect to unified library */
       {
         path: 'rfp/templates',
         name: 'RfpTemplates',
-        component: () => import('@/views/rfp/RfpTemplatesView.vue'),
-        meta: { title: 'Tendex AI - Competition Templates', requiresAuth: true, requiredPermission: 'templates.view' },
+        redirect: { name: 'TemplateLibrary' },
       },
-      /* Booklet Templates (EXPRO Official Templates) */
       {
         path: 'rfp/booklet-templates',
         name: 'BookletTemplates',
-        component: () => import('@/views/rfp/BookletTemplatesView.vue'),
-        meta: { title: 'Tendex AI - Booklet Templates', requiresAuth: true, requiredPermission: 'templates.view' },
+        redirect: { name: 'TemplateLibrary' },
       },
       {
         path: 'rfp/booklet-editor/:id',

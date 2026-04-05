@@ -122,7 +122,8 @@
     "rfp": {
       "title": "Specifications Books Management",
       "list": "View Books",
-      "create": "Create New Book"
+      "create": "Create New Book",
+      "templateLibrary": "Template Library"
     },
     "committees": {
       "title": "Committees",

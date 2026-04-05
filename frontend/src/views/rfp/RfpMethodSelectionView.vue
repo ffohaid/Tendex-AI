@@ -159,7 +159,7 @@ const methods: CreationMethod[] = [
     badgeColor: 'bg-accent text-white',
     gradient: 'from-purple-50 to-indigo-50 border-purple-200 hover:border-purple-400',
     iconBg: 'bg-purple-100 text-purple-600',
-    action: () => router.push({ name: 'RfpTemplates' }),
+    action: () => router.push({ name: 'TemplateLibrary' }),
   },
 ]
 
