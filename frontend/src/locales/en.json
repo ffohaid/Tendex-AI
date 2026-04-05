@@ -302,7 +302,11 @@
     "editModel": "Edit Model",
     "deleteModel": "Delete Model",
     "noModels": "No AI models configured yet",
-    "noModelsDesc": "Add an AI model to enable intelligent services on the platform"
+    "noModelsDesc": "Add an AI model to enable intelligent services on the platform",
+    "modelNameRequired": "Model name is required",
+    "apiKeyRequired": "API key is required for new configurations",
+    "invalidEndpoint": "Endpoint must be a valid URL (starting with https://)",
+    "apiKeyEditHint": "Leave empty to keep current key"
   },
   "sidebar": {
     "collapse": "Collapse Menu",

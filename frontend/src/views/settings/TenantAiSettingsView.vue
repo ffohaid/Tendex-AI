@@ -17,7 +17,7 @@ import httpClient from '@/services/http'
 const { t } = useI18n()
 const authStore = useAuthStore()
 
-const canConfigureAi = computed(() => authStore.hasPermission('ai.configure'))
+const canConfigureAi = computed(() => authStore.hasPermission('ai.settings_manage'))
 
 /* ---- Types ---- */
 interface AiModel {
@@ -73,6 +73,29 @@ const deploymentTypes = computed(() => [
   { value: 2, label: t('tenantAiSettings.onPremise'), icon: 'pi-server', color: 'text-success' },
   { value: 3, label: t('tenantAiSettings.hybrid'), icon: 'pi-sitemap', color: 'text-primary' },
 ])
+
+/* ---- Computed ---- */
+const endpointPlaceholder = computed(() => {
+  const placeholders: Record<number, string> = {
+    0: 'https://api.openai.com/v1',
+    1: 'https://YOUR-RESOURCE.openai.azure.com/',
+    2: 'https://generativelanguage.googleapis.com/v1beta',
+    3: 'https://api.anthropic.com/v1',
+    99: 'https://your-custom-endpoint.com/v1',
+  }
+  return placeholders[form.provider] ?? 'https://api.example.com/v1'
+})
+
+const apiKeyPlaceholder = computed(() => {
+  const placeholders: Record<number, string> = {
+    0: 'sk-...',
+    1: 'Azure API Key',
+    2: 'AIza...',
+    3: 'sk-ant-...',
+    99: 'API Key',
+  }
+  return placeholders[form.provider] ?? 'API Key'
+})
 
 /* ---- Methods ---- */
 async function loadModels(): Promise<void> {
@@ -145,39 +168,86 @@ function cancelForm(): void {
 async function saveModel(): Promise<void> {
   isSaving.value = true
   clearMessages()
+
+  // Validate required fields
+  if (!form.modelName.trim()) {
+    errorMessage.value = t('tenantAiSettings.modelNameRequired')
+    isSaving.value = false
+    return
+  }
+  if (!editingId.value && !form.apiKey.trim()) {
+    errorMessage.value = t('tenantAiSettings.apiKeyRequired')
+    isSaving.value = false
+    return
+  }
+  if (form.endpoint && !isValidUrl(form.endpoint)) {
+    errorMessage.value = t('tenantAiSettings.invalidEndpoint')
+    isSaving.value = false
+    return
+  }
+
   try {
     const tenantId = localStorage.getItem('tenant_id') || ''
-    const payload = {
-      tenantId,
-      provider: form.provider,
-      modelName: form.modelName,
-      endpoint: form.endpoint || null,
-      apiKey: form.apiKey || null,
-      maxTokens: form.maxTokens,
-      temperature: form.temperature,
-      priority: form.priority,
-      isActive: form.isActive,
-      deploymentType: form.deploymentType,
-      description: form.description || null,
-    }
+    const isEditing = !!editingId.value
 
-    if (editingId.value) {
-      await httpClient.put(`/v1/ai/configurations/${editingId.value}`, payload)
+    if (isEditing) {
+      // Update only model settings (no provider/apiKey change)
+      const updatePayload = {
+        modelName: form.modelName,
+        endpoint: form.endpoint || null,
+        maxTokens: form.maxTokens,
+        temperature: form.temperature,
+        priority: form.priority,
+        deploymentType: form.deploymentType,
+        description: form.description || null,
+      }
+      await httpClient.put(`/v1/ai/configurations/${editingId.value}`, updatePayload)
+
+      // If API key was changed, rotate it separately
+      if (form.apiKey.trim()) {
+        await httpClient.post(`/v1/ai/configurations/${editingId.value}/rotate-key`, {
+          newApiKey: form.apiKey,
+        })
+      }
     } else {
-      await httpClient.post('/v1/ai/configurations', payload)
+      // Create new configuration
+      const createPayload = {
+        tenantId,
+        provider: form.provider,
+        modelName: form.modelName,
+        apiKey: form.apiKey,
+        endpoint: form.endpoint || null,
+        maxTokens: form.maxTokens,
+        temperature: form.temperature,
+        priority: form.priority,
+        deploymentType: form.deploymentType,
+        description: form.description || null,
+      }
+      await httpClient.post('/v1/ai/configurations', createPayload)
     }
 
     await loadModels()
+    const savedEditingId = editingId.value
     showForm.value = false
     editingId.value = null
-    successMessage.value = editingId.value
+    successMessage.value = savedEditingId
       ? t('tenantAiSettings.editModel')
       : t('tenantAiSettings.addModel')
     autoHideSuccess()
-  } catch {
-    errorMessage.value = t('activeDirectory.settingsError')
+  } catch (err: any) {
+    const msg = err?.response?.data?.errorMessage || err?.response?.data?.message
+    errorMessage.value = msg || t('activeDirectory.settingsError')
   } finally {
     isSaving.value = false
+  }
+}
+
+function isValidUrl(str: string): boolean {
+  try {
+    const url = new URL(str)
+    return url.protocol === 'https:' || url.protocol === 'http:'
+  } catch {
+    return false
   }
 }
 
@@ -331,9 +401,9 @@ onMounted(() => {
               <label class="mb-1.5 block text-sm font-medium text-secondary">{{ t('tenantAiSettings.endpoint') }}</label>
               <input
                 v-model="form.endpoint"
-                type="text"
+                type="url"
                 dir="ltr"
-                placeholder="https://api.openai.com/v1"
+                :placeholder="endpointPlaceholder"
                 class="w-full rounded-xl border border-secondary-200 px-4 py-2.5 text-sm text-secondary outline-none transition-all focus:border-primary focus:ring-2 focus:ring-primary/20"
               />
             </div>
@@ -343,7 +413,7 @@ onMounted(() => {
                 v-model="form.apiKey"
                 type="password"
                 dir="ltr"
-                placeholder="sk-..."
+                :placeholder="editingId ? t('tenantAiSettings.apiKeyEditHint') : apiKeyPlaceholder"
                 class="w-full rounded-xl border border-secondary-200 px-4 py-2.5 text-sm text-secondary outline-none transition-all focus:border-primary focus:ring-2 focus:ring-primary/20"
               />
             </div>
@@ -411,7 +481,7 @@ onMounted(() => {
             <button
               type="button"
               class="flex items-center gap-2 rounded-xl bg-primary px-5 py-2.5 text-sm font-medium text-white transition-colors hover:bg-primary-dark"
-              :disabled="isSaving || !form.modelName"
+              :disabled="isSaving || !form.modelName || (!editingId && !form.apiKey)"
               @click="saveModel"
             >
               <i v-if="isSaving" class="pi pi-spinner pi-spin text-sm"></i>
