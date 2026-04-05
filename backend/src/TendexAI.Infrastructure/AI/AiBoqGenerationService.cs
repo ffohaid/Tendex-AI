@@ -536,6 +536,7 @@ public sealed class AiBoqGenerationService : IAiBoqGenerationService
         try
         {
             var jsonContent = ExtractJsonFromResponse(aiContent);
+            var wasRepaired = !aiContent.TrimEnd().EndsWith('}') && jsonContent.EndsWith('}');
 
             var parsed = JsonSerializer.Deserialize<BoqJsonResponse>(jsonContent, s_jsonOptions);
 
@@ -563,6 +564,13 @@ public sealed class AiBoqGenerationService : IAiBoqGenerationService
 
             // Validate: prices must have sources (anti-hallucination)
             var warnings = new List<string>(parsed.Warnings ?? []);
+
+            // Add warning if the response was truncated and repaired
+            if (wasRepaired)
+            {
+                warnings.Insert(0,
+                    "تحذير: تم اقتطاع استجابة الذكاء الاصطناعي بسبب الوصول للحد الأقصى من الرموز. قد تكون بعض البنود مفقودة — يُرجى المراجعة وإعادة التوليد إذا لزم الأمر.");
+            }
             foreach (var item in items)
             {
                 if (item.EstimatedUnitPrice.HasValue &&
@@ -642,7 +650,8 @@ public sealed class AiBoqGenerationService : IAiBoqGenerationService
     // ═══════════════════════════════════════════════════════════════
 
     /// <summary>
-    /// Extracts JSON content from AI response, handling potential markdown code blocks.
+    /// Extracts JSON content from AI response, handling potential markdown code blocks
+    /// and truncated responses that may occur when the AI reaches its token limit.
     /// </summary>
     private static string ExtractJsonFromResponse(string content)
     {
@@ -678,7 +687,145 @@ public sealed class AiBoqGenerationService : IAiBoqGenerationService
             return trimmed[firstBrace..(lastBrace + 1)];
         }
 
+        // Handle truncated JSON: if we have an opening brace but no proper closing,
+        // the AI response was likely cut off due to token limits.
+        // Attempt to repair by closing open structures.
+        if (firstBrace >= 0)
+        {
+            return RepairTruncatedJson(trimmed[firstBrace..]);
+        }
+
         return trimmed;
+    }
+
+    /// <summary>
+    /// Attempts to repair truncated JSON by closing any open brackets, braces, and strings.
+    /// This handles cases where the AI response is cut off mid-generation due to token limits.
+    /// </summary>
+    private static string RepairTruncatedJson(string truncatedJson)
+    {
+        var sb = new StringBuilder(truncatedJson);
+
+        // Remove any trailing incomplete key-value pair or partial string
+        var lastComplete = FindLastCompleteElement(truncatedJson);
+        if (lastComplete > 0 && lastComplete < truncatedJson.Length - 1)
+        {
+            sb = new StringBuilder(truncatedJson[..(lastComplete + 1)]);
+        }
+
+        // Count open/close brackets and braces
+        var inString = false;
+        var escape = false;
+        var openBraces = 0;
+        var openBrackets = 0;
+
+        foreach (var ch in sb.ToString())
+        {
+            if (escape)
+            {
+                escape = false;
+                continue;
+            }
+
+            if (ch == '\\' && inString)
+            {
+                escape = true;
+                continue;
+            }
+
+            if (ch == '"')
+            {
+                inString = !inString;
+                continue;
+            }
+
+            if (inString) continue;
+
+            switch (ch)
+            {
+                case '{':
+                    openBraces++;
+                    break;
+                case '}':
+                    openBraces--;
+                    break;
+                case '[':
+                    openBrackets++;
+                    break;
+                case ']':
+                    openBrackets--;
+                    break;
+            }
+        }
+
+        // Close any unclosed string
+        if (inString)
+        {
+            sb.Append('"');
+        }
+
+        // Remove trailing comma if present
+        var result = sb.ToString().TrimEnd();
+        if (result.EndsWith(','))
+        {
+            result = result[..^1];
+        }
+
+        sb = new StringBuilder(result);
+
+        // Close open brackets first, then braces
+        for (var i = 0; i < openBrackets; i++)
+            sb.Append(']');
+        for (var i = 0; i < openBraces; i++)
+            sb.Append('}');
+
+        return sb.ToString();
+    }
+
+    /// <summary>
+    /// Finds the index of the last complete JSON element (after a comma, closing brace/bracket,
+    /// or complete value) to trim any partial element from the truncated response.
+    /// </summary>
+    private static int FindLastCompleteElement(string json)
+    {
+        var inString = false;
+        var escape = false;
+        var lastGoodIndex = -1;
+
+        for (var i = 0; i < json.Length; i++)
+        {
+            var ch = json[i];
+
+            if (escape)
+            {
+                escape = false;
+                continue;
+            }
+
+            if (ch == '\\' && inString)
+            {
+                escape = true;
+                continue;
+            }
+
+            if (ch == '"')
+            {
+                inString = !inString;
+                if (!inString)
+                    lastGoodIndex = i; // End of string
+                continue;
+            }
+
+            if (inString) continue;
+
+            // These characters indicate a complete element boundary
+            if (ch is '}' or ']' or ',' || (ch >= '0' && ch <= '9') || ch == 'l' || ch == 'e')
+            {
+                lastGoodIndex = i;
+            }
+        }
+
+        return lastGoodIndex;
     }
 
     /// <summary>

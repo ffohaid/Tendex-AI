@@ -26,6 +26,19 @@
 
 *يرجى إضافة أحدث مهمة منجزة في أعلى هذه القائمة.*
 
+### 2026-04-05 - fix: Add Gemini 2.5 Flash provider & repair truncated JSON in BOQ generation
+- **الحالة:** ✅ مكتمل
+- **التغييرات:**
+  - Added Gemini 2.5 Flash as primary AI provider for MOF tenant (priority 1)
+  - Disabled obsolete gemini-2.0-flash configuration (no longer available from Google)
+  - Updated maxTokens for Gemini to 65536 and OpenAI to 16384
+  - Added `RepairTruncatedJson` and `FindLastCompleteElement` methods to `AiBoqGenerationService.cs`
+  - Enhanced `ExtractJsonFromResponse` to handle truncated AI responses gracefully
+  - Added user-facing warning when AI response is truncated and repaired
+  - Fixed backend container networking (tendex-prod-network) and all environment variables
+- **الملفات المعدلة:**
+  - `backend/src/TendexAI.Infrastructure/AI/AiBoqGenerationService.cs` (+148 lines)
+
 ### 2026-04-05 - fix: Backend container rebuild with all env vars & DELETE AI config tested
 - **الحالة:** ✅ مكتمل
 - **الوصف:** إصلاح مشكلة تسجيل الدخول (500 Error) الناتجة عن توقف الحاويات المساعدة وفقدان متغير `Security__EncryptionKey`، واختبار وظيفة حذف إعدادات AI.
