@@ -15,15 +15,19 @@
  */
 import { ref, onMounted, computed } from 'vue'
 import { useI18n } from 'vue-i18n'
+import { useAuthStore } from '@/stores/auth'
 import { useTenantStore } from '@/stores/tenant'
 import { useBrandingStore } from '@/stores/branding'
 import { useFormatters } from '@/composables/useFormatters'
 import * as brandingService from '@/services/brandingService'
 
 const { t, locale } = useI18n()
+const authStore = useAuthStore()
 const tenantStore = useTenantStore()
 const brandingStore = useBrandingStore()
 const { formatDate } = useFormatters()
+
+const canEditSettings = computed(() => authStore.hasPermission('settings.edit'))
 
 /* ------------------------------------------------------------------ */
 /*  State                                                              */
@@ -338,7 +342,7 @@ onMounted(() => {
             </h2>
           </div>
           <button
-            v-if="!isEditMode"
+            v-if="!isEditMode && canEditSettings"
             class="flex items-center gap-2 rounded-lg border border-primary/20 bg-primary/5 px-3 py-1.5 text-sm font-medium text-primary transition-colors hover:bg-primary/10"
             @click="isEditMode = true"
           >

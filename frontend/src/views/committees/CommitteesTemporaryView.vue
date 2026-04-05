@@ -12,6 +12,7 @@
  */
 import { ref, onMounted, computed, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
+import { useAuthStore } from '@/stores/auth'
 import {
   fetchCommittees,
   fetchCommitteeById,
@@ -48,6 +49,10 @@ import { fetchRfpList } from '@/services/rfpService'
 import type { RfpListItem } from '@/types/rfp'
 
 const { t, locale } = useI18n()
+const authStore = useAuthStore()
+
+const canCreateCommittee = computed(() => authStore.hasPermission('committees.create'))
+const canEditCommittee = computed(() => authStore.hasPermission('committees.edit'))
 const { formatDate } = useFormatters()
 
 /* ------------------------------------------------------------------ */
@@ -617,6 +622,7 @@ onMounted(() => {
         </p>
       </div>
       <button
+        v-if="canCreateCommittee"
         class="flex items-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-medium text-white shadow-sm transition-all hover:bg-primary-dark"
         @click="openCreateDialog"
       >
@@ -723,7 +729,7 @@ onMounted(() => {
     <div v-else-if="committees.length === 0" class="flex flex-col items-center justify-center rounded-lg border border-surface-dim bg-white py-16">
       <i class="pi pi-users text-5xl text-surface-dim"></i>
       <p class="mt-4 text-sm text-tertiary">{{ t('committees.emptyState') }}</p>
-      <button class="mt-4 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-primary-dark" @click="openCreateDialog">
+      <button v-if="canCreateCommittee" class="mt-4 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-primary-dark" @click="openCreateDialog">
         {{ t('committees.actions.create') }}
       </button>
     </div>
@@ -973,11 +979,11 @@ onMounted(() => {
                 <i class="pi pi-sparkles me-1 text-xs"></i>
                 {{ t('committees.actions.aiAnalysis') }}
               </button>
-              <button class="rounded-lg border border-surface-dim px-3 py-1.5 text-xs font-medium text-secondary hover:bg-surface-ground" @click="openEditDialog(selectedCommittee!)">
+              <button v-if="canEditCommittee" class="rounded-lg border border-surface-dim px-3 py-1.5 text-xs font-medium text-secondary hover:bg-surface-ground" @click="openEditDialog(selectedCommittee!)">
                 <i class="pi pi-pencil me-1 text-xs"></i>
                 {{ t('common.edit') }}
               </button>
-              <button class="rounded-lg border border-warning/30 px-3 py-1.5 text-xs font-medium text-warning hover:bg-warning/5" @click="openStatusDialog">
+              <button v-if="canEditCommittee" class="rounded-lg border border-warning/30 px-3 py-1.5 text-xs font-medium text-warning hover:bg-warning/5" @click="openStatusDialog">
                 <i class="pi pi-cog me-1 text-xs"></i>
                 {{ t('committees.actions.changeStatus') }}
               </button>

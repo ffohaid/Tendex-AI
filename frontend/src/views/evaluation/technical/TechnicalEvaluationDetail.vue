@@ -8,6 +8,7 @@
 import { onMounted, ref, computed, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
+import { useAuthStore } from '@/stores/auth'
 import { useEvaluationStore } from '@/stores/evaluation'
 import type { EvaluationCriterion } from '@/types/evaluation'
 import {
@@ -25,6 +26,10 @@ const { locale } = useI18n()
 const route = useRoute()
 const router = useRouter()
 const store = useEvaluationStore()
+const authStore = useAuthStore()
+
+const canScore = computed(() => authStore.hasPermission('evaluation.technical_score') || authStore.hasPermission('evaluation.technical'))
+const canSubmitEvaluation = computed(() => authStore.hasPermission('evaluation.approve'))
 const isRtl = computed(() => locale.value === 'ar')
 
 const competitionId = computed(() => route.params.id as string)
@@ -956,6 +961,7 @@ const isCompleted = computed(() => {
               </div>
               <div class="flex gap-3">
                 <button
+                  v-if="canScore"
                   @click="saveScores"
                   :disabled="savingStatus === 'saving'"
                   class="rounded-lg bg-blue-600 px-5 py-2.5 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50"
@@ -963,7 +969,7 @@ const isCompleted = computed(() => {
                   <i class="pi pi-save me-1" /> {{ isRtl ? 'حفظ الدرجات' : 'Save Scores' }}
                 </button>
                 <button
-                  v-if="overallProgress >= 100"
+                  v-if="overallProgress >= 100 && canSubmitEvaluation"
                   @click="showSubmitDialog = true"
                   class="rounded-lg bg-green-600 px-5 py-2.5 text-sm font-medium text-white hover:bg-green-700"
                 >

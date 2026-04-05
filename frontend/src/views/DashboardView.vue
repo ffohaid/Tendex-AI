@@ -50,14 +50,20 @@ const kpiCards = computed<KpiCard[]>(() => [
   { key: 'completed', icon: 'pi-check-circle', iconBg: 'bg-success-50', iconColor: 'text-success', value: stats.value.completedCompetitions, labelKey: 'dashboard.stats.completedCompetitions', trend: '', trendUp: false },
 ])
 
-interface QuickAction { key: string; icon: string; labelKey: string; subtitleKey: string; route: string; isAi?: boolean; bgClass: string; iconColor: string }
+interface QuickAction { key: string; icon: string; labelKey: string; subtitleKey: string; route: string; isAi?: boolean; bgClass: string; iconColor: string; requiredPermission?: string }
 
-const quickActions: QuickAction[] = [
-  { key: 'createRfp', icon: 'pi-file-edit', labelKey: 'dashboard.quickActions.createCompetition', subtitleKey: 'dashboard.quickActions.createCompetitionSub', route: '/rfp/new', bgClass: 'bg-interactive-50', iconColor: 'text-interactive' },
-  { key: 'uploadProposal', icon: 'pi-upload', labelKey: 'dashboard.quickActions.uploadProposal', subtitleKey: 'dashboard.quickActions.uploadProposalSub', route: '/rfp', bgClass: 'bg-surface-subtle', iconColor: 'text-secondary-600' },
+const allQuickActions: QuickAction[] = [
+  { key: 'createRfp', icon: 'pi-file-edit', labelKey: 'dashboard.quickActions.createCompetition', subtitleKey: 'dashboard.quickActions.createCompetitionSub', route: '/rfp/new', bgClass: 'bg-interactive-50', iconColor: 'text-interactive', requiredPermission: 'rfp.create' },
+  { key: 'uploadProposal', icon: 'pi-upload', labelKey: 'dashboard.quickActions.uploadProposal', subtitleKey: 'dashboard.quickActions.uploadProposalSub', route: '/rfp', bgClass: 'bg-surface-subtle', iconColor: 'text-secondary-600', requiredPermission: 'offers.create' },
   { key: 'aiAssistant', icon: 'pi-sparkles', labelKey: 'dashboard.quickActions.aiAssistant', subtitleKey: 'dashboard.quickActions.aiAssistantSub', route: '/ai-assistant', isAi: true, bgClass: 'bg-ai-50', iconColor: 'text-ai-600' },
-  { key: 'scoring', icon: 'pi-chart-bar', labelKey: 'dashboard.quickActions.scoring', subtitleKey: 'dashboard.quickActions.scoringSub', route: '/evaluation/technical', bgClass: 'bg-surface-subtle', iconColor: 'text-secondary-600' },
+  { key: 'scoring', icon: 'pi-chart-bar', labelKey: 'dashboard.quickActions.scoring', subtitleKey: 'dashboard.quickActions.scoringSub', route: '/evaluation/technical', bgClass: 'bg-surface-subtle', iconColor: 'text-secondary-600', requiredPermission: 'evaluation.view' },
 ]
+
+const quickActions = computed(() =>
+  allQuickActions.filter(a => !a.requiredPermission || authStore.hasPermission(a.requiredPermission))
+)
+
+const canCreateRfp = computed(() => authStore.hasPermission('rfp.create'))
 
 const gettingStartedSteps = [
   { number: 1, labelKey: 'dashboard.gettingStarted.step1', descKey: 'dashboard.gettingStarted.step1Desc' },
@@ -103,6 +109,7 @@ function getActivityColor(type: string): string {
           </div>
         </div>
         <button
+          v-if="canCreateRfp"
           class="flex items-center gap-2 self-start rounded-xl border border-white/30 bg-white px-5 py-2.5 text-sm font-semibold text-interactive shadow-sm transition-all hover:shadow-md"
           @click="navigateTo('/rfp/new')"
         >
@@ -186,6 +193,7 @@ function getActivityColor(type: string): string {
               <h4 class="text-base font-semibold text-secondary">{{ t('dashboard.noRfpsYet') }}</h4>
               <p class="mt-1.5 max-w-xs text-sm text-tertiary">{{ t('dashboard.noRfpsDescription') }}</p>
               <button
+                v-if="canCreateRfp"
                 class="btn-primary mt-5"
                 @click="navigateTo('/rfp/new')"
               >

@@ -15,6 +15,7 @@
  */
 import { ref, onMounted, computed } from 'vue'
 import { useI18n } from 'vue-i18n'
+import { useAuthStore } from '@/stores/auth'
 import AiUserManagementAssistant from '@/components/ai/AiUserManagementAssistant.vue'
 import {
   fetchRoles, fetchRoleById, createRole, updateRole,
@@ -28,6 +29,10 @@ import { useFormatters } from '@/composables/useFormatters'
 
 const { t, locale } = useI18n()
 const { formatDate } = useFormatters()
+const authStore = useAuthStore()
+
+const canCreateRole = computed(() => authStore.hasPermission('roles.create'))
+const canEditRole = computed(() => authStore.hasPermission('roles.edit'))
 
 /* State */
 const rolesData = ref<RoleDto[]>([])
@@ -252,7 +257,7 @@ onMounted(() => {
         <h1 class="text-2xl font-bold text-secondary">{{ t('settings.roles.title') }}</h1>
         <p class="mt-1 text-sm text-tertiary">{{ t('settings.roles.subtitle') }}</p>
       </div>
-      <button class="flex items-center gap-2 rounded-lg bg-primary px-5 py-2.5 text-sm font-medium text-white shadow-sm transition-all hover:bg-primary-dark" @click="openCreateDialog">
+      <button v-if="canCreateRole" class="flex items-center gap-2 rounded-lg bg-primary px-5 py-2.5 text-sm font-medium text-white shadow-sm transition-all hover:bg-primary-dark" @click="openCreateDialog">
         <i class="pi pi-plus text-sm"></i>
         {{ t('settings.roles.createRole') }}
       </button>
@@ -315,7 +320,7 @@ onMounted(() => {
     <div v-else-if="rolesData.length === 0" class="flex flex-col items-center justify-center rounded-lg border border-surface-dim bg-white py-16">
       <i class="pi pi-shield text-5xl text-surface-dim"></i>
       <p class="mt-4 text-sm text-tertiary">{{ t('settings.roles.emptyState') }}</p>
-      <button class="mt-4 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-primary-dark" @click="openCreateDialog">{{ t('settings.roles.createRole') }}</button>
+      <button v-if="canCreateRole" class="mt-4 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-primary-dark" @click="openCreateDialog">{{ t('settings.roles.createRole') }}</button>
     </div>
 
     <!-- Roles Grid -->
@@ -340,7 +345,7 @@ onMounted(() => {
             <span>{{ role.userCount }} {{ t('settings.roles.usersCount') }}</span>
           </div>
           <div class="flex items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100" @click.stop>
-            <button v-if="!role.isSystemRole" class="rounded-lg p-1.5 text-tertiary transition-colors hover:bg-surface-ground hover:text-primary" :title="t('common.edit')" @click="openEditDialog(role)"><i class="pi pi-pencil text-sm"></i></button>
+            <button v-if="!role.isSystemRole && canEditRole" class="rounded-lg p-1.5 text-tertiary transition-colors hover:bg-surface-ground hover:text-primary" :title="t('common.edit')" @click="openEditDialog(role)"><i class="pi pi-pencil text-sm"></i></button>
             <button v-if="!role.isSystemRole" :class="['rounded-lg p-1.5 transition-colors', role.isActive ? 'text-tertiary hover:bg-red-50 hover:text-red-600' : 'text-tertiary hover:bg-green-50 hover:text-green-600']" :title="role.isActive ? t('settings.roles.deactivateRole') : t('settings.roles.activateRole')" @click="handleToggleRoleStatus(role)">
               <i :class="['pi text-sm', role.isActive ? 'pi-ban' : 'pi-check-circle']"></i>
             </button>
@@ -417,7 +422,7 @@ onMounted(() => {
             </div>
             <!-- Actions -->
             <div v-if="!selectedRole.isSystemRole" class="flex gap-2 border-t border-surface-dim pt-4">
-              <button class="flex items-center gap-2 rounded-lg border border-surface-dim px-4 py-2 text-sm font-medium text-secondary transition-colors hover:bg-surface-ground" @click="showDetailDialog = false; openEditDialog(selectedRole as any)"><i class="pi pi-pencil text-xs"></i>{{ t('common.edit') }}</button>
+              <button v-if="canEditRole" class="flex items-center gap-2 rounded-lg border border-surface-dim px-4 py-2 text-sm font-medium text-secondary transition-colors hover:bg-surface-ground" @click="showDetailDialog = false; openEditDialog(selectedRole as any)"><i class="pi pi-pencil text-xs"></i>{{ t('common.edit') }}</button>
               <button :class="['flex items-center gap-2 rounded-lg border px-4 py-2 text-sm font-medium transition-colors', selectedRole.isActive ? 'border-red-200 text-red-600 hover:bg-red-50' : 'border-green-200 text-green-600 hover:bg-green-50']" @click="handleToggleRoleStatus(selectedRole as any); showDetailDialog = false">
                 <i :class="['pi text-xs', selectedRole.isActive ? 'pi-ban' : 'pi-check-circle']"></i>
                 {{ selectedRole.isActive ? t('settings.roles.deactivateRole') : t('settings.roles.activateRole') }}

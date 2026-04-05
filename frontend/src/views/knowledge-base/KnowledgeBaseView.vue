@@ -15,11 +15,15 @@
  */
 import { ref, computed, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
+import { useAuthStore } from '@/stores/auth'
 import { httpGet, httpPost } from '@/services/http'
 import { useFormatters } from '@/composables/useFormatters'
 
 const { t, locale } = useI18n()
+const authStore = useAuthStore()
 const { formatDateTime } = useFormatters()
+
+const canUploadKnowledge = computed(() => authStore.hasPermission('knowledge.upload') || authStore.hasPermission('knowledge.manage'))
 
 /* ── Types ── */
 interface KBDocument {
@@ -192,7 +196,7 @@ onMounted(() => {
         <h1 class="page-title">{{ t('knowledgeBase.title') }}</h1>
         <p class="page-description">{{ t('knowledgeBase.subtitle') }}</p>
       </div>
-      <label class="btn-primary cursor-pointer">
+      <label v-if="canUploadKnowledge" class="btn-primary cursor-pointer">
         <i class="pi pi-upload"></i>
         {{ t('knowledgeBase.upload') }}
         <input type="file" class="hidden" multiple accept=".pdf,.docx,.xlsx,.doc,.xls" @change="handleFileSelect" />

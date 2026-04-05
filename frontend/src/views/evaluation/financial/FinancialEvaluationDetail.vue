@@ -8,6 +8,7 @@
 import { onMounted, ref, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
+import { useAuthStore } from '@/stores/auth'
 import { useEvaluationStore } from '@/stores/evaluation'
 import { formatCurrency } from '@/utils/numbers'
 import { httpPost } from '@/services/http'
@@ -18,6 +19,9 @@ const { locale } = useI18n()
 const route = useRoute()
 const router = useRouter()
 const store = useEvaluationStore()
+const authStore = useAuthStore()
+
+const canSubmitFinancial = computed(() => authStore.hasPermission('evaluation.approve'))
 const isRtl = computed(() => locale.value === 'ar')
 
 const competitionId = computed(() => route.params.id as string)
@@ -723,6 +727,7 @@ async function submitFinancialEvaluation() {
           {{ isRtl ? 'بعد الانتهاء من مراجعة جميع العروض المالية، يمكنك تقديم التقييم المالي للاعتماد.' : 'After reviewing all financial offers, you can submit the financial evaluation for approval.' }}
         </div>
         <button
+          v-if="canSubmitFinancial"
           @click="showSubmitDialog = true"
           class="rounded-lg bg-green-600 px-6 py-2.5 text-sm font-medium text-white hover:bg-green-700"
         >

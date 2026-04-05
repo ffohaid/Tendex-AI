@@ -11,9 +11,13 @@
  */
 import { ref, reactive, onMounted, computed } from 'vue'
 import { useI18n } from 'vue-i18n'
+import { useAuthStore } from '@/stores/auth'
 import httpClient from '@/services/http'
 
 const { t } = useI18n()
+const authStore = useAuthStore()
+
+const canConfigureAi = computed(() => authStore.hasPermission('ai.configure'))
 
 /* ---- Types ---- */
 interface AiModel {
@@ -222,7 +226,7 @@ onMounted(() => {
         </div>
       </div>
       <button
-        v-if="!showForm"
+        v-if="!showForm && canConfigureAi"
         type="button"
         class="flex items-center gap-2 rounded-xl bg-primary px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-primary-dark"
         @click="openAddForm"
@@ -498,6 +502,7 @@ onMounted(() => {
           <!-- Card Actions -->
           <div class="flex items-center justify-end gap-2 border-t border-secondary-100 px-5 py-2.5">
             <button
+              v-if="canConfigureAi"
               type="button"
               class="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium text-secondary transition-colors hover:bg-surface-subtle"
               @click="openEditForm(model)"
@@ -506,6 +511,7 @@ onMounted(() => {
               {{ t('common.edit') }}
             </button>
             <button
+              v-if="canConfigureAi"
               type="button"
               class="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium text-danger transition-colors hover:bg-danger/5"
               @click="confirmDelete(model.id)"

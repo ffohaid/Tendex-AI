@@ -26,9 +26,15 @@ import {
 } from '@/services/userManagementService'
 import type { UserDto, RoleDto, InvitationDto, SendInvitationRequest } from '@/types/userManagement'
 import { useFormatters } from '@/composables/useFormatters'
+import { useAuthStore } from '@/stores/auth'
 
 const { t, locale } = useI18n()
 const { formatDate, formatDateTime } = useFormatters()
+const authStore = useAuthStore()
+
+const canCreateUser = computed(() => authStore.hasPermission('users.create'))
+const canEditUser = computed(() => authStore.hasPermission('users.edit'))
+// const canDeleteUser = computed(() => authStore.hasPermission('users.delete'))
 
 /* State */
 const activeTab = ref<'users' | 'invitations'>('users')
@@ -293,6 +299,7 @@ onMounted(() => { loadUsers(); loadRoles() })
         <p class="mt-1 text-sm text-tertiary">{{ t('settings.users.subtitle') }}</p>
       </div>
       <button
+        v-if="canCreateUser"
         class="flex items-center gap-2 rounded-lg bg-primary px-5 py-2.5 text-sm font-medium text-white shadow-sm transition-all hover:bg-primary-dark"
         @click="openInviteDialog"
       >
@@ -399,7 +406,7 @@ onMounted(() => { loadUsers(); loadRoles() })
         <i class="pi pi-users text-5xl text-surface-dim"></i>
         <p class="mt-4 text-sm text-tertiary">{{ hasActiveFilters ? t('settings.users.noSearchResults') : t('settings.users.emptyState') }}</p>
         <button v-if="hasActiveFilters" class="mt-4 rounded-lg border border-surface-dim px-4 py-2 text-sm font-medium text-secondary hover:bg-surface-ground" @click="clearFilters">{{ t('settings.users.clearFilters') }}</button>
-        <button v-else class="mt-4 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-primary-dark" @click="openInviteDialog">{{ t('settings.users.inviteUser') }}</button>
+        <button v-else-if="canCreateUser" class="mt-4 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-primary-dark" @click="openInviteDialog">{{ t('settings.users.inviteUser') }}</button>
       </div>
 
       <!-- Users Table -->
@@ -440,9 +447,9 @@ onMounted(() => { loadUsers(); loadRoles() })
                 <td class="px-4 py-3 text-tertiary">{{ formatDateTime(user.lastLoginAt) }}</td>
                 <td class="px-4 py-3 text-center" @click.stop>
                   <div class="flex items-center justify-center gap-1">
-                    <button class="rounded-lg p-1.5 text-tertiary transition-colors hover:bg-surface-ground hover:text-primary" :title="t('settings.users.editDialogTitle')" @click="openEditDialog(user)"><i class="pi pi-pencil text-sm"></i></button>
-                    <button class="rounded-lg p-1.5 text-tertiary transition-colors hover:bg-surface-ground hover:text-primary" :title="t('settings.users.manageRoles')" @click="openRoleDialog(user)"><i class="pi pi-shield text-sm"></i></button>
-                    <button :class="['rounded-lg p-1.5 transition-colors', user.isActive ? 'text-tertiary hover:bg-red-50 hover:text-red-600' : 'text-tertiary hover:bg-green-50 hover:text-green-600']" :title="user.isActive ? t('settings.users.deactivate') : t('settings.users.activate')" @click="handleToggleStatus(user)">
+                    <button v-if="canEditUser" class="rounded-lg p-1.5 text-tertiary transition-colors hover:bg-surface-ground hover:text-primary" :title="t('settings.users.editDialogTitle')" @click="openEditDialog(user)"><i class="pi pi-pencil text-sm"></i></button>
+                    <button v-if="canEditUser" class="rounded-lg p-1.5 text-tertiary transition-colors hover:bg-surface-ground hover:text-primary" :title="t('settings.users.manageRoles')" @click="openRoleDialog(user)"><i class="pi pi-shield text-sm"></i></button>
+                    <button v-if="canEditUser" :class="['rounded-lg p-1.5 transition-colors', user.isActive ? 'text-tertiary hover:bg-red-50 hover:text-red-600' : 'text-tertiary hover:bg-green-50 hover:text-green-600']" :title="user.isActive ? t('settings.users.deactivate') : t('settings.users.activate')" @click="handleToggleStatus(user)">
                       <i :class="['pi text-sm', user.isActive ? 'pi-ban' : 'pi-check-circle']"></i>
                     </button>
                   </div>
@@ -558,8 +565,8 @@ onMounted(() => { loadUsers(); loadRoles() })
               </div>
             </div>
             <div class="flex gap-2 border-t border-surface-dim pt-4">
-              <button class="flex items-center gap-2 rounded-lg border border-surface-dim px-4 py-2 text-sm font-medium text-secondary transition-colors hover:bg-surface-ground" @click="showUserDetailDialog = false; openEditDialog(selectedUser!)"><i class="pi pi-pencil text-xs"></i>{{ t('settings.users.editDialogTitle') }}</button>
-              <button class="flex items-center gap-2 rounded-lg border border-surface-dim px-4 py-2 text-sm font-medium text-secondary transition-colors hover:bg-surface-ground" @click="showUserDetailDialog = false; openRoleDialog(selectedUser!)"><i class="pi pi-shield text-xs"></i>{{ t('settings.users.manageRoles') }}</button>
+              <button v-if="canEditUser" class="flex items-center gap-2 rounded-lg border border-surface-dim px-4 py-2 text-sm font-medium text-secondary transition-colors hover:bg-surface-ground" @click="showUserDetailDialog = false; openEditDialog(selectedUser!)"><i class="pi pi-pencil text-xs"></i>{{ t('settings.users.editDialogTitle') }}</button>
+              <button v-if="canEditUser" class="flex items-center gap-2 rounded-lg border border-surface-dim px-4 py-2 text-sm font-medium text-secondary transition-colors hover:bg-surface-ground" @click="showUserDetailDialog = false; openRoleDialog(selectedUser!)"><i class="pi pi-shield text-xs"></i>{{ t('settings.users.manageRoles') }}</button>
             </div>
           </div>
         </div>

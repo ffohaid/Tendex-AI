@@ -11,9 +11,15 @@ import { useRouter } from 'vue-router'
 import { fetchRfpList, deleteRfp } from '@/services/rfpService'
 import { formatCurrency } from '@/utils/numbers'
 import type { RfpListItem, RfpStatus } from '@/types/rfp'
+import { useAuthStore } from '@/stores/auth'
 
 const { t } = useI18n()
 const router = useRouter()
+const authStore = useAuthStore()
+
+const canCreateRfp = computed(() => authStore.hasPermission('rfp.create'))
+const canEditRfp = computed(() => authStore.hasPermission('rfp.edit'))
+const canDeleteRfp = computed(() => authStore.hasPermission('rfp.delete'))
 
 /** State */
 const rfpItems = ref<RfpListItem[]>([])
@@ -159,6 +165,7 @@ onMounted(() => {
           </p>
         </div>
         <button
+          v-if="canCreateRfp"
           type="button"
           class="flex items-center gap-2 rounded-lg bg-primary px-5 py-2.5 text-sm font-bold text-white shadow-md transition-all hover:bg-primary-dark hover:shadow-lg"
           @click="goToCreate"
@@ -226,6 +233,7 @@ onMounted(() => {
         <h3 class="text-lg font-bold text-secondary">{{ t('rfp.messages.noRfps') }}</h3>
         <p class="mt-2 text-sm text-tertiary">{{ t('rfp.messages.noRfpsDesc') }}</p>
         <button
+          v-if="canCreateRfp"
           type="button"
           class="mt-6 rounded-lg bg-primary px-6 py-2.5 text-sm font-bold text-white hover:bg-primary-dark"
           @click="goToCreate"
@@ -290,6 +298,7 @@ onMounted(() => {
                 <td class="px-4 py-3 text-center">
                   <div class="flex items-center justify-center gap-1">
                     <button
+                      v-if="canEditRfp"
                       type="button"
                       class="flex h-8 w-8 items-center justify-center rounded-lg transition-colors hover:bg-surface-muted"
                       :title="t('common.edit')"
@@ -298,7 +307,7 @@ onMounted(() => {
                       <i class="pi pi-pencil text-sm text-primary"></i>
                     </button>
                     <button
-                      v-if="item.status === 'draft'"
+                      v-if="canDeleteRfp && item.status === 'draft'"
                       type="button"
                       class="flex h-8 w-8 items-center justify-center rounded-lg transition-colors hover:bg-danger/10"
                       :title="t('common.delete')"

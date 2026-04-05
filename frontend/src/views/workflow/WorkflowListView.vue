@@ -16,6 +16,7 @@
 import { ref, onMounted, computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
+import { useAuthStore } from '@/stores/auth'
 import {
   getWorkflowDefinitions,
   seedDefaultWorkflows,
@@ -26,6 +27,9 @@ import {
 
 const { t, locale } = useI18n()
 const router = useRouter()
+const authStore = useAuthStore()
+
+const canManageWorkflow = computed(() => authStore.hasPermission('workflow.manage'))
 
 /* ------------------------------------------------------------------ */
 /*  State                                                              */
@@ -282,6 +286,7 @@ onMounted(() => {
           {{ locale === 'ar' ? 'إنشاء المسارات الافتراضية' : 'Seed Default Workflows' }}
         </button>
         <button
+          v-if="canManageWorkflow"
           class="flex items-center gap-2 rounded-xl bg-primary px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-all hover:bg-primary-600"
           @click="createWorkflow"
         >
@@ -394,6 +399,7 @@ onMounted(() => {
           {{ locale === 'ar' ? 'إنشاء المسارات الافتراضية' : 'Seed Default Workflows' }}
         </button>
         <button
+          v-if="canManageWorkflow"
           class="flex items-center gap-2 rounded-xl bg-primary px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-all hover:bg-primary-600"
           @click="createWorkflow"
         >
@@ -471,6 +477,7 @@ onMounted(() => {
           <div class="flex items-center gap-2">
             <!-- Toggle Active -->
             <button
+              v-if="canManageWorkflow"
               class="rounded-lg px-2 py-1 text-[10px] font-medium transition-colors"
               :class="
                 wf.isActive
@@ -483,6 +490,7 @@ onMounted(() => {
             </button>
             <!-- Delete -->
             <button
+              v-if="canManageWorkflow"
               class="rounded-lg px-2 py-1 text-[10px] font-medium text-red-500 transition-colors hover:bg-red-50"
               @click.stop="confirmDelete(wf.id, $event)"
             >

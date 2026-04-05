@@ -14,6 +14,7 @@
  */
 import { ref, computed, onMounted, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
+import { useAuthStore } from '@/stores/auth'
 import { useFormatters } from '@/composables/useFormatters'
 import {
   fetchInquiries,
@@ -38,6 +39,11 @@ import type {
 } from '@/types/inquiry'
 
 const { t, locale } = useI18n()
+const authStore = useAuthStore()
+
+const canCreateInquiry = computed(() => authStore.hasPermission('competitions.create'))
+// canEditInquiry available for future use
+// const canEditInquiry = computed(() => authStore.hasPermission('competitions.edit'))
 const { formatDateTime, formatNumber } = useFormatters()
 
 /* ------------------------------------------------------------------ */
@@ -485,6 +491,7 @@ onMounted(async () => {
       </div>
       <div class="flex items-center gap-2">
         <button
+          v-if="canCreateInquiry"
           class="flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-primary/90"
           @click="activeTab = 'create'"
         >
@@ -492,6 +499,7 @@ onMounted(async () => {
           {{ t('inquiries.addInquiry') }}
         </button>
         <button
+          v-if="canCreateInquiry"
           class="flex items-center gap-2 rounded-lg border border-primary/30 bg-primary/5 px-4 py-2 text-sm font-medium text-primary transition-colors hover:bg-primary/10"
           @click="activeTab = 'import'"
         >
