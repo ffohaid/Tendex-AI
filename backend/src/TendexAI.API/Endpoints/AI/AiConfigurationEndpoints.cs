@@ -27,8 +27,7 @@ public static class AiConfigurationEndpoints
             CancellationToken ct) =>
         {
             var result = await mediator.Send(
-                new GetAiConfigurationsQuery { TenantId = tenantId }, ct)
-            .RequireAuthorization(PermissionPolicies.AiSettingsView);
+                new GetAiConfigurationsQuery { TenantId = tenantId }, ct);
 
             return Results.Ok(result);
         })
@@ -56,8 +55,7 @@ public static class AiConfigurationEndpoints
                 Priority = request.Priority,
                 DeploymentType = request.DeploymentType,
                 Description = request.Description
-            }
-            .RequireAuthorization(PermissionPolicies.AiSettingsManage);
+            };
 
             var result = await mediator.Send(command, ct);
 
@@ -88,8 +86,7 @@ public static class AiConfigurationEndpoints
                 Priority = request.Priority,
                 DeploymentType = request.DeploymentType,
                 Description = request.Description
-            }
-            .RequireAuthorization(PermissionPolicies.AiSettingsManage);
+            };
 
             var success = await mediator.Send(command, ct);
 
@@ -114,8 +111,7 @@ public static class AiConfigurationEndpoints
             {
                 ConfigurationId = configurationId,
                 NewPlainApiKey = request.NewApiKey
-            }
-            .RequireAuthorization(PermissionPolicies.AiSettingsManage);
+            };
 
             var success = await mediator.Send(command, ct);
 

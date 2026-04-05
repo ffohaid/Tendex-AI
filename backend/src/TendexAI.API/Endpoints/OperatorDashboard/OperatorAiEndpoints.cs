@@ -27,8 +27,7 @@ public static class OperatorAiEndpoints
             CancellationToken ct) =>
         {
             // Get all AI configurations across all tenants (for operator view)
-            var tenantIdHeader = ctx.Request.Headers["X-Tenant-Id"].FirstOrDefault()
-            .RequireAuthorization(PermissionPolicies.AiSettingsManage);
+            var tenantIdHeader = ctx.Request.Headers["X-Tenant-Id"].FirstOrDefault();
             Guid tenantId = Guid.Empty;
             if (!string.IsNullOrEmpty(tenantIdHeader) && !Guid.TryParse(tenantIdHeader, out tenantId))
                 tenantId = Guid.Empty;
@@ -64,8 +63,7 @@ public static class OperatorAiEndpoints
             HttpContext ctx,
             CancellationToken ct) =>
         {
-            var tenantIdHeader = ctx.Request.Headers["X-Tenant-Id"].FirstOrDefault()
-            .RequireAuthorization(PermissionPolicies.AiSettingsManage);
+            var tenantIdHeader = ctx.Request.Headers["X-Tenant-Id"].FirstOrDefault();
             Guid tenantId = Guid.Empty;
             if (!string.IsNullOrEmpty(tenantIdHeader) && !Guid.TryParse(tenantIdHeader, out tenantId))
                 tenantId = Guid.Empty;
@@ -98,7 +96,8 @@ public static class OperatorAiEndpoints
                 : Results.BadRequest(new { result.ErrorMessage });
         })
         .WithName("CreateOperatorAiProvider")
-        .WithSummary("Add a new AI provider");
+        .WithSummary("Add a new AI provider")
+        .RequireAuthorization(PermissionPolicies.AiSettingsManage);
 
         // PUT /api/v1/operator/ai/providers/{id}
         group.MapPut("/providers/{id:guid}", async (
@@ -115,14 +114,14 @@ public static class OperatorAiEndpoints
                 MaxTokens = request.MaxTokens ?? 4096,
                 Temperature = request.Temperature ?? 0.3,
                 Priority = request.Priority ?? 1
-            }
-            .RequireAuthorization(PermissionPolicies.AiSettingsManage);
+            };
 
             var success = await mediator.Send(command, ct);
             return success ? Results.NoContent() : Results.NotFound();
         })
         .WithName("UpdateOperatorAiProvider")
-        .WithSummary("Update an AI provider");
+        .WithSummary("Update an AI provider")
+        .RequireAuthorization(PermissionPolicies.AiSettingsManage);
 
         // POST /api/v1/operator/ai/providers/{id}/test
         group.MapPost("/providers/{id:guid}/test", async (
@@ -130,11 +129,11 @@ public static class OperatorAiEndpoints
             CancellationToken ct) =>
         {
             // Simple test - return success for now
-            return Results.Ok(new { success = true, message = "Connection test passed" })
-            .RequireAuthorization(PermissionPolicies.AiSettingsManage);
+            return Results.Ok(new { success = true, message = "Connection test passed" });
         })
         .WithName("TestOperatorAiProvider")
-        .WithSummary("Test AI provider connection");
+        .WithSummary("Test AI provider connection")
+        .RequireAuthorization(PermissionPolicies.AiSettingsManage);
 
         // GET /api/v1/operator/ai/rag-config
         group.MapGet("/rag-config", async (CancellationToken ct) =>
@@ -148,11 +147,11 @@ public static class OperatorAiEndpoints
                 chunkOverlap = 200,
                 embeddingModel = "text-embedding-004",
                 maxRetrievedChunks = 5
-            })
-            .RequireAuthorization(PermissionPolicies.AiSettingsManage);
+            });
         })
         .WithName("GetOperatorRagConfig")
-        .WithSummary("Get RAG configuration");
+        .WithSummary("Get RAG configuration")
+        .RequireAuthorization(PermissionPolicies.AiSettingsManage);
 
         // PUT /api/v1/operator/ai/rag-config
         group.MapPut("/rag-config", async (
@@ -160,11 +159,11 @@ public static class OperatorAiEndpoints
             CancellationToken ct) =>
         {
             // Save RAG config - for now just acknowledge
-            return Results.NoContent()
-            .RequireAuthorization(PermissionPolicies.AiSettingsManage);
+            return Results.NoContent();
         })
         .WithName("UpdateOperatorRagConfig")
-        .WithSummary("Update RAG configuration");
+        .WithSummary("Update RAG configuration")
+        .RequireAuthorization(PermissionPolicies.AiSettingsManage);
 
         // PUT /api/v1/operator/ai/feature-flags/{key}
         group.MapPut("/feature-flags/{key}", async (
@@ -173,11 +172,11 @@ public static class OperatorAiEndpoints
             CancellationToken ct) =>
         {
             // Toggle feature flag - for now just acknowledge
-            return Results.NoContent()
-            .RequireAuthorization(PermissionPolicies.AiSettingsManage);
+            return Results.NoContent();
         })
         .WithName("ToggleOperatorAiFeatureFlag")
-        .WithSummary("Toggle an AI feature flag");
+        .WithSummary("Toggle an AI feature flag")
+        .RequireAuthorization(PermissionPolicies.AiSettingsManage);
     }
 }
 

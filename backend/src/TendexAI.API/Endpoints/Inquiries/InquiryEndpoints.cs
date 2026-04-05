@@ -61,7 +61,7 @@ public static class InquiryEndpoints
         group.MapPut("/{id:guid}", UpdateAsync)
             .WithName("UpdateInquiry")
             .WithSummary("Update inquiry details")
-            .RequireAuthorization(PermissionPolicies.InquiriesEdit);
+            .RequireAuthorization(PermissionPolicies.InquiriesManage);
 
         group.MapPost("/{id:guid}/assign", AssignAsync)
             .WithName("AssignInquiry")
