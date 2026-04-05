@@ -26,6 +26,17 @@
 
 *يرجى إضافة أحدث مهمة منجزة في أعلى هذه القائمة.*
 
+### 2026-04-05 - fix: Add missing permissions to tenant databases (403 fix)
+- **الحالة:** ✅ مكتمل
+- **الوصف:** إصلاح خطأ 403 في صفحة مركز المهام وصفحات أخرى بسبب عدم وجود صلاحيات مطلوبة في قاعدة البيانات
+- **التفاصيل:**
+  - تم اكتشاف أن 24 صلاحية مطلوبة من Backend غير موجودة في جدول Permissions
+  - الصلاحيات الناقصة تشمل: tasks.view, active_directory.manage, ai.settings_view, ai.settings_manage, approvals.*, award.*, competitions.manage/publish, evaluation.create, minutes.*, notifications.view, organization.*, workflow.create/edit/delete
+  - تم إنشاء سكربت SQL لإضافة الصلاحيات الناقصة وربطها بدور Tenant Primary Admin
+  - تم تنفيذ السكربت على جميع قواعد بيانات الجهات الأربع (MOF, EDU, MOH, MOMRAH)
+  - تم التحقق من أن صفحة مركز المهام تعمل بنجاح بعد الإصلاح
+- **الملفات:** backend/scripts/fix_permissions.sql
+
 ### 2026-04-05 - feat: Unified Template Library & RFP Templates UX Improvement
 - **الحالة:** ✅ مكتمل
 - **الوصف:** تم دمج صفحتي القوالب المنفصلتين (قوالب كراسات الشروط + قوالب من منافسات سابقة) في صفحة موحدة "مكتبة القوالب" مع تبويبات واضحة، وربط القوالب بإنشاء الكراسات بشكل مترابط، وإضافة إمكانية رفع ملفات DOCX للقوالب.
