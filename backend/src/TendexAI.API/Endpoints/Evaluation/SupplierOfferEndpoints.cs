@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 using TendexAI.Application.Features.SupplierOffers.Commands.CreateSupplierOffer;
 using TendexAI.Application.Features.SupplierOffers.Dtos;
 using TendexAI.Application.Features.SupplierOffers.Queries.GetSupplierOffers;
+using TendexAI.Infrastructure.Authorization;
 
 namespace TendexAI.API.Endpoints.Evaluation;
 
@@ -27,7 +28,8 @@ public static class SupplierOfferEndpoints
             .WithName("GetSupplierOffers")
             .WithSummary("Get all supplier offers for a competition")
             .Produces<IReadOnlyList<SupplierOfferDto>>(StatusCodes.Status200OK)
-            .Produces<ProblemDetails>(StatusCodes.Status404NotFound);
+            .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
+        .RequireAuthorization(PermissionPolicies.OffersView);
 
         group.MapPost("/", CreateOfferAsync)
             .WithName("CreateSupplierOffer")

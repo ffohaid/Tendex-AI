@@ -1,5 +1,6 @@
 using TendexAI.Application.Common.Interfaces.AI;
 using TendexAI.Domain.Enums;
+using TendexAI.Infrastructure.Authorization;
 
 namespace TendexAI.API.Endpoints.AI;
 
@@ -53,7 +54,8 @@ public static class AiGatewayEndpoints
         .WithName("AiCompletion")
         .WithSummary("Generate a text completion using the AI Gateway")
         .Produces<AiCompletionResponse>()
-        .Produces(StatusCodes.Status422UnprocessableEntity);
+        .Produces(StatusCodes.Status422UnprocessableEntity)
+        .RequireAuthorization(PermissionPolicies.AiAssistantUse);
 
         // POST /api/v1/ai/embeddings
         group.MapPost("/embeddings", async (
@@ -83,7 +85,8 @@ public static class AiGatewayEndpoints
         .WithName("AiEmbedding")
         .WithSummary("Generate embeddings for text using the AI Gateway")
         .Produces<AiEmbeddingResponse>()
-        .Produces(StatusCodes.Status422UnprocessableEntity);
+        .Produces(StatusCodes.Status422UnprocessableEntity)
+        .RequireAuthorization(PermissionPolicies.AiAssistantUse);
 
         // GET /api/v1/ai/status/{tenantId}
         group.MapGet("/status/{tenantId:guid}", async (
@@ -101,7 +104,8 @@ public static class AiGatewayEndpoints
             });
         })
         .WithName("AiStatus")
-        .WithSummary("Check if AI services are available for a tenant");
+        .WithSummary("Check if AI services are available for a tenant")
+        .RequireAuthorization(PermissionPolicies.AiSettingsView);
     }
 }
 

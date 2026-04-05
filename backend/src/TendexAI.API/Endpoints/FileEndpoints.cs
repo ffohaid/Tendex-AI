@@ -7,6 +7,7 @@ using TendexAI.Application.Files.Queries.GetFileInfo;
 using TendexAI.Application.Files.Queries.GetPresignedDownloadUrl;
 using TendexAI.Application.Files.Queries.GetPresignedUploadUrl;
 using TendexAI.Domain.Enums;
+using TendexAI.Infrastructure.Authorization;
 
 namespace TendexAI.API.Endpoints;
 
@@ -33,7 +34,8 @@ public static class FileEndpoints
             .Produces<UploadFileResponse>(StatusCodes.Status201Created)
             .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
             .Produces<ProblemDetails>(StatusCodes.Status413PayloadTooLarge)
-            .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+            .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError)
+        .RequireAuthorization(PermissionPolicies.FilesUpload);
 
         group.MapGet("/{fileId:guid}", GetFileInfoAsync)
             .WithName("GetFileInfo")
@@ -61,7 +63,8 @@ public static class FileEndpoints
             .WithSummary("Delete a file")
             .WithDescription("Soft-deletes a file from the database and removes it from object storage.")
             .Produces(StatusCodes.Status204NoContent)
-            .Produces<ProblemDetails>(StatusCodes.Status404NotFound);
+            .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
+        .RequireAuthorization(PermissionPolicies.FilesDelete);
 
         group.MapGet("/validation-rules", GetValidationRulesAsync)
             .WithName("GetFileValidationRules")

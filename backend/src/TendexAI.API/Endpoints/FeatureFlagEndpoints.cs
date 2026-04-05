@@ -6,6 +6,7 @@ using TendexAI.Application.Features.FeatureFlags.Commands.ToggleFeatureFlag;
 using TendexAI.Application.Features.FeatureFlags.Dtos;
 using TendexAI.Application.Features.FeatureFlags.Queries.GetFeatureDefinitions;
 using TendexAI.Application.Features.FeatureFlags.Queries.GetTenantFeatureFlags;
+using TendexAI.Infrastructure.Authorization;
 
 namespace TendexAI.API.Endpoints;
 
@@ -28,14 +29,16 @@ public static class FeatureFlagEndpoints
         definitionsGroup.MapGet("/", GetFeatureDefinitions)
             .WithName("GetFeatureDefinitions")
             .WithSummary("Retrieves all active feature definitions available on the platform.")
-            .Produces<IReadOnlyList<FeatureDefinitionDto>>(StatusCodes.Status200OK);
+            .Produces<IReadOnlyList<FeatureDefinitionDto>>(StatusCodes.Status200OK)
+            .RequireAuthorization(PermissionPolicies.FeatureFlagsManage);
 
         definitionsGroup.MapPost("/", CreateFeatureDefinition)
             .WithName("CreateFeatureDefinition")
             .WithSummary("Creates a new global feature definition.")
             .Produces<FeatureDefinitionDto>(StatusCodes.Status201Created)
             .Produces(StatusCodes.Status400BadRequest)
-            .Produces(StatusCodes.Status409Conflict);
+            .Produces(StatusCodes.Status409Conflict)
+            .RequireAuthorization(PermissionPolicies.FeatureFlagsManage);
 
         // ----- Tenant Feature Flags (Per-Tenant Configuration) -----
         var flagsGroup = app.MapGroup("/api/v1/tenants/{tenantId:guid}/feature-flags")
@@ -46,21 +49,24 @@ public static class FeatureFlagEndpoints
             .WithName("GetTenantFeatureFlags")
             .WithSummary("Retrieves all feature flags configured for a specific tenant.")
             .Produces<IReadOnlyList<TenantFeatureFlagDto>>(StatusCodes.Status200OK)
-            .Produces(StatusCodes.Status404NotFound);
+            .Produces(StatusCodes.Status404NotFound)
+            .RequireAuthorization(PermissionPolicies.FeatureFlagsManage);
 
         flagsGroup.MapPut("/{featureKey}", ToggleFeatureFlag)
             .WithName("ToggleFeatureFlag")
             .WithSummary("Toggles a feature flag for a specific tenant. Creates the flag if it doesn't exist.")
             .Produces<TenantFeatureFlagDto>(StatusCodes.Status200OK)
             .Produces(StatusCodes.Status400BadRequest)
-            .Produces(StatusCodes.Status404NotFound);
+            .Produces(StatusCodes.Status404NotFound)
+            .RequireAuthorization(PermissionPolicies.FeatureFlagsManage);
 
         flagsGroup.MapPut("/", BatchToggleFeatureFlags)
             .WithName("BatchToggleFeatureFlags")
             .WithSummary("Batch-toggles multiple feature flags for a specific tenant in a single request.")
             .Produces<IReadOnlyList<TenantFeatureFlagDto>>(StatusCodes.Status200OK)
             .Produces(StatusCodes.Status400BadRequest)
-            .Produces(StatusCodes.Status404NotFound);
+            .Produces(StatusCodes.Status404NotFound)
+            .RequireAuthorization(PermissionPolicies.FeatureFlagsManage);
 
         return app;
     }

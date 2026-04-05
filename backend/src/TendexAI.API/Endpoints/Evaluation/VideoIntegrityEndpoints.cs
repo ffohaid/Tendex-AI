@@ -6,6 +6,7 @@ using TendexAI.Application.Features.VideoAnalysis.Dtos;
 using TendexAI.Application.Features.VideoAnalysis.Queries.GetVideoAnalysis;
 using TendexAI.Application.Features.VideoAnalysis.Queries.GetVideoAnalysesByCompetition;
 using TendexAI.Domain.Enums;
+using TendexAI.Infrastructure.Authorization;
 
 namespace TendexAI.API.Endpoints.Evaluation;
 
@@ -38,7 +39,8 @@ public static class VideoIntegrityEndpoints
                 "This operation is asynchronous; the analysis runs in the background.")
             .Produces<VideoIntegrityAnalysisDto>(StatusCodes.Status201Created)
             .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
-            .Produces<ProblemDetails>(StatusCodes.Status422UnprocessableEntity);
+            .Produces<ProblemDetails>(StatusCodes.Status422UnprocessableEntity)
+        .RequireAuthorization(PermissionPolicies.EvaluationCreate);
 
         // ═══════════════════════════════════════════════════════════
         //  Query Endpoints
@@ -48,7 +50,8 @@ public static class VideoIntegrityEndpoints
             .WithName("GetVideoIntegrityAnalysis")
             .WithSummary("Get a specific video integrity analysis by ID")
             .Produces<VideoIntegrityAnalysisDto>(StatusCodes.Status200OK)
-            .Produces<ProblemDetails>(StatusCodes.Status404NotFound);
+            .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
+        .RequireAuthorization(PermissionPolicies.EvaluationView);
 
         group.MapGet("/competition/{competitionId:guid}", GetByCompetitionAsync)
             .WithName("GetVideoAnalysesByCompetition")

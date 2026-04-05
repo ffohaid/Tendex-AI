@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using TendexAI.Application.Interfaces;
 using TendexAI.Domain.Entities.Identity;
 using TendexAI.Domain.Enums;
+using TendexAI.Infrastructure.Authorization;
 
 namespace TendexAI.API.Endpoints.PermissionMatrix;
 
@@ -21,7 +22,8 @@ public static class PermissionMatrixEndpoints
         // Get the full permission matrix for the current tenant
         group.MapGet("/", GetMatrixAsync)
             .WithName("GetPermissionMatrix")
-            .WithDescription("Gets the full permission matrix for the current tenant");
+            .WithDescription("Gets the full permission matrix for the current tenant")
+        .RequireAuthorization(PermissionPolicies.MatrixView);
 
         // Get permission matrix grouped by scope
         group.MapGet("/by-scope/{scope}", GetMatrixByScopeAsync)
@@ -31,7 +33,8 @@ public static class PermissionMatrixEndpoints
         // Get permission matrix for a specific role
         group.MapGet("/by-role/{roleId:guid}", GetMatrixByRoleAsync)
             .WithName("GetPermissionMatrixByRole")
-            .WithDescription("Gets the permission matrix for a specific role");
+            .WithDescription("Gets the permission matrix for a specific role")
+        .RequireAuthorization(PermissionPolicies.MatrixView);
 
         // Update a specific rule
         group.MapPut("/rules/{ruleId:guid}", UpdateRuleAsync)

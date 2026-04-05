@@ -14,6 +14,7 @@ using TendexAI.Application.Features.TechnicalEvaluation.Queries.GetEvaluationRes
 using TendexAI.Application.Features.TechnicalEvaluation.Queries.GetHeatmap;
 using TendexAI.Application.Features.TechnicalEvaluation.Queries.GetTechnicalScores;
 using TendexAI.Application.Features.TechnicalEvaluation.Queries.GetVarianceAlerts;
+using TendexAI.Infrastructure.Authorization;
 
 namespace TendexAI.API.Endpoints.Evaluation;
 
@@ -79,7 +80,8 @@ public static class TechnicalEvaluationEndpoints
             .WithDescription("Committee member submits a score for a specific evaluation criterion " +
                              "on a specific offer. Operates under blind evaluation — evaluator sees only blind code.")
             .Produces<TechnicalScoreDto>(StatusCodes.Status201Created)
-            .Produces<ProblemDetails>(StatusCodes.Status400BadRequest);
+            .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+        .RequireAuthorization(PermissionPolicies.EvaluationTechnicalScore);
 
         group.MapPost("/complete-scoring", CompleteScoringAsync)
             .WithName("CompleteTechnicalScoring")

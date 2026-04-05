@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using TendexAI.Domain.Entities.Rfp;
 using TendexAI.Infrastructure.Services;
 using TendexAI.Infrastructure.Persistence;
+using TendexAI.Infrastructure.Authorization;
 
 namespace TendexAI.API.Endpoints.Rfp;
 
@@ -21,7 +22,8 @@ public static class BookletTemplateEndpoints
 
         group.MapGet("/", GetBookletTemplatesAsync)
             .WithName("GetBookletTemplates")
-            .WithSummary("Get list of booklet templates");
+            .WithSummary("Get list of booklet templates")
+        .RequireAuthorization(PermissionPolicies.TemplatesView);
 
         group.MapGet("/{id:guid}", GetBookletTemplateByIdAsync)
             .WithName("GetBookletTemplateById")
@@ -38,7 +40,8 @@ public static class BookletTemplateEndpoints
 
         group.MapDelete("/{id:guid}", DeleteBookletTemplateAsync)
             .WithName("DeleteBookletTemplate")
-            .WithSummary("Deactivate a booklet template");
+            .WithSummary("Deactivate a booklet template")
+        .RequireAuthorization(PermissionPolicies.TemplatesDelete);
 
         group.MapGet("/competition/{competitionId:guid}/blocks", GetBookletBlocksByCompetitionAsync)
             .WithName("GetBookletBlocksByCompetition")

@@ -15,6 +15,7 @@ using TendexAI.Application.Features.Committees.Queries.GetCompetitionCommittees;
 using TendexAI.Application.Features.Committees.Queries.GetEligibleUsers;
 using TendexAI.Application.Features.Committees.Queries.ValidateConflictOfInterest;
 using TendexAI.Domain.Enums;
+using TendexAI.Infrastructure.Authorization;
 
 namespace TendexAI.API.Endpoints.Committees;
 
@@ -49,20 +50,23 @@ public static class CommitteeEndpoints
             .WithName("GetCommitteeById")
             .WithSummary("Get a specific committee with all members")
             .Produces<CommitteeDetailDto>(StatusCodes.Status200OK)
-            .Produces<ProblemDetails>(StatusCodes.Status404NotFound);
+            .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
+        .RequireAuthorization(PermissionPolicies.CommitteesView);
 
         group.MapPost("/", CreateCommitteeAsync)
             .WithName("CreateCommittee")
             .WithSummary("Create a new committee (permanent or temporary)")
             .Produces<Guid>(StatusCodes.Status201Created)
-            .Produces<ProblemDetails>(StatusCodes.Status400BadRequest);
+            .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+        .RequireAuthorization(PermissionPolicies.CommitteesCreate);
 
         group.MapPut("/{committeeId:guid}", UpdateCommitteeAsync)
             .WithName("UpdateCommittee")
             .WithSummary("Update committee information, scope, and competition links")
             .Produces(StatusCodes.Status200OK)
             .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
-            .Produces<ProblemDetails>(StatusCodes.Status404NotFound);
+            .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
+        .RequireAuthorization(PermissionPolicies.CommitteesEdit);
 
         group.MapPut("/{committeeId:guid}/status", ChangeCommitteeStatusAsync)
             .WithName("ChangeCommitteeStatus")
@@ -86,14 +90,16 @@ public static class CommitteeEndpoints
             .WithSummary("Add a registered platform user to a committee with validation")
             .Produces(StatusCodes.Status200OK)
             .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
-            .Produces<ProblemDetails>(StatusCodes.Status409Conflict);
+            .Produces<ProblemDetails>(StatusCodes.Status409Conflict)
+        .RequireAuthorization(PermissionPolicies.CommitteesManageMembers);
 
         group.MapDelete("/{committeeId:guid}/members/{userId:guid}", RemoveCommitteeMemberAsync)
             .WithName("RemoveCommitteeMember")
             .WithSummary("Remove (deactivate) a member from a committee")
             .Produces(StatusCodes.Status200OK)
             .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
-            .Produces<ProblemDetails>(StatusCodes.Status404NotFound);
+            .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
+        .RequireAuthorization(PermissionPolicies.CommitteesManageMembers);
 
         // ═════════════════════════════════════════════════════════════
         //  Conflict of Interest Validation

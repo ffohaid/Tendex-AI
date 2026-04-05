@@ -14,6 +14,7 @@ using TendexAI.Application.Features.Inquiries.Queries.GetInquiriesPaged;
 using TendexAI.Application.Features.Inquiries.Queries.GetInquiryById;
 using TendexAI.Application.Features.Inquiries.Queries.GetInquiryStatistics;
 using TendexAI.Domain.Enums;
+using TendexAI.Infrastructure.Authorization;
 
 namespace TendexAI.API.Endpoints.Inquiries;
 
@@ -33,7 +34,8 @@ public static class InquiryEndpoints
         // ─── Queries ───────────────────────────────────────────────
         group.MapGet("/", GetInquiriesPagedAsync)
             .WithName("GetInquiries")
-            .WithSummary("Get paginated inquiries with filters");
+            .WithSummary("Get paginated inquiries with filters")
+        .RequireAuthorization(PermissionPolicies.InquiriesView);
 
         group.MapGet("/statistics", GetStatisticsAsync)
             .WithName("GetInquiryStatistics")
@@ -46,7 +48,8 @@ public static class InquiryEndpoints
         // ─── Commands ──────────────────────────────────────────────
         group.MapPost("/", CreateAsync)
             .WithName("CreateInquiry")
-            .WithSummary("Create a new supplier inquiry");
+            .WithSummary("Create a new supplier inquiry")
+        .RequireAuthorization(PermissionPolicies.InquiriesCreate);
 
         group.MapPost("/bulk-import", BulkImportAsync)
             .WithName("BulkImportInquiries")
@@ -74,7 +77,8 @@ public static class InquiryEndpoints
 
         group.MapPost("/{id:guid}/close", CloseAsync)
             .WithName("CloseInquiry")
-            .WithSummary("Close an inquiry");
+            .WithSummary("Close an inquiry")
+        .RequireAuthorization(PermissionPolicies.InquiriesManage);
 
         group.MapPost("/{id:guid}/generate-ai-answer", GenerateAiAnswerAsync)
             .WithName("GenerateAiAnswer")

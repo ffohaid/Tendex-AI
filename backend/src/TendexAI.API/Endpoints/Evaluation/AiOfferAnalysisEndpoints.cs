@@ -7,6 +7,7 @@ using TendexAI.Application.Features.TechnicalEvaluation.Dtos;
 using TendexAI.Application.Features.TechnicalEvaluation.Queries.GetAiAnalysisSummary;
 using TendexAI.Application.Features.TechnicalEvaluation.Queries.GetAiComparisonMatrix;
 using TendexAI.Application.Features.TechnicalEvaluation.Queries.GetAiOfferAnalysis;
+using TendexAI.Infrastructure.Authorization;
 
 namespace TendexAI.API.Endpoints.Evaluation;
 
@@ -50,7 +51,8 @@ public static class AiOfferAnalysisEndpoints
                 "All outputs are drafts requiring human review (AI as Copilot). " +
                 "Evaluation is blind — supplier identities are hidden from the AI.")
             .Produces<AiAnalysisSummaryDto>(StatusCodes.Status200OK)
-            .Produces<ProblemDetails>(StatusCodes.Status400BadRequest);
+            .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+            .RequireAuthorization(PermissionPolicies.EvaluationCreate);
 
         // ═══════════════════════════════════════════════════════════
         //  Retrieve Analysis Results
@@ -63,7 +65,8 @@ public static class AiOfferAnalysisEndpoints
                 "Returns an aggregated summary of AI analysis results including " +
                 "completion status, compliance scores, and review status for each offer.")
             .Produces<AiAnalysisSummaryDto>(StatusCodes.Status200OK)
-            .Produces<ProblemDetails>(StatusCodes.Status404NotFound);
+            .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
+            .RequireAuthorization(PermissionPolicies.EvaluationView);
 
         group.MapGet("/{analysisId:guid}", GetAiOfferAnalysisAsync)
             .WithName("GetAiOfferAnalysis")
@@ -73,7 +76,8 @@ public static class AiOfferAnalysisEndpoints
                 "executive summary, strengths/weaknesses analysis, risk assessment, " +
                 "compliance evaluation, and per-criterion detailed analysis with citations.")
             .Produces<AiOfferAnalysisDto>(StatusCodes.Status200OK)
-            .Produces<ProblemDetails>(StatusCodes.Status404NotFound);
+            .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
+            .RequireAuthorization(PermissionPolicies.EvaluationView);
 
         group.MapGet("/comparison-matrix", GetAiComparisonMatrixAsync)
             .WithName("GetAiComparisonMatrix")
@@ -83,7 +87,8 @@ public static class AiOfferAnalysisEndpoints
                 "across all evaluation criteria. Enables the committee to compare offers " +
                 "side-by-side based on AI analysis.")
             .Produces<AiComparisonMatrixDto>(StatusCodes.Status200OK)
-            .Produces<ProblemDetails>(StatusCodes.Status404NotFound);
+            .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
+            .RequireAuthorization(PermissionPolicies.EvaluationView);
 
         // ═══════════════════════════════════════════════════════════
         //  Human Review
@@ -98,7 +103,8 @@ public static class AiOfferAnalysisEndpoints
                 "must be reviewed before being considered final. " +
                 "The review does not necessarily mean acceptance of all suggested scores.")
             .Produces<AiOfferAnalysisDto>(StatusCodes.Status200OK)
-            .Produces<ProblemDetails>(StatusCodes.Status400BadRequest);
+            .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+            .RequireAuthorization(PermissionPolicies.EvaluationCreate);
 
         return app;
     }

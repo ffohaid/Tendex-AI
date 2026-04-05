@@ -17,6 +17,7 @@ using TendexAI.Application.Features.Rfp.Dtos;
 using TendexAI.Application.Features.Rfp.Queries.GetCompetitionById;
 using TendexAI.Application.Features.Rfp.Queries.GetCompetitionsList;
 using TendexAI.Domain.Enums;
+using TendexAI.Infrastructure.Authorization;
 
 namespace TendexAI.API.Endpoints.Rfp;
 
@@ -41,7 +42,8 @@ public static class CompetitionEndpoints
             .WithName("GetCompetitions")
             .WithSummary("Get paginated list of competitions for the current tenant")
             .Produces<CompetitionPagedResultDto>(StatusCodes.Status200OK)
-            .Produces<ProblemDetails>(StatusCodes.Status400BadRequest);
+            .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+        .RequireAuthorization(PermissionPolicies.CompetitionsView);
 
         group.MapGet("/{competitionId:guid}", GetCompetitionByIdAsync)
             .WithName("GetCompetitionById")
@@ -53,21 +55,24 @@ public static class CompetitionEndpoints
             .WithName("CreateCompetition")
             .WithSummary("Create a new competition (RFP)")
             .Produces<CompetitionDetailDto>(StatusCodes.Status201Created)
-            .Produces<ProblemDetails>(StatusCodes.Status400BadRequest);
+            .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+        .RequireAuthorization(PermissionPolicies.CompetitionsCreate);
 
         group.MapPut("/{competitionId:guid}", UpdateCompetitionAsync)
             .WithName("UpdateCompetition")
             .WithSummary("Update competition basic information")
             .Produces<CompetitionDetailDto>(StatusCodes.Status200OK)
             .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
-            .Produces<ProblemDetails>(StatusCodes.Status404NotFound);
+            .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
+        .RequireAuthorization(PermissionPolicies.CompetitionsEdit);
 
         group.MapDelete("/{competitionId:guid}", DeleteCompetitionAsync)
             .WithName("DeleteCompetition")
             .WithSummary("Soft-delete a competition (Draft or Cancelled only)")
             .Produces(StatusCodes.Status204NoContent)
             .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
-            .Produces<ProblemDetails>(StatusCodes.Status404NotFound);
+            .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
+        .RequireAuthorization(PermissionPolicies.CompetitionsDelete);
 
         // ----- Auto-Save -----
 

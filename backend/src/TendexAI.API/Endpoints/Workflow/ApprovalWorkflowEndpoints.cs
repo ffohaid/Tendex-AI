@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using TendexAI.Application.Features.Workflow.Services;
 using TendexAI.Domain.Enums;
+using TendexAI.Infrastructure.Authorization;
 
 namespace TendexAI.API.Endpoints.Workflow;
 
@@ -25,29 +26,34 @@ public static class ApprovalWorkflowEndpoints
             .WithName("InitiateApprovalWorkflow")
             .WithSummary("Initiate an approval workflow for a competition phase transition")
             .Produces<ApprovalWorkflowInitiationResult>(StatusCodes.Status200OK)
-            .Produces<ProblemDetails>(StatusCodes.Status400BadRequest);
+            .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+            .RequireAuthorization(PermissionPolicies.ApprovalsCreate);
 
         executionGroup.MapPost("/steps/{stepId:guid}/approve", ApproveStepAsync)
             .WithName("ApproveWorkflowStep")
             .WithSummary("Approve a specific step in the approval workflow")
             .Produces<ApprovalActionResult>(StatusCodes.Status200OK)
-            .Produces<ProblemDetails>(StatusCodes.Status400BadRequest);
+            .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+            .RequireAuthorization(PermissionPolicies.ApprovalsApprove);
 
         executionGroup.MapPost("/steps/{stepId:guid}/reject", RejectStepAsync)
             .WithName("RejectWorkflowStep")
             .WithSummary("Reject a specific step in the approval workflow")
             .Produces<ApprovalActionResult>(StatusCodes.Status200OK)
-            .Produces<ProblemDetails>(StatusCodes.Status400BadRequest);
+            .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+            .RequireAuthorization(PermissionPolicies.ApprovalsApprove);
 
         executionGroup.MapGet("/status", GetWorkflowStatusAsync)
             .WithName("GetApprovalWorkflowStatus")
             .WithSummary("Get the current status of an approval workflow for a competition transition")
-            .Produces<ApprovalWorkflowStatusResult>(StatusCodes.Status200OK);
+            .Produces<ApprovalWorkflowStatusResult>(StatusCodes.Status200OK)
+            .RequireAuthorization(PermissionPolicies.ApprovalsView);
 
         executionGroup.MapGet("/competition/{competitionId:guid}", GetCompetitionWorkflowsAsync)
             .WithName("GetCompetitionWorkflows")
             .WithSummary("Get all approval workflow steps for a competition")
-            .Produces<IReadOnlyList<ApprovalStepDetail>>(StatusCodes.Status200OK);
+            .Produces<IReadOnlyList<ApprovalStepDetail>>(StatusCodes.Status200OK)
+            .RequireAuthorization(PermissionPolicies.ApprovalsView);
 
         // ── Workflow Definition Management Endpoints (Admin) ──
         var definitionGroup = app.MapGroup("/api/v1/workflow-definitions")
@@ -56,27 +62,33 @@ public static class ApprovalWorkflowEndpoints
 
         definitionGroup.MapGet("/", GetWorkflowDefinitionsAsync)
             .WithName("GetWorkflowDefinitions")
-            .WithSummary("Get all workflow definitions for the current tenant");
+            .WithSummary("Get all workflow definitions for the current tenant")
+            .RequireAuthorization(PermissionPolicies.WorkflowView);
 
         definitionGroup.MapGet("/{id:guid}", GetWorkflowDefinitionByIdAsync)
             .WithName("GetWorkflowDefinitionById")
-            .WithSummary("Get a workflow definition with its steps");
+            .WithSummary("Get a workflow definition with its steps")
+            .RequireAuthorization(PermissionPolicies.WorkflowView);
 
         definitionGroup.MapPost("/", CreateWorkflowDefinitionAsync)
             .WithName("CreateWorkflowDefinition")
-            .WithSummary("Create a new workflow definition");
+            .WithSummary("Create a new workflow definition")
+            .RequireAuthorization(PermissionPolicies.WorkflowCreate);
 
         definitionGroup.MapPut("/{id:guid}", UpdateWorkflowDefinitionAsync)
             .WithName("UpdateWorkflowDefinition")
-            .WithSummary("Update an existing workflow definition including its steps");
+            .WithSummary("Update an existing workflow definition including its steps")
+            .RequireAuthorization(PermissionPolicies.WorkflowEdit);
 
         definitionGroup.MapDelete("/{id:guid}", DeleteWorkflowDefinitionAsync)
             .WithName("DeleteWorkflowDefinition")
-            .WithSummary("Delete a workflow definition (soft-delete by deactivation)");
+            .WithSummary("Delete a workflow definition (soft-delete by deactivation)")
+            .RequireAuthorization(PermissionPolicies.WorkflowDelete);
 
         definitionGroup.MapPost("/seed-defaults", SeedDefaultWorkflowsAsync)
             .WithName("SeedDefaultWorkflows")
-            .WithSummary("Seed default workflow definitions for the current tenant");
+            .WithSummary("Seed default workflow definitions for the current tenant")
+            .RequireAuthorization(PermissionPolicies.WorkflowCreate);
 
         return app;
     }

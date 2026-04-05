@@ -4,6 +4,7 @@ using TendexAI.Application.Features.AI.Commands.GenerateBoq;
 using TendexAI.Application.Features.AI.Commands.GenerateSectionDraft;
 using TendexAI.Application.Features.AI.Commands.RefineBoq;
 using TendexAI.Application.Features.AI.Commands.RefineSectionDraft;
+using TendexAI.Infrastructure.Authorization;
 
 namespace TendexAI.API.Endpoints.AI;
 
@@ -57,7 +58,8 @@ public static class AiSpecificationDraftingEndpoints
         .WithName("GenerateSectionDraft")
         .WithSummary("Generate an AI-assisted draft for an RFP booklet section with RAG-grounded citations")
         .Produces<GenerateSectionDraftResult>()
-        .Produces(StatusCodes.Status422UnprocessableEntity);
+        .Produces(StatusCodes.Status422UnprocessableEntity)
+        .RequireAuthorization(PermissionPolicies.AiAssistantUse);
 
         // POST /api/v1/ai/specifications/sections/refine
         group.MapPost("/sections/refine", async (
@@ -85,7 +87,8 @@ public static class AiSpecificationDraftingEndpoints
         .WithName("RefineSectionDraft")
         .WithSummary("Refine an existing AI-generated section draft based on user feedback")
         .Produces<RefineSectionDraftResult>()
-        .Produces(StatusCodes.Status422UnprocessableEntity);
+        .Produces(StatusCodes.Status422UnprocessableEntity)
+        .RequireAuthorization(PermissionPolicies.AiAssistantUse);
 
         // ═══════════════════════════════════════════════════════════════
         //  Booklet Structure Generation
@@ -117,7 +120,8 @@ public static class AiSpecificationDraftingEndpoints
         .WithName("GenerateBookletStructure")
         .WithSummary("Generate a complete RFP booklet structure with mandatory and optional sections")
         .Produces<GenerateBookletStructureResult>()
-        .Produces(StatusCodes.Status422UnprocessableEntity);
+        .Produces(StatusCodes.Status422UnprocessableEntity)
+        .RequireAuthorization(PermissionPolicies.AiAssistantUse);
 
         // ═══════════════════════════════════════════════════════════════
         //  BOQ Generation
@@ -151,7 +155,8 @@ public static class AiSpecificationDraftingEndpoints
         .WithName("GenerateBoq")
         .WithSummary("Generate an AI-assisted Bill of Quantities (BOQ) with anti-hallucination price controls")
         .Produces<GenerateBoqResult>()
-        .Produces(StatusCodes.Status422UnprocessableEntity);
+        .Produces(StatusCodes.Status422UnprocessableEntity)
+        .RequireAuthorization(PermissionPolicies.AiAssistantUse);
 
         // POST /api/v1/ai/specifications/boq/refine
         group.MapPost("/boq/refine", async (
@@ -178,7 +183,8 @@ public static class AiSpecificationDraftingEndpoints
         .WithName("RefineBoq")
         .WithSummary("Refine an existing AI-generated BOQ based on user feedback")
         .Produces<RefineBoqResult>()
-        .Produces(StatusCodes.Status422UnprocessableEntity);
+        .Produces(StatusCodes.Status422UnprocessableEntity)
+        .RequireAuthorization(PermissionPolicies.AiAssistantUse);
     }
 }
 

@@ -6,6 +6,7 @@ using TendexAI.Application.Features.OperatorDashboard.Queries.GetTenantUsageStat
 using TendexAI.Application.Features.OperatorDashboard.Queries.GetSystemHealthStatus;
 using TendexAI.Application.Features.OperatorDashboard.Queries.GetResourceConsumptionTrends;
 using TendexAI.Application.Features.Tenants.Dtos;
+using TendexAI.Infrastructure.Authorization;
 
 namespace TendexAI.API.Endpoints.OperatorDashboard;
 
@@ -30,28 +31,32 @@ public static class OperatorDashboardEndpoints
             .WithSummary("Retrieve aggregated operator dashboard KPIs and summary data")
             .Produces<OperatorDashboardSummaryDto>(StatusCodes.Status200OK)
             .Produces<ProblemDetails>(StatusCodes.Status401Unauthorized)
-            .Produces<ProblemDetails>(StatusCodes.Status403Forbidden);
+            .Produces<ProblemDetails>(StatusCodes.Status403Forbidden)
+            .RequireAuthorization(PermissionPolicies.TenantsView);
 
         group.MapGet("/tenant-usage", GetTenantUsageStatisticsAsync)
             .WithName("GetTenantUsageStatistics")
             .WithSummary("Retrieve per-tenant usage statistics with pagination")
             .Produces<PagedResultDto<TenantUsageStatisticsDto>>(StatusCodes.Status200OK)
             .Produces<ProblemDetails>(StatusCodes.Status401Unauthorized)
-            .Produces<ProblemDetails>(StatusCodes.Status403Forbidden);
+            .Produces<ProblemDetails>(StatusCodes.Status403Forbidden)
+            .RequireAuthorization(PermissionPolicies.TenantsView);
 
         group.MapGet("/system-health", GetSystemHealthStatusAsync)
             .WithName("GetSystemHealthStatus")
             .WithSummary("Check system health status of all infrastructure services")
             .Produces<SystemHealthStatusDto>(StatusCodes.Status200OK)
             .Produces<ProblemDetails>(StatusCodes.Status401Unauthorized)
-            .Produces<ProblemDetails>(StatusCodes.Status403Forbidden);
+            .Produces<ProblemDetails>(StatusCodes.Status403Forbidden)
+            .RequireAuthorization(PermissionPolicies.TenantsView);
 
         group.MapGet("/resource-trends", GetResourceConsumptionTrendsAsync)
             .WithName("GetResourceConsumptionTrends")
             .WithSummary("Retrieve resource consumption trends and analytics data")
             .Produces<ResourceConsumptionTrendsDto>(StatusCodes.Status200OK)
             .Produces<ProblemDetails>(StatusCodes.Status401Unauthorized)
-            .Produces<ProblemDetails>(StatusCodes.Status403Forbidden);
+            .Produces<ProblemDetails>(StatusCodes.Status403Forbidden)
+            .RequireAuthorization(PermissionPolicies.TenantsView);
 
         return app;
     }

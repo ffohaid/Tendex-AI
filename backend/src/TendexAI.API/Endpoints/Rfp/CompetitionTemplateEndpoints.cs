@@ -5,6 +5,7 @@ using TendexAI.Application.Features.Rfp.Commands.CopyFromTemplate;
 using TendexAI.Application.Features.Rfp.Queries.GetCompetitionTemplates;
 using TendexAI.Domain.Common;
 using TendexAI.Domain.Enums;
+using TendexAI.Infrastructure.Authorization;
 
 namespace TendexAI.API.Endpoints.Rfp;
 
@@ -22,13 +23,15 @@ public static class CompetitionTemplateEndpoints
         group.MapGet("/", GetTemplatesAsync)
             .WithName("GetCompetitionTemplates")
             .WithSummary("Get list of competition templates")
-            .Produces<CompetitionTemplateListDto>(StatusCodes.Status200OK);
+            .Produces<CompetitionTemplateListDto>(StatusCodes.Status200OK)
+        .RequireAuthorization(PermissionPolicies.TemplatesView);
 
         group.MapPost("/", CreateTemplateAsync)
             .WithName("CreateCompetitionTemplate")
             .WithSummary("Create a new competition template")
             .Produces<object>(StatusCodes.Status201Created)
-            .Produces<ProblemDetails>(StatusCodes.Status400BadRequest);
+            .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+        .RequireAuthorization(PermissionPolicies.TemplatesCreate);
 
         group.MapPost("/{templateId:guid}/copy", CopyFromTemplateAsync)
             .WithName("CopyFromTemplate")

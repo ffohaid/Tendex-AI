@@ -175,6 +175,9 @@ public static class DependencyInjection
                 policy.RequireRole("SuperAdmin", "SupportAdmin", "Operator Super Admin", "OperatorPrimaryAdmin", "OperatorSuperAdmin"));
         });
 
+        // ----- Permission-based Authorization Policies -----
+        services.AddPermissionPolicies();
+
         // ----- Identity Services -----
         services.AddSingleton<IPasswordHasher, PasswordHasher>();
         services.AddSingleton<ITotpService, TotpService>();

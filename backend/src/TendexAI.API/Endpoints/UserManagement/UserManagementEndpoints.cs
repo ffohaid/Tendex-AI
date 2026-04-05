@@ -19,6 +19,7 @@ using TendexAI.Application.Features.UserManagement.Queries.GetRoleById;
 using TendexAI.Application.Features.UserManagement.Queries.GetRoles;
 using TendexAI.Application.Features.UserManagement.Queries.GetUserById;
 using TendexAI.Application.Features.UserManagement.Queries.GetUsers;
+using TendexAI.Infrastructure.Authorization;
 
 namespace TendexAI.API.Endpoints.UserManagement;
 
@@ -40,7 +41,7 @@ public static class UserManagementEndpoints
         usersGroup.MapGet("/", GetUsersAsync)
             .WithName("GetUsers")
             .WithSummary("Get paginated list of users with search and filters")
-            .RequireAuthorization()
+            .RequireAuthorization(PermissionPolicies.UsersView)
             .Produces<PaginatedResult<UserDto>>(StatusCodes.Status200OK)
             .Produces<ProblemDetails>(StatusCodes.Status401Unauthorized);
 
@@ -54,7 +55,7 @@ public static class UserManagementEndpoints
         usersGroup.MapPut("/{userId:guid}", UpdateUserAsync)
             .WithName("UpdateUser")
             .WithSummary("Update user profile information")
-            .RequireAuthorization()
+            .RequireAuthorization(PermissionPolicies.UsersEdit)
             .Produces(StatusCodes.Status204NoContent)
             .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
             .Produces<ProblemDetails>(StatusCodes.Status404NotFound);
@@ -62,21 +63,21 @@ public static class UserManagementEndpoints
         usersGroup.MapPatch("/{userId:guid}/status", ToggleUserStatusAsync)
             .WithName("ToggleUserStatus")
             .WithSummary("Activate or deactivate a user account")
-            .RequireAuthorization()
+            .RequireAuthorization(PermissionPolicies.UsersEdit)
             .Produces(StatusCodes.Status204NoContent)
             .Produces<ProblemDetails>(StatusCodes.Status404NotFound);
 
         usersGroup.MapPost("/{userId:guid}/roles", AssignRoleAsync)
             .WithName("AssignRole")
             .WithSummary("Assign a role to a user")
-            .RequireAuthorization()
+            .RequireAuthorization(PermissionPolicies.UsersManageRoles)
             .Produces(StatusCodes.Status204NoContent)
             .Produces<ProblemDetails>(StatusCodes.Status400BadRequest);
 
         usersGroup.MapDelete("/{userId:guid}/roles/{roleId:guid}", RemoveRoleAsync)
             .WithName("RemoveRole")
             .WithSummary("Remove a role from a user")
-            .RequireAuthorization()
+            .RequireAuthorization(PermissionPolicies.UsersManageRoles)
             .Produces(StatusCodes.Status204NoContent)
             .Produces<ProblemDetails>(StatusCodes.Status400BadRequest);
 
@@ -87,7 +88,7 @@ public static class UserManagementEndpoints
         rolesGroup.MapGet("/", GetRolesAsync)
             .WithName("GetRoles")
             .WithSummary("Get all roles for the current tenant")
-            .RequireAuthorization()
+            .RequireAuthorization(PermissionPolicies.RolesView)
             .Produces<IReadOnlyList<RoleDto>>(StatusCodes.Status200OK);
 
         rolesGroup.MapGet("/{roleId:guid}", GetRoleByIdAsync)
@@ -100,14 +101,14 @@ public static class UserManagementEndpoints
         rolesGroup.MapPost("/", CreateRoleAsync)
             .WithName("CreateRole")
             .WithSummary("Create a new custom role")
-            .RequireAuthorization()
+            .RequireAuthorization(PermissionPolicies.RolesCreate)
             .Produces<RoleDto>(StatusCodes.Status201Created)
             .Produces<ProblemDetails>(StatusCodes.Status400BadRequest);
 
         rolesGroup.MapPut("/{roleId:guid}", UpdateRoleAsync)
             .WithName("UpdateRole")
             .WithSummary("Update a role's name, description, and permissions")
-            .RequireAuthorization()
+            .RequireAuthorization(PermissionPolicies.RolesEdit)
             .Produces(StatusCodes.Status204NoContent)
             .Produces<ProblemDetails>(StatusCodes.Status400BadRequest);
 

@@ -5,6 +5,7 @@ using TendexAI.Domain.Entities.Rfp;
 using TendexAI.Domain.Entities.Evaluation;
 using TendexAI.Domain.Entities.Committees;
 using TendexAI.Domain.Enums;
+using TendexAI.Infrastructure.Authorization;
 
 namespace TendexAI.API.Endpoints.Reports;
 
@@ -23,7 +24,8 @@ public static class ReportEndpoints
 
         group.MapGet("/", GetReportDataAsync)
             .WithName("GetReportData")
-            .WithSummary("Retrieve comprehensive report data including KPIs, trends, and distributions");
+            .WithSummary("Retrieve comprehensive report data including KPIs, trends, and distributions")
+        .RequireAuthorization(PermissionPolicies.ReportsView);
 
         return app;
     }

@@ -1,4 +1,5 @@
 using TendexAI.Application.Common.Interfaces.AI;
+using TendexAI.Infrastructure.Authorization;
 
 namespace TendexAI.API.Endpoints.AI;
 
@@ -198,7 +199,8 @@ public static class AiUserManagementEndpoints
         })
         .WithName("AiAnalyzePermissions")
         .WithSummary("AI-powered permission analysis and security recommendations")
-        .Produces(StatusCodes.Status200OK);
+        .Produces(StatusCodes.Status200OK)
+        .RequireAuthorization(PermissionPolicies.AiAssistantUse);
 
         group.MapPost("/assist", async (
             AiUserManagementAssistRequest request,
@@ -244,7 +246,8 @@ public static class AiUserManagementEndpoints
         })
         .WithName("AiUserManagementAssist")
         .WithSummary("General AI assistant for user management questions")
-        .Produces(StatusCodes.Status200OK);
+        .Produces(StatusCodes.Status200OK)
+        .RequireAuthorization(PermissionPolicies.AiAssistantUse);
     }
 }
 

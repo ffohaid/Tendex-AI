@@ -4,6 +4,7 @@ using TendexAI.Application.Features.Rag.Commands.IndexDocument;
 using TendexAI.Application.Features.Rag.Commands.RemoveDocument;
 using TendexAI.Application.Features.Rag.Queries.GetVectorStoreStatus;
 using TendexAI.Application.Features.Rag.Queries.RetrieveContext;
+using TendexAI.Infrastructure.Authorization;
 
 namespace TendexAI.API.Endpoints.AI;
 
@@ -29,7 +30,8 @@ public static class RagEndpoints
                 "If the document was previously indexed, existing vectors are replaced (idempotent).")
             .Produces<DocumentIndexingResult>(StatusCodes.Status200OK)
             .Produces(StatusCodes.Status400BadRequest)
-            .Produces(StatusCodes.Status500InternalServerError);
+            .Produces(StatusCodes.Status500InternalServerError)
+            .RequireAuthorization(PermissionPolicies.KnowledgeBaseManage);
 
         // POST /api/v1/rag/query — Retrieve relevant context for a query
         group.MapPost("/query", RetrieveContextHandler)

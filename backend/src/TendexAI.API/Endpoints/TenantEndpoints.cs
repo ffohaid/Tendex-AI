@@ -11,6 +11,7 @@ using TendexAI.Application.Features.Tenants.Queries.GetTenantById;
 using TendexAI.Application.Features.Tenants.Queries.GetTenantsList;
 using TendexAI.Domain.Entities;
 using TendexAI.Domain.Enums;
+using TendexAI.Infrastructure.Authorization;
 
 namespace TendexAI.API.Endpoints;
 
@@ -56,21 +57,24 @@ public static class TenantEndpoints
             .WithSummary("Creates a new government entity (tenant) on the platform.")
             .Produces<TenantDto>(StatusCodes.Status201Created)
             .Produces(StatusCodes.Status400BadRequest)
-            .Produces(StatusCodes.Status409Conflict);
+            .Produces(StatusCodes.Status409Conflict)
+        .RequireAuthorization(PermissionPolicies.TenantsCreate);
 
         // PUT /api/v1/tenants/{id} - Update tenant info
         group.MapPut("/{id:guid}", UpdateTenant)
             .WithName("UpdateTenant")
             .WithSummary("Updates the basic information of an existing tenant.")
             .Produces<TenantDto>(StatusCodes.Status200OK)
-            .Produces(StatusCodes.Status404NotFound);
+            .Produces(StatusCodes.Status404NotFound)
+        .RequireAuthorization(PermissionPolicies.TenantsEdit);
 
         // PUT /api/v1/tenants/{id}/branding - Update tenant branding
         group.MapPut("/{id:guid}/branding", UpdateTenantBranding)
             .WithName("UpdateTenantBranding")
             .WithSummary("Updates the visual branding (logo, colors) for a tenant.")
             .Produces<TenantDto>(StatusCodes.Status200OK)
-            .Produces(StatusCodes.Status404NotFound);
+            .Produces(StatusCodes.Status404NotFound)
+        .RequireAuthorization(PermissionPolicies.TenantsEdit);
 
         // POST /api/v1/tenants/{id}/status - Change tenant status
         group.MapPost("/{id:guid}/status", ChangeTenantStatus)

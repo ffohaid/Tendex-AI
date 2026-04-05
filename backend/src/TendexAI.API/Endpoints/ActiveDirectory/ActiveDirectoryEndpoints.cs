@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 using TendexAI.Application.Features.ActiveDirectory.Commands;
 using TendexAI.Application.Features.ActiveDirectory.Dtos;
 using TendexAI.Application.Features.ActiveDirectory.Queries;
+using TendexAI.Infrastructure.Authorization;
 
 namespace TendexAI.API.Endpoints.ActiveDirectory;
 
@@ -25,7 +26,8 @@ public static class ActiveDirectoryEndpoints
         group.MapGet("/{tenantId:guid}", GetConfigAsync)
             .WithName("GetActiveDirectoryConfig")
             .WithSummary("Get the Active Directory configuration for a tenant")
-            .Produces<ActiveDirectoryConfigurationDto>(StatusCodes.Status200OK);
+            .Produces<ActiveDirectoryConfigurationDto>(StatusCodes.Status200OK)
+        .RequireAuthorization(PermissionPolicies.ActiveDirectoryManage);
 
         group.MapPut("/{tenantId:guid}", SaveConfigAsync)
             .WithName("SaveActiveDirectoryConfig")
@@ -43,7 +45,8 @@ public static class ActiveDirectoryEndpoints
             .WithName("TestActiveDirectoryConnection")
             .WithSummary("Test the Active Directory connection for a tenant")
             .Produces<TestConnectionResultDto>(StatusCodes.Status200OK)
-            .Produces<ProblemDetails>(StatusCodes.Status400BadRequest);
+            .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+        .RequireAuthorization(PermissionPolicies.ActiveDirectoryManage);
 
         return app;
     }

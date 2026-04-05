@@ -2,6 +2,7 @@ using MediatR;
 using Microsoft.AspNetCore.Mvc;
 using TendexAI.Application.Features.Dashboard.Dtos;
 using TendexAI.Application.Features.Dashboard.Queries.GetPendingTasks;
+using TendexAI.Infrastructure.Authorization;
 
 namespace TendexAI.API.Endpoints.Tasks;
 
@@ -27,13 +28,15 @@ public static class TaskEndpoints
             .WithSummary("Retrieve pending tasks for the current user with filtering, sorting, and statistics")
             .Produces<PendingTasksPagedResultDto>(StatusCodes.Status200OK)
             .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
-            .Produces<ProblemDetails>(StatusCodes.Status401Unauthorized);
+            .Produces<ProblemDetails>(StatusCodes.Status401Unauthorized)
+            .RequireAuthorization(PermissionPolicies.TasksView);
 
         group.MapGet("/statistics", GetTaskStatisticsAsync)
             .WithName("GetTaskStatistics")
             .WithSummary("Retrieve task center statistics summary")
             .Produces<TaskCenterStatsDto>(StatusCodes.Status200OK)
-            .Produces<ProblemDetails>(StatusCodes.Status401Unauthorized);
+            .Produces<ProblemDetails>(StatusCodes.Status401Unauthorized)
+            .RequireAuthorization(PermissionPolicies.TasksView);
 
         return app;
     }

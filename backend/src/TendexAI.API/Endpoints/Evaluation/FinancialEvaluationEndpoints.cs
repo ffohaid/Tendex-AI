@@ -13,6 +13,7 @@ using TendexAI.Application.Features.FinancialEvaluation.Queries.GetFinancialComp
 using TendexAI.Application.Features.FinancialEvaluation.Queries.GetFinancialEvaluationDetails;
 using TendexAI.Application.Features.FinancialEvaluation.Queries.GetFinancialOfferItems;
 using TendexAI.Application.Features.FinancialEvaluation.Queries.GetFinancialScores;
+using TendexAI.Infrastructure.Authorization;
 
 namespace TendexAI.API.Endpoints.Evaluation;
 
@@ -91,7 +92,8 @@ public static class FinancialEvaluationEndpoints
             .WithName("SubmitFinancialScore")
             .WithSummary("Submit a financial evaluation score for a supplier offer")
             .Produces<FinancialScoreDto>(StatusCodes.Status201Created)
-            .Produces<ProblemDetails>(StatusCodes.Status400BadRequest);
+            .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+        .RequireAuthorization(PermissionPolicies.EvaluationFinancialScore);
 
         group.MapPost("/complete-scoring", CompleteFinancialScoringAsync)
             .WithName("CompleteFinancialScoring")

@@ -1,5 +1,6 @@
 using System.Text.RegularExpressions;
 using TendexAI.Application.Common.Interfaces.AI;
+using TendexAI.Infrastructure.Authorization;
 
 namespace TendexAI.API.Endpoints.AI;
 
@@ -60,7 +61,8 @@ public static class AiTextAssistEndpoints
         })
         .WithName("AiTextAssist")
         .WithSummary("General-purpose AI text generation and improvement")
-        .Produces(StatusCodes.Status200OK);
+        .Produces(StatusCodes.Status200OK)
+        .RequireAuthorization(PermissionPolicies.AiAssistantUse);
     }
 
     private static string BuildSystemPrompt(AiTextAssistRequest request)

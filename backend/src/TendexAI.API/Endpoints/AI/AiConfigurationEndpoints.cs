@@ -4,6 +4,7 @@ using TendexAI.Application.Features.AI.Commands.RotateAiApiKey;
 using TendexAI.Application.Features.AI.Commands.UpdateAiConfiguration;
 using TendexAI.Application.Features.AI.Queries.GetAiConfigurations;
 using TendexAI.Domain.Enums;
+using TendexAI.Infrastructure.Authorization;
 
 namespace TendexAI.API.Endpoints.AI;
 
@@ -32,7 +33,8 @@ public static class AiConfigurationEndpoints
         })
         .WithName("GetAiConfigurations")
         .WithSummary("Get all active AI configurations for a tenant")
-        .Produces<IReadOnlyList<AiConfigurationDto>>();
+        .Produces<IReadOnlyList<AiConfigurationDto>>()
+        .RequireAuthorization(PermissionPolicies.AiSettingsView);
 
         // POST /api/v1/ai/configurations
         group.MapPost("/", async (
@@ -64,7 +66,8 @@ public static class AiConfigurationEndpoints
         .WithName("CreateAiConfiguration")
         .WithSummary("Create a new AI configuration for a tenant")
         .Produces<CreateAiConfigurationResult>(StatusCodes.Status201Created)
-        .ProducesValidationProblem();
+        .ProducesValidationProblem()
+        .RequireAuthorization(PermissionPolicies.AiSettingsManage);
 
         // PUT /api/v1/ai/configurations/{configurationId}
         group.MapPut("/{configurationId:guid}", async (
@@ -94,7 +97,8 @@ public static class AiConfigurationEndpoints
         .WithName("UpdateAiConfiguration")
         .WithSummary("Update an AI configuration's model settings")
         .Produces(StatusCodes.Status204NoContent)
-        .Produces(StatusCodes.Status404NotFound);
+        .Produces(StatusCodes.Status404NotFound)
+        .RequireAuthorization(PermissionPolicies.AiSettingsManage);
 
         // POST /api/v1/ai/configurations/{configurationId}/rotate-key
         group.MapPost("/{configurationId:guid}/rotate-key", async (
@@ -118,7 +122,8 @@ public static class AiConfigurationEndpoints
         .WithName("RotateAiApiKey")
         .WithSummary("Rotate the API key for an AI configuration (AES-256 encrypted)")
         .Produces(StatusCodes.Status204NoContent)
-        .Produces(StatusCodes.Status404NotFound);
+        .Produces(StatusCodes.Status404NotFound)
+        .RequireAuthorization(PermissionPolicies.AiSettingsManage);
     }
 }
 

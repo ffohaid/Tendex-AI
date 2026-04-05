@@ -3,6 +3,7 @@ using TendexAI.Application.Features.AI.Commands.CreateAiConfiguration;
 using TendexAI.Application.Features.AI.Commands.UpdateAiConfiguration;
 using TendexAI.Application.Features.AI.Queries.GetAiConfigurations;
 using TendexAI.Domain.Enums;
+using TendexAI.Infrastructure.Authorization;
 
 namespace TendexAI.API.Endpoints.OperatorDashboard;
 
@@ -52,7 +53,8 @@ public static class OperatorAiEndpoints
             return Results.Ok(new { items });
         })
         .WithName("GetOperatorAiProviders")
-        .WithSummary("Get all AI providers for operator management");
+        .WithSummary("Get all AI providers for operator management")
+        .RequireAuthorization(PermissionPolicies.AiSettingsView);
 
         // POST /api/v1/operator/ai/providers
         group.MapPost("/providers", async (

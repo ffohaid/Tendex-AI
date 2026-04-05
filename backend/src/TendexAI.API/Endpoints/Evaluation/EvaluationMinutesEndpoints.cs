@@ -8,6 +8,7 @@ using TendexAI.Application.Features.EvaluationMinutes.Dtos;
 using TendexAI.Application.Features.EvaluationMinutes.Queries.GetMinutes;
 using TendexAI.Application.Features.EvaluationMinutes.Queries.GetMinutesList;
 using TendexAI.Domain.Enums;
+using TendexAI.Infrastructure.Authorization;
 
 namespace TendexAI.API.Endpoints.Evaluation;
 
@@ -30,24 +31,28 @@ public static class EvaluationMinutesEndpoints
             .WithDescription("Generates evaluation minutes (technical, financial, or final comprehensive) " +
                              "based on evaluation data. Per PRD Section 11.1.")
             .Produces<EvaluationMinutesDto>(StatusCodes.Status201Created)
-            .Produces<ProblemDetails>(StatusCodes.Status400BadRequest);
+            .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+            .RequireAuthorization(PermissionPolicies.MinutesCreate);
 
         group.MapGet("/", GetMinutesListAsync)
             .WithName("GetMinutesList")
             .WithSummary("Get all evaluation minutes for a competition")
-            .Produces<IReadOnlyList<MinutesListItemDto>>(StatusCodes.Status200OK);
+            .Produces<IReadOnlyList<MinutesListItemDto>>(StatusCodes.Status200OK)
+            .RequireAuthorization(PermissionPolicies.MinutesView);
 
         group.MapGet("/{minutesId:guid}", GetMinutesAsync)
             .WithName("GetMinutesDetails")
             .WithSummary("Get details of a specific evaluation minutes document")
             .Produces<EvaluationMinutesDto>(StatusCodes.Status200OK)
-            .Produces<ProblemDetails>(StatusCodes.Status404NotFound);
+            .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
+            .RequireAuthorization(PermissionPolicies.MinutesView);
 
         group.MapPost("/{minutesId:guid}/approve", ApproveMinutesAsync)
             .WithName("ApproveMinutes")
             .WithSummary("Approve evaluation minutes")
             .Produces<EvaluationMinutesDto>(StatusCodes.Status200OK)
-            .Produces<ProblemDetails>(StatusCodes.Status400BadRequest);
+            .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+            .RequireAuthorization(PermissionPolicies.MinutesSign);
 
         group.MapPost("/{minutesId:guid}/sign", SignMinutesAsync)
             .WithName("SignMinutes")
@@ -55,7 +60,8 @@ public static class EvaluationMinutesEndpoints
             .WithDescription("Allows a designated signatory to electronically sign the minutes. " +
                              "Per PRD Section 11.2.")
             .Produces<MinutesSignatoryDto>(StatusCodes.Status200OK)
-            .Produces<ProblemDetails>(StatusCodes.Status400BadRequest);
+            .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+            .RequireAuthorization(PermissionPolicies.MinutesSign);
 
         return app;
     }

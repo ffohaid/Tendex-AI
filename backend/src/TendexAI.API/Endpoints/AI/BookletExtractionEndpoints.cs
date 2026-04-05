@@ -1,5 +1,6 @@
 using MediatR;
 using TendexAI.Application.Features.AI.Commands.ExtractBookletFromDocument;
+using TendexAI.Infrastructure.Authorization;
 
 namespace TendexAI.API.Endpoints.AI;
 
@@ -26,7 +27,8 @@ public static class BookletExtractionEndpoints
             .Produces<ExtractBookletFromDocumentResult>()
             .Produces(StatusCodes.Status400BadRequest)
             .Produces(StatusCodes.Status422UnprocessableEntity)
-            .Produces(StatusCodes.Status413PayloadTooLarge);
+            .Produces(StatusCodes.Status413PayloadTooLarge)
+            .RequireAuthorization(PermissionPolicies.AiAssistantUse);
     }
 
     /// <summary>

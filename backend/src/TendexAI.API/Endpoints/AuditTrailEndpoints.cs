@@ -3,6 +3,7 @@ using System.Text;
 using MediatR;
 using TendexAI.Application.AuditTrail.Queries;
 using TendexAI.Domain.Enums;
+using TendexAI.Infrastructure.Authorization;
 
 namespace TendexAI.API.Endpoints;
 
@@ -25,32 +26,37 @@ public static class AuditTrailEndpoints
         group.MapGet("/", GetAuditLogs)
             .WithName("GetAuditLogs")
             .WithSummary("Retrieves paginated audit log entries with optional filters.")
-            .Produces<GetAuditLogsResult>(StatusCodes.Status200OK);
+            .Produces<GetAuditLogsResult>(StatusCodes.Status200OK)
+            .RequireAuthorization(PermissionPolicies.AuditView);
 
         // GET /api/v1/audit-logs/export
         group.MapGet("/export", ExportAuditLogs)
             .WithName("ExportAuditLogs")
             .WithSummary("Exports audit log entries as CSV file.")
-            .Produces(StatusCodes.Status200OK);
+            .Produces(StatusCodes.Status200OK)
+            .RequireAuthorization(PermissionPolicies.AuditExport);
 
         // GET /api/v1/audit-logs/{id}
         group.MapGet("/{id:guid}", GetAuditLogById)
             .WithName("GetAuditLogById")
             .WithSummary("Retrieves a single audit log entry by its unique identifier.")
             .Produces<AuditLogDetailResponse>(StatusCodes.Status200OK)
-            .Produces(StatusCodes.Status404NotFound);
+            .Produces(StatusCodes.Status404NotFound)
+            .RequireAuthorization(PermissionPolicies.AuditView);
 
         // GET /api/v1/audit-logs/entity/{entityType}/{entityId}
         group.MapGet("/entity/{entityType}/{entityId}", GetAuditLogsByEntity)
             .WithName("GetAuditLogsByEntity")
             .WithSummary("Retrieves audit log entries for a specific entity.")
-            .Produces<GetAuditLogsResult>(StatusCodes.Status200OK);
+            .Produces<GetAuditLogsResult>(StatusCodes.Status200OK)
+            .RequireAuthorization(PermissionPolicies.AuditView);
 
         // GET /api/v1/audit-logs/action-types
         group.MapGet("/action-types", GetActionTypes)
             .WithName("GetAuditActionTypes")
             .WithSummary("Returns all available audit action types.")
-            .Produces<IEnumerable<ActionTypeResponse>>(StatusCodes.Status200OK);
+            .Produces<IEnumerable<ActionTypeResponse>>(StatusCodes.Status200OK)
+            .RequireAuthorization(PermissionPolicies.AuditView);
 
         return app;
     }

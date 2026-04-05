@@ -7,6 +7,7 @@ using TendexAI.Application.Features.Award.Commands.RejectAward;
 using TendexAI.Application.Features.Award.Dtos;
 using TendexAI.Application.Features.Award.Queries.GetAwardRecommendation;
 using TendexAI.Application.Features.Award.Queries.GetFinalRanking;
+using TendexAI.Infrastructure.Authorization;
 
 namespace TendexAI.API.Endpoints.Evaluation;
 
@@ -34,7 +35,8 @@ public static class AwardEndpoints
             .WithName("GetAwardRecommendation")
             .WithSummary("Get the award recommendation for a competition")
             .Produces<AwardRecommendationDto>(StatusCodes.Status200OK)
-            .Produces<ProblemDetails>(StatusCodes.Status404NotFound);
+            .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
+        .RequireAuthorization(PermissionPolicies.AwardView);
 
         group.MapGet("/final-ranking", GetFinalRankingAsync)
             .WithName("GetFinalRanking")

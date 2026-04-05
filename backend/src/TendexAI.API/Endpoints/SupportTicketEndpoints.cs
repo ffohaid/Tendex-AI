@@ -3,6 +3,7 @@ using TendexAI.Application.Common.Interfaces;
 using TendexAI.Domain.Entities;
 using TendexAI.Domain.Enums;
 using TendexAI.Infrastructure.Persistence;
+using TendexAI.Infrastructure.Authorization;
 
 namespace TendexAI.API.Endpoints;
 
@@ -21,7 +22,8 @@ public static class SupportTicketEndpoints
         // ----- Ticket CRUD -----
         group.MapGet("/", GetTicketsAsync)
             .WithName("GetSupportTickets")
-            .WithSummary("Get paginated list of support tickets");
+            .WithSummary("Get paginated list of support tickets")
+        .RequireAuthorization(PermissionPolicies.SupportView);
 
         group.MapGet("/{id:guid}", GetTicketByIdAsync)
             .WithName("GetSupportTicketById")
@@ -29,7 +31,8 @@ public static class SupportTicketEndpoints
 
         group.MapPost("/", CreateTicketAsync)
             .WithName("CreateSupportTicket")
-            .WithSummary("Create a new support ticket");
+            .WithSummary("Create a new support ticket")
+        .RequireAuthorization(PermissionPolicies.SupportCreate);
 
         group.MapPut("/{id:guid}/status", UpdateTicketStatusAsync)
             .WithName("UpdateSupportTicketStatus")
@@ -37,7 +40,8 @@ public static class SupportTicketEndpoints
 
         group.MapPut("/{id:guid}/assign", AssignTicketAsync)
             .WithName("AssignSupportTicket")
-            .WithSummary("Assign ticket to an operator");
+            .WithSummary("Assign ticket to an operator")
+        .RequireAuthorization(PermissionPolicies.SupportManage);
 
         group.MapPut("/{id:guid}/resolve", ResolveTicketAsync)
             .WithName("ResolveSupportTicket")
@@ -68,7 +72,8 @@ public static class SupportTicketEndpoints
         // ----- Stats -----
         group.MapGet("/stats", GetTicketStatsAsync)
             .WithName("GetSupportTicketStats")
-            .WithSummary("Get ticket statistics and counts");
+            .WithSummary("Get ticket statistics and counts")
+        .RequireAuthorization(PermissionPolicies.SupportView);
 
         return app;
     }

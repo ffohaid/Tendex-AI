@@ -4,6 +4,7 @@ using TendexAI.Application.Features.Dashboard.Dtos;
 using TendexAI.Application.Features.Dashboard.Queries.GetDashboardStats;
 using TendexAI.Application.Features.Dashboard.Queries.GetRecentActivities;
 using TendexAI.Application.Features.Dashboard.Queries.GetPerformanceMetrics;
+using TendexAI.Infrastructure.Authorization;
 
 namespace TendexAI.API.Endpoints.Dashboard;
 
@@ -28,7 +29,8 @@ public static class DashboardEndpoints
             .WithSummary("Retrieve aggregated dashboard statistics (KPI cards) for the current tenant")
             .Produces<DashboardStatsDto>(StatusCodes.Status200OK)
             .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
-            .Produces<ProblemDetails>(StatusCodes.Status401Unauthorized);
+            .Produces<ProblemDetails>(StatusCodes.Status401Unauthorized)
+        .RequireAuthorization(PermissionPolicies.DashboardView);
 
         group.MapGet("/activities", GetRecentActivitiesAsync)
             .WithName("GetRecentActivities")

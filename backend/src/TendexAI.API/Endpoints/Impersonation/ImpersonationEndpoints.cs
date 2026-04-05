@@ -7,6 +7,7 @@ using TendexAI.Application.Features.Impersonation.Commands.RejectConsent;
 using TendexAI.Application.Features.Impersonation.Commands.RequestConsent;
 using TendexAI.Application.Features.Impersonation.Commands.StartImpersonation;
 using TendexAI.Application.Features.Impersonation.Queries;
+using TendexAI.Infrastructure.Authorization;
 
 namespace TendexAI.API.Endpoints.Impersonation;
 
@@ -67,7 +68,8 @@ public static class ImpersonationEndpoints
             .Produces(StatusCodes.Status200OK)
             .Produces(StatusCodes.Status400BadRequest)
             .Produces(StatusCodes.Status401Unauthorized)
-            .Produces(StatusCodes.Status403Forbidden);
+            .Produces(StatusCodes.Status403Forbidden)
+            .RequireAuthorization(PermissionPolicies.Impersonate);
 
         group.MapPost("/sessions/{sessionId:guid}/end", EndImpersonationAsync)
             .WithName("EndImpersonation")
