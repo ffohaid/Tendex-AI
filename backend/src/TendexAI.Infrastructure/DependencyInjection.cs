@@ -255,6 +255,7 @@ public static class DependencyInjection
         // ----- Flexible Permission Matrix -----
         services.AddScoped<IPermissionMatrixRepository, PermissionMatrixRepository>();
         services.AddScoped<Application.Interfaces.IPermissionEvaluator, PermissionEvaluatorService>();
+        services.AddScoped<PermissionMatrixSyncService>();
         services.AddScoped<IAuthorizationHandler, PermissionRequirementHandler>();
         services.AddScoped<IUserSystemRoleProvider, UserSystemRoleProvider>();
 

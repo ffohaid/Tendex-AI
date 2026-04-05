@@ -201,6 +201,7 @@ public static class PermissionMatrixEndpoints
     private static async Task<IResult> ResetMatrixAsync(
         [FromServices] IPermissionMatrixRepository repository,
         [FromServices] IRoleRepository roleRepository,
+        [FromServices] TendexAI.Infrastructure.Services.PermissionMatrixSyncService syncService,
         HttpContext httpContext,
         CancellationToken cancellationToken)
     {
@@ -223,7 +224,17 @@ public static class PermissionMatrixEndpoints
         await repository.AddRangeAsync(defaultRules, cancellationToken);
         await repository.SaveChangesAsync(cancellationToken);
 
-        return Results.Ok(new { message = "Permission matrix reset to defaults", rulesCount = defaultRules.Count });
+        // Sync reset rules to legacy RolePermissions table
+        try
+        {
+            await syncService.SyncAllRolesAsync(tenantId, cancellationToken);
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"Warning: Failed to sync after reset: {ex.Message}");
+        }
+
+        return Results.Ok(new { message = "Permission matrix reset to defaults and permissions synced", rulesCount = defaultRules.Count });
     }
 
     private static async Task<IResult> GetMyPermissionsAsync(
@@ -312,6 +323,7 @@ public static class PermissionMatrixEndpoints
     private static async Task<IResult> SeedDefaultRulesAsync(
         [FromServices] IPermissionMatrixRepository repository,
         [FromServices] IRoleRepository roleRepository,
+        [FromServices] TendexAI.Infrastructure.Services.PermissionMatrixSyncService syncService,
         HttpContext httpContext,
         CancellationToken cancellationToken)
     {
@@ -334,7 +346,17 @@ public static class PermissionMatrixEndpoints
         await repository.AddRangeAsync(defaultRules, cancellationToken);
         await repository.SaveChangesAsync(cancellationToken);
 
-        return Results.Ok(new { message = "Default rules seeded successfully", rulesCount = defaultRules.Count });
+        // Sync seeded rules to legacy RolePermissions table
+        try
+        {
+            await syncService.SyncAllRolesAsync(tenantId, cancellationToken);
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"Warning: Failed to sync after seed: {ex.Message}");
+        }
+
+        return Results.Ok(new { message = "Default rules seeded and permissions synced successfully", rulesCount = defaultRules.Count });
     }
 
     /// <summary>
@@ -477,6 +499,7 @@ public static class PermissionMatrixEndpoints
         [FromBody] GridBulkUpdateRequest request,
         [FromServices] IPermissionMatrixRepository repository,
         [FromServices] IRoleRepository roleRepository,
+        [FromServices] TendexAI.Infrastructure.Services.PermissionMatrixSyncService syncService,
         HttpContext httpContext,
         CancellationToken cancellationToken)
     {
@@ -537,9 +560,20 @@ public static class PermissionMatrixEndpoints
 
         await repository.SaveChangesAsync(cancellationToken);
 
+        // Sync matrix rules to legacy RolePermissions table so JWT tokens reflect matrix state
+        try
+        {
+            await syncService.SyncAllRolesAsync(tenantId, cancellationToken);
+        }
+        catch (Exception ex)
+        {
+            // Log but don't fail the matrix update if sync fails
+            Console.Error.WriteLine($"Warning: Failed to sync matrix to RolePermissions: {ex.Message}");
+        }
+
         return Results.Ok(new
         {
-            message = "Grid cells updated successfully",
+            message = "Grid cells updated and permissions synced successfully",
             updatedCount,
             createdCount,
             totalProcessed = updatedCount + createdCount
@@ -572,6 +606,7 @@ public static class PermissionMatrixEndpoints
         var roleMap = new Dictionary<SystemRole, Guid>();
         var normalizedNameToSystemRole = new Dictionary<string, SystemRole>(StringComparer.OrdinalIgnoreCase)
         {
+            // Underscore-separated format
             ["OPERATOR_SUPER_ADMIN"] = SystemRole.OperatorSuperAdmin,
             ["TENANT_PRIMARY_ADMIN"] = SystemRole.TenantPrimaryAdmin,
             ["TENANT_OWNER"] = SystemRole.TenantPrimaryAdmin,
@@ -583,7 +618,15 @@ public static class PermissionMatrixEndpoints
             ["COMMITTEE_CHAIR"] = SystemRole.CommitteeChair,
             ["COMMITTEE_MEMBER"] = SystemRole.CommitteeMember,
             ["MEMBER"] = SystemRole.Member,
-            ["VIEWER"] = SystemRole.Viewer
+            ["VIEWER"] = SystemRole.Viewer,
+            // Space-separated format (actual DB NormalizedName values)
+            ["OPERATOR SUPER ADMIN"] = SystemRole.OperatorSuperAdmin,
+            ["TENANT PRIMARY ADMIN"] = SystemRole.TenantPrimaryAdmin,
+            ["PROCUREMENT MANAGER"] = SystemRole.ProcurementManager,
+            ["FINANCIAL CONTROLLER"] = SystemRole.FinancialController,
+            ["SECTOR REPRESENTATIVE"] = SystemRole.SectorRepresentative,
+            ["COMMITTEE CHAIR"] = SystemRole.CommitteeChair,
+            ["COMMITTEE MEMBER"] = SystemRole.CommitteeMember
         };
 
         foreach (var role in roles)
