@@ -26,6 +26,22 @@
 
 *يرجى إضافة أحدث مهمة منجزة في أعلى هذه القائمة.*
 
+### 2026-04-05 - fix: Backend container rebuild with all env vars & DELETE AI config tested
+- **الحالة:** ✅ مكتمل
+- **الوصف:** إصلاح مشكلة تسجيل الدخول (500 Error) الناتجة عن توقف الحاويات المساعدة وفقدان متغير `Security__EncryptionKey`، واختبار وظيفة حذف إعدادات AI.
+- **التفاصيل:**
+  - حذف 5 حاويات مكررة كانت في حالة `Created` تتعارض مع الحاويات الأصلية
+  - إعادة بناء Docker image بدون كاش لضمان تضمين جميع التغييرات
+  - إعادة إنشاء حاوية Backend مع جميع متغيرات البيئة المطلوبة (Security, JWT, MinIO, Qdrant, Elasticsearch, RabbitMQ, OpenIddict)
+  - إضافة `--restart unless-stopped` لجميع الحاويات
+  - إعادة تحميل nginx config لإعادة الاتصال بـ backend
+  - حفظ سكربت `/root/recreate_backend.sh` على الخادم للاستخدام المستقبلي
+- **الاختبارات:**
+  - ✅ تسجيل الدخول: HTTP 200
+  - ✅ GET AI Configurations: HTTP 200 (يعرض التكوينات بنجاح)
+  - ✅ DELETE AI Configuration: HTTP 204 (soft delete يعمل بنجاح)
+- **Commit:** `fix: rebuild backend with all env vars, test DELETE AI config`
+
 ### 2026-04-05 - fix: Add missing permissions to tenant databases (403 fix)
 - **الحالة:** ✅ مكتمل
 - **الوصف:** إصلاح خطأ 403 في صفحة مركز المهام وصفحات أخرى بسبب عدم وجود صلاحيات مطلوبة في قاعدة البيانات
