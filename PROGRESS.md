@@ -26,6 +26,21 @@
 
 *يرجى إضافة أحدث مهمة منجزة في أعلى هذه القائمة.*
 
+### 2026-04-05 - feat: Subdomain-Based Tenant Login & Dynamic Branding
+- **الحالة:** ✅ مكتمل
+- **الملفات المعدلة:**
+  - `frontend/src/views/auth/LoginView.vue` — Updated to auto-detect tenant from hostname subdomain, display tenant name/logo dynamically, and differentiate between operator (netaq.pro) and tenant (mof.netaq.pro) login screens.
+  - `frontend/src/locales/ar.json` — Added `auth.operatorPanel`, `auth.resolvingTenant`, `auth.tenantResolutionError` keys.
+  - `frontend/src/locales/en.json` — Added corresponding English translation keys.
+- **التغييرات:**
+  - SSL certificate renewed to cover all 13 subdomains (netaq.pro + 12 tenant subdomains).
+  - Login page now auto-resolves tenant from subdomain (e.g., mof.netaq.pro → وزارة المالية).
+  - Operator login (netaq.pro) shows gear icon + "لوحة تحكم مشغل المنصة" badge.
+  - Tenant login (mof.netaq.pro) shows building icon + tenant name (وزارة المالية).
+  - Fixed operator user password to allow login with Admin@123456.
+  - Tenant branding stored in sessionStorage for use across the app.
+  - Previous tenant_id cleared on login page visit to ensure fresh resolution.
+
 ### 2026-04-05 - feat: Restructure Sidebar Menu to Match Required Layout
 - **الحالة:** ✅ مكتمل
 - **الوصف:** إعادة هيكلة القائمة الرئيسية (Sidebar) للجهات الحكومية لتتوافق مع الترتيب والمسميات المطلوبة.
