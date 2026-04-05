@@ -26,6 +26,16 @@
 
 *يرجى إضافة أحدث مهمة منجزة في أعلى هذه القائمة.*
 
+### 2026-04-05 - feat: Unified Template Library & RFP Templates UX Improvement
+- **الحالة:** ✅ مكتمل
+- **الوصف:** تم دمج صفحتي القوالب المنفصلتين (قوالب كراسات الشروط + قوالب من منافسات سابقة) في صفحة موحدة "مكتبة القوالب" مع تبويبات واضحة، وربط القوالب بإنشاء الكراسات بشكل مترابط، وإضافة إمكانية رفع ملفات DOCX للقوالب.
+- **الملفات المعدلة:**
+  - `frontend/src/views/rfp/TemplateLibraryView.vue` (جديد)
+  - `frontend/src/config/navigation.ts`
+  - `frontend/src/router/index.ts`
+  - `frontend/src/views/rfp/RfpMethodSelectionView.vue`
+  - `frontend/src/locales/ar.ts` و `en.ts`
+
 ### 2026-04-05 - feat: Subdomain-Based Tenant Login & Dynamic Branding
 - **الحالة:** ✅ مكتمل
 - **الملفات المعدلة:**
