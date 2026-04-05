@@ -112,7 +112,10 @@
       "strengthMedium": "متوسطة",
       "strengthGood": "جيدة",
       "strengthStrong": "قوية"
-    }
+    },
+    "operatorPanel": "لوحة تحكم مشغل المنصة",
+    "resolvingTenant": "جاري تحديد الجهة...",
+    "tenantResolutionError": "تعذر تحديد الجهة تلقائياً. يرجى المحاولة مرة أخرى."
   },
   "nav": {
     "dashboard": "لوحة المعلومات",

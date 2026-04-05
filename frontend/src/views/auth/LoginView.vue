@@ -4,7 +4,9 @@
  *
  * Features:
  * - Email + Password login with real-time validation (VeeValidate + Zod)
- * - Automatic tenant resolution by hostname (no manual tenant ID entry)
+ * - Automatic tenant resolution by hostname/subdomain (no manual tenant ID entry)
+ * - Dynamic tenant branding: displays tenant name, logo, and colors
+ * - Differentiates between operator login (netaq.pro) and tenant login (mof.netaq.pro)
  * - MFA redirect when required
  * - Clear error messages
  * - RTL/LTR support via logical Tailwind properties
@@ -18,12 +20,13 @@ import { toTypedSchema } from '@vee-validate/zod'
 import { z } from 'zod'
 import { useAuthStore } from '@/stores/auth'
 import { resolveTenantByHostname } from '@/services/tenantService'
+import type { TenantResolveDto } from '@/types/tenant'
 import InputText from 'primevue/inputtext'
 import Button from 'primevue/button'
 import Message from 'primevue/message'
 
 const router = useRouter()
-const { t } = useI18n()
+const { t, locale } = useI18n()
 const authStore = useAuthStore()
 
 /* ------------------------------------------------------------------ */
@@ -32,27 +35,58 @@ const authStore = useAuthStore()
 
 const tenantResolved = ref(false)
 const tenantError = ref(false)
+const tenantInfo = ref<TenantResolveDto | null>(null)
+const isOperatorLogin = ref(false)
+
+/**
+ * Determines if the current hostname is the base/operator domain.
+ * Base domain = netaq.pro or www.netaq.pro (operator login).
+ * Subdomain = mof.netaq.pro, edu.netaq.pro, etc. (tenant login).
+ */
+function detectSubdomain(hostname: string): { isOperator: boolean; subdomain: string | null } {
+  const parts = hostname.split('.')
+
+  // localhost or IP-based access (development)
+  if (hostname === 'localhost' || /^\d+\.\d+\.\d+\.\d+$/.test(hostname)) {
+    return { isOperator: true, subdomain: null }
+  }
+
+  // Base domain (netaq.pro) or www (www.netaq.pro) → operator login
+  if (parts.length <= 2 || (parts.length === 3 && parts[0] === 'www')) {
+    return { isOperator: true, subdomain: null }
+  }
+
+  // Subdomain detected (e.g., mof.netaq.pro)
+  const subdomain = parts[0]
+  return { isOperator: false, subdomain }
+}
 
 /**
  * Automatically resolves the tenant from the current hostname.
- * Called on mount so the user never needs to manually set tenant_id.
+ * Always re-resolves based on current hostname to ensure correct tenant
+ * when switching between subdomains.
  */
 async function autoResolveTenant(): Promise<void> {
-  // If tenant_id already exists in localStorage (from a previous login), use it
-  const existingTenantId = localStorage.getItem('tenant_id')
-  if (existingTenantId && existingTenantId !== '00000000-0000-0000-0000-000000000000') {
-    authStore.setTenantId(existingTenantId)
-    tenantResolved.value = true
-    return
-  }
+  const hostname = window.location.hostname
+  const { isOperator } = detectSubdomain(hostname)
+  isOperatorLogin.value = isOperator
+
+  // Always clear previous tenant data when visiting login page
+  // to ensure fresh resolution based on current hostname
+  localStorage.removeItem('tenant_id')
+  localStorage.removeItem('tenant_branding')
+  sessionStorage.removeItem('tenant_branding')
 
   try {
-    const hostname = window.location.hostname
     const resolved = await resolveTenantByHostname(hostname)
+    tenantInfo.value = resolved
     authStore.setTenantId(resolved.id)
+
+    // Store branding info for use in other components
+    sessionStorage.setItem('tenant_branding', JSON.stringify(resolved))
+
     tenantResolved.value = true
   } catch {
-    // Fallback: if resolve fails, still allow login attempt
     tenantError.value = true
     tenantResolved.value = true
   }
@@ -60,6 +94,26 @@ async function autoResolveTenant(): Promise<void> {
 
 onMounted(() => {
   autoResolveTenant()
+})
+
+/* ------------------------------------------------------------------ */
+/*  Computed Properties for Tenant Display                             */
+/* ------------------------------------------------------------------ */
+
+/** Tenant display name based on current locale */
+const tenantDisplayName = computed(() => {
+  if (!tenantInfo.value) return ''
+  return locale.value === 'ar' ? tenantInfo.value.nameAr : tenantInfo.value.nameEn
+})
+
+/** Whether the tenant has a custom logo */
+const hasLogo = computed(() => {
+  return tenantInfo.value?.logoUrl && tenantInfo.value.logoUrl.trim() !== ''
+})
+
+/** Primary color from tenant branding */
+const primaryColor = computed(() => {
+  return tenantInfo.value?.primaryColor || '#1E40AF'
 })
 
 /* ------------------------------------------------------------------ */
@@ -112,6 +166,9 @@ const onSubmit = handleSubmit(async (values) => {
     if (authStore.mfaRequired) {
       router.push({ name: 'MfaVerify' })
     } else {
+      // Redirect based on context:
+      // - Operator login → Operator Dashboard
+      // - Tenant login → Tenant Dashboard
       const redirectTo = (router.currentRoute.value.query.redirect as string) || '/'
       router.push(redirectTo)
     }
@@ -124,14 +181,49 @@ const onSubmit = handleSubmit(async (values) => {
     <div class="w-full max-w-md">
       <!-- Logo & Title -->
       <div class="mb-8 text-center">
+        <!-- Tenant Logo or Default Icon -->
         <div
-          class="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-primary"
+          v-if="hasLogo"
+          class="mx-auto mb-4 flex h-20 w-20 items-center justify-center rounded-2xl bg-white p-2 shadow-md"
         >
-          <i class="pi pi-shield text-3xl text-white"></i>
+          <img
+            :src="tenantInfo!.logoUrl!"
+            :alt="tenantDisplayName"
+            class="h-full w-full object-contain"
+          />
         </div>
+        <div
+          v-else
+          class="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl"
+          :style="{ backgroundColor: primaryColor }"
+        >
+          <i
+            :class="isOperatorLogin ? 'pi pi-cog' : 'pi pi-building'"
+            class="text-3xl text-white"
+          ></i>
+        </div>
+
+        <!-- Platform Name -->
         <h1 class="text-2xl font-bold text-white">
           {{ t('app.name') }}
         </h1>
+
+        <!-- Tenant Name (for government entities) -->
+        <p
+          v-if="tenantInfo && !isOperatorLogin"
+          class="mt-2 text-lg font-semibold text-white/90"
+        >
+          {{ tenantDisplayName }}
+        </p>
+
+        <!-- Operator Badge -->
+        <p
+          v-if="isOperatorLogin && tenantResolved"
+          class="mt-2 text-sm font-medium text-white/70"
+        >
+          {{ t('auth.operatorPanel', 'لوحة تحكم مشغل المنصة') }}
+        </p>
+
         <p class="mt-1 text-sm text-white/60">
           {{ t('auth.loginSubtitle') }}
         </p>
@@ -162,6 +254,15 @@ const onSubmit = handleSubmit(async (values) => {
         >
           {{ t('auth.tenantResolutionError', 'تعذر تحديد الجهة تلقائياً. يرجى المحاولة مرة أخرى.') }}
         </Message>
+
+        <!-- Loading Tenant Resolution -->
+        <div
+          v-if="!tenantResolved && !tenantError"
+          class="mb-4 flex items-center justify-center gap-2 text-sm text-secondary/60"
+        >
+          <i class="pi pi-spin pi-spinner"></i>
+          {{ t('auth.resolvingTenant', 'جاري تحديد الجهة...') }}
+        </div>
 
         <form @submit.prevent="onSubmit" novalidate>
           <!-- Email Field -->

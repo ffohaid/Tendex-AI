@@ -112,7 +112,10 @@
       "strengthMedium": "Medium",
       "strengthGood": "Good",
       "strengthStrong": "Strong"
-    }
+    },
+    "operatorPanel": "Platform Operator Panel",
+    "resolvingTenant": "Resolving organization...",
+    "tenantResolutionError": "Failed to detect organization automatically. Please try again."
   },
   "nav": {
     "dashboard": "Information Dashboard",
