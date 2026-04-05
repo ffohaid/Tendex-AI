@@ -138,6 +138,7 @@ export const PERMISSIONS = {
 export const SYSTEM_ROLES = {
   OWNER: 'Tenant Owner',
   OWNER_ALT: 'Owner',
+  PRIMARY_ADMIN: 'Tenant Primary Admin',
   ADMIN: 'Super Admin',
   ADMIN_ALT: 'System Administrator',
   SECTOR_REP: 'Sector Representative',
@@ -281,7 +282,9 @@ export function usePermissions() {
   }
 
   const isOwner = computed(() =>
-    authStore.hasRole(SYSTEM_ROLES.OWNER) || authStore.hasRole(SYSTEM_ROLES.OWNER_ALT)
+    authStore.hasRole(SYSTEM_ROLES.OWNER) ||
+    authStore.hasRole(SYSTEM_ROLES.OWNER_ALT) ||
+    authStore.hasRole(SYSTEM_ROLES.PRIMARY_ADMIN)
   )
   const isAdmin = computed(() => {
     // Operator admins are NOT tenant admins - they should not bypass tenant permissions
