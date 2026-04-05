@@ -27,7 +27,8 @@ public static class OperatorAiEndpoints
             CancellationToken ct) =>
         {
             // Get all AI configurations across all tenants (for operator view)
-            var tenantIdHeader = ctx.Request.Headers["X-Tenant-Id"].FirstOrDefault();
+            var tenantIdHeader = ctx.Request.Headers["X-Tenant-Id"].FirstOrDefault()
+            .RequireAuthorization(PermissionPolicies.AiSettingsManage);
             Guid tenantId = Guid.Empty;
             if (!string.IsNullOrEmpty(tenantIdHeader) && !Guid.TryParse(tenantIdHeader, out tenantId))
                 tenantId = Guid.Empty;
@@ -63,7 +64,8 @@ public static class OperatorAiEndpoints
             HttpContext ctx,
             CancellationToken ct) =>
         {
-            var tenantIdHeader = ctx.Request.Headers["X-Tenant-Id"].FirstOrDefault();
+            var tenantIdHeader = ctx.Request.Headers["X-Tenant-Id"].FirstOrDefault()
+            .RequireAuthorization(PermissionPolicies.AiSettingsManage);
             Guid tenantId = Guid.Empty;
             if (!string.IsNullOrEmpty(tenantIdHeader) && !Guid.TryParse(tenantIdHeader, out tenantId))
                 tenantId = Guid.Empty;
@@ -113,7 +115,8 @@ public static class OperatorAiEndpoints
                 MaxTokens = request.MaxTokens ?? 4096,
                 Temperature = request.Temperature ?? 0.3,
                 Priority = request.Priority ?? 1
-            };
+            }
+            .RequireAuthorization(PermissionPolicies.AiSettingsManage);
 
             var success = await mediator.Send(command, ct);
             return success ? Results.NoContent() : Results.NotFound();
@@ -127,7 +130,8 @@ public static class OperatorAiEndpoints
             CancellationToken ct) =>
         {
             // Simple test - return success for now
-            return Results.Ok(new { success = true, message = "Connection test passed" });
+            return Results.Ok(new { success = true, message = "Connection test passed" })
+            .RequireAuthorization(PermissionPolicies.AiSettingsManage);
         })
         .WithName("TestOperatorAiProvider")
         .WithSummary("Test AI provider connection");
@@ -144,7 +148,8 @@ public static class OperatorAiEndpoints
                 chunkOverlap = 200,
                 embeddingModel = "text-embedding-004",
                 maxRetrievedChunks = 5
-            });
+            })
+            .RequireAuthorization(PermissionPolicies.AiSettingsManage);
         })
         .WithName("GetOperatorRagConfig")
         .WithSummary("Get RAG configuration");
@@ -155,7 +160,8 @@ public static class OperatorAiEndpoints
             CancellationToken ct) =>
         {
             // Save RAG config - for now just acknowledge
-            return Results.NoContent();
+            return Results.NoContent()
+            .RequireAuthorization(PermissionPolicies.AiSettingsManage);
         })
         .WithName("UpdateOperatorRagConfig")
         .WithSummary("Update RAG configuration");
@@ -167,7 +173,8 @@ public static class OperatorAiEndpoints
             CancellationToken ct) =>
         {
             // Toggle feature flag - for now just acknowledge
-            return Results.NoContent();
+            return Results.NoContent()
+            .RequireAuthorization(PermissionPolicies.AiSettingsManage);
         })
         .WithName("ToggleOperatorAiFeatureFlag")
         .WithSummary("Toggle an AI feature flag");

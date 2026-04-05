@@ -47,7 +47,8 @@ public static class AiSpecificationDraftingEndpoints
                 SectionTitleAr = request.SectionTitleAr,
                 AdditionalInstructions = request.AdditionalInstructions,
                 CollectionName = request.CollectionName ?? "rfp_knowledge_base"
-            };
+            }
+            .RequireAuthorization(PermissionPolicies.AiAssistantUse);
 
             var result = await mediator.Send(command, ct);
 
@@ -76,7 +77,8 @@ public static class AiSpecificationDraftingEndpoints
                 CurrentContentHtml = request.CurrentContentHtml,
                 UserFeedbackAr = request.UserFeedbackAr,
                 CollectionName = request.CollectionName ?? "rfp_knowledge_base"
-            };
+            }
+            .RequireAuthorization(PermissionPolicies.AiAssistantUse);
 
             var result = await mediator.Send(command, ct);
 
@@ -109,7 +111,8 @@ public static class AiSpecificationDraftingEndpoints
                 ProjectType = request.ProjectType,
                 EstimatedBudget = request.EstimatedBudget,
                 CollectionName = request.CollectionName ?? "rfp_knowledge_base"
-            };
+            }
+            .RequireAuthorization(PermissionPolicies.AiAssistantUse);
 
             var result = await mediator.Send(command, ct);
 
@@ -144,7 +147,8 @@ public static class AiSpecificationDraftingEndpoints
                 SpecificationsContentHtml = request.SpecificationsContentHtml,
                 AdditionalInstructions = request.AdditionalInstructions,
                 CollectionName = request.CollectionName ?? "rfp_knowledge_base"
-            };
+            }
+            .RequireAuthorization(PermissionPolicies.AiAssistantUse);
 
             var result = await mediator.Send(command, ct);
 
@@ -172,7 +176,8 @@ public static class AiSpecificationDraftingEndpoints
                 ExistingBoqJson = request.ExistingBoqJson,
                 UserFeedbackAr = request.UserFeedbackAr,
                 CollectionName = request.CollectionName ?? "rfp_knowledge_base"
-            };
+            }
+            .RequireAuthorization(PermissionPolicies.AiAssistantUse);
 
             var result = await mediator.Send(command, ct);
 

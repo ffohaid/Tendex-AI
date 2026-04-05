@@ -35,7 +35,8 @@ public static class SupplierOfferEndpoints
             .WithName("CreateSupplierOffer")
             .WithSummary("Create a new supplier offer for a competition")
             .Produces<SupplierOfferDto>(StatusCodes.Status201Created)
-            .Produces<ProblemDetails>(StatusCodes.Status400BadRequest);
+            .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+            .RequireAuthorization(PermissionPolicies.OffersOpen);
 
         return app;
     }

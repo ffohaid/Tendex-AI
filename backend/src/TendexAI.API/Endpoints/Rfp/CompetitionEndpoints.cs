@@ -49,7 +49,8 @@ public static class CompetitionEndpoints
             .WithName("GetCompetitionById")
             .WithSummary("Get a specific competition with all details")
             .Produces<CompetitionDetailDto>(StatusCodes.Status200OK)
-            .Produces<ProblemDetails>(StatusCodes.Status404NotFound);
+            .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
+            .RequireAuthorization(PermissionPolicies.CompetitionsView);
 
         group.MapPost("/", CreateCompetitionAsync)
             .WithName("CreateCompetition")
@@ -81,7 +82,8 @@ public static class CompetitionEndpoints
             .WithSummary("Auto-save competition draft (partial update)")
             .WithDescription("Lightweight endpoint for periodic auto-save of draft competitions. Supports partial updates.")
             .Produces<AutoSaveResultDto>(StatusCodes.Status200OK)
-            .Produces<ProblemDetails>(StatusCodes.Status400BadRequest);
+            .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+            .RequireAuthorization(PermissionPolicies.CompetitionsEdit);
 
         // ----- Status Management -----
 
@@ -89,7 +91,8 @@ public static class CompetitionEndpoints
             .WithName("ChangeCompetitionStatus")
             .WithSummary("Change competition status (submit, approve, reject, cancel)")
             .Produces<CompetitionDetailDto>(StatusCodes.Status200OK)
-            .Produces<ProblemDetails>(StatusCodes.Status400BadRequest);
+            .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+            .RequireAuthorization(PermissionPolicies.CompetitionsEdit);
 
         // ----- Evaluation Settings -----
 
@@ -97,7 +100,8 @@ public static class CompetitionEndpoints
             .WithName("UpdateEvaluationSettings")
             .WithSummary("Update evaluation weights and passing score")
             .Produces<CompetitionDetailDto>(StatusCodes.Status200OK)
-            .Produces<ProblemDetails>(StatusCodes.Status400BadRequest);
+            .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+            .RequireAuthorization(PermissionPolicies.CompetitionsEdit);
 
         // ----- Sections -----
 
@@ -105,19 +109,22 @@ public static class CompetitionEndpoints
             .WithName("AddRfpSection")
             .WithSummary("Add a new section to the RFP booklet")
             .Produces<RfpSectionDto>(StatusCodes.Status201Created)
-            .Produces<ProblemDetails>(StatusCodes.Status400BadRequest);
+            .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+            .RequireAuthorization(PermissionPolicies.CompetitionsEdit);
 
         group.MapPost("/{competitionId:guid}/sections/batch", BatchAddSectionsAsync)
             .WithName("BatchAddRfpSections")
             .WithSummary("Add multiple sections in a single transaction")
             .Produces<IReadOnlyList<RfpSectionDto>>(StatusCodes.Status201Created)
-            .Produces<ProblemDetails>(StatusCodes.Status400BadRequest);
+            .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+            .RequireAuthorization(PermissionPolicies.CompetitionsEdit);
 
         group.MapPut("/{competitionId:guid}/sections/{sectionId:guid}", UpdateSectionAsync)
             .WithName("UpdateRfpSection")
             .WithSummary("Update an existing RFP section content or title")
             .Produces<RfpSectionDto>(StatusCodes.Status200OK)
-            .Produces<ProblemDetails>(StatusCodes.Status400BadRequest);
+            .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+            .RequireAuthorization(PermissionPolicies.CompetitionsEdit);
 
         // ----- BOQ Items -----
 
@@ -125,13 +132,15 @@ public static class CompetitionEndpoints
             .WithName("AddBoqItem")
             .WithSummary("Add a new BOQ item to the competition")
             .Produces<BoqItemDto>(StatusCodes.Status201Created)
-            .Produces<ProblemDetails>(StatusCodes.Status400BadRequest);
+            .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+            .RequireAuthorization(PermissionPolicies.CompetitionsEdit);
 
         group.MapPost("/{competitionId:guid}/boq-items/batch", BatchAddBoqItemsAsync)
             .WithName("BatchAddBoqItems")
             .WithSummary("Add multiple BOQ items in a single transaction")
             .Produces<IReadOnlyList<BoqItemDto>>(StatusCodes.Status201Created)
-            .Produces<ProblemDetails>(StatusCodes.Status400BadRequest);
+            .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+            .RequireAuthorization(PermissionPolicies.CompetitionsEdit);
 
         // ----- Evaluation Criteria -----
 
@@ -139,25 +148,29 @@ public static class CompetitionEndpoints
             .WithName("GetEvaluationCriteria")
             .WithSummary("Get all evaluation criteria for a competition")
             .Produces<IReadOnlyList<EvaluationCriterionDto>>(StatusCodes.Status200OK)
-            .Produces<ProblemDetails>(StatusCodes.Status404NotFound);
+            .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
+            .RequireAuthorization(PermissionPolicies.CompetitionsView);
 
         group.MapPost("/{competitionId:guid}/evaluation-criteria", AddEvaluationCriterionAsync)
             .WithName("AddEvaluationCriterion")
             .WithSummary("Add a new evaluation criterion to the competition")
             .Produces<EvaluationCriterionDto>(StatusCodes.Status201Created)
-            .Produces<ProblemDetails>(StatusCodes.Status400BadRequest);
+            .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+            .RequireAuthorization(PermissionPolicies.CompetitionsView);
 
         // ----- Enum Lookups -----
 
         group.MapGet("/statuses", GetCompetitionStatusesAsync)
             .WithName("GetCompetitionStatuses")
             .WithSummary("Get all competition status values")
-            .Produces<IEnumerable<object>>(StatusCodes.Status200OK);
+            .Produces<IEnumerable<object>>(StatusCodes.Status200OK)
+            .RequireAuthorization(PermissionPolicies.CompetitionsEdit);
 
         group.MapGet("/types", GetCompetitionTypesAsync)
             .WithName("GetCompetitionTypes")
             .WithSummary("Get all competition type values")
-            .Produces<IEnumerable<object>>(StatusCodes.Status200OK);
+            .Produces<IEnumerable<object>>(StatusCodes.Status200OK)
+            .RequireAuthorization(PermissionPolicies.CompetitionsView);
 
         return app;
     }

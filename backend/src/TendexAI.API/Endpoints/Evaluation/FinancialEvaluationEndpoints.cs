@@ -41,13 +41,15 @@ public static class FinancialEvaluationEndpoints
             .WithDescription("Creates a financial evaluation session and opens financial envelopes " +
                              "for technically-passed offers. Requires approved technical evaluation.")
             .Produces<FinancialEvaluationDetailDto>(StatusCodes.Status201Created)
-            .Produces<ProblemDetails>(StatusCodes.Status400BadRequest);
+            .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+            .RequireAuthorization(PermissionPolicies.EvaluationCreate);
 
         group.MapGet("/", GetFinancialEvaluationDetailsAsync)
             .WithName("GetFinancialEvaluationDetails")
             .WithSummary("Get financial evaluation details for a competition")
             .Produces<FinancialEvaluationDetailDto>(StatusCodes.Status200OK)
-            .Produces<ProblemDetails>(StatusCodes.Status404NotFound);
+            .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
+            .RequireAuthorization(PermissionPolicies.EvaluationView);
 
         // ═══════════════════════════════════════════════════════════
         //  Financial Offer Items (Price Lines)
@@ -59,13 +61,15 @@ public static class FinancialEvaluationEndpoints
             .WithDescription("Submits price line items from a supplier's financial offer, " +
                              "mapped to BOQ items. Includes automatic arithmetic verification.")
             .Produces<IReadOnlyList<FinancialOfferItemDto>>(StatusCodes.Status201Created)
-            .Produces<ProblemDetails>(StatusCodes.Status400BadRequest);
+            .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+            .RequireAuthorization(PermissionPolicies.EvaluationView);
 
         group.MapGet("/offers/{supplierOfferId:guid}/items", GetFinancialOfferItemsAsync)
             .WithName("GetFinancialOfferItems")
             .WithSummary("Get financial offer items for a supplier")
             .Produces<IReadOnlyList<FinancialOfferItemDto>>(StatusCodes.Status200OK)
-            .Produces<ProblemDetails>(StatusCodes.Status404NotFound);
+            .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
+            .RequireAuthorization(PermissionPolicies.EvaluationView);
 
         // ═══════════════════════════════════════════════════════════
         //  Arithmetic Verification
@@ -77,7 +81,8 @@ public static class FinancialEvaluationEndpoints
             .WithDescription("Checks all price line items for arithmetic errors by comparing " +
                              "calculated totals with supplier-submitted totals.")
             .Produces<ArithmeticVerificationResultDto>(StatusCodes.Status200OK)
-            .Produces<ProblemDetails>(StatusCodes.Status400BadRequest);
+            .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+            .RequireAuthorization(PermissionPolicies.EvaluationCreate);
 
         // ═══════════════════════════════════════════════════════════
         //  Financial Scoring
@@ -86,7 +91,8 @@ public static class FinancialEvaluationEndpoints
         group.MapGet("/scores", GetFinancialScoresAsync)
             .WithName("GetFinancialScores")
             .WithSummary("Get all financial scores for a competition")
-            .Produces<IReadOnlyList<FinancialScoreDto>>(StatusCodes.Status200OK);
+            .Produces<IReadOnlyList<FinancialScoreDto>>(StatusCodes.Status200OK)
+            .RequireAuthorization(PermissionPolicies.EvaluationView);
 
         group.MapPost("/offers/{supplierOfferId:guid}/scores", SubmitFinancialScoreAsync)
             .WithName("SubmitFinancialScore")
@@ -99,7 +105,8 @@ public static class FinancialEvaluationEndpoints
             .WithName("CompleteFinancialScoring")
             .WithSummary("Complete financial scoring and submit report for approval")
             .Produces<FinancialEvaluationDetailDto>(StatusCodes.Status200OK)
-            .Produces<ProblemDetails>(StatusCodes.Status400BadRequest);
+            .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+            .RequireAuthorization(PermissionPolicies.EvaluationCreate);
 
         // ═══════════════════════════════════════════════════════════
         //  Financial Comparison Matrix
@@ -111,7 +118,8 @@ public static class FinancialEvaluationEndpoints
             .WithDescription("Returns a detailed comparison matrix showing all supplier prices " +
                              "against BOQ items with deviation analysis and color coding.")
             .Produces<FinancialComparisonMatrixDto>(StatusCodes.Status200OK)
-            .Produces<ProblemDetails>(StatusCodes.Status404NotFound);
+            .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
+            .RequireAuthorization(PermissionPolicies.EvaluationView);
 
         // ═══════════════════════════════════════════════════════════
         //  Report Approval/Rejection
@@ -121,13 +129,15 @@ public static class FinancialEvaluationEndpoints
             .WithName("ApproveFinancialReport")
             .WithSummary("Approve the financial evaluation report")
             .Produces<FinancialEvaluationDetailDto>(StatusCodes.Status200OK)
-            .Produces<ProblemDetails>(StatusCodes.Status400BadRequest);
+            .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+            .RequireAuthorization(PermissionPolicies.EvaluationCreate);
 
         group.MapPost("/reject", RejectFinancialReportAsync)
             .WithName("RejectFinancialReport")
             .WithSummary("Reject the financial evaluation report")
             .Produces<FinancialEvaluationDetailDto>(StatusCodes.Status200OK)
-            .Produces<ProblemDetails>(StatusCodes.Status400BadRequest);
+            .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+            .RequireAuthorization(PermissionPolicies.EvaluationCreate);
 
         return app;
     }

@@ -50,7 +50,8 @@ public static class UserManagementEndpoints
             .WithSummary("Get a specific user by ID")
             .RequireAuthorization()
             .Produces<UserDto>(StatusCodes.Status200OK)
-            .Produces<ProblemDetails>(StatusCodes.Status404NotFound);
+            .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
+            .RequireAuthorization(PermissionPolicies.UsersView);
 
         usersGroup.MapPut("/{userId:guid}", UpdateUserAsync)
             .WithName("UpdateUser")
@@ -96,7 +97,8 @@ public static class UserManagementEndpoints
             .WithSummary("Get a role with its permissions and users")
             .RequireAuthorization()
             .Produces<RoleDetailDto>(StatusCodes.Status200OK)
-            .Produces<ProblemDetails>(StatusCodes.Status404NotFound);
+            .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
+            .RequireAuthorization(PermissionPolicies.UsersView);
 
         rolesGroup.MapPost("/", CreateRoleAsync)
             .WithName("CreateRole")
@@ -117,7 +119,8 @@ public static class UserManagementEndpoints
             .WithSummary("Activate or deactivate a role")
             .RequireAuthorization()
             .Produces(StatusCodes.Status204NoContent)
-            .Produces<ProblemDetails>(StatusCodes.Status400BadRequest);
+            .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+            .RequireAuthorization(PermissionPolicies.RolesEdit);
 
         // ----- Permission Endpoints -----
         var permissionsGroup = app.MapGroup("/api/v1/permissions")
@@ -127,7 +130,8 @@ public static class UserManagementEndpoints
             .WithName("GetPermissions")
             .WithSummary("Get all available permissions grouped by module")
             .RequireAuthorization()
-            .Produces<IReadOnlyList<PermissionGroupDto>>(StatusCodes.Status200OK);
+            .Produces<IReadOnlyList<PermissionGroupDto>>(StatusCodes.Status200OK)
+            .RequireAuthorization(PermissionPolicies.UsersView);
 
         // ----- Invitation Endpoints -----
         var invitationsGroup = app.MapGroup("/api/v1/invitations")
@@ -137,14 +141,16 @@ public static class UserManagementEndpoints
             .WithName("GetInvitations")
             .WithSummary("Get paginated list of invitations for the current tenant")
             .RequireAuthorization()
-            .Produces<PaginatedResult<InvitationDto>>(StatusCodes.Status200OK);
+            .Produces<PaginatedResult<InvitationDto>>(StatusCodes.Status200OK)
+            .RequireAuthorization(PermissionPolicies.UsersView);
 
         invitationsGroup.MapPost("/", SendInvitationAsync)
             .WithName("SendInvitation")
             .WithSummary("Send a registration invitation to a new user")
             .RequireAuthorization()
             .Produces<Guid>(StatusCodes.Status201Created)
-            .Produces<ProblemDetails>(StatusCodes.Status400BadRequest);
+            .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+            .RequireAuthorization(PermissionPolicies.UsersCreate);
 
         invitationsGroup.MapGet("/validate", ValidateInvitationTokenAsync)
             .WithName("ValidateInvitationToken")
@@ -152,28 +158,32 @@ public static class UserManagementEndpoints
             .AllowAnonymous()
             .Produces<InvitationValidationResponse>(StatusCodes.Status200OK)
             .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
-            .Produces<ProblemDetails>(StatusCodes.Status410Gone);
+            .Produces<ProblemDetails>(StatusCodes.Status410Gone)
+            .RequireAuthorization(PermissionPolicies.UsersCreate);
 
         invitationsGroup.MapPost("/accept", AcceptInvitationAsync)
             .WithName("AcceptInvitation")
             .WithSummary("Accept an invitation and complete registration")
             .AllowAnonymous()
             .Produces<Guid>(StatusCodes.Status201Created)
-            .Produces<ProblemDetails>(StatusCodes.Status400BadRequest);
+            .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+            .RequireAuthorization(PermissionPolicies.UsersCreate);
 
         invitationsGroup.MapPost("/{invitationId:guid}/resend", ResendInvitationAsync)
             .WithName("ResendInvitation")
             .WithSummary("Resend an invitation email")
             .RequireAuthorization()
             .Produces(StatusCodes.Status204NoContent)
-            .Produces<ProblemDetails>(StatusCodes.Status400BadRequest);
+            .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+            .RequireAuthorization(PermissionPolicies.UsersCreate);
 
         invitationsGroup.MapDelete("/{invitationId:guid}", RevokeInvitationAsync)
             .WithName("RevokeInvitation")
             .WithSummary("Revoke a pending invitation")
             .RequireAuthorization()
             .Produces(StatusCodes.Status204NoContent)
-            .Produces<ProblemDetails>(StatusCodes.Status400BadRequest);
+            .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+            .RequireAuthorization(PermissionPolicies.UsersDelete);
 
         return app;
     }

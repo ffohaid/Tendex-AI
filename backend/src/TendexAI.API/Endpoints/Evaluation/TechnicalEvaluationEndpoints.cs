@@ -44,13 +44,15 @@ public static class TechnicalEvaluationEndpoints
             .WithDescription("Creates a new technical evaluation session and activates blind evaluation mode. " +
                              "Requires the competition to be in OffersClosed or TechnicalAnalysis status.")
             .Produces<TechnicalEvaluationDetailDto>(StatusCodes.Status201Created)
-            .Produces<ProblemDetails>(StatusCodes.Status400BadRequest);
+            .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+            .RequireAuthorization(PermissionPolicies.EvaluationCreate);
 
         group.MapGet("/", GetEvaluationDetailsAsync)
             .WithName("GetTechnicalEvaluationDetails")
             .WithSummary("Get technical evaluation details for a competition")
             .Produces<TechnicalEvaluationDetailDto>(StatusCodes.Status200OK)
-            .Produces<ProblemDetails>(StatusCodes.Status404NotFound);
+            .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
+            .RequireAuthorization(PermissionPolicies.EvaluationView);
 
         // ═══════════════════════════════════════════════════════════
         //  Blind Offers
@@ -62,7 +64,8 @@ public static class TechnicalEvaluationEndpoints
             .WithDescription("Returns offers with anonymous blind codes instead of supplier names " +
                              "when blind evaluation is active. Per PRD Section 9.1.")
             .Produces<IReadOnlyList<BlindOfferSummaryDto>>(StatusCodes.Status200OK)
-            .Produces<ProblemDetails>(StatusCodes.Status404NotFound);
+            .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
+            .RequireAuthorization(PermissionPolicies.EvaluationView);
 
         // ═══════════════════════════════════════════════════════════
         //  Scoring
@@ -72,7 +75,8 @@ public static class TechnicalEvaluationEndpoints
             .WithName("GetTechnicalScores")
             .WithSummary("Get all technical scores for a competition's evaluation")
             .Produces<IReadOnlyList<TechnicalScoreDto>>(StatusCodes.Status200OK)
-            .Produces<ProblemDetails>(StatusCodes.Status404NotFound);
+            .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
+            .RequireAuthorization(PermissionPolicies.EvaluationView);
 
         group.MapPost("/scores", SubmitScoreAsync)
             .WithName("SubmitTechnicalScore")
@@ -89,7 +93,8 @@ public static class TechnicalEvaluationEndpoints
             .WithDescription("Finalizes all scores, calculates weighted totals, determines pass/fail " +
                              "for each offer, assigns rankings, and submits the report for committee chair approval.")
             .Produces<IReadOnlyList<OfferEvaluationResultDto>>(StatusCodes.Status200OK)
-            .Produces<ProblemDetails>(StatusCodes.Status400BadRequest);
+            .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+            .RequireAuthorization(PermissionPolicies.EvaluationCreate);
 
         // ═══════════════════════════════════════════════════════════
         //  Report Approval
@@ -101,7 +106,8 @@ public static class TechnicalEvaluationEndpoints
             .WithDescription("Committee chair approves the technical evaluation report. " +
                              "This action reveals supplier identities and unlocks financial envelopes for passed offers.")
             .Produces<TechnicalEvaluationDetailDto>(StatusCodes.Status200OK)
-            .Produces<ProblemDetails>(StatusCodes.Status400BadRequest);
+            .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+            .RequireAuthorization(PermissionPolicies.EvaluationCreate);
 
         group.MapPost("/reject", RejectReportAsync)
             .WithName("RejectTechnicalReport")
@@ -109,7 +115,8 @@ public static class TechnicalEvaluationEndpoints
             .WithDescription("Committee chair rejects the report with a reason. " +
                              "The evaluation returns to InProgress for re-scoring.")
             .Produces<TechnicalEvaluationDetailDto>(StatusCodes.Status200OK)
-            .Produces<ProblemDetails>(StatusCodes.Status400BadRequest);
+            .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+            .RequireAuthorization(PermissionPolicies.EvaluationCreate);
 
         // ═══════════════════════════════════════════════════════════
         //  Results & Analytics
@@ -119,7 +126,8 @@ public static class TechnicalEvaluationEndpoints
             .WithName("GetTechnicalEvaluationResults")
             .WithSummary("Get final evaluation results with rankings")
             .Produces<IReadOnlyList<OfferEvaluationResultDto>>(StatusCodes.Status200OK)
-            .Produces<ProblemDetails>(StatusCodes.Status404NotFound);
+            .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
+            .RequireAuthorization(PermissionPolicies.EvaluationView);
 
         group.MapGet("/heatmap", GetHeatmapAsync)
             .WithName("GetTechnicalHeatmap")
@@ -127,7 +135,8 @@ public static class TechnicalEvaluationEndpoints
             .WithDescription("Returns a heatmap matrix showing average scores per criterion per offer. " +
                              "Green >= 80%, Yellow 60-79%, Red < 60%. Per PRD Section 9.3.")
             .Produces<TechnicalHeatmapDto>(StatusCodes.Status200OK)
-            .Produces<ProblemDetails>(StatusCodes.Status404NotFound);
+            .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
+            .RequireAuthorization(PermissionPolicies.EvaluationView);
 
         group.MapGet("/variance-alerts", GetVarianceAlertsAsync)
             .WithName("GetVarianceAlerts")
@@ -135,7 +144,8 @@ public static class TechnicalEvaluationEndpoints
             .WithDescription("Detects and returns alerts where score variance exceeds 20% threshold. " +
                              "Per PRD Section 9.2.")
             .Produces<IReadOnlyList<VarianceAlertDto>>(StatusCodes.Status200OK)
-            .Produces<ProblemDetails>(StatusCodes.Status404NotFound);
+            .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
+            .RequireAuthorization(PermissionPolicies.EvaluationView);
 
         // ═══════════════════════════════════════════════════════════
         //  Financial Envelope Gate
@@ -149,7 +159,8 @@ public static class TechnicalEvaluationEndpoints
                              "Only offers that passed technical evaluation will have their envelopes opened. " +
                              "Per PRD Section 10.1.")
             .Produces<IReadOnlyList<BlindOfferSummaryDto>>(StatusCodes.Status200OK)
-            .Produces<ProblemDetails>(StatusCodes.Status400BadRequest);
+            .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+            .RequireAuthorization(PermissionPolicies.EvaluationCreate);
 
         return app;
     }

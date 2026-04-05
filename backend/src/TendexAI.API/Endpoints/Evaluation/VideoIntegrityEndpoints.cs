@@ -40,7 +40,7 @@ public static class VideoIntegrityEndpoints
             .Produces<VideoIntegrityAnalysisDto>(StatusCodes.Status201Created)
             .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
             .Produces<ProblemDetails>(StatusCodes.Status422UnprocessableEntity)
-        .RequireAuthorization(PermissionPolicies.EvaluationCreate);
+            .RequireAuthorization(PermissionPolicies.EvaluationCreate);
 
         // ═══════════════════════════════════════════════════════════
         //  Query Endpoints
@@ -56,7 +56,8 @@ public static class VideoIntegrityEndpoints
         group.MapGet("/competition/{competitionId:guid}", GetByCompetitionAsync)
             .WithName("GetVideoAnalysesByCompetition")
             .WithSummary("Get all video integrity analyses for a competition")
-            .Produces<IReadOnlyList<VideoIntegrityAnalysisDto>>(StatusCodes.Status200OK);
+            .Produces<IReadOnlyList<VideoIntegrityAnalysisDto>>(StatusCodes.Status200OK)
+            .RequireAuthorization(PermissionPolicies.EvaluationView);
 
         // ═══════════════════════════════════════════════════════════
         //  Manual Review
@@ -70,7 +71,8 @@ public static class VideoIntegrityEndpoints
                 "The reviewer can override the status to Passed or Failed.")
             .Produces<VideoIntegrityAnalysisDto>(StatusCodes.Status200OK)
             .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
-            .Produces<ProblemDetails>(StatusCodes.Status404NotFound);
+            .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
+            .RequireAuthorization(PermissionPolicies.EvaluationView);
 
         return app;
     }

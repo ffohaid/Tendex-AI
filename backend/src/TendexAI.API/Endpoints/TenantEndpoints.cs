@@ -35,21 +35,24 @@ public static class TenantEndpoints
         group.MapGet("/", GetTenantsList)
             .WithName("GetTenantsList")
             .WithSummary("Retrieves a paginated list of tenants with optional search and status filtering.")
-            .Produces<PagedResultDto<TenantListItemDto>>(StatusCodes.Status200OK);
+            .Produces<PagedResultDto<TenantListItemDto>>(StatusCodes.Status200OK)
+            .RequireAuthorization(PermissionPolicies.TenantsView);
 
         // GET /api/v1/tenants/{id} - Get tenant details
         group.MapGet("/{id:guid}", GetTenantById)
             .WithName("GetTenantById")
             .WithSummary("Retrieves detailed information about a specific tenant.")
             .Produces<TenantDto>(StatusCodes.Status200OK)
-            .Produces(StatusCodes.Status404NotFound);
+            .Produces(StatusCodes.Status404NotFound)
+            .RequireAuthorization(PermissionPolicies.TenantsView);
 
         // GET /api/v1/tenants/{id}/branding - Get tenant branding configuration
         group.MapGet("/{id:guid}/branding", GetTenantBranding)
             .WithName("GetTenantBranding")
             .WithSummary("Retrieves the branding configuration (logo, colors) for a specific tenant.")
             .Produces<TenantBrandingDto>(StatusCodes.Status200OK)
-            .Produces(StatusCodes.Status404NotFound);
+            .Produces(StatusCodes.Status404NotFound)
+            .RequireAuthorization(PermissionPolicies.TenantsView);
 
         // POST /api/v1/tenants - Create new tenant
         group.MapPost("/", CreateTenant)
@@ -82,7 +85,8 @@ public static class TenantEndpoints
             .WithSummary("Changes the lifecycle status of a tenant following valid state transitions.")
             .Produces<TenantDto>(StatusCodes.Status200OK)
             .Produces(StatusCodes.Status400BadRequest)
-            .Produces(StatusCodes.Status404NotFound);
+            .Produces(StatusCodes.Status404NotFound)
+            .RequireAuthorization(PermissionPolicies.TenantsEdit);
 
         // POST /api/v1/tenants/{id}/provision - Trigger database provisioning
         group.MapPost("/{id:guid}/provision", ProvisionTenantDatabase)
@@ -90,13 +94,15 @@ public static class TenantEndpoints
             .WithSummary("Triggers automated database provisioning for a tenant in PendingProvisioning status.")
             .Produces<TenantDto>(StatusCodes.Status200OK)
             .Produces(StatusCodes.Status400BadRequest)
-            .Produces(StatusCodes.Status404NotFound);
+            .Produces(StatusCodes.Status404NotFound)
+            .RequireAuthorization(PermissionPolicies.TenantsCreate);
 
         // GET /api/v1/tenants/statuses - Get available tenant statuses
         group.MapGet("/statuses", GetTenantStatuses)
             .WithName("GetTenantStatuses")
             .WithSummary("Returns all available tenant lifecycle statuses.")
-            .Produces<IEnumerable<TenantStatusDto>>(StatusCodes.Status200OK);
+            .Produces<IEnumerable<TenantStatusDto>>(StatusCodes.Status200OK)
+            .RequireAuthorization(PermissionPolicies.TenantsEdit);
 
         // GET /api/v1/tenants/resolve?hostname={hostname} - Resolve tenant by hostname (public, no auth)
         // TASK-905: Tenant resolve endpoint is registered outside the group

@@ -29,7 +29,8 @@ public static class AwardEndpoints
             .WithDescription("Generates an award recommendation by combining technical and financial " +
                              "evaluation scores. Requires approved financial evaluation.")
             .Produces<AwardRecommendationDto>(StatusCodes.Status201Created)
-            .Produces<ProblemDetails>(StatusCodes.Status400BadRequest);
+            .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+            .RequireAuthorization(PermissionPolicies.EvaluationApprove);
 
         group.MapGet("/", GetAwardRecommendationAsync)
             .WithName("GetAwardRecommendation")
@@ -43,19 +44,22 @@ public static class AwardEndpoints
             .WithSummary("Get the final ranking of all technically-passed offers")
             .WithDescription("Returns the combined ranking based on technical and financial scores.")
             .Produces<FinalRankingDto>(StatusCodes.Status200OK)
-            .Produces<ProblemDetails>(StatusCodes.Status404NotFound);
+            .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
+            .RequireAuthorization(PermissionPolicies.EvaluationView);
 
         group.MapPost("/approve", ApproveAwardAsync)
             .WithName("ApproveAward")
             .WithSummary("Approve the award recommendation")
             .Produces<AwardRecommendationDto>(StatusCodes.Status200OK)
-            .Produces<ProblemDetails>(StatusCodes.Status400BadRequest);
+            .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+            .RequireAuthorization(PermissionPolicies.EvaluationApprove);
 
         group.MapPost("/reject", RejectAwardAsync)
             .WithName("RejectAward")
             .WithSummary("Reject the award recommendation")
             .Produces<AwardRecommendationDto>(StatusCodes.Status200OK)
-            .Produces<ProblemDetails>(StatusCodes.Status400BadRequest);
+            .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+            .RequireAuthorization(PermissionPolicies.EvaluationApprove);
 
         return app;
     }

@@ -37,14 +37,16 @@ public static class DashboardEndpoints
             .WithSummary("Retrieve recent activity log entries for the current tenant")
             .Produces<RecentActivitiesPagedResultDto>(StatusCodes.Status200OK)
             .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
-            .Produces<ProblemDetails>(StatusCodes.Status401Unauthorized);
+            .Produces<ProblemDetails>(StatusCodes.Status401Unauthorized)
+            .RequireAuthorization(PermissionPolicies.DashboardView);
 
         group.MapGet("/metrics", GetPerformanceMetricsAsync)
             .WithName("GetPerformanceMetrics")
             .WithSummary("Retrieve performance metrics and chart data for the current tenant")
             .Produces<PerformanceMetricsDto>(StatusCodes.Status200OK)
             .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
-            .Produces<ProblemDetails>(StatusCodes.Status401Unauthorized);
+            .Produces<ProblemDetails>(StatusCodes.Status401Unauthorized)
+            .RequireAuthorization(PermissionPolicies.DashboardView);
 
         return app;
     }

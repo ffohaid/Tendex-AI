@@ -39,11 +39,13 @@ public static class InquiryEndpoints
 
         group.MapGet("/statistics", GetStatisticsAsync)
             .WithName("GetInquiryStatistics")
-            .WithSummary("Get inquiry statistics dashboard");
+            .WithSummary("Get inquiry statistics dashboard")
+            .RequireAuthorization(PermissionPolicies.InquiriesView);
 
         group.MapGet("/{id:guid}", GetByIdAsync)
             .WithName("GetInquiryById")
-            .WithSummary("Get inquiry details by ID");
+            .WithSummary("Get inquiry details by ID")
+            .RequireAuthorization(PermissionPolicies.InquiriesView);
 
         // ─── Commands ──────────────────────────────────────────────
         group.MapPost("/", CreateAsync)
@@ -53,27 +55,33 @@ public static class InquiryEndpoints
 
         group.MapPost("/bulk-import", BulkImportAsync)
             .WithName("BulkImportInquiries")
-            .WithSummary("Bulk import inquiries from Etimad");
+            .WithSummary("Bulk import inquiries from Etimad")
+            .RequireAuthorization(PermissionPolicies.InquiriesCreate);
 
         group.MapPut("/{id:guid}", UpdateAsync)
             .WithName("UpdateInquiry")
-            .WithSummary("Update inquiry details");
+            .WithSummary("Update inquiry details")
+            .RequireAuthorization(PermissionPolicies.InquiriesEdit);
 
         group.MapPost("/{id:guid}/assign", AssignAsync)
             .WithName("AssignInquiry")
-            .WithSummary("Assign inquiry to user or committee");
+            .WithSummary("Assign inquiry to user or committee")
+            .RequireAuthorization(PermissionPolicies.InquiriesManage);
 
         group.MapPost("/{id:guid}/submit-answer", SubmitAnswerAsync)
             .WithName("SubmitInquiryAnswer")
-            .WithSummary("Submit an answer for review");
+            .WithSummary("Submit an answer for review")
+            .RequireAuthorization(PermissionPolicies.InquiriesRespond);
 
         group.MapPost("/{id:guid}/approve", ApproveAsync)
             .WithName("ApproveInquiryAnswer")
-            .WithSummary("Approve the submitted answer");
+            .WithSummary("Approve the submitted answer")
+            .RequireAuthorization(PermissionPolicies.InquiriesManage);
 
         group.MapPost("/{id:guid}/reject", RejectAsync)
             .WithName("RejectInquiryAnswer")
-            .WithSummary("Reject the submitted answer");
+            .WithSummary("Reject the submitted answer")
+            .RequireAuthorization(PermissionPolicies.InquiriesManage);
 
         group.MapPost("/{id:guid}/close", CloseAsync)
             .WithName("CloseInquiry")
@@ -82,7 +90,8 @@ public static class InquiryEndpoints
 
         group.MapPost("/{id:guid}/generate-ai-answer", GenerateAiAnswerAsync)
             .WithName("GenerateAiAnswer")
-            .WithSummary("Generate AI-powered answer suggestion");
+            .WithSummary("Generate AI-powered answer suggestion")
+            .RequireAuthorization(PermissionPolicies.AiAssistantUse);
 
         return app;
     }

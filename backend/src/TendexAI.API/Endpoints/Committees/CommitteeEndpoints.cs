@@ -44,7 +44,8 @@ public static class CommitteeEndpoints
             .WithName("GetCommittees")
             .WithSummary("Get paginated list of committees for the current tenant")
             .Produces<CommitteePagedResultDto>(StatusCodes.Status200OK)
-            .Produces<ProblemDetails>(StatusCodes.Status400BadRequest);
+            .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+            .RequireAuthorization(PermissionPolicies.CommitteesView);
 
         group.MapGet("/{committeeId:guid}", GetCommitteeByIdAsync)
             .WithName("GetCommitteeById")
@@ -73,7 +74,8 @@ public static class CommitteeEndpoints
             .WithSummary("Change committee lifecycle status (Suspend, Reactivate, Dissolve)")
             .Produces(StatusCodes.Status200OK)
             .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
-            .Produces<ProblemDetails>(StatusCodes.Status404NotFound);
+            .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
+            .RequireAuthorization(PermissionPolicies.CommitteesEdit);
 
         // ═════════════════════════════════════════════════════════════
         //  Member Management
@@ -83,7 +85,8 @@ public static class CommitteeEndpoints
             .WithName("GetEligibleUsers")
             .WithSummary("Search for platform users eligible to be added to a committee")
             .Produces<IReadOnlyList<EligibleUserDto>>(StatusCodes.Status200OK)
-            .Produces<ProblemDetails>(StatusCodes.Status404NotFound);
+            .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
+            .RequireAuthorization(PermissionPolicies.CommitteesManageMembers);
 
         group.MapPost("/{committeeId:guid}/members", AddCommitteeMemberAsync)
             .WithName("AddCommitteeMember")
@@ -109,7 +112,8 @@ public static class CommitteeEndpoints
             .WithName("ValidateConflictOfInterest")
             .WithSummary("Check if adding a user to a committee would violate conflict of interest rules")
             .Produces<ConflictOfInterestResultDto>(StatusCodes.Status200OK)
-            .Produces<ProblemDetails>(StatusCodes.Status404NotFound);
+            .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
+            .RequireAuthorization(PermissionPolicies.CommitteesView);
 
         // ═════════════════════════════════════════════════════════════
         //  Statistics & AI Analysis
@@ -119,13 +123,15 @@ public static class CommitteeEndpoints
             .WithName("GetCommitteeStatistics")
             .WithSummary("Get committee statistics for the current tenant")
             .Produces<CommitteeStatisticsDto>(StatusCodes.Status200OK)
-            .Produces<ProblemDetails>(StatusCodes.Status400BadRequest);
+            .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+            .RequireAuthorization(PermissionPolicies.CommitteesView);
 
         group.MapGet("/{committeeId:guid}/ai-analysis", GetCommitteeAiAnalysisAsync)
             .WithName("GetCommitteeAiAnalysis")
             .WithSummary("Get AI-powered analysis and recommendations for a committee")
             .Produces<CommitteeAiAnalysisResponseDto>(StatusCodes.Status200OK)
-            .Produces<ProblemDetails>(StatusCodes.Status404NotFound);
+            .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
+            .RequireAuthorization(PermissionPolicies.CommitteesView);
 
         // ═════════════════════════════════════════════════════════════
         //  Competition-Scoped Queries
@@ -136,7 +142,8 @@ public static class CommitteeEndpoints
             .WithName("GetCompetitionCommittees")
             .WithSummary("Get all committees linked to a specific competition")
             .RequireAuthorization()
-            .Produces<IReadOnlyList<CommitteeDetailDto>>(StatusCodes.Status200OK);
+            .Produces<IReadOnlyList<CommitteeDetailDto>>(StatusCodes.Status200OK)
+            .RequireAuthorization(PermissionPolicies.CommitteesView);
 
         return app;
     }

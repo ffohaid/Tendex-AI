@@ -38,7 +38,8 @@ public static class AiGatewayEndpoints
                 MaxTokensOverride = request.MaxTokensOverride,
                 TemperatureOverride = request.TemperatureOverride,
                 RagContext = request.RagContext
-            };
+            }
+            .RequireAuthorization(PermissionPolicies.AiAssistantUse);
 
             var response = await gateway.GenerateCompletionAsync(aiRequest, ct);
 
@@ -69,7 +70,8 @@ public static class AiGatewayEndpoints
                 Text = request.Text,
                 PreferredProvider = request.PreferredProvider,
                 ModelNameOverride = request.ModelNameOverride
-            };
+            }
+            .RequireAuthorization(PermissionPolicies.AiAssistantUse);
 
             var response = await gateway.GenerateEmbeddingAsync(aiRequest, ct);
 
@@ -94,7 +96,8 @@ public static class AiGatewayEndpoints
             IAiGateway gateway,
             CancellationToken ct) =>
         {
-            var isAvailable = await gateway.IsAvailableAsync(tenantId, ct);
+            var isAvailable = await gateway.IsAvailableAsync(tenantId, ct)
+            .RequireAuthorization(PermissionPolicies.AiAssistantUse);
 
             return Results.Ok(new
             {

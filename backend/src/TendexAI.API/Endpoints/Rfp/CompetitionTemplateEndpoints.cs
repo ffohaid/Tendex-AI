@@ -37,7 +37,8 @@ public static class CompetitionTemplateEndpoints
             .WithName("CopyFromTemplate")
             .WithSummary("Create a new competition from a template")
             .Produces<object>(StatusCodes.Status201Created)
-            .Produces<ProblemDetails>(StatusCodes.Status404NotFound);
+            .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
+            .RequireAuthorization(PermissionPolicies.CompetitionsCreate);
 
         return app;
     }

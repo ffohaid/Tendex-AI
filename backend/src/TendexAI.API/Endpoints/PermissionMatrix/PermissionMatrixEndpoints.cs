@@ -28,7 +28,8 @@ public static class PermissionMatrixEndpoints
         // Get permission matrix grouped by scope
         group.MapGet("/by-scope/{scope}", GetMatrixByScopeAsync)
             .WithName("GetPermissionMatrixByScope")
-            .WithDescription("Gets the permission matrix filtered by scope");
+            .WithDescription("Gets the permission matrix filtered by scope")
+            .RequireAuthorization(PermissionPolicies.MatrixView);
 
         // Get permission matrix for a specific role
         group.MapGet("/by-role/{roleId:guid}", GetMatrixByRoleAsync)
@@ -39,57 +40,68 @@ public static class PermissionMatrixEndpoints
         // Update a specific rule
         group.MapPut("/rules/{ruleId:guid}", UpdateRuleAsync)
             .WithName("UpdatePermissionRule")
-            .WithDescription("Updates a specific permission matrix rule");
+            .WithDescription("Updates a specific permission matrix rule")
+            .RequireAuthorization(PermissionPolicies.MatrixEdit);
 
         // Bulk update rules for a role
         group.MapPut("/roles/{roleId:guid}/bulk", BulkUpdateRulesAsync)
             .WithName("BulkUpdatePermissionRules")
-            .WithDescription("Bulk updates permission rules for a role");
+            .WithDescription("Bulk updates permission rules for a role")
+            .RequireAuthorization(PermissionPolicies.MatrixEdit);
 
         // Reset matrix to defaults
         group.MapPost("/reset", ResetMatrixAsync)
             .WithName("ResetPermissionMatrix")
-            .WithDescription("Resets the permission matrix to system defaults");
+            .WithDescription("Resets the permission matrix to system defaults")
+            .RequireAuthorization(PermissionPolicies.MatrixEdit);
 
         // Get current user's effective permissions
         group.MapGet("/my-permissions", GetMyPermissionsAsync)
             .WithName("GetMyPermissions")
-            .WithDescription("Gets the current user's effective permissions");
+            .WithDescription("Gets the current user's effective permissions")
+            .RequireAuthorization(PermissionPolicies.MatrixView);
 
         // Get current user's competition permissions
         group.MapGet("/my-permissions/competition/{competitionId:guid}", GetMyCompetitionPermissionsAsync)
             .WithName("GetMyCompetitionPermissions")
-            .WithDescription("Gets the current user's effective permissions for a specific competition");
+            .WithDescription("Gets the current user's effective permissions for a specific competition")
+            .RequireAuthorization(PermissionPolicies.MatrixView);
 
         // Check if current user has a specific permission
         group.MapGet("/check", CheckPermissionAsync)
             .WithName("CheckPermission")
-            .WithDescription("Checks if the current user has a specific permission");
+            .WithDescription("Checks if the current user has a specific permission")
+            .RequireAuthorization(PermissionPolicies.MatrixView);
 
         // Get resource types metadata
         group.MapGet("/resource-types", GetResourceTypesAsync)
             .WithName("GetResourceTypes")
-            .WithDescription("Gets all resource types with their metadata");
+            .WithDescription("Gets all resource types with their metadata")
+            .RequireAuthorization(PermissionPolicies.MatrixView);
 
         // Get permission actions metadata
         group.MapGet("/actions", GetPermissionActionsAsync)
             .WithName("GetPermissionActions")
-            .WithDescription("Gets all permission actions with their metadata");
+            .WithDescription("Gets all permission actions with their metadata")
+            .RequireAuthorization(PermissionPolicies.MatrixView);
 
         // Seed default rules for the current tenant (admin only)
         group.MapPost("/seed", SeedDefaultRulesAsync)
             .WithName("SeedDefaultPermissionRules")
-            .WithDescription("Seeds default permission matrix rules for the current tenant");
+            .WithDescription("Seeds default permission matrix rules for the current tenant")
+            .RequireAuthorization(PermissionPolicies.MatrixEdit);
 
         // Get the full permission matrix as a grid (rows = resources, columns = roles)
         group.MapGet("/grid", GetMatrixGridAsync)
             .WithName("GetPermissionMatrixGrid")
-            .WithDescription("Gets the full permission matrix in grid format with roles as columns and resources as rows");
+            .WithDescription("Gets the full permission matrix in grid format with roles as columns and resources as rows")
+            .RequireAuthorization(PermissionPolicies.MatrixView);
 
         // Bulk update multiple cells in the grid
         group.MapPut("/grid/bulk-update", BulkUpdateGridCellsAsync)
             .WithName("BulkUpdateGridCells")
-            .WithDescription("Bulk updates permission matrix cells from the grid view");
+            .WithDescription("Bulk updates permission matrix cells from the grid view")
+            .RequireAuthorization(PermissionPolicies.MatrixEdit);
     }
 
     private static async Task<IResult> GetMatrixAsync(

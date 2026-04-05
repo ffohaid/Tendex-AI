@@ -36,14 +36,16 @@ public static class ImpersonationEndpoints
             .Produces(StatusCodes.Status201Created)
             .Produces(StatusCodes.Status400BadRequest)
             .Produces(StatusCodes.Status401Unauthorized)
-            .Produces(StatusCodes.Status403Forbidden);
+            .Produces(StatusCodes.Status403Forbidden)
+            .RequireAuthorization(PermissionPolicies.Impersonate);
 
         group.MapGet("/consents", GetConsentsAsync)
             .WithName("GetImpersonationConsents")
             .WithSummary("Get impersonation consent requests with optional filters")
             .Produces(StatusCodes.Status200OK)
             .Produces(StatusCodes.Status401Unauthorized)
-            .Produces(StatusCodes.Status403Forbidden);
+            .Produces(StatusCodes.Status403Forbidden)
+            .RequireAuthorization(PermissionPolicies.Impersonate);
 
         group.MapPost("/consents/{consentId:guid}/approve", ApproveConsentAsync)
             .WithName("ApproveImpersonationConsent")
@@ -51,7 +53,8 @@ public static class ImpersonationEndpoints
             .Produces(StatusCodes.Status200OK)
             .Produces(StatusCodes.Status400BadRequest)
             .Produces(StatusCodes.Status401Unauthorized)
-            .Produces(StatusCodes.Status403Forbidden);
+            .Produces(StatusCodes.Status403Forbidden)
+            .RequireAuthorization(PermissionPolicies.Impersonate);
 
         group.MapPost("/consents/{consentId:guid}/reject", RejectConsentAsync)
             .WithName("RejectImpersonationConsent")
@@ -59,7 +62,8 @@ public static class ImpersonationEndpoints
             .Produces(StatusCodes.Status200OK)
             .Produces(StatusCodes.Status400BadRequest)
             .Produces(StatusCodes.Status401Unauthorized)
-            .Produces(StatusCodes.Status403Forbidden);
+            .Produces(StatusCodes.Status403Forbidden)
+            .RequireAuthorization(PermissionPolicies.Impersonate);
 
         // ----- Impersonation Session Management -----
         group.MapPost("/sessions/start", StartImpersonationAsync)
@@ -77,14 +81,16 @@ public static class ImpersonationEndpoints
             .Produces(StatusCodes.Status204NoContent)
             .Produces(StatusCodes.Status400BadRequest)
             .Produces(StatusCodes.Status401Unauthorized)
-            .Produces(StatusCodes.Status403Forbidden);
+            .Produces(StatusCodes.Status403Forbidden)
+            .RequireAuthorization(PermissionPolicies.Impersonate);
 
         group.MapGet("/sessions", GetSessionsAsync)
             .WithName("GetImpersonationSessions")
             .WithSummary("Get impersonation sessions with optional filters")
             .Produces(StatusCodes.Status200OK)
             .Produces(StatusCodes.Status401Unauthorized)
-            .Produces(StatusCodes.Status403Forbidden);
+            .Produces(StatusCodes.Status403Forbidden)
+            .RequireAuthorization(PermissionPolicies.Impersonate);
 
         // ----- User Search -----
         group.MapGet("/users/search", SearchUsersAsync)
@@ -92,7 +98,8 @@ public static class ImpersonationEndpoints
             .WithSummary("Search users across all tenants for impersonation")
             .Produces(StatusCodes.Status200OK)
             .Produces(StatusCodes.Status401Unauthorized)
-            .Produces(StatusCodes.Status403Forbidden);
+            .Produces(StatusCodes.Status403Forbidden)
+            .RequireAuthorization(PermissionPolicies.Impersonate);
     }
 
     // ----- Endpoint Handlers -----

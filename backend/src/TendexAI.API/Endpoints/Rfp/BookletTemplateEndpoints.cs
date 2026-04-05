@@ -27,16 +27,19 @@ public static class BookletTemplateEndpoints
 
         group.MapGet("/{id:guid}", GetBookletTemplateByIdAsync)
             .WithName("GetBookletTemplateById")
-            .WithSummary("Get a booklet template with all sections and blocks");
+            .WithSummary("Get a booklet template with all sections and blocks")
+            .RequireAuthorization(PermissionPolicies.CompetitionsView);
 
         group.MapPost("/upload", UploadBookletTemplateAsync)
             .WithName("UploadBookletTemplate")
             .WithSummary("Upload and parse a DOCX booklet template")
-            .DisableAntiforgery();
+            .DisableAntiforgery()
+            .RequireAuthorization(PermissionPolicies.CompetitionsEdit);
 
         group.MapPost("/{id:guid}/create-booklet", CreateBookletFromTemplateAsync)
             .WithName("CreateBookletFromTemplate")
-            .WithSummary("Create an editable booklet instance from a template");
+            .WithSummary("Create an editable booklet instance from a template")
+            .RequireAuthorization(PermissionPolicies.CompetitionsEdit);
 
         group.MapDelete("/{id:guid}", DeleteBookletTemplateAsync)
             .WithName("DeleteBookletTemplate")
@@ -45,11 +48,13 @@ public static class BookletTemplateEndpoints
 
         group.MapGet("/competition/{competitionId:guid}/blocks", GetBookletBlocksByCompetitionAsync)
             .WithName("GetBookletBlocksByCompetition")
-            .WithSummary("Get booklet template blocks with color types for a competition created from a template");
+            .WithSummary("Get booklet template blocks with color types for a competition created from a template")
+            .RequireAuthorization(PermissionPolicies.CompetitionsView);
 
         group.MapPut("/competition/{competitionId:guid}/blocks", SaveBookletBlocksAsync)
             .WithName("SaveBookletBlocks")
-            .WithSummary("Save edited booklet blocks for a competition");
+            .WithSummary("Save edited booklet blocks for a competition")
+            .RequireAuthorization(PermissionPolicies.CompetitionsView);
 
         return app;
     }

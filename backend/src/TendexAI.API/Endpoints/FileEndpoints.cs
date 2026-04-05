@@ -42,21 +42,24 @@ public static class FileEndpoints
             .WithSummary("Get file metadata by ID")
             .WithDescription("Retrieves file attachment metadata including name, size, type, and storage location.")
             .Produces<FileInfoResponse>()
-            .Produces<ProblemDetails>(StatusCodes.Status404NotFound);
+            .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
+            .RequireAuthorization(PermissionPolicies.FilesView);
 
         group.MapGet("/{fileId:guid}/download-url", GetPresignedDownloadUrlAsync)
             .WithName("GetPresignedDownloadUrl")
             .WithSummary("Generate a presigned download URL")
             .WithDescription("Generates a time-limited presigned URL for secure file download directly from MinIO.")
             .Produces<PresignedDownloadUrlResponse>()
-            .Produces<ProblemDetails>(StatusCodes.Status404NotFound);
+            .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
+            .RequireAuthorization(PermissionPolicies.FilesView);
 
         group.MapPost("/presigned-upload-url", GetPresignedUploadUrlAsync)
             .WithName("GetPresignedUploadUrl")
             .WithSummary("Generate a presigned upload URL")
             .WithDescription("Generates a time-limited presigned URL for direct client-to-MinIO file upload. Pre-validates file parameters.")
             .Produces<PresignedUploadUrlResponse>()
-            .Produces<ProblemDetails>(StatusCodes.Status400BadRequest);
+            .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+            .RequireAuthorization(PermissionPolicies.FilesUpload);
 
         group.MapDelete("/{fileId:guid}", DeleteFileAsync)
             .WithName("DeleteFile")
@@ -69,7 +72,8 @@ public static class FileEndpoints
         group.MapGet("/validation-rules", GetValidationRulesAsync)
             .WithName("GetFileValidationRules")
             .WithSummary("Get file validation rules")
-            .WithDescription("Returns the current file upload validation rules including allowed types, extensions, and maximum size.");
+            .WithDescription("Returns the current file upload validation rules including allowed types, extensions, and maximum size.")
+            .RequireAuthorization(PermissionPolicies.FilesView);
     }
 
     /// <summary>

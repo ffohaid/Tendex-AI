@@ -27,7 +27,8 @@ public static class SupportTicketEndpoints
 
         group.MapGet("/{id:guid}", GetTicketByIdAsync)
             .WithName("GetSupportTicketById")
-            .WithSummary("Get a support ticket with messages");
+            .WithSummary("Get a support ticket with messages")
+            .RequireAuthorization(PermissionPolicies.SupportView);
 
         group.MapPost("/", CreateTicketAsync)
             .WithName("CreateSupportTicket")
@@ -36,7 +37,8 @@ public static class SupportTicketEndpoints
 
         group.MapPut("/{id:guid}/status", UpdateTicketStatusAsync)
             .WithName("UpdateSupportTicketStatus")
-            .WithSummary("Update ticket status");
+            .WithSummary("Update ticket status")
+            .RequireAuthorization(PermissionPolicies.SupportCreate);
 
         group.MapPut("/{id:guid}/assign", AssignTicketAsync)
             .WithName("AssignSupportTicket")
@@ -45,29 +47,35 @@ public static class SupportTicketEndpoints
 
         group.MapPut("/{id:guid}/resolve", ResolveTicketAsync)
             .WithName("ResolveSupportTicket")
-            .WithSummary("Resolve a support ticket");
+            .WithSummary("Resolve a support ticket")
+            .RequireAuthorization(PermissionPolicies.SupportCreate);
 
         group.MapPut("/{id:guid}/rate", RateTicketAsync)
             .WithName("RateSupportTicket")
-            .WithSummary("Rate a resolved ticket");
+            .WithSummary("Rate a resolved ticket")
+            .RequireAuthorization(PermissionPolicies.SupportView);
 
         // ----- Messages -----
         group.MapPost("/{id:guid}/messages", AddMessageAsync)
             .WithName("AddSupportTicketMessage")
-            .WithSummary("Add a message to a support ticket");
+            .WithSummary("Add a message to a support ticket")
+            .RequireAuthorization(PermissionPolicies.SupportView);
 
         group.MapPut("/{id:guid}/messages/read", MarkMessagesReadAsync)
             .WithName("MarkSupportTicketMessagesRead")
-            .WithSummary("Mark all messages as read");
+            .WithSummary("Mark all messages as read")
+            .RequireAuthorization(PermissionPolicies.SupportView);
 
         // ----- AI Features -----
         group.MapPost("/{id:guid}/ai-analyze", AiAnalyzeTicketAsync)
             .WithName("AiAnalyzeSupportTicket")
-            .WithSummary("Use AI to analyze and suggest resolution");
+            .WithSummary("Use AI to analyze and suggest resolution")
+            .RequireAuthorization(PermissionPolicies.SupportCreate);
 
         group.MapPost("/{id:guid}/ai-reply", AiGenerateReplyAsync)
             .WithName("AiGenerateSupportReply")
-            .WithSummary("Use AI to generate a reply suggestion");
+            .WithSummary("Use AI to generate a reply suggestion")
+            .RequireAuthorization(PermissionPolicies.SupportCreate);
 
         // ----- Stats -----
         group.MapGet("/stats", GetTicketStatsAsync)
