@@ -1,5 +1,6 @@
 using MediatR;
 using TendexAI.Application.Features.AI.Commands.CreateAiConfiguration;
+using TendexAI.Application.Features.AI.Commands.DeleteAiConfiguration;
 using TendexAI.Application.Features.AI.Commands.RotateAiApiKey;
 using TendexAI.Application.Features.AI.Commands.UpdateAiConfiguration;
 using TendexAI.Application.Features.AI.Queries.GetAiConfigurations;
@@ -96,6 +97,29 @@ public static class AiConfigurationEndpoints
         })
         .WithName("UpdateAiConfiguration")
         .WithSummary("Update an AI configuration's model settings")
+        .Produces(StatusCodes.Status204NoContent)
+        .Produces(StatusCodes.Status404NotFound)
+        .RequireAuthorization(PermissionPolicies.AiSettingsManage);
+
+        // DELETE /api/v1/ai/configurations/{configurationId}
+        group.MapDelete("/{configurationId:guid}", async (
+            Guid configurationId,
+            IMediator mediator,
+            CancellationToken ct) =>
+        {
+            var command = new DeleteAiConfigurationCommand
+            {
+                ConfigurationId = configurationId
+            };
+
+            var success = await mediator.Send(command, ct);
+
+            return success
+                ? Results.NoContent()
+                : Results.NotFound(new { Message = "AI configuration not found." });
+        })
+        .WithName("DeleteAiConfiguration")
+        .WithSummary("Deactivate (soft delete) an AI configuration")
         .Produces(StatusCodes.Status204NoContent)
         .Produces(StatusCodes.Status404NotFound)
         .RequireAuthorization(PermissionPolicies.AiSettingsManage);
