@@ -50,11 +50,10 @@ public static class DefaultPermissionMatrixRuleSeeder
     // ═══════════════════════════════════════════════════════════════
     //  GLOBAL SCOPE RULES
     // ═══════════════════════════════════════════════════════════════
-
     private static void SeedGlobalRules(
         List<PermissionMatrixRule> rules, Guid tenantId, Dictionary<SystemRole, Guid> roleMap)
     {
-        // ── Owner: Full access to everything ──
+        // ── TenantPrimaryAdmin (Owner): Full access to everything ──
         if (roleMap.TryGetValue(SystemRole.TenantPrimaryAdmin, out var ownerId))
         {
             AddGlobal(rules, tenantId, ownerId, ResourceType.Organization, PermissionAction.FullAccess);
@@ -75,25 +74,25 @@ public static class DefaultPermissionMatrixRuleSeeder
             AddGlobal(rules, tenantId, ownerId, ResourceType.ApprovalTasks, PermissionAction.Read | PermissionAction.Approve | PermissionAction.Reject);
         }
 
-        // ── Admin: Full access except approval tasks ──
-        if (roleMap.TryGetValue(SystemRole.TenantPrimaryAdmin, out var adminId))
+        // ── ProcurementManager: Manage procurement processes ──
+        if (roleMap.TryGetValue(SystemRole.ProcurementManager, out var pmId))
         {
-            AddGlobal(rules, tenantId, adminId, ResourceType.Organization, PermissionAction.Read | PermissionAction.Update);
-            AddGlobal(rules, tenantId, adminId, ResourceType.Users, PermissionAction.FullAccess);
-            AddGlobal(rules, tenantId, adminId, ResourceType.Roles, PermissionAction.FullAccess);
-            AddGlobal(rules, tenantId, adminId, ResourceType.PermissionMatrix, PermissionAction.FullAccess);
-            AddGlobal(rules, tenantId, adminId, ResourceType.Dashboard, PermissionAction.Read);
-            AddGlobal(rules, tenantId, adminId, ResourceType.Reports, PermissionAction.Read | PermissionAction.Create);
-            AddGlobal(rules, tenantId, adminId, ResourceType.AiAssistant, PermissionAction.Read | PermissionAction.Create);
-            AddGlobal(rules, tenantId, adminId, ResourceType.AiConfiguration, PermissionAction.FullAccess);
-            AddGlobal(rules, tenantId, adminId, ResourceType.KnowledgeBase, PermissionAction.FullAccess);
-            AddGlobal(rules, tenantId, adminId, ResourceType.WorkflowDefinitions, PermissionAction.FullAccess);
-            AddGlobal(rules, tenantId, adminId, ResourceType.AuditLogs, PermissionAction.Read);
-            AddGlobal(rules, tenantId, adminId, ResourceType.SystemSettings, PermissionAction.Read | PermissionAction.Update);
-            AddGlobal(rules, tenantId, adminId, ResourceType.Invitations, PermissionAction.FullAccess);
-            AddGlobal(rules, tenantId, adminId, ResourceType.Notifications, PermissionAction.Read | PermissionAction.Update);
-            AddGlobal(rules, tenantId, adminId, ResourceType.Tasks, PermissionAction.Read);
-            AddGlobal(rules, tenantId, adminId, ResourceType.ApprovalTasks, PermissionAction.Read);
+            AddGlobal(rules, tenantId, pmId, ResourceType.Organization, PermissionAction.Read);
+            AddGlobal(rules, tenantId, pmId, ResourceType.Users, PermissionAction.Read);
+            AddGlobal(rules, tenantId, pmId, ResourceType.Roles, PermissionAction.Read);
+            AddGlobal(rules, tenantId, pmId, ResourceType.PermissionMatrix, PermissionAction.None);
+            AddGlobal(rules, tenantId, pmId, ResourceType.Dashboard, PermissionAction.Read);
+            AddGlobal(rules, tenantId, pmId, ResourceType.Reports, PermissionAction.Read | PermissionAction.Create);
+            AddGlobal(rules, tenantId, pmId, ResourceType.AiAssistant, PermissionAction.Read | PermissionAction.Create);
+            AddGlobal(rules, tenantId, pmId, ResourceType.AiConfiguration, PermissionAction.None);
+            AddGlobal(rules, tenantId, pmId, ResourceType.KnowledgeBase, PermissionAction.Read | PermissionAction.Create);
+            AddGlobal(rules, tenantId, pmId, ResourceType.WorkflowDefinitions, PermissionAction.Read | PermissionAction.Create | PermissionAction.Update);
+            AddGlobal(rules, tenantId, pmId, ResourceType.AuditLogs, PermissionAction.Read);
+            AddGlobal(rules, tenantId, pmId, ResourceType.SystemSettings, PermissionAction.None);
+            AddGlobal(rules, tenantId, pmId, ResourceType.Invitations, PermissionAction.Read | PermissionAction.Create);
+            AddGlobal(rules, tenantId, pmId, ResourceType.Notifications, PermissionAction.Read | PermissionAction.Update);
+            AddGlobal(rules, tenantId, pmId, ResourceType.Tasks, PermissionAction.Read | PermissionAction.Update | PermissionAction.Approve | PermissionAction.Reject);
+            AddGlobal(rules, tenantId, pmId, ResourceType.ApprovalTasks, PermissionAction.Read | PermissionAction.Approve | PermissionAction.Reject);
         }
 
         // ── SectorRep: Manage users in their sector, view reports ──
@@ -136,6 +135,48 @@ public static class DefaultPermissionMatrixRuleSeeder
             AddGlobal(rules, tenantId, fcId, ResourceType.Notifications, PermissionAction.Read);
             AddGlobal(rules, tenantId, fcId, ResourceType.Tasks, PermissionAction.Read | PermissionAction.Update);
             AddGlobal(rules, tenantId, fcId, ResourceType.ApprovalTasks, PermissionAction.Read | PermissionAction.Approve | PermissionAction.Reject);
+        }
+
+        // ── CommitteeChair: Committee leadership + operational access ──
+        if (roleMap.TryGetValue(SystemRole.CommitteeChair, out var chairId))
+        {
+            AddGlobal(rules, tenantId, chairId, ResourceType.Organization, PermissionAction.Read);
+            AddGlobal(rules, tenantId, chairId, ResourceType.Users, PermissionAction.Read);
+            AddGlobal(rules, tenantId, chairId, ResourceType.Roles, PermissionAction.None);
+            AddGlobal(rules, tenantId, chairId, ResourceType.PermissionMatrix, PermissionAction.None);
+            AddGlobal(rules, tenantId, chairId, ResourceType.Dashboard, PermissionAction.Read);
+            AddGlobal(rules, tenantId, chairId, ResourceType.Reports, PermissionAction.Read);
+            AddGlobal(rules, tenantId, chairId, ResourceType.AiAssistant, PermissionAction.Read | PermissionAction.Create);
+            AddGlobal(rules, tenantId, chairId, ResourceType.AiConfiguration, PermissionAction.None);
+            AddGlobal(rules, tenantId, chairId, ResourceType.KnowledgeBase, PermissionAction.Read);
+            AddGlobal(rules, tenantId, chairId, ResourceType.WorkflowDefinitions, PermissionAction.Read);
+            AddGlobal(rules, tenantId, chairId, ResourceType.AuditLogs, PermissionAction.None);
+            AddGlobal(rules, tenantId, chairId, ResourceType.SystemSettings, PermissionAction.None);
+            AddGlobal(rules, tenantId, chairId, ResourceType.Invitations, PermissionAction.None);
+            AddGlobal(rules, tenantId, chairId, ResourceType.Notifications, PermissionAction.Read | PermissionAction.Update);
+            AddGlobal(rules, tenantId, chairId, ResourceType.Tasks, PermissionAction.Read | PermissionAction.Update | PermissionAction.Approve);
+            AddGlobal(rules, tenantId, chairId, ResourceType.ApprovalTasks, PermissionAction.Read | PermissionAction.Approve | PermissionAction.Reject);
+        }
+
+        // ── CommitteeMember: Committee participation ──
+        if (roleMap.TryGetValue(SystemRole.CommitteeMember, out var cmId))
+        {
+            AddGlobal(rules, tenantId, cmId, ResourceType.Organization, PermissionAction.Read);
+            AddGlobal(rules, tenantId, cmId, ResourceType.Users, PermissionAction.Read);
+            AddGlobal(rules, tenantId, cmId, ResourceType.Roles, PermissionAction.None);
+            AddGlobal(rules, tenantId, cmId, ResourceType.PermissionMatrix, PermissionAction.None);
+            AddGlobal(rules, tenantId, cmId, ResourceType.Dashboard, PermissionAction.Read);
+            AddGlobal(rules, tenantId, cmId, ResourceType.Reports, PermissionAction.Read);
+            AddGlobal(rules, tenantId, cmId, ResourceType.AiAssistant, PermissionAction.Read | PermissionAction.Create);
+            AddGlobal(rules, tenantId, cmId, ResourceType.AiConfiguration, PermissionAction.None);
+            AddGlobal(rules, tenantId, cmId, ResourceType.KnowledgeBase, PermissionAction.Read);
+            AddGlobal(rules, tenantId, cmId, ResourceType.WorkflowDefinitions, PermissionAction.None);
+            AddGlobal(rules, tenantId, cmId, ResourceType.AuditLogs, PermissionAction.None);
+            AddGlobal(rules, tenantId, cmId, ResourceType.SystemSettings, PermissionAction.None);
+            AddGlobal(rules, tenantId, cmId, ResourceType.Invitations, PermissionAction.None);
+            AddGlobal(rules, tenantId, cmId, ResourceType.Notifications, PermissionAction.Read);
+            AddGlobal(rules, tenantId, cmId, ResourceType.Tasks, PermissionAction.Read | PermissionAction.Update);
+            AddGlobal(rules, tenantId, cmId, ResourceType.ApprovalTasks, PermissionAction.Read);
         }
 
         // ── Member: Basic operational access ──
@@ -201,7 +242,7 @@ public static class DefaultPermissionMatrixRuleSeeder
 
         foreach (var phase in Enum.GetValues<CompetitionPhase>())
         {
-            // ── Owner: Read all + approve/reject in key phases ──
+            // ── TenantPrimaryAdmin (Owner): Read all + approve/reject in key phases ──
             if (roleMap.TryGetValue(SystemRole.TenantPrimaryAdmin, out var ownerId))
             {
                 var ownerActions = phase switch
@@ -216,11 +257,24 @@ public static class DefaultPermissionMatrixRuleSeeder
                     AddCompetition(rules, tenantId, ownerId, rt, phase, null, ownerActions);
             }
 
-            // ── Admin: Read all phases ──
-            if (roleMap.TryGetValue(SystemRole.TenantPrimaryAdmin, out var adminId))
+            // ── ProcurementManager: Full lifecycle management ──
+            if (roleMap.TryGetValue(SystemRole.ProcurementManager, out var pmId))
             {
+                var pmActions = phase switch
+                {
+                    CompetitionPhase.BookletPreparation => PermissionAction.Read | PermissionAction.Create | PermissionAction.Update | PermissionAction.Delete,
+                    CompetitionPhase.BookletApproval => PermissionAction.Read | PermissionAction.Submit,
+                    CompetitionPhase.BookletPublishing => PermissionAction.Read | PermissionAction.Update,
+                    CompetitionPhase.OfferReception => PermissionAction.Read | PermissionAction.Create | PermissionAction.Update,
+                    CompetitionPhase.TechnicalAnalysis => PermissionAction.Read,
+                    CompetitionPhase.FinancialAnalysis => PermissionAction.Read,
+                    CompetitionPhase.AwardNotification => PermissionAction.Read | PermissionAction.Submit,
+                    CompetitionPhase.ContractApproval => PermissionAction.Read | PermissionAction.Submit,
+                    CompetitionPhase.ContractSigning => PermissionAction.Read,
+                    _ => PermissionAction.Read
+                };
                 foreach (var rt in competitionResources)
-                    AddCompetition(rules, tenantId, adminId, rt, phase, null, PermissionAction.Read);
+                    AddCompetition(rules, tenantId, pmId, rt, phase, null, pmActions);
             }
 
             // ── SectorRep: Create/edit in preparation, read elsewhere ──
@@ -246,6 +300,36 @@ public static class DefaultPermissionMatrixRuleSeeder
                 };
                 foreach (var rt in competitionResources)
                     AddCompetition(rules, tenantId, fcId, rt, phase, null, fcActions);
+            }
+
+            // ── CommitteeChair: Read all phases, approve in key phases ──
+            if (roleMap.TryGetValue(SystemRole.CommitteeChair, out var chairId))
+            {
+                var chairActions = phase switch
+                {
+                    CompetitionPhase.BookletPreparation => PermissionAction.Read | PermissionAction.Create | PermissionAction.Update | PermissionAction.Submit,
+                    CompetitionPhase.BookletApproval => PermissionAction.Read | PermissionAction.Approve | PermissionAction.Reject,
+                    CompetitionPhase.TechnicalAnalysis => PermissionAction.Read | PermissionAction.Score | PermissionAction.Approve | PermissionAction.Submit,
+                    CompetitionPhase.FinancialAnalysis => PermissionAction.Read | PermissionAction.Score | PermissionAction.Approve | PermissionAction.Submit,
+                    CompetitionPhase.AwardNotification => PermissionAction.Read | PermissionAction.Approve | PermissionAction.Sign,
+                    _ => PermissionAction.Read
+                };
+                foreach (var rt in competitionResources)
+                    AddCompetition(rules, tenantId, chairId, rt, phase, null, chairActions);
+            }
+
+            // ── CommitteeMember: Read + score in evaluation phases ──
+            if (roleMap.TryGetValue(SystemRole.CommitteeMember, out var cmId))
+            {
+                var cmActions = phase switch
+                {
+                    CompetitionPhase.BookletPreparation => PermissionAction.Read | PermissionAction.Update,
+                    CompetitionPhase.TechnicalAnalysis => PermissionAction.Read | PermissionAction.Score,
+                    CompetitionPhase.FinancialAnalysis => PermissionAction.Read | PermissionAction.Score,
+                    _ => PermissionAction.Read
+                };
+                foreach (var rt in competitionResources)
+                    AddCompetition(rules, tenantId, cmId, rt, phase, null, cmActions);
             }
 
             // ── Member (no committee role): Read only ──
@@ -397,7 +481,6 @@ public static class DefaultPermissionMatrixRuleSeeder
     // ═══════════════════════════════════════════════════════════════
     //  COMMITTEE SCOPE RULES
     // ═══════════════════════════════════════════════════════════════
-
     private static void SeedCommitteeRules(
         List<PermissionMatrixRule> rules, Guid tenantId, Dictionary<SystemRole, Guid> roleMap)
     {
@@ -407,18 +490,20 @@ public static class DefaultPermissionMatrixRuleSeeder
             ResourceType.CommitteeMeetings, ResourceType.CommitteeTasks
         };
 
-        // Owner: Full access to committees
+        // TenantPrimaryAdmin: Full access to committees
         if (roleMap.TryGetValue(SystemRole.TenantPrimaryAdmin, out var ownerId))
         {
             foreach (var rt in committeeResources)
                 AddCommittee(rules, tenantId, ownerId, rt, PermissionAction.FullAccess);
         }
 
-        // Admin: Full access to committees
-        if (roleMap.TryGetValue(SystemRole.TenantPrimaryAdmin, out var adminId))
+        // ProcurementManager: Manage committees
+        if (roleMap.TryGetValue(SystemRole.ProcurementManager, out var pmId))
         {
-            foreach (var rt in committeeResources)
-                AddCommittee(rules, tenantId, adminId, rt, PermissionAction.FullAccess);
+            AddCommittee(rules, tenantId, pmId, ResourceType.Committee, PermissionAction.Read | PermissionAction.Create | PermissionAction.Update);
+            AddCommittee(rules, tenantId, pmId, ResourceType.CommitteeMembers, PermissionAction.Read | PermissionAction.Create | PermissionAction.Update | PermissionAction.Delete);
+            AddCommittee(rules, tenantId, pmId, ResourceType.CommitteeMeetings, PermissionAction.Read | PermissionAction.Create | PermissionAction.Update);
+            AddCommittee(rules, tenantId, pmId, ResourceType.CommitteeTasks, PermissionAction.Read | PermissionAction.Create | PermissionAction.Update);
         }
 
         // SectorRep: Create and manage committees
@@ -435,6 +520,24 @@ public static class DefaultPermissionMatrixRuleSeeder
         {
             foreach (var rt in committeeResources)
                 AddCommittee(rules, tenantId, fcId, rt, PermissionAction.Read);
+        }
+
+        // CommitteeChair: Manage committees they lead
+        if (roleMap.TryGetValue(SystemRole.CommitteeChair, out var chairId))
+        {
+            AddCommittee(rules, tenantId, chairId, ResourceType.Committee, PermissionAction.Read | PermissionAction.Update);
+            AddCommittee(rules, tenantId, chairId, ResourceType.CommitteeMembers, PermissionAction.Read | PermissionAction.Create | PermissionAction.Update);
+            AddCommittee(rules, tenantId, chairId, ResourceType.CommitteeMeetings, PermissionAction.Read | PermissionAction.Create | PermissionAction.Update);
+            AddCommittee(rules, tenantId, chairId, ResourceType.CommitteeTasks, PermissionAction.Read | PermissionAction.Create | PermissionAction.Update | PermissionAction.Approve);
+        }
+
+        // CommitteeMember: Participate in committees
+        if (roleMap.TryGetValue(SystemRole.CommitteeMember, out var cmId))
+        {
+            AddCommittee(rules, tenantId, cmId, ResourceType.Committee, PermissionAction.Read);
+            AddCommittee(rules, tenantId, cmId, ResourceType.CommitteeMembers, PermissionAction.Read);
+            AddCommittee(rules, tenantId, cmId, ResourceType.CommitteeMeetings, PermissionAction.Read);
+            AddCommittee(rules, tenantId, cmId, ResourceType.CommitteeTasks, PermissionAction.Read | PermissionAction.Update);
         }
 
         // Member: Read committees they belong to
@@ -457,7 +560,6 @@ public static class DefaultPermissionMatrixRuleSeeder
     // ═══════════════════════════════════════════════════════════════
     //  Helper Methods
     // ═══════════════════════════════════════════════════════════════
-
     private static void AddGlobal(
         List<PermissionMatrixRule> rules, Guid tenantId, Guid roleId,
         ResourceType resourceType, PermissionAction actions)
