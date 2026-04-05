@@ -22,22 +22,20 @@ import type { NavigationItem } from '@/types/navigation'
  * IMPORTANT: Route names MUST exactly match the `name` property
  * defined in `@/router/index.ts`. Any mismatch will break navigation.
  *
- * Menu Order Rationale (optimized for government procurement workflow):
- * ────────────────────────────────────────────────────────────────────
- * 1. Information Dashboard – overview & KPIs (first thing users see)
- * 2. Task Center – daily tasks & pending approvals (most used daily)
- * 3. RFP / Specifications Books – core workflow entry point
- * 4. Committees – committee management tied to competitions
- * 5. Evaluation – technical & financial evaluation of offers
- * 6. Inquiries – supplier questions management
- * 7. AI Assistant – AI-powered assistance across modules
- * 8. Knowledge Base – reference documents & regulations
- * 9. Reports – analytics & export (periodic use)
- * 10. Support – help & tickets (occasional use)
- * 11. Settings – admin configuration (least frequent)
+ * Menu Order (optimized for government procurement workflow):
+ * ────────────────────────────────────────────────────────────
+ * 1. لوحة المعلومات – overview & KPIs (first thing users see)
+ * 2. مركز المهام – daily tasks & pending approvals (most used daily)
+ * 3. إدارة كراسات الشروط – core workflow entry point
+ * 4. إدارة استفسارات المتنافسين – supplier questions management
+ * 5. إدارة الفحص وتقييم العروض – technical & financial evaluation
+ * 6. المساعد الذكي – AI-powered assistance across modules
+ * 7. التقارير – analytics & export (periodic use)
+ * 8. الدعم الفني – help & tickets (occasional use)
+ * 9. الإعدادات – admin configuration (includes committees, knowledge base)
  */
 export const sidebarNavigation: NavigationItem[] = [
-  /* ── 1. Information Dashboard (visible to all authenticated tenant users) ── */
+  /* ── 1. لوحة المعلومات (visible to all authenticated tenant users) ── */
   {
     key: 'dashboard',
     labelKey: 'nav.dashboard',
@@ -45,7 +43,7 @@ export const sidebarNavigation: NavigationItem[] = [
     route: 'Dashboard',
   },
 
-  /* ── 2. Task Center (most used daily – pending approvals & tasks) ── */
+  /* ── 2. مركز المهام (most used daily – pending approvals & tasks) ── */
   {
     key: 'task-center',
     labelKey: 'nav.taskCenter',
@@ -54,7 +52,7 @@ export const sidebarNavigation: NavigationItem[] = [
     permission: 'tasks.view',
   },
 
-  /* ── 3. RFP / Specifications Books ── */
+  /* ── 3. إدارة كراسات الشروط ── */
   {
     key: 'rfp',
     labelKey: 'nav.rfp.title',
@@ -92,29 +90,16 @@ export const sidebarNavigation: NavigationItem[] = [
     ],
   },
 
-  /* ── 4. Committees (permission-based, not role-locked) ── */
+  /* ── 4. إدارة استفسارات المتنافسين ── */
   {
-    key: 'committees',
-    labelKey: 'nav.committees.title',
-    icon: 'pi pi-users',
-    permission: 'committees.view',
-    children: [
-      {
-        key: 'committees-permanent',
-        labelKey: 'nav.committees.permanent',
-        icon: 'pi pi-shield',
-        route: 'CommitteesPermanent',
-      },
-      {
-        key: 'committees-temporary',
-        labelKey: 'nav.committees.temporary',
-        icon: 'pi pi-clock',
-        route: 'CommitteesTemporary',
-      },
-    ],
+    key: 'inquiries',
+    labelKey: 'nav.inquiries',
+    icon: 'pi pi-comments',
+    route: 'Inquiries',
+    permission: 'inquiries.view',
   },
 
-  /* ── 5. Evaluation ── */
+  /* ── 5. إدارة الفحص وتقييم العروض ── */
   {
     key: 'evaluation',
     labelKey: 'nav.evaluation.title',
@@ -152,16 +137,7 @@ export const sidebarNavigation: NavigationItem[] = [
     ],
   },
 
-  /* ── 6. Inquiries (supplier questions – tied to active competitions) ── */
-  {
-    key: 'inquiries',
-    labelKey: 'nav.inquiries',
-    icon: 'pi pi-comments',
-    route: 'Inquiries',
-    permission: 'inquiries.view',
-  },
-
-  /* ── 7. AI Assistant ── */
+  /* ── 6. المساعد الذكي ── */
   {
     key: 'ai-assistant',
     labelKey: 'nav.aiAssistant',
@@ -170,16 +146,7 @@ export const sidebarNavigation: NavigationItem[] = [
     permission: 'ai.view',
   },
 
-  /* ── 8. Knowledge Base (permission-based) ── */
-  {
-    key: 'knowledge-base',
-    labelKey: 'nav.knowledgeBase',
-    icon: 'pi pi-book',
-    route: 'KnowledgeBase',
-    permission: 'knowledge.view',
-  },
-
-  /* ── 9. Reports (permission-based) ── */
+  /* ── 7. التقارير ── */
   {
     key: 'reports',
     labelKey: 'nav.reports',
@@ -188,7 +155,7 @@ export const sidebarNavigation: NavigationItem[] = [
     children: [
       {
         key: 'reports-analytics',
-        labelKey: 'nav.reports',
+        labelKey: 'nav.reportsAnalytics',
         icon: 'pi pi-chart-bar',
         route: 'Reports',
       },
@@ -201,7 +168,7 @@ export const sidebarNavigation: NavigationItem[] = [
     ],
   },
 
-  /* ── 10. Support Tickets ── */
+  /* ── 8. الدعم الفني ── */
   {
     key: 'support',
     labelKey: 'nav.support',
@@ -210,7 +177,7 @@ export const sidebarNavigation: NavigationItem[] = [
     permission: 'support.view',
   },
 
-  /* ── 11. Settings (admin – least frequent, always last) ── */
+  /* ── 9. الإعدادات (includes committees, knowledge base, + existing sections) ── */
   {
     key: 'settings',
     labelKey: 'nav.settings.title',
@@ -240,6 +207,20 @@ export const sidebarNavigation: NavigationItem[] = [
         labelKey: 'nav.settings.permissionsMatrix',
         icon: 'pi pi-th-large',
         route: 'PermissionsMatrix',
+      },
+      {
+        key: 'settings-committees',
+        labelKey: 'nav.settings.committees',
+        icon: 'pi pi-users',
+        route: 'CommitteesPermanent',
+        permission: 'committees.view',
+      },
+      {
+        key: 'settings-knowledge-base',
+        labelKey: 'nav.settings.knowledgeBase',
+        icon: 'pi pi-book',
+        route: 'KnowledgeBase',
+        permission: 'knowledge.view',
       },
       {
         key: 'settings-workflows',

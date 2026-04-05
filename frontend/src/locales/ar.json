@@ -117,7 +117,7 @@
   "nav": {
     "dashboard": "لوحة المعلومات",
     "rfp": {
-      "title": "كراسات الشروط",
+      "title": "إدارة كراسات الشروط",
       "list": "عرض الكراسات",
       "create": "إنشاء كراسة جديدة"
     },
@@ -127,14 +127,14 @@
       "temporary": "اللجان المؤقتة"
     },
     "evaluation": {
-      "title": "الفحص والتقييم",
+      "title": "إدارة الفحص وتقييم العروض",
       "offers": "عروض الموردين",
       "technical": "التقييم الفني",
       "financial": "التقييم المالي",
       "comprehensive": "التقييم الشامل والترسية"
     },
     "approvals": "مركز المهام والاعتمادات",
-    "inquiries": "الاستفسارات",
+    "inquiries": "إدارة استفسارات المتنافسين",
     "reports": "التقارير",
     "aiAssistant": "المساعد الذكي",
     "settings": {
@@ -143,7 +143,9 @@
       "users": "إدارة المستخدمين",
       "roles": "الأدوار والصلاحيات",
       "workflows": "مسارات الاعتماد",
-      "permissionsMatrix": "مصفوفة الصلاحيات"
+      "permissionsMatrix": "مصفوفة الصلاحيات",
+      "committees": "إدارة اللجان",
+      "knowledgeBase": "قاعدة المعرفة"
     },
     "taskCenter": "مركز المهام",
     "operator": {
@@ -180,7 +182,8 @@
     "consumption": "مراقبة الاستهلاك",
     "subscriptions": "الاشتراكات والخطط",
     "operatorPortal": "لوحة المشغل",
-    "support": "الدعم الفني"
+    "support": "الدعم الفني",
+    "reportsAnalytics": "التقارير والتحليلات"
   },
   "header": {
     "searchPlaceholder": "البحث في المنصة...",

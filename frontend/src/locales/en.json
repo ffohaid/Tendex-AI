@@ -117,7 +117,7 @@
   "nav": {
     "dashboard": "Information Dashboard",
     "rfp": {
-      "title": "Specifications Books",
+      "title": "Specifications Books Management",
       "list": "View Books",
       "create": "Create New Book"
     },
@@ -127,14 +127,14 @@
       "temporary": "Temporary Committees"
     },
     "evaluation": {
-      "title": "Evaluation",
+      "title": "Inspection & Offer Evaluation",
       "offers": "Supplier Offers",
       "technical": "Technical Evaluation",
       "financial": "Financial Evaluation",
       "comprehensive": "Comprehensive & Award"
     },
     "approvals": "Task Center & Approvals",
-    "inquiries": "Inquiries",
+    "inquiries": "Competitor Inquiries Management",
     "reports": "Reports",
     "aiAssistant": "AI Assistant",
     "settings": {
@@ -143,7 +143,9 @@
       "users": "User Management",
       "roles": "Roles & Permissions",
       "workflows": "Approval Workflows",
-      "permissionsMatrix": "Permissions Matrix"
+      "permissionsMatrix": "Permissions Matrix",
+      "committees": "Committees Management",
+      "knowledgeBase": "Knowledge Base"
     },
     "taskCenter": "Task Center",
     "operator": {
@@ -180,7 +182,8 @@
     "consumption": "Consumption Monitoring",
     "subscriptions": "Plans & Subscriptions",
     "operatorPortal": "Operator Portal",
-    "support": "Support"
+    "support": "Technical Support",
+    "reportsAnalytics": "Reports & Analytics"
   },
   "header": {
     "searchPlaceholder": "Search the platform...",
