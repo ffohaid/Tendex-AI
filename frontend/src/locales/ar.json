@@ -1712,7 +1712,13 @@
       "rfpApproval": "اعتماد كراسة شروط",
       "evaluationReview": "مراجعة تقييم",
       "committeeAssignment": "تعيين لجنة",
-      "contractApproval": "إجازة عقد"
+      "contractApproval": "إجازة عقد",
+      "approval": "اعتماد",
+      "approveRequest": "طلب اعتماد",
+      "evaluateOffer": "تقييم عرض",
+      "answerInquiry": "الرد على استفسار",
+      "committeeAction": "إجراء لجنة",
+      "approveInquiryResponse": "اعتماد رد استفسار"
     },
     "priorities": {
       "all": "جميع الأولويات",
@@ -1735,6 +1741,18 @@
     },
     "errors": {
       "loadFailed": "فشل في تحميل المهام المعلقة"
+    },
+    "actionRequired": {
+      "reviewAndApprove": "مراجعة واعتماد",
+      "waitingForPriorStep": "بانتظار الخطوة السابقة",
+      "evaluateTechnicalOffers": "تقييم العروض الفنية",
+      "evaluateFinancialOffers": "تقييم العروض المالية",
+      "reviewAwardRecommendation": "مراجعة توصية الترسية",
+      "respondToInquiries": "الرد على الاستفسارات",
+      "reviewContract": "مراجعة العقد",
+      "review": "مراجعة",
+      "respondToInquiry": "الرد على الاستفسار",
+      "approveInquiryResponse": "اعتماد رد الاستفسار"
     }
   },
   "settings": {

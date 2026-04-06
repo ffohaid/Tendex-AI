@@ -1707,7 +1707,13 @@
       "rfpApproval": "RFP Approval",
       "evaluationReview": "Evaluation Review",
       "committeeAssignment": "Committee Assignment",
-      "contractApproval": "Contract Approval"
+      "contractApproval": "Contract Approval",
+      "approval": "Approval",
+      "approveRequest": "Approval Request",
+      "evaluateOffer": "Offer Evaluation",
+      "answerInquiry": "Answer Inquiry",
+      "committeeAction": "Committee Action",
+      "approveInquiryResponse": "Approve Inquiry Response"
     },
     "priorities": {
       "all": "All Priorities",
@@ -1730,6 +1736,18 @@
     },
     "errors": {
       "loadFailed": "Failed to load pending tasks"
+    },
+    "actionRequired": {
+      "reviewAndApprove": "Review & Approve",
+      "waitingForPriorStep": "Waiting for Prior Step",
+      "evaluateTechnicalOffers": "Evaluate Technical Offers",
+      "evaluateFinancialOffers": "Evaluate Financial Offers",
+      "reviewAwardRecommendation": "Review Award Recommendation",
+      "respondToInquiries": "Respond to Inquiries",
+      "reviewContract": "Review Contract",
+      "review": "Review",
+      "respondToInquiry": "Respond to Inquiry",
+      "approveInquiryResponse": "Approve Inquiry Response"
     }
   },
   "settings": {
