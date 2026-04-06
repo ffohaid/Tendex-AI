@@ -31,6 +31,8 @@ import {
 } from '@/services/inquiryService'
 import { fetchCommittees } from '@/services/committeeService'
 import { fetchRfpList } from '@/services/rfpService'
+import { httpGet } from '@/services/http'
+import RichTextEditor from '@/components/common/RichTextEditor.vue'
 import type {
   Inquiry,
   InquiryFilters,
@@ -108,9 +110,17 @@ const parsedInquiries = ref<Array<{ questionText: string; supplierName: string }
 const isImporting = ref(false)
 
 /* Assignment */
+const assignMode = ref<'committee' | 'user'>('committee')
 const assignForm = ref({ userId: '', userName: '', committeeId: '' })
 const isAssigning = ref(false)
-const committees = ref<Array<{ id: string; nameAr: string; nameEn: string; members: Array<{ userId: string; userFullName: string }> }>>([])
+const committees = ref<Array<{ id: string; nameAr: string; nameEn: string; members: Array<{ userId: string; userFullName: string }> }>>([]) 
+
+/* User Search for Assignment */
+const userSearchQuery = ref('')
+const userSearchResults = ref<Array<{ id: string; fullName: string; email: string; roleName: string }>>([]) 
+const isSearchingUsers = ref(false)
+const showUserDropdown = ref(false)
+let userSearchTimeout: ReturnType<typeof setTimeout> | null = null
 
 /* Answer */
 const answerText = ref('')
@@ -348,6 +358,47 @@ async function handleBulkImport(): Promise<void> {
 }
 
 /* ------------------------------------------------------------------ */
+/*  User Search for Assignment                                         */
+/* ------------------------------------------------------------------ */
+function handleUserSearch(query: string): void {
+  userSearchQuery.value = query
+  if (userSearchTimeout) clearTimeout(userSearchTimeout)
+  if (!query || query.trim().length < 2) {
+    userSearchResults.value = []
+    showUserDropdown.value = false
+    return
+  }
+  userSearchTimeout = setTimeout(async () => {
+    isSearchingUsers.value = true
+    try {
+      const result = await httpGet<{ items: Array<{ id: string; firstName: string; lastName: string; email: string; roles: Array<{ nameAr: string; nameEn: string }> }> }>(
+        `/v1/users?page=1&pageSize=10&search=${encodeURIComponent(query.trim())}`
+      )
+      userSearchResults.value = (result.items || []).map(u => ({
+        id: u.id,
+        fullName: `${u.firstName} ${u.lastName}`,
+        email: u.email,
+        roleName: u.roles?.[0]?.nameAr || '',
+      }))
+      showUserDropdown.value = userSearchResults.value.length > 0
+    } catch (err) {
+      console.warn('[InquiriesView] User search failed:', err)
+      userSearchResults.value = []
+      showUserDropdown.value = false
+    } finally {
+      isSearchingUsers.value = false
+    }
+  }, 300)
+}
+
+function selectUser(user: { id: string; fullName: string; email: string }): void {
+  assignForm.value.userId = user.id
+  assignForm.value.userName = user.fullName
+  userSearchQuery.value = `${user.fullName} (${user.email})`
+  showUserDropdown.value = false
+}
+
+/* ------------------------------------------------------------------ */
 /*  Assign                                                             */
 /* ------------------------------------------------------------------ */
 async function handleAssign(): Promise<void> {
@@ -361,6 +412,8 @@ async function handleAssign(): Promise<void> {
     })
     selectedInquiry.value = await fetchInquiryById(selectedInquiry.value.id)
     assignForm.value = { userId: '', userName: '', committeeId: '' }
+    userSearchQuery.value = ''
+    userSearchResults.value = []
     await loadInquiries()
   } catch (err) {
     console.error('[InquiriesView] Failed to assign:', err)
@@ -1038,14 +1091,25 @@ onMounted(async () => {
               </div>
             </div>
 
-            <!-- Manual Answer Form -->
+            <!-- Direct Reply Form -->
             <div v-if="selectedInquiry.status === 'New' || selectedInquiry.status === 'InProgress' || selectedInquiry.status === 'Rejected'">
-              <h4 class="mb-2 text-sm font-bold text-secondary">{{ t('inquiries.detail.answer.submitForApproval') }}</h4>
-              <textarea v-model="answerText" rows="5" :placeholder="t('inquiries.detail.answer.answerPlaceholder')" class="w-full rounded-lg border border-surface-dim bg-white p-3 text-sm text-secondary focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary" />
-              <div class="mt-2 flex justify-end">
+              <h4 class="mb-2 text-sm font-bold text-secondary">
+                <i class="pi pi-reply me-2 text-primary" />
+                {{ locale === 'ar' ? 'كتابة الرد' : 'Write Reply' }}
+              </h4>
+              <RichTextEditor
+                :model-value="answerText"
+                :placeholder="locale === 'ar' ? 'اكتب نص الرد هنا...' : 'Write your reply here...'"
+                dir="auto"
+                min-height="150px"
+                max-height="350px"
+                @update:model-value="(val: string) => answerText = val"
+                @update:text="() => { /* plain text available via event */ }"
+              />
+              <div class="mt-3 flex justify-end">
                 <button
                   class="flex items-center gap-2 rounded-lg bg-primary px-5 py-2.5 text-sm font-medium text-white hover:bg-primary/90 disabled:opacity-50"
-                  :disabled="!answerText.trim() || isSubmittingAnswer"
+                  :disabled="!answerText.trim() || answerText === '<p></p>' || isSubmittingAnswer"
                   @click="handleSubmitAnswer"
                 >
                   <i class="pi" :class="isSubmittingAnswer ? 'pi-spinner pi-spin' : 'pi-send'" />
@@ -1098,9 +1162,10 @@ onMounted(async () => {
 
           <!-- Tab: Assign -->
           <div v-else-if="detailTab === 'assign'" class="px-6 py-5 space-y-5">
-            <div v-if="selectedInquiry.assignedToUserName" class="rounded-lg border border-green-200 bg-green-50 p-4">
+            <!-- Current Assignment Status -->
+            <div v-if="selectedInquiry.assignedToUserName || selectedInquiry.assignedToCommitteeId" class="rounded-lg border border-green-200 bg-green-50 p-4">
               <p class="text-sm font-medium text-green-700">
-                <i class="pi pi-user me-2" />{{ t('inquiries.detail.assignment.assignedTo') }}: {{ selectedInquiry.assignedToUserName }}
+                <i class="pi pi-user me-2" />{{ t('inquiries.detail.assignment.assignedTo') }}: {{ selectedInquiry.assignedToUserName || (locale === 'ar' ? 'لجنة' : 'Committee') }}
               </p>
             </div>
 
@@ -1110,8 +1175,30 @@ onMounted(async () => {
                 {{ t('inquiries.detail.assignment.title') }}
               </h4>
 
+              <!-- Assignment Mode Toggle -->
+              <div class="mb-5 flex rounded-lg border border-surface-dim bg-surface-muted/50 p-1">
+                <button
+                  type="button"
+                  class="flex-1 rounded-md px-4 py-2 text-sm font-medium transition-all"
+                  :class="assignMode === 'committee' ? 'bg-white text-primary shadow-sm' : 'text-tertiary hover:text-secondary'"
+                  @click="assignMode = 'committee'; assignForm.userId = ''; assignForm.userName = ''; userSearchQuery = ''"
+                >
+                  <i class="pi pi-sitemap me-2" />
+                  {{ locale === 'ar' ? 'إسناد للجنة' : 'Assign to Committee' }}
+                </button>
+                <button
+                  type="button"
+                  class="flex-1 rounded-md px-4 py-2 text-sm font-medium transition-all"
+                  :class="assignMode === 'user' ? 'bg-white text-primary shadow-sm' : 'text-tertiary hover:text-secondary'"
+                  @click="assignMode = 'user'; assignForm.committeeId = ''"
+                >
+                  <i class="pi pi-user me-2" />
+                  {{ locale === 'ar' ? 'إسناد لشخص' : 'Assign to Person' }}
+                </button>
+              </div>
+
               <!-- Assign to Committee -->
-              <div class="mb-4">
+              <div v-if="assignMode === 'committee'" class="mb-4">
                 <label class="mb-1 block text-xs font-medium text-tertiary">{{ t('inquiries.detail.assignment.committee') }}</label>
                 <select v-model="assignForm.committeeId" class="w-full rounded-lg border border-surface-dim bg-white px-3 py-2.5 text-sm text-secondary focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary">
                   <option value="">{{ t('inquiries.detail.assignment.selectCommittee') }}</option>
@@ -1121,16 +1208,61 @@ onMounted(async () => {
                 </select>
               </div>
 
-              <!-- Or assign to specific user -->
-              <div class="mb-4">
-                <label class="mb-1 block text-xs font-medium text-tertiary">{{ t('inquiries.detail.assignment.assignedTo') }}</label>
-                <input v-model="assignForm.userName" type="text" :placeholder="t('inquiries.detail.assignment.assignedTo')" class="w-full rounded-lg border border-surface-dim bg-white px-3 py-2.5 text-sm text-secondary focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary" />
+              <!-- Assign to Specific User (Dynamic Search) -->
+              <div v-if="assignMode === 'user'" class="mb-4">
+                <label class="mb-1 block text-xs font-medium text-tertiary">
+                  {{ locale === 'ar' ? 'ابحث عن الشخص بالاسم أو البريد الإلكتروني' : 'Search by name or email' }}
+                </label>
+                <div class="relative">
+                  <div class="relative">
+                    <i class="pi pi-search absolute start-3 top-1/2 -translate-y-1/2 text-sm text-tertiary" />
+                    <input
+                      :value="userSearchQuery"
+                      type="text"
+                      class="w-full rounded-lg border border-surface-dim bg-white pe-3 ps-9 py-2.5 text-sm text-secondary focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+                      :placeholder="locale === 'ar' ? 'اكتب اسم الشخص أو بريده الإلكتروني...' : 'Type name or email...'"
+                      @input="handleUserSearch(($event.target as HTMLInputElement).value)"
+                      @focus="showUserDropdown = userSearchResults.length > 0"
+                    />
+                    <i v-if="isSearchingUsers" class="pi pi-spinner pi-spin absolute end-3 top-1/2 -translate-y-1/2 text-sm text-primary" />
+                  </div>
+                  <!-- Search Results Dropdown -->
+                  <div
+                    v-if="showUserDropdown && userSearchResults.length > 0"
+                    class="absolute z-50 mt-1 w-full rounded-lg border border-surface-dim bg-white shadow-lg max-h-48 overflow-y-auto"
+                  >
+                    <button
+                      v-for="user in userSearchResults"
+                      :key="user.id"
+                      type="button"
+                      class="flex w-full items-center gap-3 px-4 py-2.5 text-start hover:bg-primary/5 transition-colors"
+                      @click="selectUser(user)"
+                    >
+                      <div class="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10 text-xs font-bold text-primary">
+                        {{ user.fullName.charAt(0) }}
+                      </div>
+                      <div class="flex-1 min-w-0">
+                        <p class="text-sm font-medium text-secondary truncate">{{ user.fullName }}</p>
+                        <p class="text-xs text-tertiary truncate">{{ user.email }}</p>
+                      </div>
+                      <span v-if="user.roleName" class="rounded-full bg-surface-muted px-2 py-0.5 text-xs text-tertiary">{{ user.roleName }}</span>
+                    </button>
+                  </div>
+                </div>
+                <!-- Selected User Display -->
+                <div v-if="assignForm.userId" class="mt-2 flex items-center gap-2 rounded-lg border border-green-200 bg-green-50 px-3 py-2">
+                  <i class="pi pi-check-circle text-green-600 text-sm" />
+                  <span class="text-sm text-green-700">{{ assignForm.userName }}</span>
+                  <button type="button" class="ms-auto text-xs text-red-500 hover:text-red-700" @click="assignForm.userId = ''; assignForm.userName = ''; userSearchQuery = ''">
+                    <i class="pi pi-times" />
+                  </button>
+                </div>
               </div>
 
               <div class="flex justify-end">
                 <button
                   class="flex items-center gap-2 rounded-lg bg-primary px-5 py-2.5 text-sm font-medium text-white hover:bg-primary/90 disabled:opacity-50"
-                  :disabled="(!assignForm.committeeId && !assignForm.userName) || isAssigning"
+                  :disabled="(assignMode === 'committee' ? !assignForm.committeeId : !assignForm.userId) || isAssigning"
                   @click="handleAssign"
                 >
                   <i class="pi" :class="isAssigning ? 'pi-spinner pi-spin' : 'pi-user-plus'" />

@@ -19,6 +19,7 @@ import { useRfpStore } from '@/stores/rfp'
 import draggable from 'vuedraggable'
 import AiSectionAssistant from './AiSectionAssistant.vue'
 import AiStructureGenerator from './AiStructureGenerator.vue'
+import RichTextEditor from '@/components/common/RichTextEditor.vue'
 import type { BookletSection } from '@/services/aiSpecificationService'
 
 const { t } = useI18n()
@@ -337,18 +338,18 @@ defineExpose({
                 </div>
               </div>
 
-              <!-- Content textarea -->
+              <!-- Content editor -->
               <label class="mb-1 block text-xs font-medium text-tertiary">
                 {{ t('rfp.fields.sectionContent') }}
               </label>
-              <textarea
-                :value="section.content"
-                rows="6"
-                class="w-full rounded-lg border border-surface-dim px-4 py-3 text-sm leading-relaxed focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
+              <RichTextEditor
+                :model-value="section.content || ''"
                 :placeholder="t('rfp.placeholders.sectionContent')"
                 dir="rtl"
-                @input="rfpStore.updateSection(section.id, { content: ($event.target as HTMLTextAreaElement).value })"
-              ></textarea>
+                min-height="180px"
+                max-height="400px"
+                @update:model-value="(val: string) => rfpStore.updateSection(section.id, { content: val })"
+              />
 
               <!-- Mark as completed -->
               <div class="mt-3 flex items-center gap-2">
@@ -394,7 +395,7 @@ defineExpose({
 
 .slide-enter-to,
 .slide-leave-from {
-  max-height: 500px;
+  max-height: 800px;
   opacity: 1;
 }
 </style>

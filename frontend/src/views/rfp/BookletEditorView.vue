@@ -3,6 +3,7 @@ import { ref, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { httpGet, httpPost, httpPut } from '@/services/http'
+import RichTextEditor from '@/components/common/RichTextEditor.vue'
 import {
   initiateWorkflow,
   getWorkflowStatus,
@@ -723,13 +724,15 @@ onMounted(async () => {
                   <!-- Editable / Example Block -->
                   <div v-else>
                     <component :is="block.isHeading ? 'h3' : 'div'" :class="block.isHeading ? 'font-bold text-base' : ''">
-                      <textarea
-                        :value="block.editedContent"
-                        class="w-full resize-y rounded-lg border border-secondary-200 bg-white px-3 py-2 text-sm leading-relaxed outline-none transition-all focus:border-primary focus:ring-2 focus:ring-primary/20"
-                        :class="block.colorType === 'example' ? 'border-red-200 focus:border-red-400 focus:ring-red-200/20' : ''"
-                        :rows="Math.max(3, Math.ceil(block.editedContent.length / 80))"
-                        @input="(e) => updateBlockContent(block.id, (e.target as HTMLTextAreaElement).value)"
-                      ></textarea>
+                      <RichTextEditor
+                        :model-value="block.editedContent"
+                        :editable="!isReadOnly"
+                        :placeholder="locale === 'ar' ? 'أدخل المحتوى هنا...' : 'Enter content here...'"
+                        dir="rtl"
+                        min-height="120px"
+                        max-height="400px"
+                        @update:model-value="(val: string) => updateBlockContent(block.id, val)"
+                      />
                     </component>
 
                     <!-- Example warning -->
