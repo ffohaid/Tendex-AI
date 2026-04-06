@@ -125,6 +125,14 @@ let userSearchTimeout: ReturnType<typeof setTimeout> | null = null
 /* Answer */
 const answerText = ref('')
 const isSubmittingAnswer = ref(false)
+const isDirectApproving = ref(false)
+
+/* Response Mode: manual = write reply directly, ai = generate via AI */
+const responseMode = ref<'manual' | 'ai'>('manual')
+const isEditingAiResponse = ref(false)
+
+/* Permission: can the user directly approve without sending for approval? */
+const canDirectApprove = computed(() => authStore.hasPermission('inquiries.manage') || authStore.hasPermission('approvals.approve'))
 
 /* AI Answer */
 const aiContext = ref('')
@@ -275,6 +283,8 @@ async function openDetail(inquiry: Inquiry): Promise<void> {
   aiContext.value = ''
   rejectReason.value = ''
   showRejectDialog.value = false
+  responseMode.value = 'manual'
+  isEditingAiResponse.value = false
   try {
     selectedInquiry.value = await fetchInquiryById(inquiry.id)
   } catch {
@@ -448,7 +458,7 @@ async function handleGenerateAi(): Promise<void> {
 }
 
 /* ------------------------------------------------------------------ */
-/*  Submit Answer                                                      */
+/*  Submit Answer (for approval)                                       */
 /* ------------------------------------------------------------------ */
 async function handleSubmitAnswer(): Promise<void> {
   if (!selectedInquiry.value || !answerText.value.trim()) return
@@ -456,16 +466,55 @@ async function handleSubmitAnswer(): Promise<void> {
   try {
     await submitAnswer(selectedInquiry.value.id, {
       answerText: answerText.value,
-      isAiAssisted: aiResult.value !== null,
+      isAiAssisted: aiResult.value !== null || isEditingAiResponse.value,
     })
     selectedInquiry.value = await fetchInquiryById(selectedInquiry.value.id)
     answerText.value = ''
     aiResult.value = null
+    isEditingAiResponse.value = false
+    responseMode.value = 'manual'
     await loadInquiries()
   } catch (err) {
     console.error('[InquiriesView] Failed to submit answer:', err)
   } finally {
     isSubmittingAnswer.value = false
+  }
+}
+
+/* ------------------------------------------------------------------ */
+/*  Direct Approve Answer (submit + approve in one step)               */
+/* ------------------------------------------------------------------ */
+async function handleDirectApprove(): Promise<void> {
+  if (!selectedInquiry.value || !answerText.value.trim()) return
+  isDirectApproving.value = true
+  try {
+    // Step 1: Submit the answer
+    await submitAnswer(selectedInquiry.value.id, {
+      answerText: answerText.value,
+      isAiAssisted: aiResult.value !== null || isEditingAiResponse.value,
+    })
+    // Step 2: Approve immediately
+    await approveInquiry(selectedInquiry.value.id)
+    selectedInquiry.value = await fetchInquiryById(selectedInquiry.value.id)
+    answerText.value = ''
+    aiResult.value = null
+    isEditingAiResponse.value = false
+    responseMode.value = 'manual'
+    await loadInquiries()
+  } catch (err) {
+    console.error('[InquiriesView] Failed to direct approve:', err)
+  } finally {
+    isDirectApproving.value = false
+  }
+}
+
+/* ------------------------------------------------------------------ */
+/*  Edit AI Response in Rich Editor                                    */
+/* ------------------------------------------------------------------ */
+function editAiResponseInEditor(): void {
+  if (aiResult.value) {
+    answerText.value = aiResult.value.answerText
+    isEditingAiResponse.value = true
   }
 }
 
@@ -1006,51 +1055,195 @@ onMounted(async () => {
 
           <!-- Tab: Responses & AI -->
           <div v-else-if="detailTab === 'responses'" class="px-6 py-5 space-y-5">
-            <!-- AI Generation Section -->
-            <div v-if="selectedInquiry.status === 'New' || selectedInquiry.status === 'InProgress' || selectedInquiry.status === 'Rejected'" class="rounded-xl border border-purple-200 bg-gradient-to-l from-purple-50 to-white p-5">
-              <div class="flex items-center gap-2 mb-3">
-                <div class="flex h-8 w-8 items-center justify-center rounded-lg bg-purple-500/10">
-                  <i class="pi pi-sparkles text-purple-600" />
-                </div>
-                <div>
-                  <h4 class="text-sm font-bold text-secondary">{{ t('inquiries.detail.ai.title') }}</h4>
-                  <p class="text-xs text-tertiary">{{ t('inquiries.detail.ai.contextLabel') }}</p>
-                </div>
-              </div>
-              <div class="mb-3">
-                <label class="mb-1 block text-xs font-medium text-tertiary">{{ t('inquiries.detail.ai.contextLabel') }}</label>
-                <textarea v-model="aiContext" rows="2" :placeholder="t('inquiries.detail.ai.contextPlaceholder')" class="w-full rounded-lg border border-purple-200 bg-white p-3 text-sm text-secondary focus:border-purple-400 focus:outline-none focus:ring-1 focus:ring-purple-400" />
-              </div>
-              <button
-                class="flex items-center gap-2 rounded-lg bg-purple-600 px-5 py-2.5 text-sm font-medium text-white hover:bg-purple-700 disabled:opacity-50"
-                :disabled="isGeneratingAi"
-                @click="handleGenerateAi"
-              >
-                <i class="pi" :class="isGeneratingAi ? 'pi-spinner pi-spin' : 'pi-sparkles'" />
-                {{ isGeneratingAi ? t('inquiries.detail.ai.generating') : t('inquiries.detail.ai.generate') }}
-              </button>
 
-              <!-- AI Result -->
-              <div v-if="aiResult" class="mt-4 rounded-lg border border-purple-200 bg-white p-4">
-                <div class="flex items-center justify-between mb-2">
-                  <span class="text-xs font-medium text-purple-600">
-                    <i class="pi pi-sparkles me-1" />{{ t('inquiries.detail.ai.result') }}
-                  </span>
-                  <div class="flex items-center gap-3">
-                    <span class="text-xs text-tertiary">{{ t('inquiries.detail.ai.confidence') }}: {{ aiResult.confidenceScore }}%</span>
-                    <span class="text-xs text-tertiary">{{ t('inquiries.detail.ai.model') }}: {{ aiResult.modelUsed }}</span>
+            <!-- ═══ Response Mode Selector (only when inquiry is actionable) ═══ -->
+            <div v-if="selectedInquiry.status === 'New' || selectedInquiry.status === 'InProgress' || selectedInquiry.status === 'Rejected'">
+
+              <!-- Mode Toggle -->
+              <div class="mb-5 flex rounded-xl border border-surface-dim bg-surface-muted/50 p-1">
+                <button
+                  type="button"
+                  class="flex flex-1 items-center justify-center gap-2 rounded-lg px-4 py-2.5 text-sm font-medium transition-all"
+                  :class="responseMode === 'manual' ? 'bg-white text-primary shadow-sm' : 'text-tertiary hover:text-secondary'"
+                  @click="responseMode = 'manual'"
+                >
+                  <i class="pi pi-pencil" />
+                  {{ locale === 'ar' ? 'كتابة الرد على الاستفسار' : 'Write Reply Manually' }}
+                </button>
+                <button
+                  type="button"
+                  class="flex flex-1 items-center justify-center gap-2 rounded-lg px-4 py-2.5 text-sm font-medium transition-all"
+                  :class="responseMode === 'ai' ? 'bg-white text-purple-600 shadow-sm' : 'text-tertiary hover:text-secondary'"
+                  @click="responseMode = 'ai'"
+                >
+                  <i class="pi pi-sparkles" />
+                  {{ locale === 'ar' ? 'كتابة الرد من خلال الذكاء الاصطناعي' : 'Generate Reply with AI' }}
+                </button>
+              </div>
+
+              <!-- ═══ MODE 1: Manual Reply ═══ -->
+              <div v-if="responseMode === 'manual'" class="space-y-4">
+                <div class="rounded-xl border border-primary/20 bg-gradient-to-l from-primary/5 to-white p-5">
+                  <div class="flex items-center gap-2 mb-3">
+                    <div class="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10">
+                      <i class="pi pi-pencil text-primary" />
+                    </div>
+                    <div>
+                      <h4 class="text-sm font-bold text-secondary">{{ locale === 'ar' ? 'كتابة الرد على الاستفسار' : 'Write Reply' }}</h4>
+                      <p class="text-xs text-tertiary">{{ locale === 'ar' ? 'اكتب نص الرد باستخدام المحرر المتقدم ثم اختر إرسال للاعتماد أو الاعتماد المباشر' : 'Write your reply using the advanced editor then choose to submit for approval or approve directly' }}</p>
+                    </div>
+                  </div>
+                  <RichTextEditor
+                    :model-value="answerText"
+                    :placeholder="locale === 'ar' ? 'اكتب نص الرد هنا...' : 'Write your reply here...'"
+                    dir="auto"
+                    min-height="180px"
+                    max-height="400px"
+                    @update:model-value="(val: string) => answerText = val"
+                  />
+                  <div class="mt-4 flex flex-wrap items-center justify-end gap-3">
+                    <button
+                      class="flex items-center gap-2 rounded-lg border border-primary/30 bg-white px-5 py-2.5 text-sm font-medium text-primary hover:bg-primary/5 disabled:opacity-50"
+                      :disabled="!answerText.trim() || answerText === '<p></p>' || isSubmittingAnswer || isDirectApproving"
+                      @click="handleSubmitAnswer"
+                    >
+                      <i class="pi" :class="isSubmittingAnswer ? 'pi-spinner pi-spin' : 'pi-send'" />
+                      {{ locale === 'ar' ? 'إرسال للاعتماد' : 'Submit for Approval' }}
+                    </button>
+                    <button
+                      v-if="canDirectApprove"
+                      class="flex items-center gap-2 rounded-lg bg-green-600 px-5 py-2.5 text-sm font-medium text-white hover:bg-green-700 disabled:opacity-50"
+                      :disabled="!answerText.trim() || answerText === '<p></p>' || isSubmittingAnswer || isDirectApproving"
+                      @click="handleDirectApprove"
+                    >
+                      <i class="pi" :class="isDirectApproving ? 'pi-spinner pi-spin' : 'pi-check-circle'" />
+                      {{ locale === 'ar' ? 'اعتماد مباشر' : 'Approve Directly' }}
+                    </button>
                   </div>
                 </div>
-                <div class="rounded-lg bg-purple-50 p-3 text-sm leading-relaxed text-secondary whitespace-pre-wrap">
-                  {{ aiResult.answerText }}
+              </div>
+
+              <!-- ═══ MODE 2: AI-Assisted Reply ═══ -->
+              <div v-if="responseMode === 'ai'" class="space-y-4">
+
+                <!-- Step 1: Generate AI Response -->
+                <div v-if="!isEditingAiResponse" class="rounded-xl border border-purple-200 bg-gradient-to-l from-purple-50 to-white p-5">
+                  <div class="flex items-center gap-2 mb-3">
+                    <div class="flex h-8 w-8 items-center justify-center rounded-lg bg-purple-500/10">
+                      <i class="pi pi-sparkles text-purple-600" />
+                    </div>
+                    <div>
+                      <h4 class="text-sm font-bold text-secondary">{{ t('inquiries.detail.ai.title') }}</h4>
+                      <p class="text-xs text-tertiary">{{ locale === 'ar' ? 'سيتم توليد رد باستخدام الذكاء الاصطناعي بناءً على قاعدة المعرفة' : 'AI will generate a reply based on the knowledge base' }}</p>
+                    </div>
+                  </div>
+                  <div class="mb-3">
+                    <label class="mb-1 block text-xs font-medium text-tertiary">{{ t('inquiries.detail.ai.contextLabel') }}</label>
+                    <textarea v-model="aiContext" rows="2" :placeholder="t('inquiries.detail.ai.contextPlaceholder')" class="w-full rounded-lg border border-purple-200 bg-white p-3 text-sm text-secondary focus:border-purple-400 focus:outline-none focus:ring-1 focus:ring-purple-400" />
+                  </div>
+                  <button
+                    class="flex items-center gap-2 rounded-lg bg-purple-600 px-5 py-2.5 text-sm font-medium text-white hover:bg-purple-700 disabled:opacity-50"
+                    :disabled="isGeneratingAi"
+                    @click="handleGenerateAi"
+                  >
+                    <i class="pi" :class="isGeneratingAi ? 'pi-spinner pi-spin' : 'pi-sparkles'" />
+                    {{ isGeneratingAi ? t('inquiries.detail.ai.generating') : t('inquiries.detail.ai.generate') }}
+                  </button>
+
+                  <!-- AI Result Preview -->
+                  <div v-if="aiResult" class="mt-4 rounded-lg border border-purple-200 bg-white p-4">
+                    <div class="flex items-center justify-between mb-2">
+                      <span class="text-xs font-medium text-purple-600">
+                        <i class="pi pi-sparkles me-1" />{{ t('inquiries.detail.ai.result') }}
+                      </span>
+                      <div class="flex items-center gap-3">
+                        <span class="text-xs text-tertiary">{{ t('inquiries.detail.ai.confidence') }}: {{ aiResult.confidenceScore }}%</span>
+                        <span class="text-xs text-tertiary">{{ t('inquiries.detail.ai.model') }}: {{ aiResult.modelUsed }}</span>
+                      </div>
+                    </div>
+                    <div class="rounded-lg bg-purple-50 p-3 text-sm leading-relaxed text-secondary whitespace-pre-wrap">
+                      {{ aiResult.answerText }}
+                    </div>
+                    <div v-if="aiResult.sources" class="mt-2 text-xs text-tertiary">
+                      <i class="pi pi-book me-1" />{{ t('inquiries.detail.ai.sources') }}: {{ aiResult.sources }}
+                    </div>
+                    <div class="mt-4 flex flex-wrap items-center gap-3">
+                      <button
+                        class="flex items-center gap-2 rounded-lg bg-primary px-5 py-2.5 text-sm font-medium text-white hover:bg-primary/90"
+                        @click="editAiResponseInEditor"
+                      >
+                        <i class="pi pi-file-edit" />
+                        {{ locale === 'ar' ? 'تعديل الرد في المحرر المتقدم' : 'Edit Reply in Advanced Editor' }}
+                      </button>
+                      <button
+                        class="flex items-center gap-2 rounded-lg border border-purple-300 bg-white px-5 py-2.5 text-sm font-medium text-purple-600 hover:bg-purple-50"
+                        @click="handleGenerateAi"
+                      >
+                        <i class="pi pi-refresh" />
+                        {{ locale === 'ar' ? 'إعادة التوليد' : 'Regenerate' }}
+                      </button>
+                    </div>
+                  </div>
                 </div>
-                <div v-if="aiResult.sources" class="mt-2 text-xs text-tertiary">
-                  <i class="pi pi-book me-1" />{{ t('inquiries.detail.ai.sources') }}: {{ aiResult.sources }}
+
+                <!-- Step 2: Edit AI Response in Rich Editor -->
+                <div v-if="isEditingAiResponse" class="rounded-xl border border-purple-200 bg-gradient-to-l from-purple-50 to-white p-5">
+                  <div class="flex items-center gap-2 mb-3">
+                    <div class="flex h-8 w-8 items-center justify-center rounded-lg bg-purple-500/10">
+                      <i class="pi pi-file-edit text-purple-600" />
+                    </div>
+                    <div>
+                      <h4 class="text-sm font-bold text-secondary">{{ locale === 'ar' ? 'تعديل رد الذكاء الاصطناعي' : 'Edit AI Response' }}</h4>
+                      <p class="text-xs text-tertiary">{{ locale === 'ar' ? 'قم بمراجعة وتعديل النص المولّد ثم اختر الإجراء المناسب' : 'Review and edit the generated text then choose the appropriate action' }}</p>
+                    </div>
+                  </div>
+                  <div v-if="aiResult" class="mb-3 flex items-center gap-3 rounded-lg bg-purple-100/50 px-3 py-2">
+                    <span class="text-xs font-medium text-purple-600">
+                      <i class="pi pi-sparkles me-1" />{{ t('inquiries.detail.ai.confidence') }}: {{ aiResult.confidenceScore }}%
+                    </span>
+                    <span class="text-xs text-tertiary">{{ t('inquiries.detail.ai.model') }}: {{ aiResult.modelUsed }}</span>
+                  </div>
+                  <RichTextEditor
+                    :model-value="answerText"
+                    :placeholder="locale === 'ar' ? 'عدّل نص الرد هنا...' : 'Edit reply text here...'"
+                    dir="auto"
+                    min-height="200px"
+                    max-height="400px"
+                    @update:model-value="(val: string) => answerText = val"
+                  />
+                  <div class="mt-4 flex flex-wrap items-center justify-between gap-3">
+                    <button
+                      class="flex items-center gap-2 rounded-lg border border-surface-dim bg-white px-4 py-2 text-sm font-medium text-tertiary hover:bg-surface-muted"
+                      @click="isEditingAiResponse = false; answerText = ''"
+                    >
+                      <i class="pi pi-arrow-right" />
+                      {{ locale === 'ar' ? 'العودة للتوليد' : 'Back to Generation' }}
+                    </button>
+                    <div class="flex flex-wrap items-center gap-3">
+                      <button
+                        class="flex items-center gap-2 rounded-lg border border-primary/30 bg-white px-5 py-2.5 text-sm font-medium text-primary hover:bg-primary/5 disabled:opacity-50"
+                        :disabled="!answerText.trim() || answerText === '<p></p>' || isSubmittingAnswer || isDirectApproving"
+                        @click="handleSubmitAnswer"
+                      >
+                        <i class="pi" :class="isSubmittingAnswer ? 'pi-spinner pi-spin' : 'pi-send'" />
+                        {{ locale === 'ar' ? 'إرسال للاعتماد' : 'Submit for Approval' }}
+                      </button>
+                      <button
+                        v-if="canDirectApprove"
+                        class="flex items-center gap-2 rounded-lg bg-green-600 px-5 py-2.5 text-sm font-medium text-white hover:bg-green-700 disabled:opacity-50"
+                        :disabled="!answerText.trim() || answerText === '<p></p>' || isSubmittingAnswer || isDirectApproving"
+                        @click="handleDirectApprove"
+                      >
+                        <i class="pi" :class="isDirectApproving ? 'pi-spinner pi-spin' : 'pi-check-circle'" />
+                        {{ locale === 'ar' ? 'اعتماد مباشر' : 'Approve Directly' }}
+                      </button>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
 
-            <!-- Previous Responses -->
+            <!-- ═══ Previous Responses ═══ -->
             <div v-if="selectedInquiry.responses && selectedInquiry.responses.length > 0">
               <h4 class="mb-3 text-sm font-bold text-secondary">{{ t('inquiries.detail.responses.title') }} ({{ selectedInquiry.responses.length }})</h4>
               <div class="space-y-3">
@@ -1077,7 +1270,7 @@ onMounted(async () => {
                     </div>
                     <span class="text-xs text-tertiary">{{ formatDateTime(response.createdAt) }}</span>
                   </div>
-                  <p class="text-sm leading-relaxed text-secondary whitespace-pre-wrap">{{ response.answerText }}</p>
+                  <div class="text-sm leading-relaxed text-secondary" v-html="response.answerText" />
                   <div class="mt-2 flex justify-end">
                     <button
                       v-if="selectedInquiry.status !== 'Approved' && selectedInquiry.status !== 'Closed'"
@@ -1091,39 +1284,13 @@ onMounted(async () => {
               </div>
             </div>
 
-            <!-- Direct Reply Form -->
-            <div v-if="selectedInquiry.status === 'New' || selectedInquiry.status === 'InProgress' || selectedInquiry.status === 'Rejected'">
-              <h4 class="mb-2 text-sm font-bold text-secondary">
-                <i class="pi pi-reply me-2 text-primary" />
-                {{ locale === 'ar' ? 'كتابة الرد' : 'Write Reply' }}
-              </h4>
-              <RichTextEditor
-                :model-value="answerText"
-                :placeholder="locale === 'ar' ? 'اكتب نص الرد هنا...' : 'Write your reply here...'"
-                dir="auto"
-                min-height="150px"
-                max-height="350px"
-                @update:model-value="(val: string) => answerText = val"
-                @update:text="() => { /* plain text available via event */ }"
-              />
-              <div class="mt-3 flex justify-end">
-                <button
-                  class="flex items-center gap-2 rounded-lg bg-primary px-5 py-2.5 text-sm font-medium text-white hover:bg-primary/90 disabled:opacity-50"
-                  :disabled="!answerText.trim() || answerText === '<p></p>' || isSubmittingAnswer"
-                  @click="handleSubmitAnswer"
-                >
-                  <i class="pi" :class="isSubmittingAnswer ? 'pi-spinner pi-spin' : 'pi-send'" />
-                  {{ t('inquiries.detail.answer.submitForApproval') }}
-                </button>
-              </div>
-            </div>
-
-            <!-- Approval Actions -->
+            <!-- ═══ Approval Actions (when pending approval) ═══ -->
             <div v-if="selectedInquiry.status === 'PendingApproval'" class="rounded-xl border border-orange-200 bg-orange-50 p-5">
               <h4 class="mb-3 text-sm font-bold text-secondary">
                 <i class="pi pi-check-square me-2 text-orange-600" />
-                {{ t('inquiries.detail.answer.approve') }}
+                {{ locale === 'ar' ? 'اعتماد الرد' : 'Approve Response' }}
               </h4>
+              <p class="mb-4 text-xs text-tertiary">{{ locale === 'ar' ? 'تم إرسال الرد للاعتماد. يمكنك الموافقة أو الرفض مع ذكر السبب.' : 'The response has been submitted for approval. You can approve or reject with a reason.' }}</p>
               <div class="flex gap-3">
                 <button
                   class="flex items-center gap-2 rounded-lg bg-green-600 px-5 py-2.5 text-sm font-medium text-white hover:bg-green-700 disabled:opacity-50"
