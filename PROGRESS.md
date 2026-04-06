@@ -3677,3 +3677,46 @@ Fix remaining issues in the platform: Organization Settings page, Committees pag
 - Frontend rebuilt and deployed to nginx container
 - Backend redeployed with correct environment variables
 - All changes pushed to GitHub
+
+## Task: Rich Text Editor & Inquiry Improvements (2026-04-06)
+
+### Completed:
+
+1. **TipTap Rich Text Editor Integration**
+   - Installed TipTap editor with all extensions (@tiptap/vue-3, @tiptap/starter-kit, @tiptap/extension-table, @tiptap/extension-text-align, @tiptap/extension-underline, @tiptap/extension-link, @tiptap/extension-image, @tiptap/extension-color, @tiptap/extension-text-style, @tiptap/extension-highlight, @tiptap/extension-task-list, @tiptap/extension-task-item, @tiptap/extension-placeholder)
+   - Created reusable `RichTextEditor.vue` component at `frontend/src/components/common/RichTextEditor.vue`
+   - Features: Bold, Italic, Underline, Strikethrough, H1/H2/H3, Bullet/Ordered/Task Lists, Text Alignment (Right/Center/Left/Justify), Tables, Links, Images, Text Color, Highlight, Undo/Redo, Blockquote, Code Block, Horizontal Rule
+   - Full RTL support
+
+2. **Booklet Editor (BookletEditorView.vue)**
+   - Replaced plain textarea with TipTap RichTextEditor in all editable blocks
+   - Editor appears with full toolbar for each editable section
+   - 13 sections of the booklet all use the new editor
+
+3. **Step3Content.vue (RFP Creation)**
+   - Replaced textarea with RichTextEditor for content editing
+
+4. **Inquiries View (InquiriesView.vue)**
+   - Added RichTextEditor for writing inquiry responses (replacing plain textarea)
+   - Added direct reply capability without needing to assign to committee/person
+   - Improved assignment tab with two options:
+     a. "Assign to Committee" - dropdown to select committee
+     b. "Assign to Person" - dynamic search field that searches users by name or email
+   - Dynamic user search calls `/api/v1/users?search=...` API with debounce (300ms)
+   - Search results show user name, email, and role in a dropdown list
+
+### Files Modified:
+- `frontend/package.json` - Added TipTap dependencies
+- `frontend/src/components/common/RichTextEditor.vue` - NEW - Reusable rich text editor component
+- `frontend/src/components/rfp/Step3Content.vue` - Replaced textarea with RichTextEditor
+- `frontend/src/views/rfp/BookletEditorView.vue` - Replaced textarea with RichTextEditor in editable blocks
+- `frontend/src/views/inquiries/InquiriesView.vue` - Added RichTextEditor, direct reply, and improved assignment
+
+### Database Changes:
+- Added organization.view/edit/manage permissions to all tenant databases
+- Linked permissions to Tenant Primary Admin and Tenant Admin roles
+
+### Deployment:
+- Frontend rebuilt and deployed to nginx container
+- Backend redeployed with correct environment variables
+- All changes pushed to GitHub
