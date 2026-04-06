@@ -155,9 +155,34 @@ function toggleSelect(taskId: string): void {
 }
 
 function navigateToTask(task: TaskItem): void {
-  if (task.actionUrl) {
-    router.push(task.actionUrl)
+  if (!task.actionUrl) return
+
+  // Map legacy/incorrect actionUrls to valid Vue Router paths
+  const urlMappings: Record<string, (id: string) => string> = {
+    '/competitions/': (id) => {
+      // Route based on task type
+      if (task.type === 'approve_request' || task.type === 'approval') {
+        return `/approvals?competitionId=${id}`
+      }
+      if (task.type === 'evaluate_offer') {
+        return `/evaluation/offers/${id}`
+      }
+      return `/approvals?competitionId=${id}`
+    },
   }
+
+  let targetUrl = task.actionUrl
+
+  // Check if the URL matches any legacy pattern and remap it
+  for (const [prefix, mapper] of Object.entries(urlMappings)) {
+    if (targetUrl.startsWith(prefix)) {
+      const id = targetUrl.replace(prefix, '').split('?')[0]
+      targetUrl = mapper(id)
+      break
+    }
+  }
+
+  router.push(targetUrl)
 }
 
 function showAiRecommendation(task: TaskItem): void {

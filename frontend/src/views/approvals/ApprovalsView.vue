@@ -146,9 +146,17 @@ function getTypeName(type: string): string {
 }
 
 function navigateToAction(task: PendingTask) {
-  if (task.actionUrl) {
-    router.push(task.actionUrl)
+  if (!task.actionUrl) return
+
+  let targetUrl = task.actionUrl
+
+  // Map legacy /competitions/{id} URLs to valid Vue Router paths
+  if (targetUrl.startsWith('/competitions/')) {
+    const id = targetUrl.replace('/competitions/', '').split('?')[0]
+    targetUrl = `/approvals?competitionId=${id}`
   }
+
+  router.push(targetUrl)
 }
 
 /* ------------------------------------------------------------------ */

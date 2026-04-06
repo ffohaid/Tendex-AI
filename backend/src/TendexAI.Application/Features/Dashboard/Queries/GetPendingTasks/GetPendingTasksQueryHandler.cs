@@ -167,7 +167,7 @@ public sealed class GetPendingTasksQueryHandler
                         RemainingTimeSeconds: remainingSeconds,
                         Priority: priority,
                         ActionRequired: GetCompetitionActionRequired(competition.Status),
-                        ActionUrl: $"/competitions/{competition.Id}",
+                        ActionUrl: GetCompetitionActionUrl(competition.Status, competition.Id),
                         AiRecommendationAr: GetAiRecommendationAr(taskType, priority, slaStatus),
                         AiRecommendationEn: GetAiRecommendationEn(taskType, priority, slaStatus),
                         AiConfidence: 0.85));
@@ -291,7 +291,7 @@ public sealed class GetPendingTasksQueryHandler
                     RemainingTimeSeconds: remainingSeconds,
                     Priority: priority,
                     ActionRequired: actionableStepIds.Contains(step.Id) ? "review_and_approve" : "waiting_for_prior_step",
-                    ActionUrl: $"/competitions/{competition.Id}",
+                    ActionUrl: $"/approvals?competitionId={competition.Id}&stepId={step.Id}",
                     AiRecommendationAr: GetAiRecommendationAr("approve_request", priority, slaStatus),
                     AiRecommendationEn: GetAiRecommendationEn("approve_request", priority, slaStatus),
                     AiConfidence: 0.90));
@@ -611,6 +611,22 @@ public sealed class GetPendingTasksQueryHandler
         CompetitionStatus.InquiryPeriod => "respond_to_inquiries",
         CompetitionStatus.ContractApproval => "review_contract",
         _ => "review"
+    };
+
+    /// <summary>
+    /// Returns the correct frontend route URL based on the competition status.
+    /// Maps to actual Vue Router paths to prevent catch-all redirect to dashboard.
+    /// </summary>
+    private static string GetCompetitionActionUrl(CompetitionStatus status, Guid competitionId) => status switch
+    {
+        CompetitionStatus.PendingApproval => $"/approvals?competitionId={competitionId}",
+        CompetitionStatus.TechnicalAnalysis => $"/evaluation/technical/{competitionId}",
+        CompetitionStatus.FinancialAnalysis => $"/evaluation/financial/{competitionId}",
+        CompetitionStatus.AwardNotification => $"/approvals?competitionId={competitionId}",
+        CompetitionStatus.InquiryPeriod => $"/inquiries?competitionId={competitionId}",
+        CompetitionStatus.ContractApproval => $"/approvals?competitionId={competitionId}",
+        CompetitionStatus.Draft => $"/rfp/{competitionId}/edit",
+        _ => $"/approvals?competitionId={competitionId}"
     };
 
     // ═══════════════════════════════════════════════════════════════
