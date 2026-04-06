@@ -20,6 +20,7 @@ import { useTenantStore } from '@/stores/tenant'
 import { useBrandingStore } from '@/stores/branding'
 import { useFormatters } from '@/composables/useFormatters'
 import * as brandingService from '@/services/brandingService'
+import * as organizationService from '@/services/organizationService'
 
 const { t, locale } = useI18n()
 const authStore = useAuthStore()
@@ -128,14 +129,24 @@ async function loadTenantData() {
   }
   error.value = ''
   try {
-    await tenantStore.loadTenantDetail(currentTenantId.value)
+    const orgData = await organizationService.fetchCurrentOrganization()
+    tenantStore.currentTenant = orgData
     if (tenantStore.currentTenant) {
       populateForm()
       await loadBranding()
     }
   } catch (err) {
-    /* Graceful degradation — populate from localStorage user data */
-    console.warn('[OrgSettings] API unavailable, using fallback:', err)
+    /* Graceful degradation — try operator endpoint, then localStorage */
+    console.warn('[OrgSettings] Organization API unavailable, trying fallback:', err)
+    try {
+      await tenantStore.loadTenantDetail(currentTenantId.value)
+      if (tenantStore.currentTenant) {
+        populateForm()
+        await loadBranding()
+        isLoading.value = false
+        return
+      }
+    } catch { /* operator endpoint also failed */ }
     try {
       const userStr = localStorage.getItem('user')
       if (userStr) {
@@ -181,7 +192,12 @@ function populateForm() {
 async function loadBranding() {
   if (!currentTenantId.value) return
   try {
-    const branding = await brandingService.fetchTenantBranding(currentTenantId.value)
+    let branding
+    try {
+      branding = await organizationService.fetchCurrentOrganizationBranding()
+    } catch {
+      branding = await brandingService.fetchTenantBranding(currentTenantId.value)
+    }
     brandingData.value = {
       logoUrl: branding.logoUrl || '',
       primaryColor: branding.primaryColor || '#1e40af',
@@ -198,7 +214,7 @@ async function handleSaveInfo() {
   error.value = ''
   successMessage.value = ''
   try {
-    await tenantStore.updateTenant(currentTenantId.value, {
+    await organizationService.updateCurrentOrganization({
       nameAr: formData.value.nameAr,
       nameEn: formData.value.nameEn,
       contactPersonName: formData.value.contactPersonName,
@@ -234,7 +250,7 @@ async function handleSaveBranding() {
       isUploadingLogo.value = false
     }
 
-    await tenantStore.updateBranding(currentTenantId.value, {
+    await organizationService.updateCurrentOrganizationBranding({
       logoUrl: finalLogoUrl,
       primaryColor: brandingData.value.primaryColor,
       secondaryColor: brandingData.value.secondaryColor,

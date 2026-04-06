@@ -157,6 +157,7 @@ app.MapUserManagementEndpoints();
 
 // Tenant (Government Entity) lifecycle management endpoints
 app.MapTenantEndpoints();
+app.MapOrganizationEndpoints();
 
 // Feature flag management endpoints
 app.MapFeatureFlagEndpoints();

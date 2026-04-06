@@ -3567,3 +3567,70 @@
 ### النشر
 - ✅ تم النشر بنجاح على https://netaq.pro
 - **Commit:** `fix: align role names between database and frontend, add IsProtected column`
+
+
+---
+
+## 2026-04-06: Fix Organization Settings, Committees, and Permissions
+
+### Agent Task
+Fix remaining issues in the platform: Organization Settings page, Committees page, and related permissions.
+
+### Changes Made
+
+#### 1. Organization API Endpoint
+- Created `OrganizationEndpoints.cs` with GET `/api/v1/organization/current` endpoint
+- Endpoint fetches current tenant's organization data from master database
+- Registered endpoint in `Program.cs`
+- Protected with `OrganizationView` policy
+
+#### 2. Organization Frontend Service
+- Created `organizationService.ts` for API communication
+- Updated `OrganizationSettingsView.vue` to fetch data from real API instead of mock data
+- Added proper error handling and loading states
+
+#### 3. Translation Files Updated
+- Added missing `committees.noCommittees` key in both `ar.json` and `en.json`
+- Fixed translation keys for organization settings page
+
+#### 4. Database Permissions Added
+- Added `organization.view`, `organization.edit`, `organization.manage` permissions to:
+  - `tenant_a86f3588` (operator tenant)
+  - `tendex_tenant_gov_mof_001` (MOF tenant)
+  - All other tenant databases
+- Linked permissions to admin roles (Tenant Primary Admin, Tenant Admin, Operator Super Admin)
+
+#### 5. Environment Variables Fix
+- Fixed `Security__EncryptionKey` and `AI__EncryptionKey` not being passed to backend container
+- Updated docker-compose deployment to use `--env-file .env.prod`
+
+#### 6. Password Hash Fix
+- BCrypt.Net-Next 4.0.3 requires `$2a$` salt prefix (not `$2b$`)
+- Reset passwords with correct `$2a$12$` prefix for testing accounts
+- Unlocked locked accounts after failed login attempts
+
+### Test Results
+- ✅ Organization Settings page loads with real API data
+- ✅ Committees page shows 8 committees with real data
+- ✅ Login works for both operator and tenant users
+- ✅ JWT contains organization.view/edit/manage permissions
+- ✅ Organization API returns 200 (previously 403)
+
+### Files Modified
+- `backend/src/TendexAI.API/Endpoints/OrganizationEndpoints.cs` (NEW)
+- `backend/src/TendexAI.API/Program.cs`
+- `backend/src/TendexAI.Infrastructure/AI/AiBoqGenerationService.cs`
+- `frontend/src/services/organizationService.ts` (NEW)
+- `frontend/src/views/settings/OrganizationSettingsView.vue`
+- `frontend/src/locales/ar.json`
+- `frontend/src/locales/en.json`
+
+### Database Changes
+- Added permissions: `organization.view`, `organization.edit`, `organization.manage`
+- Linked to roles: Tenant Primary Admin, Tenant Admin, Operator Super Admin
+- Applied across all tenant databases
+
+### Deployment
+- ✅ Backend rebuilt and deployed with `--env-file .env.prod`
+- ✅ Frontend rebuilt and deployed
+- **Commit:** `feat: add organization API endpoint, fix permissions and translations`

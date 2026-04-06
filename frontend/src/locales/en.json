@@ -37,7 +37,8 @@
     "results": "results",
     "minutes": "minutes",
     "hours": "hours",
-    "all": "All"
+    "all": "All",
+    "view": "View"
   },
   "auth": {
     "login": "Login",
@@ -1690,7 +1691,8 @@
       "comprehensive": "The committee operates across all phases for all competitions linked to the organization",
       "specificPhasesAll": "The committee operates on specific phases only but for all competitions",
       "specificPhasesSpecific": "The committee operates on specific phases for specific competitions only"
-    }
+    },
+    "noCommittees": "No committees found"
   },
   "approvals": {
     "title": "Task Center & Approvals",
