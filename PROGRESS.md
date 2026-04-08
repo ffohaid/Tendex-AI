@@ -62,3 +62,33 @@
 ## Next Steps
 - Update project documentation (PRD, Architecture, Operational Guide) to reflect new features
 - Continue with remaining platform development tasks
+
+## 2026-04-08: Fix Role Permissions (Critical Bug Fix)
+
+### Problem
+- Procurement Manager role had only 5 permissions (competitions only) in RolePermissions table
+- Committee Chair, Committee Member, Financial Controller, Sector Representative had 0 permissions
+- This caused "Access Denied" when users tried to create RFPs or access other features
+- The UI showed 40 permissions in the role details (from PermissionMatrixRules) but the actual JWT token only loaded from RolePermissions
+
+### Root Cause
+- RolePermissions table was not properly seeded during tenant provisioning
+- Only Tenant Primary Admin (95 perms), Member (30 perms), and Viewer (13 perms) had adequate permissions
+
+### Fix Applied
+- Created comprehensive SQL script (infrastructure/sql/fix_role_permissions.sql)
+- Assigned proper permissions to all 7 roles across all 5 tenant databases:
+  - Procurement Manager: 62 permissions
+  - Committee Chair: 40 permissions
+  - Sector Representative: 33 permissions
+  - Member: 28 permissions
+  - Financial Controller: 27 permissions
+  - Committee Member: 25 permissions
+  - Viewer: 16 permissions
+  - Tenant Primary Admin: 95 permissions (unchanged)
+- Cleared Redis cache to force re-evaluation
+
+### Verification
+- Tested login as khalid@mof.gov.sa (Procurement Manager)
+- Successfully accessed RFP creation page (previously showed Access Denied)
+- All menu items visible and accessible
