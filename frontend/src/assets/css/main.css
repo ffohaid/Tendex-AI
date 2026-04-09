@@ -1,61 +1,4 @@
 @import "tailwindcss";
-/* IBMPlexSansArabic - Self-hosted Official IBM Font Files */
-@font-face {
-  font-family: "IBMPlexSansArabic";
-  font-style: normal;
-  font-weight: 100;
-  font-display: swap;
-  src: url("/fonts/ibm-plex-sans-arabic/IBMPlexSansArabic-Thin.woff2") format("woff2");
-}
-@font-face {
-  font-family: "IBMPlexSansArabic";
-  font-style: normal;
-  font-weight: 200;
-  font-display: swap;
-  src: url("/fonts/ibm-plex-sans-arabic/IBMPlexSansArabic-ExtraLight.woff2") format("woff2");
-}
-@font-face {
-  font-family: "IBMPlexSansArabic";
-  font-style: normal;
-  font-weight: 300;
-  font-display: swap;
-  src: url("/fonts/ibm-plex-sans-arabic/IBMPlexSansArabic-Light.woff2") format("woff2");
-}
-@font-face {
-  font-family: "IBMPlexSansArabic";
-  font-style: normal;
-  font-weight: 400;
-  font-display: swap;
-  src: url("/fonts/ibm-plex-sans-arabic/IBMPlexSansArabic-Regular.woff2") format("woff2");
-}
-@font-face {
-  font-family: "IBMPlexSansArabic";
-  font-style: normal;
-  font-weight: 450;
-  font-display: swap;
-  src: url("/fonts/ibm-plex-sans-arabic/IBMPlexSansArabic-Text.woff2") format("woff2");
-}
-@font-face {
-  font-family: "IBMPlexSansArabic";
-  font-style: normal;
-  font-weight: 500;
-  font-display: swap;
-  src: url("/fonts/ibm-plex-sans-arabic/IBMPlexSansArabic-Medium.woff2") format("woff2");
-}
-@font-face {
-  font-family: "IBMPlexSansArabic";
-  font-style: normal;
-  font-weight: 600;
-  font-display: swap;
-  src: url("/fonts/ibm-plex-sans-arabic/IBMPlexSansArabic-SemiBold.woff2") format("woff2");
-}
-@font-face {
-  font-family: "IBMPlexSansArabic";
-  font-style: normal;
-  font-weight: 700;
-  font-display: swap;
-  src: url("/fonts/ibm-plex-sans-arabic/IBMPlexSansArabic-Bold.woff2") format("woff2");
-}
 
 @theme {
   /* ── Primary Brand Colors (Dark Navy Blue) ── */
@@ -144,8 +87,8 @@
   --color-info-dark: #2980B9;
   --color-info-50: #EBF5FB;
 
-  /* ── Typography ── */
-  --font-sans: IBMPlexSansArabic, sans-serif;
+  /* ── Typography (Cairo from Google Fonts CDN) ── */
+  --font-sans: "Cairo", sans-serif;
 
   /* ── Border Radius ── */
   --radius-sm: 0.375rem;
@@ -316,7 +259,7 @@
   }
 
   .btn-secondary {
-    @apply inline-flex items-center justify-center gap-2 rounded-xl px-5 py-2.5 text-sm font-semibold transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed bg-secondary text-white hover:bg-secondary-light focus:ring-secondary;
+    @apply inline-flex items-center justify-center gap-2 rounded-xl px-5 py-2.5 text-sm font-semibold transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed border border-secondary-200 bg-white text-secondary-700 hover:bg-surface-subtle focus:ring-secondary-200;
   }
 
   .btn-outline {
