@@ -100,3 +100,17 @@
 - Updated --font-sans CSS variable to: IBMPlexSansArabic, sans-serif
 - Rebuilt Docker container from scratch with --no-cache
 - Verified font loading and rendering in browser (weights 400, 500, 600, 700 loaded)
+
+## 2026-04-09: Font Change to Cairo (Google Fonts CDN)
+
+### Changes Made:
+- **frontend/index.html**: Added Google Fonts CDN preconnect and stylesheet links for Cairo font (weights: 300, 400, 500, 600, 700)
+- **frontend/src/assets/css/main.css**: Updated `--font-sans` from `IBMPlexSansArabic` to `"Cairo", sans-serif`. Removed all `@font-face` declarations for IBMPlexSansArabic.
+- **Removed**: All 8 self-hosted IBMPlexSansArabic woff2 files from `frontend/public/fonts/`
+- **Docker**: Rebuilt and redeployed frontend container with new font configuration
+- **Commits**: `b1a02e3` (font change) and `797554d` (cleanup old font files)
+
+### Technical Approach:
+- Cairo font is loaded via Google Fonts CDN (no self-hosted files needed)
+- Tailwind CSS v4 `@theme` block updated with `--font-sans: "Cairo", sans-serif`
+- Font supports both Arabic and Latin characters with weights 300-700
