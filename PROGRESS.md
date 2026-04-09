@@ -92,3 +92,11 @@
 - Tested login as khalid@mof.gov.sa (Procurement Manager)
 - Successfully accessed RFP creation page (previously showed Access Denied)
 - All menu items visible and accessible
+
+## 2026-04-09: Font Change - IBMPlexSansArabic (Final Fix)
+- Changed platform font from "Diodrum Arabic" to "IBMPlexSansArabic, sans-serif"
+- Used official IBM woff2 font files (self-hosted, 8 weights: Thin, ExtraLight, Light, Regular, Text, Medium, SemiBold, Bold)
+- Added @font-face declarations in main.css with font-family: IBMPlexSansArabic (no spaces, no quotes)
+- Updated --font-sans CSS variable to: IBMPlexSansArabic, sans-serif
+- Rebuilt Docker container from scratch with --no-cache
+- Verified font loading and rendering in browser (weights 400, 500, 600, 700 loaded)
