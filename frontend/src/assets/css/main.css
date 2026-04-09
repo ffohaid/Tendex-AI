@@ -8,7 +8,7 @@
  *   Secondary: #2ECC71 (Emerald Green)
  *   AI: #8B5CF6 (Purple)
  *   Status: Success=#27AE60, Warning=#F39C12, Error=#E74C3C, Info=#3498DB
- * Font: Diodrum Arabic (Arabic + English)
+ * Font: IBM Plex Sans Arabic (Arabic + English)
  * All utilities use logical properties for RTL/LTR support.
  */
 
@@ -100,7 +100,7 @@
   --color-info-50: #EBF5FB;
 
   /* ── Typography ── */
-  --font-sans: 'Diodrum Arabic', 'Inter', system-ui, -apple-system, sans-serif;
+  --font-sans: 'IBM Plex Sans Arabic', sans-serif;
 
   /* ── Border Radius ── */
   --radius-sm: 0.375rem;
