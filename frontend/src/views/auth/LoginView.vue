@@ -179,9 +179,9 @@ const onSubmit = handleSubmit(async (values) => {
 <template>
   <div class="flex min-h-screen w-full items-center justify-center bg-secondary p-4">
     <div class="w-full max-w-md">
-      <!-- Logo & Title -->
+      <!-- Tendex AI Logo (top branding) -->
       <div class="mb-8 text-center">
-        <!-- Tenant Logo or Default Icon -->
+        <!-- Tenant Logo (if available) -->
         <div
           v-if="hasLogo"
           class="mx-auto mb-4 flex h-20 w-20 items-center justify-center rounded-2xl bg-white p-2 shadow-md"
@@ -192,21 +192,17 @@ const onSubmit = handleSubmit(async (values) => {
             class="h-full w-full object-contain"
           />
         </div>
+        <!-- Default: Tendex AI Logo (vertical version for dark background) -->
         <div
           v-else
-          class="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl"
-          :style="{ backgroundColor: primaryColor }"
+          class="mx-auto mb-4 flex items-center justify-center"
         >
-          <i
-            :class="isOperatorLogin ? 'pi pi-cog' : 'pi pi-building'"
-            class="text-3xl text-white"
-          ></i>
+          <img
+            src="/logos/Tendexnewtypograpgy-07.svg"
+            alt="Tendex AI"
+            class="h-28 w-auto"
+          />
         </div>
-
-        <!-- Platform Name -->
-        <h1 class="text-2xl font-bold text-white">
-          {{ t('app.name') }}
-        </h1>
 
         <!-- Tenant Name (for government entities) -->
         <p

@@ -66,8 +66,12 @@ function switchLanguage(): void {
     >
       <!-- Logo -->
       <div class="flex h-16 items-center gap-3 border-b border-white/10 px-4">
-        <div class="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-white/10">
-          <i class="pi pi-bolt text-lg text-white"></i>
+        <div class="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-xl">
+          <img
+            src="/logos/Tendexicon-02.svg"
+            alt="Tendex AI"
+            class="h-full w-full object-contain"
+          />
         </div>
         <div v-if="!isCollapsed" class="flex flex-col">
           <span class="text-sm font-bold text-white">Tendex AI</span>

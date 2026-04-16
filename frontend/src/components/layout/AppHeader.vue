@@ -87,7 +87,7 @@ onMounted(async () => {
       </button>
 
       <!-- Platform Logo — Dynamic Branding -->
-      <div class="flex items-center gap-2">
+      <div class="flex items-center gap-2.5">
         <!-- Tenant logo (if available) -->
         <div
           v-if="hasTenantLogo"
@@ -99,12 +99,16 @@ onMounted(async () => {
             class="h-full w-full object-contain"
           />
         </div>
-        <!-- Default platform icon -->
+        <!-- Default Tendex AI icon -->
         <div
           v-else
-          class="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-primary to-primary-dark text-white shadow-xs"
+          class="flex h-9 w-9 items-center justify-center overflow-hidden rounded-lg"
         >
-          <i class="pi pi-bolt text-lg"></i>
+          <img
+            src="/logos/Tendexicon-01.svg"
+            alt="Tendex AI"
+            class="h-full w-full object-contain"
+          />
         </div>
         <div class="flex flex-col">
           <span class="text-lg font-bold leading-tight text-secondary">
