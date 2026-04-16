@@ -114,3 +114,50 @@
 - Cairo font is loaded via Google Fonts CDN (no self-hosted files needed)
 - Tailwind CSS v4 `@theme` block updated with `--font-sans: "Cairo", sans-serif`
 - Font supports both Arabic and Latin characters with weights 300-700
+
+## 2026-04-16: New Tendex AI Logo Integration
+
+### Changes Made:
+
+1. **Favicon Update**
+   - Replaced default favicon with Tendex green icon (Tendexicon-01.svg)
+   - Green diamond-shaped icon with circuit pattern visible in browser tabs
+
+2. **Logo Files Added** (`frontend/public/logos/`)
+   - 3 icon variants: Tendexicon-01 (green), Tendexicon-02 (white), Tendexicon-03 (navy)
+   - 4 typography variants: Tendexnewtypograpgy-01 (horizontal light bg), -02 (horizontal dark bg), -06 (vertical light bg), -07 (vertical dark bg)
+
+3. **AppHeader.vue** (Main Navigation Header)
+   - Replaced `pi pi-bolt` icon with Tendex logo image (`/logos/Tendexicon-01.svg`)
+   - Logo appears when no tenant branding is loaded (default fallback)
+
+4. **LoginView.vue** (Authentication Screen)
+   - Replaced generic icon with vertical Tendex AI logo (`/logos/Tendexnewtypograpgy-07.svg`)
+   - Logo displays on dark background with white text
+   - Removed unused `primaryColor` computed property (TypeScript strict mode fix)
+
+5. **OperatorLayout.vue** (Operator/Super Admin Portal)
+   - Replaced `pi pi-bolt` icon with white Tendex icon (`/logos/Tendexicon-02.svg`)
+   - White icon on dark sidebar gradient background
+
+6. **index.html**
+   - Added Arabic meta description
+   - Added `theme-color` meta tag (#1B3A5C)
+
+### Files Modified:
+- `frontend/public/favicon.svg` (replaced with Tendexicon-01.svg)
+- `frontend/public/logos/` (7 new SVG files)
+- `frontend/src/components/layout/AppHeader.vue`
+- `frontend/src/components/layout/OperatorLayout.vue`
+- `frontend/src/views/auth/LoginView.vue`
+- `frontend/index.html`
+
+### Commits:
+- `dcfc0c2` - feat(ui): add new Tendex AI logo across platform
+- `af3f803` - fix(ui): remove unused primaryColor variable in LoginView
+
+### Verification:
+- Tested on mof.netaq.pro and edu.netaq.pro
+- Logo renders correctly on login page (dark background)
+- Favicon updated in browser tab
+- All 7 logo SVG files accessible via HTTP (200 OK)
