@@ -111,10 +111,6 @@ const hasLogo = computed(() => {
   return tenantInfo.value?.logoUrl && tenantInfo.value.logoUrl.trim() !== ''
 })
 
-/** Primary color from tenant branding */
-const primaryColor = computed(() => {
-  return tenantInfo.value?.primaryColor || '#1E40AF'
-})
 
 /* ------------------------------------------------------------------ */
 /*  Validation Schema                                                  */
