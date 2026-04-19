@@ -9,7 +9,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="MailKit" Version="4.15.2" />
+    <PackageReference Include="MailKit" Version="4.16.0" />
     <PackageReference Include="Microsoft.EntityFrameworkCore" Version="10.0.5" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Relational" Version="10.0.5" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="10.0.5" />
@@ -50,7 +50,7 @@
     <TargetFramework>net10.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
-    <NoWarn>CA1848;CA1873;CA2016;CA1311;CA1862;CA1304;CA1305;CA1861;CA1825;IDE0161;NU1902</NoWarn>
+    <NoWarn>CA1848;CA1873;CA2016;CA1311;CA1862;CA1304;CA1305;CA1861;CA1825;IDE0161;NU1902;NU1603</NoWarn>
   </PropertyGroup>
 
   <ItemGroup>
