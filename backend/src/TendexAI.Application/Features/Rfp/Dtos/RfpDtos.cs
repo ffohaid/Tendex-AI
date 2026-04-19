@@ -19,6 +19,7 @@ public sealed record CompetitionListItemDto(
     int SectionsCount,
     int BoqItemsCount,
     int AttachmentsCount,
+    int OfferCount,
     DateTime CreatedAt,
     string? CreatedBy);
 
@@ -39,6 +40,10 @@ public sealed record CompetitionDetailDto(
     string Currency,
     DateTime? SubmissionDeadline,
     int? ProjectDurationDays,
+    DateTime? StartDate,
+    DateTime? EndDate,
+    string? Department,
+    string? FiscalYear,
     decimal? TechnicalPassingScore,
     decimal? TechnicalWeight,
     decimal? FinancialWeight,

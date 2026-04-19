@@ -243,6 +243,10 @@ public static class CompetitionEndpoints
             EstimatedBudget: request.EstimatedBudget,
             SubmissionDeadline: request.SubmissionDeadline,
             ProjectDurationDays: request.ProjectDurationDays,
+            StartDate: request.StartDate,
+            EndDate: request.EndDate,
+            Department: request.Department,
+            FiscalYear: request.FiscalYear,
             SourceTemplateId: request.SourceTemplateId,
             SourceCompetitionId: request.SourceCompetitionId,
             CreatedByUserId: userId.ToString());
@@ -271,6 +275,10 @@ public static class CompetitionEndpoints
             EstimatedBudget: request.EstimatedBudget,
             SubmissionDeadline: request.SubmissionDeadline,
             ProjectDurationDays: request.ProjectDurationDays,
+            StartDate: request.StartDate,
+            EndDate: request.EndDate,
+            Department: request.Department,
+            FiscalYear: request.FiscalYear,
             ModifiedByUserId: userId.ToString());
 
         var result = await mediator.Send(command);
@@ -312,6 +320,10 @@ public static class CompetitionEndpoints
             EstimatedBudget: request.EstimatedBudget,
             SubmissionDeadline: request.SubmissionDeadline,
             ProjectDurationDays: request.ProjectDurationDays,
+            StartDate: request.StartDate,
+            EndDate: request.EndDate,
+            Department: request.Department,
+            FiscalYear: request.FiscalYear,
             CurrentWizardStep: request.CurrentWizardStep,
             ModifiedByUserId: userId.ToString());
 
@@ -582,6 +594,10 @@ public sealed record CreateCompetitionRequest(
     decimal? EstimatedBudget,
     DateTime? SubmissionDeadline,
     int? ProjectDurationDays,
+    DateTime? StartDate,
+    DateTime? EndDate,
+    string? Department,
+    string? FiscalYear,
     Guid? SourceTemplateId,
     Guid? SourceCompetitionId);
 
@@ -592,7 +608,11 @@ public sealed record UpdateCompetitionRequest(
     CompetitionType CompetitionType,
     decimal? EstimatedBudget,
     DateTime? SubmissionDeadline,
-    int? ProjectDurationDays);
+    int? ProjectDurationDays,
+    DateTime? StartDate,
+    DateTime? EndDate,
+    string? Department,
+    string? FiscalYear);
 
 public sealed record AutoSaveCompetitionRequest(
     string? ProjectNameAr,
@@ -602,6 +622,10 @@ public sealed record AutoSaveCompetitionRequest(
     decimal? EstimatedBudget,
     DateTime? SubmissionDeadline,
     int? ProjectDurationDays,
+    DateTime? StartDate,
+    DateTime? EndDate,
+    string? Department,
+    string? FiscalYear,
     int? CurrentWizardStep);
 
 public sealed record ChangeCompetitionStatusRequest(

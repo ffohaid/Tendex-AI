@@ -5,6 +5,9 @@
  * Collects project name, description, competition type,
  * estimated value, dates, reference number, and department.
  * Uses VeeValidate + Zod for real-time validation.
+ *
+ * Issue 26 Fix: Date pickers now enforce min date = today to prevent past dates.
+ * Issue 28 Fix: Date picker year range is synced with fiscal year selection.
  */
 import { watch, computed } from 'vue'
 import { useI18n } from 'vue-i18n'
@@ -48,14 +51,47 @@ const competitionTypes = computed(() => [
   { value: 'reverse_auction', label: t('rfp.competitionTypes.reverseAuction') },
 ])
 
-/** Fiscal year options */
+/** Fiscal year options - expanded range to cover 5 years */
 const fiscalYears = computed(() => {
   const currentYear = new Date().getFullYear()
   return [
     { value: String(currentYear - 1), label: String(currentYear - 1) },
     { value: String(currentYear), label: String(currentYear) },
     { value: String(currentYear + 1), label: String(currentYear + 1) },
+    { value: String(currentYear + 2), label: String(currentYear + 2) },
+    { value: String(currentYear + 3), label: String(currentYear + 3) },
   ]
+})
+
+/**
+ * Issue 26 Fix: Compute minimum date as today's date in YYYY-MM-DD format.
+ * This prevents users from selecting past dates for start date, end date,
+ * and submission deadline.
+ */
+const todayStr = computed(() => {
+  const now = new Date()
+  return now.toISOString().split('T')[0]
+})
+
+/**
+ * Issue 28 Fix: Compute min/max dates for date pickers based on fiscal year.
+ * When a fiscal year is selected, date pickers are constrained to that year's range.
+ * If no fiscal year is selected, only the minimum (today) constraint applies.
+ */
+const dateMinForPicker = computed(() => {
+  if (fiscalYear.value) {
+    const yearStart = `${fiscalYear.value}-01-01`
+    // Use the later of today or fiscal year start
+    return yearStart > todayStr.value ? yearStart : todayStr.value
+  }
+  return todayStr.value
+})
+
+const dateMaxForPicker = computed(() => {
+  if (fiscalYear.value) {
+    return `${fiscalYear.value}-12-31`
+  }
+  return '' // No max constraint if no fiscal year selected
 })
 
 /** Sync field changes back to store */
@@ -81,6 +117,26 @@ watch(
   },
   { deep: true },
 )
+
+/**
+ * Issue 28 Fix: When fiscal year changes, clear dates that fall outside
+ * the new fiscal year range to maintain consistency.
+ */
+watch(fiscalYear, (newYear) => {
+  if (!newYear) return
+  const yearStart = `${newYear}-01-01`
+  const yearEnd = `${newYear}-12-31`
+
+  if (startDate.value && (startDate.value < yearStart || startDate.value > yearEnd)) {
+    startDate.value = ''
+  }
+  if (endDate.value && (endDate.value < yearStart || endDate.value > yearEnd)) {
+    endDate.value = ''
+  }
+  if (submissionDeadline.value && (submissionDeadline.value < yearStart || submissionDeadline.value > yearEnd)) {
+    submissionDeadline.value = ''
+  }
+})
 
 /** Expose validate for parent wizard */
 defineExpose({
@@ -150,6 +206,7 @@ defineExpose({
                 competitionType: competitionType || '',
               }"
               :current-text="projectDescription || ''"
+              :max-characters="2000"
               @text-generated="(text) => { projectDescription = text }"
             />
           </div>
@@ -274,6 +331,8 @@ defineExpose({
           id="startDate"
           v-model="startDate"
           type="date"
+          :min="dateMinForPicker"
+          :max="dateMaxForPicker"
           class="w-full rounded-lg border px-4 py-2.5 text-sm transition-colors focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
           :class="errors.startDate ? 'border-danger' : 'border-surface-dim'"
         />
@@ -290,6 +349,8 @@ defineExpose({
           id="endDate"
           v-model="endDate"
           type="date"
+          :min="startDate || dateMinForPicker"
+          :max="dateMaxForPicker"
           class="w-full rounded-lg border px-4 py-2.5 text-sm transition-colors focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
           :class="errors.endDate ? 'border-danger' : 'border-surface-dim'"
         />
@@ -306,6 +367,8 @@ defineExpose({
           id="submissionDeadline"
           v-model="submissionDeadline"
           type="date"
+          :min="dateMinForPicker"
+          :max="dateMaxForPicker"
           class="w-full rounded-lg border px-4 py-2.5 text-sm transition-colors focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
           :class="errors.submissionDeadline ? 'border-danger' : 'border-surface-dim'"
         />

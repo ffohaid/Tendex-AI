@@ -61,6 +61,9 @@ public sealed class TenantDatabaseProvisioner : ITenantDatabaseProvisioner
             // Step 4: Seed initial data
             await SeedInitialDataAsync(connectionString, tenantId, cancellationToken);
 
+            // Step 5: Seed default admin user (Issue 30 Fix)
+            await SeedDefaultAdminUserAsync(connectionString, tenantId, cancellationToken);
+
             _logger.LogInformation(
                 "Database provisioning completed successfully for tenant {TenantId}, database: {DatabaseName}",
                 tenantId, databaseName);
@@ -195,6 +198,90 @@ public sealed class TenantDatabaseProvisioner : ITenantDatabaseProvisioner
         await SeedDefaultRolesAsync(connection, tenantId, cancellationToken);
 
         _logger.LogInformation("Initial data seeded successfully for tenant {TenantId}.", tenantId);
+    }
+
+    /// <summary>
+    /// Issue 30 Fix: Seeds a default admin user for the tenant.
+    /// Creates a primary admin user with a default password that must be changed on first login.
+    /// The operator can then reset this password via the "Reset Admin Password" feature.
+    /// </summary>
+    private async Task SeedDefaultAdminUserAsync(
+        string connectionString,
+        Guid tenantId,
+        CancellationToken cancellationToken)
+    {
+        _logger.LogInformation("Seeding default admin user for tenant {TenantId}...", tenantId);
+
+        await using var connection = new SqlConnection(connectionString);
+        await connection.OpenAsync(cancellationToken);
+
+        // Check if admin user already exists
+        var checkCommand = connection.CreateCommand();
+        checkCommand.CommandText = @"
+            SELECT COUNT(1) FROM [identity].Users
+            WHERE TenantId = @TenantId";
+        checkCommand.Parameters.Add(new SqlParameter("@TenantId", tenantId));
+
+        var userCount = (int)(await checkCommand.ExecuteScalarAsync(cancellationToken) ?? 0);
+        if (userCount > 0)
+        {
+            _logger.LogInformation("Admin user already exists for tenant {TenantId}, skipping.", tenantId);
+            return;
+        }
+
+        var userId = Guid.NewGuid();
+        var now = DateTime.UtcNow;
+        // Default password: Tendex@Admin123 (must be changed on first login)
+        // BCrypt hash for "Tendex@Admin123"
+        var defaultPasswordHash = BCrypt.Net.BCrypt.HashPassword("Tendex@Admin123", 12);
+
+        // Insert admin user
+        var insertUserCommand = connection.CreateCommand();
+        insertUserCommand.CommandText = @"
+            INSERT INTO [identity].Users
+                (Id, FirstNameAr, FirstNameEn, LastNameAr, LastNameEn, Email, NormalizedEmail,
+                 UserName, NormalizedUserName, PasswordHash, TenantId, IsActive,
+                 EmailConfirmed, PhoneNumberConfirmed, TwoFactorEnabled, LockoutEnabled,
+                 AccessFailedCount, SecurityStamp, ConcurrencyStamp, CreatedAt, MustChangePassword)
+            VALUES
+                (@Id, @FirstNameAr, @FirstNameEn, @LastNameAr, @LastNameEn, @Email, @NormalizedEmail,
+                 @UserName, @NormalizedUserName, @PasswordHash, @TenantId, 1,
+                 1, 0, 0, 1,
+                 0, @SecurityStamp, @ConcurrencyStamp, @CreatedAt, 1)";
+
+        var adminEmail = $"admin@{tenantId:N}.tendex.local";
+        insertUserCommand.Parameters.Add(new SqlParameter("@Id", userId));
+        insertUserCommand.Parameters.Add(new SqlParameter("@FirstNameAr", "مدير"));
+        insertUserCommand.Parameters.Add(new SqlParameter("@FirstNameEn", "Admin"));
+        insertUserCommand.Parameters.Add(new SqlParameter("@LastNameAr", "النظام"));
+        insertUserCommand.Parameters.Add(new SqlParameter("@LastNameEn", "System"));
+        insertUserCommand.Parameters.Add(new SqlParameter("@Email", adminEmail));
+        insertUserCommand.Parameters.Add(new SqlParameter("@NormalizedEmail", adminEmail.ToUpperInvariant()));
+        insertUserCommand.Parameters.Add(new SqlParameter("@UserName", adminEmail));
+        insertUserCommand.Parameters.Add(new SqlParameter("@NormalizedUserName", adminEmail.ToUpperInvariant()));
+        insertUserCommand.Parameters.Add(new SqlParameter("@PasswordHash", defaultPasswordHash));
+        insertUserCommand.Parameters.Add(new SqlParameter("@TenantId", tenantId));
+        insertUserCommand.Parameters.Add(new SqlParameter("@SecurityStamp", Guid.NewGuid().ToString("N")));
+        insertUserCommand.Parameters.Add(new SqlParameter("@ConcurrencyStamp", Guid.NewGuid().ToString("N")));
+        insertUserCommand.Parameters.Add(new SqlParameter("@CreatedAt", now));
+
+        await insertUserCommand.ExecuteNonQueryAsync(cancellationToken);
+
+        // Assign TenantPrimaryAdmin role to the admin user
+        var assignRoleCommand = connection.CreateCommand();
+        assignRoleCommand.CommandText = @"
+            INSERT INTO [identity].UserRoles (UserId, RoleId)
+            SELECT @UserId, Id FROM [identity].Roles
+            WHERE NormalizedName = 'TENANT PRIMARY ADMIN' AND TenantId = @TenantId";
+        assignRoleCommand.Parameters.Add(new SqlParameter("@UserId", userId));
+        assignRoleCommand.Parameters.Add(new SqlParameter("@TenantId", tenantId));
+
+        await assignRoleCommand.ExecuteNonQueryAsync(cancellationToken);
+
+        _logger.LogInformation(
+            "Default admin user seeded for tenant {TenantId}. Email: {Email}. " +
+            "Operator should reset password via 'Reset Admin Password' feature.",
+            tenantId, adminEmail);
     }
 
     /// <summary>

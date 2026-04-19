@@ -8,7 +8,7 @@ namespace TendexAI.Application.Features.Rfp.Mappers;
 /// </summary>
 public static class CompetitionMapper
 {
-    public static CompetitionListItemDto ToListItemDto(Competition entity)
+    public static CompetitionListItemDto ToListItemDto(Competition entity, int offerCount = 0)
     {
         return new CompetitionListItemDto(
             Id: entity.Id,
@@ -24,6 +24,7 @@ public static class CompetitionMapper
             SectionsCount: entity.Sections.Count,
             BoqItemsCount: entity.BoqItems.Count,
             AttachmentsCount: entity.Attachments.Count,
+            OfferCount: offerCount,
             CreatedAt: entity.CreatedAt,
             CreatedBy: entity.CreatedBy);
     }
@@ -44,6 +45,10 @@ public static class CompetitionMapper
             Currency: entity.Currency,
             SubmissionDeadline: entity.SubmissionDeadline,
             ProjectDurationDays: entity.ProjectDurationDays,
+            StartDate: entity.StartDate,
+            EndDate: entity.EndDate,
+            Department: entity.Department,
+            FiscalYear: entity.FiscalYear,
             TechnicalPassingScore: entity.TechnicalPassingScore,
             TechnicalWeight: entity.TechnicalWeight,
             FinancialWeight: entity.FinancialWeight,

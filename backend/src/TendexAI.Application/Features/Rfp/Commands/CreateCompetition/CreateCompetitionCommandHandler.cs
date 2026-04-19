@@ -40,7 +40,8 @@ public sealed class CreateCompetitionCommandHandler
             sourceCompetitionId: request.SourceCompetitionId);
 
         // Set optional fields
-        if (request.EstimatedBudget.HasValue || request.SubmissionDeadline.HasValue || request.ProjectDurationDays.HasValue)
+        if (request.EstimatedBudget.HasValue || request.SubmissionDeadline.HasValue || request.ProjectDurationDays.HasValue
+            || request.StartDate.HasValue || request.EndDate.HasValue || request.Department is not null || request.FiscalYear is not null)
         {
             competition.UpdateBasicInfo(
                 projectNameAr: request.ProjectNameAr,
@@ -50,6 +51,10 @@ public sealed class CreateCompetitionCommandHandler
                 estimatedBudget: request.EstimatedBudget,
                 submissionDeadline: request.SubmissionDeadline,
                 projectDurationDays: request.ProjectDurationDays,
+                startDate: request.StartDate,
+                endDate: request.EndDate,
+                department: request.Department,
+                fiscalYear: request.FiscalYear,
                 modifiedBy: request.CreatedByUserId);
         }
 

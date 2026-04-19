@@ -33,6 +33,11 @@ const props = defineProps<{
   currentText: string
   /** Whether to show in compact/inline mode */
   compact?: boolean
+  /**
+   * Issue 20 Fix: Maximum characters allowed for the generated text.
+   * When set, this constraint is sent to the backend to limit AI output.
+   */
+  maxCharacters?: number
 }>()
 
 const emit = defineEmits<{
@@ -108,6 +113,7 @@ async function handleAction(actionKey: string) {
         additionalContext: props.context.additionalContext || '',
         customPrompt: customPrompt.value || '',
         language: 'ar',
+        maxCharacters: props.maxCharacters || 0,
       },
       { timeout: 120_000 },
     )
@@ -148,6 +154,7 @@ async function handleCustomPrompt() {
         additionalContext: props.context.additionalContext || '',
         customPrompt: customPrompt.value,
         language: 'ar',
+        maxCharacters: props.maxCharacters || 0,
       },
       { timeout: 120_000 },
     )

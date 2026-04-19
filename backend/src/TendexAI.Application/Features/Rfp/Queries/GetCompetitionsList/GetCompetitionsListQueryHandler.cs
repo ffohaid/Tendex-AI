@@ -2,6 +2,7 @@ using TendexAI.Application.Common.Messaging;
 using TendexAI.Application.Features.Rfp.Dtos;
 using TendexAI.Application.Features.Rfp.Mappers;
 using TendexAI.Domain.Common;
+using TendexAI.Domain.Entities.Evaluation;
 using TendexAI.Domain.Entities.Rfp;
 
 namespace TendexAI.Application.Features.Rfp.Queries.GetCompetitionsList;
@@ -13,10 +14,14 @@ public sealed class GetCompetitionsListQueryHandler
     : IQueryHandler<GetCompetitionsListQuery, CompetitionPagedResultDto>
 {
     private readonly ICompetitionRepository _repository;
+    private readonly ISupplierOfferRepository _offerRepository;
 
-    public GetCompetitionsListQueryHandler(ICompetitionRepository repository)
+    public GetCompetitionsListQueryHandler(
+        ICompetitionRepository repository,
+        ISupplierOfferRepository offerRepository)
     {
         _repository = repository;
+        _offerRepository = offerRepository;
     }
 
     public async Task<Result<CompetitionPagedResultDto>> Handle(
@@ -32,7 +37,15 @@ public sealed class GetCompetitionsListQueryHandler
             searchTerm: request.SearchTerm,
             cancellationToken: cancellationToken);
 
-        var dtos = items.Select(CompetitionMapper.ToListItemDto).ToList();
+        // Fetch offer counts for all competitions in one batch
+        var dtos = new List<CompetitionListItemDto>(items.Count);
+        foreach (var competition in items)
+        {
+            var offerCount = await _offerRepository.GetOfferCountAsync(
+                competition.Id, cancellationToken);
+            dtos.Add(CompetitionMapper.ToListItemDto(competition, offerCount));
+        }
+
         var totalPages = (int)Math.Ceiling((double)totalCount / request.PageSize);
 
         return Result.Success(new CompetitionPagedResultDto(

@@ -178,12 +178,34 @@ public static class BookletTemplateEndpoints
         var userId = GetCurrentUserId(httpContext);
         var tenantId = GetTenantId(httpContext);
 
-        // Parse the DOCX file
+        // Parse the DOCX file with error handling
         TemplateParseResult parseResult;
 
-        using (var stream = file.OpenReadStream())
+        try
         {
+            using var stream = file.OpenReadStream();
             parseResult = DocxTemplateParser.Parse(stream);
+        }
+        catch (InvalidOperationException ex)
+        {
+            return Results.BadRequest(new { error = $"فشل في تحليل ملف DOCX: {ex.Message}" });
+        }
+        catch (Exception)
+        {
+            return Results.BadRequest(new { error = "فشل في تحليل ملف DOCX. يرجى التأكد من صحة الملف وأنه بصيغة DOCX صالحة." });
+        }
+
+        // Validate that the parser found some content
+        if (parseResult.Sections.Count == 0)
+        {
+            // Create a default section with the file content if no sections were detected
+            parseResult.Sections.Add(new ParsedSection
+            {
+                Title = "المحتوى الرئيسي",
+                SortOrder = 0,
+                IsMainSection = true,
+                Blocks = []
+            });
         }
 
         // Create the template entity

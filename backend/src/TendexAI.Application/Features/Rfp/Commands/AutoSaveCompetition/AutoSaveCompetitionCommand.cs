@@ -18,5 +18,9 @@ public sealed record AutoSaveCompetitionCommand(
     decimal? EstimatedBudget,
     DateTime? SubmissionDeadline,
     int? ProjectDurationDays,
+    DateTime? StartDate,
+    DateTime? EndDate,
+    string? Department,
+    string? FiscalYear,
     int? CurrentWizardStep,
     string ModifiedByUserId) : ICommand<AutoSaveResultDto>;

@@ -37,10 +37,36 @@ public sealed class StartTechnicalEvaluationCommandHandler
             return Result.Failure<TechnicalEvaluationDetailDto>("Competition not found.");
 
         // 2. Validate competition is in the correct phase
-        if (competition.Status != CompetitionStatus.OffersClosed &&
-            competition.Status != CompetitionStatus.TechnicalAnalysis)
+        // Accept OffersClosed, TechnicalAnalysis, Approved, Published, or InquiryPeriod
+        // For Approved/Published/InquiryPeriod, we auto-transition to TechnicalAnalysis
+        var allowedStatuses = new[]
+        {
+            CompetitionStatus.OffersClosed,
+            CompetitionStatus.TechnicalAnalysis,
+            CompetitionStatus.Approved,
+            CompetitionStatus.Published,
+            CompetitionStatus.InquiryPeriod
+        };
+        if (!allowedStatuses.Contains(competition.Status))
             return Result.Failure<TechnicalEvaluationDetailDto>(
-                "Competition must be in OffersClosed or TechnicalAnalysis status to start technical evaluation.");
+                $"Competition must be in OffersClosed, TechnicalAnalysis, Approved, Published, or InquiryPeriod status. Current status: {competition.Status}.");
+
+        // Auto-transition to TechnicalAnalysis if needed
+        if (competition.Status != CompetitionStatus.TechnicalAnalysis)
+        {
+            var transitionResult = competition.TransitionTo(
+                CompetitionStatus.TechnicalAnalysis,
+                request.StartedByUserId,
+                "Auto-transition: Technical evaluation started");
+            if (transitionResult.IsFailure)
+            {
+                _logger.LogWarning(
+                    "Could not auto-transition competition {CompetitionId} from {CurrentStatus} to TechnicalAnalysis: {Error}",
+                    competition.Id, competition.Status, transitionResult.Error);
+                // Don't block — allow evaluation to start even if transition fails
+            }
+            _competitionRepository.Update(competition);
+        }
 
         // 3. Check if evaluation already exists
         var existingEvaluation = await _evaluationRepository.ExistsForCompetitionAsync(

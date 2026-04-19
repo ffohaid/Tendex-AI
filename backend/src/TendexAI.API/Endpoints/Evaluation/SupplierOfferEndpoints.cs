@@ -38,6 +38,14 @@ public static class SupplierOfferEndpoints
             .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
             .RequireAuthorization(PermissionPolicies.OffersOpen);
 
+        group.MapDelete("/{offerId:guid}", DeleteOfferAsync)
+            .WithName("DeleteSupplierOffer")
+            .WithSummary("Delete (soft-delete) a supplier offer")
+            .Produces(StatusCodes.Status204NoContent)
+            .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
+            .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+            .RequireAuthorization(PermissionPolicies.OffersOpen);
+
         return app;
     }
 
@@ -76,6 +84,28 @@ public static class SupplierOfferEndpoints
                 $"/api/v1/competitions/{competitionId}/offers/{result.Value!.Id}",
                 result.Value)
             : Results.Problem(result.Error, statusCode: 400);
+    }
+
+    private static async Task<IResult> DeleteOfferAsync(
+        Guid competitionId,
+        Guid offerId,
+        [FromServices] Application.Common.Interfaces.ITenantDbContextFactory dbContextFactory,
+        HttpContext httpContext)
+    {
+        var userId = GetCurrentUserId(httpContext);
+        var dbContext = dbContextFactory.CreateDbContext();
+        var offers = dbContext.GetDbSet<Domain.Entities.Evaluation.SupplierOffer>();
+
+        var offer = await offers.FindAsync(offerId);
+        if (offer is null || offer.CompetitionId != competitionId)
+            return Results.NotFound(new { error = "العرض غير موجود." });
+
+        var result = offer.MarkAsDeleted(userId);
+        if (!result.IsSuccess)
+            return Results.BadRequest(new { error = result.Error });
+
+        await dbContext.SaveChangesAsync();
+        return Results.NoContent();
     }
 
     private static string GetCurrentUserId(HttpContext httpContext)

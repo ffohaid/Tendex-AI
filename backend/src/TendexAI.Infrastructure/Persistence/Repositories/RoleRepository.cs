@@ -64,6 +64,11 @@ public sealed class RoleRepository : IRoleRepository
         _context.Roles.Update(role);
     }
 
+    public void Delete(Role role)
+    {
+        _context.Roles.Remove(role);
+    }
+
     /// <inheritdoc />
     public async Task UpdatePermissionsAsync(Guid roleId, IReadOnlyList<Guid> permissionIds, CancellationToken cancellationToken = default)
     {

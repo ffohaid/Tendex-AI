@@ -34,7 +34,7 @@ public sealed class SupplierOfferRepository : ISupplierOfferRepository, IDisposa
         Guid competitionId, CancellationToken cancellationToken = default)
     {
         return await _context.SupplierOffers
-            .Where(o => o.CompetitionId == competitionId)
+            .Where(o => o.CompetitionId == competitionId && !o.IsDeleted)
             .OrderBy(o => o.BlindCode)
             .AsNoTracking()
             .ToListAsync(cancellationToken);
@@ -55,7 +55,7 @@ public sealed class SupplierOfferRepository : ISupplierOfferRepository, IDisposa
         Guid competitionId, CancellationToken cancellationToken = default)
     {
         return await _context.SupplierOffers
-            .CountAsync(o => o.CompetitionId == competitionId, cancellationToken);
+            .CountAsync(o => o.CompetitionId == competitionId && !o.IsDeleted, cancellationToken);
     }
 
     public async Task<bool> ExistsAsync(
@@ -65,7 +65,8 @@ public sealed class SupplierOfferRepository : ISupplierOfferRepository, IDisposa
     {
         return await _context.SupplierOffers
             .AnyAsync(o => o.CompetitionId == competitionId &&
-                           o.SupplierIdentifier == supplierIdentifier,
+                           o.SupplierIdentifier == supplierIdentifier &&
+                           !o.IsDeleted,
                 cancellationToken);
     }
 

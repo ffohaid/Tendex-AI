@@ -29,7 +29,12 @@ const { t, locale } = useI18n()
 const router = useRouter()
 const authStore = useAuthStore()
 
-const canManageWorkflow = computed(() => authStore.hasPermission('workflow.manage'))
+const canManageWorkflow = computed(() =>
+  authStore.hasPermission('workflow.manage') ||
+  authStore.hasPermission('workflow.edit') ||
+  authStore.hasPermission('workflow.delete') ||
+  authStore.hasPermission('workflow.create')
+)
 
 /* ------------------------------------------------------------------ */
 /*  State                                                              */

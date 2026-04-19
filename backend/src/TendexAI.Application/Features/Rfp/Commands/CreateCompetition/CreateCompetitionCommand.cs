@@ -17,6 +17,10 @@ public sealed record CreateCompetitionCommand(
     decimal? EstimatedBudget,
     DateTime? SubmissionDeadline,
     int? ProjectDurationDays,
+    DateTime? StartDate,
+    DateTime? EndDate,
+    string? Department,
+    string? FiscalYear,
     Guid? SourceTemplateId,
     Guid? SourceCompetitionId,
     string CreatedByUserId) : ICommand<CompetitionDetailDto>;

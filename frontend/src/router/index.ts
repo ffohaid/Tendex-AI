@@ -55,6 +55,13 @@ const routes: RouteRecordRaw[] = [
         meta: { title: 'Tendex AI - Edit RFP', requiresAuth: true, requiredPermission: 'rfp.update' },
         props: true,
       },
+      {
+        path: 'rfp/:id/export',
+        name: 'rfp-export',
+        component: () => import('@/views/rfp/RfpExportView.vue'),
+        meta: { title: 'Tendex AI - Export RFP', requiresAuth: true, requiredPermission: 'rfp.export' },
+        props: true,
+      },
       /* Committee Management routes (TASK-902) */
       {
         path: 'committees/permanent',
@@ -276,7 +283,7 @@ const routes: RouteRecordRaw[] = [
         path: 'workflow/designer/:id',
         name: 'WorkflowDesignerEdit',
         component: () => import('@/views/workflow/WorkflowDesignerView.vue'),
-        meta: { title: 'Tendex AI - Edit Workflow', requiresAuth: true, requiredPermission: 'workflow.update' },
+        meta: { title: 'Tendex AI - Edit Workflow', requiresAuth: true, requiredPermission: 'workflow.edit' },
         props: true,
       },
       /* Flexible Permissions Matrix */

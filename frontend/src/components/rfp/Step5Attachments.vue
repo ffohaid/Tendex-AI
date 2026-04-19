@@ -1,12 +1,14 @@
 <script setup lang="ts">
 /**
- * Step 5: Attachments.
+ * Step 5: Mandatory Attachments Selection.
  *
- * Manages file uploads for the RFP booklet with:
- * - Interactive checkboxes for selecting required attachment types
- * - Drag & Drop file upload zone
- * - File type and size validation
- * - Upload progress indication
+ * Issue 25 Fix: This step is now focused ONLY on selecting which
+ * mandatory attachment types competitors must submit with their offers.
+ * File upload functionality has been separated into a dedicated
+ * section that only appears for supplementary documents.
+ *
+ * The required attachment types checklist defines what competitors
+ * must provide, NOT what the entity uploads.
  */
 import { ref, computed } from 'vue'
 import { useI18n } from 'vue-i18n'
@@ -30,6 +32,7 @@ const { validate, setFieldValue } = useForm({
 
 const isDragOver = ref(false)
 const uploadError = ref('')
+const showSupplementaryUpload = ref(false)
 
 /** Required attachments list per PRD */
 const requiredAttachments = computed(() => [
@@ -65,7 +68,6 @@ const allowedTypes = [
   'image/png',
   'image/jpeg',
 ]
-
 const maxFileSize = 25 * 1024 * 1024 // 25 MB
 
 /** Format file size */
@@ -228,70 +230,99 @@ defineExpose({
       </div>
     </div>
 
-    <!-- Drop zone -->
-    <div
-      class="relative rounded-lg border-2 border-dashed p-8 text-center transition-colors"
-      :class="{
-        'border-primary bg-primary/5': isDragOver,
-        'border-surface-dim hover:border-primary/40': !isDragOver,
-      }"
-      @dragover="onDragOver"
-      @dragleave="onDragLeave"
-      @drop="onDrop"
-    >
-      <input
-        id="fileUpload"
-        type="file"
-        multiple
-        :accept="allowedTypes.join(',')"
-        class="absolute inset-0 cursor-pointer opacity-0"
-        @change="onFileInputChange"
-      />
-      <div class="pointer-events-none">
-        <i class="pi pi-cloud-upload mb-3 text-4xl text-tertiary"></i>
-        <p class="text-sm font-medium text-secondary">
-          {{ t('rfp.messages.dropFilesHere') }}
-        </p>
-        <p class="mt-1 text-xs text-tertiary">
-          {{ t('rfp.messages.allowedFileTypes') }}
-        </p>
-        <p class="text-xs text-tertiary">
-          {{ t('rfp.messages.maxFileSize') }}
-        </p>
-      </div>
-    </div>
-
-    <!-- Upload error -->
-    <p v-if="uploadError" class="text-sm text-danger">
-      <i class="pi pi-exclamation-circle me-1"></i>
-      {{ uploadError }}
-    </p>
-
-    <!-- Uploaded files list -->
-    <div v-if="rfpStore.formData.attachments.files.length > 0" class="space-y-2">
-      <h3 class="text-sm font-bold text-secondary">
-        {{ t('rfp.labels.uploadedFiles') }}
-        ({{ rfpStore.formData.attachments.files.length }})
-      </h3>
-
-      <div
-        v-for="file in rfpStore.formData.attachments.files"
-        :key="file.id"
-        class="flex items-center gap-3 rounded-lg border border-surface-dim bg-white p-3 transition-colors hover:bg-surface-muted/50"
+    <!-- Supplementary Documents Section (collapsible) -->
+    <div class="rounded-lg border border-surface-dim bg-white">
+      <button
+        type="button"
+        class="flex w-full items-center justify-between p-4 text-start transition-colors hover:bg-surface-muted/50"
+        @click="showSupplementaryUpload = !showSupplementaryUpload"
       >
-        <i :class="[getFileIcon(file.fileType), 'text-xl text-primary']"></i>
-        <div class="min-w-0 flex-1">
-          <p class="truncate text-sm font-medium text-secondary">{{ file.name }}</p>
-          <p class="text-xs text-tertiary">{{ formatFileSize(file.fileSize) }}</p>
+        <div class="flex items-center gap-2">
+          <i class="pi pi-paperclip text-sm text-primary"></i>
+          <span class="text-sm font-bold text-secondary">
+            {{ $t('rfp.labels.supplementaryDocuments', 'مستندات تكميلية للكراسة') }}
+          </span>
+          <span v-if="rfpStore.formData.attachments.files.length > 0" class="rounded-full bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary">
+            {{ rfpStore.formData.attachments.files.length }}
+          </span>
         </div>
-        <button
-          type="button"
-          class="flex h-8 w-8 items-center justify-center rounded-lg text-danger transition-colors hover:bg-danger/10"
-          :title="t('common.delete')"
-          @click="removeAttachment(file.id)"
+        <i
+          class="pi text-xs text-tertiary transition-transform"
+          :class="showSupplementaryUpload ? 'pi-chevron-up' : 'pi-chevron-down'"
+        ></i>
+      </button>
+
+      <div v-if="showSupplementaryUpload" class="border-t border-surface-dim p-4 space-y-4">
+        <p class="text-xs text-tertiary">
+          {{ $t('rfp.messages.supplementaryDocsHint', 'يمكنك إرفاق مستندات تكميلية خاصة بالكراسة مثل المخططات أو المواصفات الفنية التفصيلية') }}
+        </p>
+
+        <!-- Drop zone -->
+        <div
+          class="relative rounded-lg border-2 border-dashed p-8 text-center transition-colors"
+          :class="{
+            'border-primary bg-primary/5': isDragOver,
+            'border-surface-dim hover:border-primary/40': !isDragOver,
+          }"
+          @dragover="onDragOver"
+          @dragleave="onDragLeave"
+          @drop="onDrop"
         >
-          <i class="pi pi-trash text-sm"></i>
-        </button>
+          <input
+            id="fileUpload"
+            type="file"
+            multiple
+            :accept="allowedTypes.join(',')"
+            class="absolute inset-0 cursor-pointer opacity-0"
+            @change="onFileInputChange"
+          />
+          <div class="pointer-events-none">
+            <i class="pi pi-cloud-upload mb-3 text-4xl text-tertiary"></i>
+            <p class="text-sm font-medium text-secondary">
+              {{ t('rfp.messages.dropFilesHere') }}
+            </p>
+            <p class="mt-1 text-xs text-tertiary">
+              {{ t('rfp.messages.allowedFileTypes') }}
+            </p>
+            <p class="text-xs text-tertiary">
+              {{ t('rfp.messages.maxFileSize') }}
+            </p>
+          </div>
+        </div>
+
+        <!-- Upload error -->
+        <p v-if="uploadError" class="text-sm text-danger">
+          <i class="pi pi-exclamation-circle me-1"></i>
+          {{ uploadError }}
+        </p>
+
+        <!-- Uploaded files list -->
+        <div v-if="rfpStore.formData.attachments.files.length > 0" class="space-y-2">
+          <h3 class="text-sm font-bold text-secondary">
+            {{ t('rfp.labels.uploadedFiles') }}
+            ({{ rfpStore.formData.attachments.files.length }})
+          </h3>
+
+          <div
+            v-for="file in rfpStore.formData.attachments.files"
+            :key="file.id"
+            class="flex items-center gap-3 rounded-lg border border-surface-dim bg-white p-3 transition-colors hover:bg-surface-muted/50"
+          >
+            <i :class="[getFileIcon(file.fileType), 'text-xl text-primary']"></i>
+            <div class="min-w-0 flex-1">
+              <p class="truncate text-sm font-medium text-secondary">{{ file.name }}</p>
+              <p class="text-xs text-tertiary">{{ formatFileSize(file.fileSize) }}</p>
+            </div>
+            <button
+              type="button"
+              class="flex h-8 w-8 items-center justify-center rounded-lg text-danger transition-colors hover:bg-danger/10"
+              :title="t('common.delete')"
+              @click="removeAttachment(file.id)"
+            >
+              <i class="pi pi-trash text-sm"></i>
+            </button>
+          </div>
+        </div>
       </div>
     </div>
   </div>

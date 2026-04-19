@@ -91,6 +91,7 @@ const competitionTotalCount = ref(0)
 const showUploadDialog = ref(false)
 const isUploading = ref(false)
 const uploadError = ref('')
+const uploadSuccess = ref(false)
 const uploadFile = ref<File | null>(null)
 const uploadForm = ref({
   nameAr: '',
@@ -324,6 +325,8 @@ async function handleUpload(): Promise<void> {
 
     await httpPost('/v1/booklet-templates/upload', formData)
     showUploadDialog.value = false
+    uploadSuccess.value = true
+    setTimeout(() => { uploadSuccess.value = false }, 5000)
     await loadBookletTemplates()
   } catch (err: unknown) {
     uploadError.value = err instanceof Error ? err.message : (locale.value === 'ar' ? 'حدث خطأ أثناء رفع القالب' : 'Error uploading template')
@@ -478,6 +481,19 @@ onMounted(() => {
 
 <template>
   <div class="space-y-6">
+    <!-- Success Notification -->
+    <Transition name="fade">
+      <div
+        v-if="uploadSuccess"
+        class="rounded-lg border border-green-200 bg-green-50 p-4 text-green-800"
+      >
+        <div class="flex items-center gap-2">
+          <i class="pi pi-check-circle"></i>
+          <span>{{ locale === 'ar' ? 'تم رفع القالب بنجاح' : 'Template uploaded successfully' }}</span>
+        </div>
+      </div>
+    </Transition>
+
     <!-- ═══════════════════════════════════════════════════════════ -->
     <!--  Header                                                     -->
     <!-- ═══════════════════════════════════════════════════════════ -->

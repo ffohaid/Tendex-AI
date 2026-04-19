@@ -16,4 +16,8 @@ public sealed record UpdateCompetitionCommand(
     decimal? EstimatedBudget,
     DateTime? SubmissionDeadline,
     int? ProjectDurationDays,
+    DateTime? StartDate,
+    DateTime? EndDate,
+    string? Department,
+    string? FiscalYear,
     string ModifiedByUserId) : ICommand<CompetitionDetailDto>;

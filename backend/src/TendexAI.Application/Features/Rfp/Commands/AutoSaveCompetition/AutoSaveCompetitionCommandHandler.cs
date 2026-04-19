@@ -10,7 +10,7 @@ namespace TendexAI.Application.Features.Rfp.Commands.AutoSaveCompetition;
 /// <summary>
 /// Handles auto-saving a competition draft.
 /// Performs partial updates and records the auto-save timestamp.
-/// Only works on competitions in Draft status.
+/// Works on competitions in Draft, UnderPreparation, PendingApproval, or Approved status.
 /// </summary>
 public sealed class AutoSaveCompetitionCommandHandler
     : ICommandHandler<AutoSaveCompetitionCommand, AutoSaveResultDto>
@@ -34,8 +34,16 @@ public sealed class AutoSaveCompetitionCommandHandler
         if (competition is null)
             return Result.Failure<AutoSaveResultDto>("Competition not found.");
 
-        if (competition.Status != CompetitionStatus.Draft && competition.Status != CompetitionStatus.UnderPreparation)
-            return Result.Failure<AutoSaveResultDto>("Auto-save is only available for Draft or UnderPreparation competitions.");
+        var editableStatuses = new[]
+        {
+            CompetitionStatus.Draft,
+            CompetitionStatus.UnderPreparation,
+            CompetitionStatus.PendingApproval,
+            CompetitionStatus.Approved
+        };
+        if (!editableStatuses.Contains(competition.Status))
+            return Result.Failure<AutoSaveResultDto>(
+                $"Auto-save is only available for Draft, UnderPreparation, PendingApproval, or Approved competitions. Current status: {competition.Status}.");
 
         // Apply partial updates only for provided fields
         if (request.ProjectNameAr is not null || request.ProjectNameEn is not null)
@@ -48,6 +56,10 @@ public sealed class AutoSaveCompetitionCommandHandler
                 estimatedBudget: request.EstimatedBudget ?? competition.EstimatedBudget,
                 submissionDeadline: request.SubmissionDeadline ?? competition.SubmissionDeadline,
                 projectDurationDays: request.ProjectDurationDays ?? competition.ProjectDurationDays,
+                startDate: request.StartDate ?? competition.StartDate,
+                endDate: request.EndDate ?? competition.EndDate,
+                department: request.Department ?? competition.Department,
+                fiscalYear: request.FiscalYear ?? competition.FiscalYear,
                 modifiedBy: request.ModifiedByUserId);
 
             if (updateResult.IsFailure)

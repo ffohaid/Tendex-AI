@@ -130,7 +130,12 @@ function parseRecommendations(text: string) {
         const isRequired = (parts[3] || '').toLowerCase() === 'required'
 
         if (attachmentLabels[key]) {
+          // Known attachment type - add to recommendations
           recommendations.value.push({ key, label, reason, required: isRequired })
+        } else {
+          // Issue 17 Fix: Unknown attachment type from AI - add as additional suggestion
+          // instead of silently ignoring it
+          additionalSuggestions.value.push(`${label}: ${reason}`)
         }
       }
     }

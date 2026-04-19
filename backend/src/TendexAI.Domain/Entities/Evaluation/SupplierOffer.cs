@@ -80,6 +80,15 @@ public sealed class SupplierOffer : BaseEntity<Guid>
     /// <summary>User who opened the financial envelope.</summary>
     public string? FinancialEnvelopeOpenedBy { get; private set; }
 
+    /// <summary>Soft-delete flag.</summary>
+    public bool IsDeleted { get; private set; }
+
+    /// <summary>Timestamp when the offer was deleted.</summary>
+    public DateTime? DeletedAt { get; private set; }
+
+    /// <summary>User who deleted the offer.</summary>
+    public string? DeletedBy { get; private set; }
+
     // ═══════════════════════════════════════════════
     //  Domain Methods
     // ═══════════════════════════════════════════════
@@ -99,6 +108,26 @@ public sealed class SupplierOffer : BaseEntity<Guid>
         TechnicalTotalScore = totalScore;
         LastModifiedAt = DateTime.UtcNow;
         LastModifiedBy = modifiedBy;
+        return Result.Success();
+    }
+
+    /// <summary>
+    /// Marks the offer as deleted (soft-delete).
+    /// Only allowed if evaluation has not started.
+    /// </summary>
+    public Result MarkAsDeleted(string deletedBy)
+    {
+        if (TechnicalResult != OfferTechnicalResult.Pending)
+            return Result.Failure("لا يمكن حذف العرض بعد بدء التقييم الفني.");
+
+        if (IsDeleted)
+            return Result.Failure("العرض محذوف بالفعل.");
+
+        IsDeleted = true;
+        DeletedAt = DateTime.UtcNow;
+        DeletedBy = deletedBy;
+        LastModifiedAt = DateTime.UtcNow;
+        LastModifiedBy = deletedBy;
         return Result.Success();
     }
 

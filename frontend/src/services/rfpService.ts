@@ -135,6 +135,10 @@ interface CreateCompetitionRequest {
   estimatedBudget: number | null
   submissionDeadline: string | null
   projectDurationDays: number | null
+  startDate: string | null
+  endDate: string | null
+  department: string | null
+  fiscalYear: string | null
   sourceTemplateId: string | null
   sourceCompetitionId: string | null
 }
@@ -150,6 +154,10 @@ function mapToCreateRequest(data: Partial<RfpFormData>): CreateCompetitionReques
     estimatedBudget: basic?.estimatedValue || null,
     submissionDeadline: basic?.submissionDeadline || null,
     projectDurationDays: calculateDurationDays(basic?.startDate, basic?.endDate),
+    startDate: basic?.startDate || null,
+    endDate: basic?.endDate || null,
+    department: basic?.department || null,
+    fiscalYear: basic?.fiscalYear || null,
     sourceTemplateId: null,
     sourceCompetitionId: null,
   }
@@ -167,6 +175,10 @@ interface AutoSaveCompetitionRequest {
   estimatedBudget: number | null
   submissionDeadline: string | null
   projectDurationDays: number | null
+  startDate: string | null
+  endDate: string | null
+  department: string | null
+  fiscalYear: string | null
   currentWizardStep: number | null
 }
 
@@ -180,6 +192,10 @@ function mapToAutoSaveRequest(data: Partial<RfpFormData>): AutoSaveCompetitionRe
     estimatedBudget: basic?.estimatedValue || null,
     submissionDeadline: basic?.submissionDeadline || null,
     projectDurationDays: calculateDurationDays(basic?.startDate, basic?.endDate),
+    startDate: basic?.startDate || null,
+    endDate: basic?.endDate || null,
+    department: basic?.department || null,
+    fiscalYear: basic?.fiscalYear || null,
     currentWizardStep: data.currentStep || null,
   }
 }
@@ -217,6 +233,21 @@ const statusIntToString: Record<number, string> = {
   90: 'cancelled',
   91: 'cancelled',
   92: 'cancelled',
+}
+
+/** Map frontend status strings back to backend enum values for filtering */
+const statusStringToInt: Record<string, number> = {
+  'draft': 0,
+  'pending_approval': 2,
+  'approved': 3,
+  'published': 4,
+  'receiving_offers': 6,
+  'technical_evaluation': 8,
+  'financial_evaluation': 10,
+  'awarding': 12,
+  'contracting': 14,
+  'completed': 16,
+  'cancelled': 91,
 }
 
 const creationMethodIntToString: Record<number, RfpCreationMethod> = {
@@ -373,17 +404,12 @@ function mapFromBackendResponse(dto: Record<string, unknown>): RfpFormData {
   if (attachments.length > 0) completedSteps++
   const completionPercentage = Math.round((completedSteps / 5) * 100)
 
-  // Calculate dates from projectDurationDays
-  const durationDays = (dto.projectDurationDays as number) || null
+  // Read dates and additional fields from backend
   const submissionDeadline = (dto.submissionDeadline as string) || ''
-  let startDate = ''
-  let endDate = ''
-  if (submissionDeadline && durationDays) {
-    const deadline = new Date(submissionDeadline)
-    startDate = submissionDeadline
-    const end = new Date(deadline.getTime() + durationDays * 24 * 60 * 60 * 1000)
-    endDate = end.toISOString().split('T')[0]
-  }
+  const startDate = dto.startDate ? (dto.startDate as string).split('T')[0] : ''
+  const endDate = dto.endDate ? (dto.endDate as string).split('T')[0] : ''
+  const department = (dto.department as string) || ''
+  const fiscalYear = (dto.fiscalYear as string) || ''
 
   return {
     id: String(dto.id || ''),
@@ -397,8 +423,8 @@ function mapFromBackendResponse(dto: Record<string, unknown>): RfpFormData {
       endDate,
       submissionDeadline: submissionDeadline ? submissionDeadline.split('T')[0] : '',
       referenceNumber: (dto.referenceNumber as string) || '',
-      department: '',
-      fiscalYear: '',
+      department,
+      fiscalYear,
     },
     settings: {
       evaluationMethod: evaluationMethod as RfpFormData['settings']['evaluationMethod'],
@@ -489,7 +515,7 @@ export async function fetchRfpList(params: {
       params: {
         page: params.page || 1,
         pageSize: params.pageSize || 10,
-        status: params.status,
+        status: params.status ? statusStringToInt[params.status] : undefined,
         search: params.search,
       },
     })
@@ -813,17 +839,21 @@ export async function saveAllBoqItems(
   clearExisting: boolean = false,
 ): Promise<ApiResponse<void>> {
   try {
-    // Filter out items that are already saved (have valid UUID)
-    const newItems = items.filter(
-      (item) => !item.id || !item.id.match(/^[0-9a-f]{8}-/),
-    )
-
-    // If clearExisting is true, send all items (even saved ones) for re-creation
-    const itemsToSend = clearExisting ? items : newItems
+    /**
+     * Issue 24 Fix: Always send all items with clearExisting=true.
+     * Previously, items with valid UUIDs were filtered out, causing
+     * the BOQ table to appear empty after save because existing items
+     * were skipped and no new items were sent. By always clearing and
+     * re-creating, we ensure the full BOQ state is persisted.
+     */
+    const itemsToSend = items
 
     if (itemsToSend.length === 0) {
       return { data: undefined as unknown as void, success: true, message: '', errors: [] }
     }
+
+    // Always clear existing to ensure full sync
+    clearExisting = true
 
     const batchPayload = {
       items: itemsToSend.map((item, index) => ({
@@ -938,6 +968,10 @@ export async function createRfpFromExtraction(
     estimatedBudget: data.estimatedBudget,
     submissionDeadline: null,
     projectDurationDays: data.projectDurationDays,
+    startDate: null,
+    endDate: null,
+    department: null,
+    fiscalYear: null,
     sourceTemplateId: null,
     sourceCompetitionId: null,
   }

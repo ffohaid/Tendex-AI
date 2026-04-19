@@ -73,10 +73,31 @@ async function handleGenerate() {
       result.value = response
       showPreview.value = true
     } else {
-      error.value = response.errorMessage || t('ai.errors.boqGenerationFailed')
+      // Issue 18 Fix: Provide descriptive error messages based on the failure reason
+      const backendError = response.errorMessage || ''
+      if (backendError) {
+        error.value = backendError
+      } else if (!response.boq?.items?.length && response.isSuccess) {
+        error.value = t('ai.errors.boqNoItemsGenerated', 'لم يتمكن الذكاء الاصطناعي من توليد عناصر لجدول الكميات. يرجى التأكد من إدخال وصف المشروع وأقسام الكراسة أولاً.')
+      } else {
+        error.value = t('ai.errors.boqGenerationFailed', 'فشل في توليد جدول الكميات. يرجى المحاولة مرة أخرى أو التواصل مع الدعم الفني.')
+      }
     }
   } catch (err: any) {
-    error.value = err?.response?.data?.errorMessage || t('ai.errors.boqGenerationFailed')
+    // Issue 18 Fix: Provide more descriptive error messages for different failure scenarios
+    const serverError = err?.response?.data?.errorMessage || err?.response?.data?.error || ''
+    const statusCode = err?.response?.status
+    if (statusCode === 408 || err?.code === 'ECONNABORTED') {
+      error.value = t('ai.errors.boqTimeout', 'انتهت مهلة الانتظار. يرجى المحاولة مرة أخرى - قد يستغرق التوليد وقتاً أطول للمشاريع الكبيرة.')
+    } else if (statusCode === 503 || statusCode === 502) {
+      error.value = t('ai.errors.boqServiceUnavailable', 'خدمة الذكاء الاصطناعي غير متاحة حالياً. يرجى المحاولة لاحقاً.')
+    } else if (statusCode === 401 || statusCode === 403) {
+      error.value = t('ai.errors.boqUnauthorized', 'ليس لديك صلاحية استخدام خدمة الذكاء الاصطناعي. يرجى التواصل مع مدير النظام.')
+    } else if (serverError) {
+      error.value = serverError
+    } else {
+      error.value = t('ai.errors.boqGenerationFailed', 'فشل في توليد جدول الكميات. يرجى المحاولة مرة أخرى أو التواصل مع الدعم الفني.')
+    }
   } finally {
     isGenerating.value = false
   }

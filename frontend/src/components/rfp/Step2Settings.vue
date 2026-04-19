@@ -86,6 +86,12 @@ function removeCriterion(id: string) {
 }
 
 function updateCriterionField(id: string, field: string, value: string | number) {
+  // Issue 27 Fix: Enforce max 100 for weight field
+  if (field === 'weight') {
+    const numVal = Number(value)
+    if (numVal > 100) value = 100
+    if (numVal < 0) value = 0
+  }
   rfpStore.updateCriterion(id, { [field]: value })
 }
 

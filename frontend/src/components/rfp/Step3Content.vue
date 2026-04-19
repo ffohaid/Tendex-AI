@@ -173,7 +173,6 @@ defineExpose({
       </button>
 
       <button
-        v-if="rfpStore.formData.content.sections.length === 0"
         type="button"
         class="flex items-center gap-2 rounded-lg border border-primary bg-white px-4 py-2 text-sm font-medium text-primary transition-colors hover:bg-primary/5"
         @click="addDefaultSections"

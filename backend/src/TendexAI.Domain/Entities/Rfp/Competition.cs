@@ -98,6 +98,18 @@ public sealed class Competition : AggregateRoot<Guid>
     /// <summary>Duration of the project in days.</summary>
     public int? ProjectDurationDays { get; private set; }
 
+    /// <summary>Project start date.</summary>
+    public DateTime? StartDate { get; private set; }
+
+    /// <summary>Project end date.</summary>
+    public DateTime? EndDate { get; private set; }
+
+    /// <summary>Department / management name responsible for this competition.</summary>
+    public string? Department { get; private set; }
+
+    /// <summary>Fiscal year for this competition (e.g., "2025-2026").</summary>
+    public string? FiscalYear { get; private set; }
+
     /// <summary>Minimum passing score for technical evaluation (percentage).</summary>
     public decimal? TechnicalPassingScore { get; private set; }
 
@@ -301,10 +313,14 @@ public sealed class Competition : AggregateRoot<Guid>
         decimal? estimatedBudget,
         DateTime? submissionDeadline,
         int? projectDurationDays,
+        DateTime? startDate,
+        DateTime? endDate,
+        string? department,
+        string? fiscalYear,
         string modifiedBy)
     {
-        if (Status != CompetitionStatus.Draft && Status != CompetitionStatus.UnderPreparation)
-            return Result.Failure("لا يمكن تحديث المعلومات الأساسية: المنافسة ليست في حالة مسودة أو قيد الإعداد.");
+        if (Status != CompetitionStatus.Draft && Status != CompetitionStatus.UnderPreparation && Status != CompetitionStatus.PendingApproval && Status != CompetitionStatus.Rejected)
+            return Result.Failure("لا يمكن تحديث المعلومات الأساسية: المنافسة ليست في حالة مسودة أو قيد الإعداد أو بانتظار الاعتماد.");
 
         ProjectNameAr = projectNameAr;
         ProjectNameEn = projectNameEn;
@@ -313,6 +329,10 @@ public sealed class Competition : AggregateRoot<Guid>
         EstimatedBudget = estimatedBudget;
         SubmissionDeadline = submissionDeadline;
         ProjectDurationDays = projectDurationDays;
+        StartDate = startDate;
+        EndDate = endDate;
+        Department = department;
+        FiscalYear = fiscalYear;
         LastModifiedAt = DateTime.UtcNow;
         LastModifiedBy = modifiedBy;
         Version++;
@@ -329,8 +349,8 @@ public sealed class Competition : AggregateRoot<Guid>
         decimal? financialWeight,
         string modifiedBy)
     {
-        if (Status != CompetitionStatus.Draft && Status != CompetitionStatus.UnderPreparation)
-            return Result.Failure("لا يمكن تحديث إعدادات التقييم: المنافسة ليست في حالة مسودة أو قيد الإعداد.");
+        if (Status != CompetitionStatus.Draft && Status != CompetitionStatus.UnderPreparation && Status != CompetitionStatus.PendingApproval && Status != CompetitionStatus.Rejected)
+            return Result.Failure("لا يمكن تحديث إعدادات التقييم: المنافسة ليست في حالة مسودة أو قيد الإعداد أو بانتظار الاعتماد.");
 
         if (technicalWeight.HasValue && financialWeight.HasValue &&
             technicalWeight.Value + financialWeight.Value != 100m)
@@ -379,7 +399,7 @@ public sealed class Competition : AggregateRoot<Guid>
 
     public Result AddSection(RfpSection section)
     {
-        if (Status != CompetitionStatus.Draft && Status != CompetitionStatus.UnderPreparation)
+        if (Status != CompetitionStatus.Draft && Status != CompetitionStatus.UnderPreparation && Status != CompetitionStatus.PendingApproval && Status != CompetitionStatus.Rejected)
             return Result.Failure("لا يمكن إضافة أقسام: المنافسة ليست في حالة قابلة للتعديل.");
 
         section.SetSortOrder(_sections.Count + 1);
@@ -392,7 +412,7 @@ public sealed class Competition : AggregateRoot<Guid>
 
     public Result RemoveSection(Guid sectionId)
     {
-        if (Status != CompetitionStatus.Draft && Status != CompetitionStatus.UnderPreparation)
+        if (Status != CompetitionStatus.Draft && Status != CompetitionStatus.UnderPreparation && Status != CompetitionStatus.PendingApproval && Status != CompetitionStatus.Rejected)
             return Result.Failure("لا يمكن حذف أقسام: المنافسة ليست في حالة قابلة للتعديل.");
 
         var section = _sections.FirstOrDefault(s => s.Id == sectionId);
@@ -410,7 +430,7 @@ public sealed class Competition : AggregateRoot<Guid>
 
     public Result AddBoqItem(BoqItem item)
     {
-        if (Status != CompetitionStatus.Draft && Status != CompetitionStatus.UnderPreparation)
+        if (Status != CompetitionStatus.Draft && Status != CompetitionStatus.UnderPreparation && Status != CompetitionStatus.PendingApproval && Status != CompetitionStatus.Rejected)
             return Result.Failure("لا يمكن إضافة بنود جدول الكميات: المنافسة ليست في حالة قابلة للتعديل.");
 
         _boqItems.Add(item);
@@ -419,7 +439,7 @@ public sealed class Competition : AggregateRoot<Guid>
 
     public Result RemoveBoqItem(Guid itemId)
     {
-        if (Status != CompetitionStatus.Draft && Status != CompetitionStatus.UnderPreparation)
+        if (Status != CompetitionStatus.Draft && Status != CompetitionStatus.UnderPreparation && Status != CompetitionStatus.PendingApproval && Status != CompetitionStatus.Rejected)
             return Result.Failure("لا يمكن حذف بنود جدول الكميات: المنافسة ليست في حالة قابلة للتعديل.");
 
         var item = _boqItems.FirstOrDefault(i => i.Id == itemId);
@@ -436,7 +456,7 @@ public sealed class Competition : AggregateRoot<Guid>
 
     public Result AddEvaluationCriterion(EvaluationCriterion criterion)
     {
-        if (Status != CompetitionStatus.Draft && Status != CompetitionStatus.UnderPreparation)
+        if (Status != CompetitionStatus.Draft && Status != CompetitionStatus.UnderPreparation && Status != CompetitionStatus.PendingApproval && Status != CompetitionStatus.Rejected)
             return Result.Failure("لا يمكن إضافة معايير التقييم: المنافسة ليست في حالة قابلة للتعديل.");
 
         _evaluationCriteria.Add(criterion);
@@ -445,7 +465,7 @@ public sealed class Competition : AggregateRoot<Guid>
 
     public Result RemoveEvaluationCriterion(Guid criterionId)
     {
-        if (Status != CompetitionStatus.Draft && Status != CompetitionStatus.UnderPreparation)
+        if (Status != CompetitionStatus.Draft && Status != CompetitionStatus.UnderPreparation && Status != CompetitionStatus.PendingApproval && Status != CompetitionStatus.Rejected)
             return Result.Failure("لا يمكن حذف معايير التقييم: المنافسة ليست في حالة قابلة للتعديل.");
 
         var criterion = _evaluationCriteria.FirstOrDefault(c => c.Id == criterionId);
@@ -462,7 +482,7 @@ public sealed class Competition : AggregateRoot<Guid>
 
     public Result AddAttachment(RfpAttachment attachment)
     {
-        if (Status != CompetitionStatus.Draft && Status != CompetitionStatus.UnderPreparation)
+        if (Status != CompetitionStatus.Draft && Status != CompetitionStatus.UnderPreparation && Status != CompetitionStatus.PendingApproval && Status != CompetitionStatus.Rejected)
             return Result.Failure("لا يمكن إضافة مرفقات: المنافسة ليست في حالة قابلة للتعديل.");
 
         _attachments.Add(attachment);
@@ -471,7 +491,7 @@ public sealed class Competition : AggregateRoot<Guid>
 
     public Result RemoveAttachment(Guid attachmentId)
     {
-        if (Status != CompetitionStatus.Draft && Status != CompetitionStatus.UnderPreparation)
+        if (Status != CompetitionStatus.Draft && Status != CompetitionStatus.UnderPreparation && Status != CompetitionStatus.PendingApproval && Status != CompetitionStatus.Rejected)
             return Result.Failure("لا يمكن حذف مرفقات: المنافسة ليست في حالة قابلة للتعديل.");
 
         var attachment = _attachments.FirstOrDefault(a => a.Id == attachmentId);

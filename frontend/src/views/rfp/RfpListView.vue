@@ -7,7 +7,7 @@
  */
 import { ref, onMounted, computed, watch, onUnmounted } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { useRouter } from 'vue-router'
+import { useRouter, useRoute } from 'vue-router'
 import { fetchRfpList, deleteRfp } from '@/services/rfpService'
 import { formatCurrency } from '@/utils/numbers'
 import type { RfpListItem, RfpStatus } from '@/types/rfp'
@@ -15,11 +15,13 @@ import { useAuthStore } from '@/stores/auth'
 
 const { t } = useI18n()
 const router = useRouter()
+const route = useRoute()
 const authStore = useAuthStore()
 
 const canCreateRfp = computed(() => authStore.hasPermission('rfp.create'))
 const canEditRfp = computed(() => authStore.hasPermission('rfp.edit'))
 const canDeleteRfp = computed(() => authStore.hasPermission('rfp.delete'))
+const canExportRfp = computed(() => authStore.hasPermission('rfp.export'))
 
 /** State */
 const rfpItems = ref<RfpListItem[]>([])
@@ -108,6 +110,15 @@ function goToEdit(id: string) {
   router.push({ name: 'rfp-edit', params: { id } })
 }
 
+/**
+ * Issue 22 Fix: Export/download booklet as PDF.
+ * Opens the RFP detail in a new tab for print/PDF export.
+ * A dedicated PDF generation endpoint will be added in a future iteration.
+ */
+function exportBooklet(id: string) {
+  router.push({ name: 'rfp-export', params: { id } })
+}
+
 /** Format date */
 function formatDate(dateStr: string): string {
   if (!dateStr) return '-'
@@ -147,6 +158,11 @@ watch(currentPage, () => {
 })
 
 onMounted(() => {
+  // Read search query from URL (from header search bar)
+  const urlSearch = route.query.search as string
+  if (urlSearch) {
+    searchQuery.value = urlSearch
+  }
   loadRfpList()
 })
 </script>
@@ -305,6 +321,15 @@ onMounted(() => {
                       @click="goToEdit(item.id)"
                     >
                       <i class="pi pi-pencil text-sm text-primary"></i>
+                    </button>
+                    <button
+                      v-if="canExportRfp"
+                      type="button"
+                      class="flex h-8 w-8 items-center justify-center rounded-lg transition-colors hover:bg-surface-muted"
+                      :title="$t('rfp.actions.exportPdf', 'تحميل الكراسة')"
+                      @click="exportBooklet(item.id)"
+                    >
+                      <i class="pi pi-download text-sm text-info"></i>
                     </button>
                     <button
                       v-if="canDeleteRfp && item.status === 'draft'"

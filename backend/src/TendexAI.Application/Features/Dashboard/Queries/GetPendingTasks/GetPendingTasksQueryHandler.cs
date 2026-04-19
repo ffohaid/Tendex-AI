@@ -308,18 +308,34 @@ public sealed class GetPendingTasksQueryHandler
     /// </summary>
     private static SystemRole? MapRoleNameToSystemRole(string roleNameEn)
     {
-        return roleNameEn switch
+        // Case-insensitive matching with multiple name variants
+        var normalized = roleNameEn.Trim().ToLowerInvariant();
+        return normalized switch
         {
-            "Tenant Primary Admin" => SystemRole.TenantPrimaryAdmin,
-            "Procurement Manager" => SystemRole.ProcurementManager,
-            "Financial Controller" => SystemRole.FinancialController,
-            "Sector Representative" => SystemRole.SectorRepresentative,
-            "Committee Chair" => SystemRole.CommitteeChair,
-            "Committee Member" => SystemRole.CommitteeMember,
-            "Member" => SystemRole.Member,
-            "Viewer" => SystemRole.Viewer,
-            _ => null
+            "tenant primary admin" or "tenantprimaryadmin" or "primary admin" => SystemRole.TenantPrimaryAdmin,
+            "procurement manager" or "procurementmanager" => SystemRole.ProcurementManager,
+            "financial controller" or "financialcontroller" => SystemRole.FinancialController,
+            "sector representative" or "sectorrepresentative" => SystemRole.SectorRepresentative,
+            "committee chair" or "committeechair" or "chair" => SystemRole.CommitteeChair,
+            "committee member" or "committeemember" => SystemRole.CommitteeMember,
+            "member" => SystemRole.Member,
+            "viewer" or "readonly" => SystemRole.Viewer,
+            _ => TryParseSystemRole(normalized)
         };
+    }
+
+    /// <summary>
+    /// Fallback: try to parse the role name as a SystemRole enum value.
+    /// </summary>
+    private static SystemRole? TryParseSystemRole(string normalized)
+    {
+        if (Enum.TryParse<SystemRole>(normalized, ignoreCase: true, out var role))
+            return role;
+        // Try removing spaces
+        var noSpaces = normalized.Replace(" ", "");
+        if (Enum.TryParse<SystemRole>(noSpaces, ignoreCase: true, out var role2))
+            return role2;
+        return null;
     }
 
     // ═══════════════════════════════════════════════════════════════

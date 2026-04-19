@@ -220,6 +220,7 @@ onMounted(loadData)
           <input
             v-model="newOffer.submissionDate"
             type="date"
+            :min="new Date().toISOString().split('T')[0]"
             class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
           />
         </div>

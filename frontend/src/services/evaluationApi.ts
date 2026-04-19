@@ -53,6 +53,7 @@ interface BackendCompetitionItem {
   sectionsCount: number
   boqItemsCount: number
   attachmentsCount: number
+  offerCount: number
   createdAt: string
   createdBy: string | null
 }
@@ -157,7 +158,7 @@ export async function fetchCompetitionEvaluations(): Promise<CompetitionEvaluati
       stage,
       technicalStatus: techStatus,
       financialStatus: finStatus,
-      vendorCount: 0,
+      vendorCount: item.offerCount ?? 0,
       passedVendorCount: 0,
       estimatedBudget: item.estimatedBudget ?? 0,
       deadlineGregorian: item.submissionDeadline ?? '',

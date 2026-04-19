@@ -40,6 +40,10 @@ public sealed class UpdateCompetitionCommandHandler
             estimatedBudget: request.EstimatedBudget,
             submissionDeadline: request.SubmissionDeadline,
             projectDurationDays: request.ProjectDurationDays,
+            startDate: request.StartDate,
+            endDate: request.EndDate,
+            department: request.Department,
+            fiscalYear: request.FiscalYear,
             modifiedBy: request.ModifiedByUserId);
 
         if (result.IsFailure)
