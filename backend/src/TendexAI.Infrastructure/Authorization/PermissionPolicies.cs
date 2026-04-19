@@ -15,6 +15,7 @@ public static class PermissionPolicies
     public const string UsersEdit = "Permission:users.edit";
     public const string UsersDelete = "Permission:users.delete";
     public const string UsersManageRoles = "Permission:users.manage_roles";
+    public const string UsersResetPassword = "Permission:users.reset_password";
     public const string UsersImpersonate = "Permission:users.impersonate";
 
     // ═══════════════════════════════════════════════════════════════

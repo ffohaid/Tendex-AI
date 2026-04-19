@@ -23,8 +23,9 @@ import {
   fetchUsers, fetchUserById, updateUser, toggleUserStatus,
   assignRole, removeRole, fetchRoles, fetchInvitations,
   sendInvitation, resendInvitation, revokeInvitation,
+  adminResetPassword,
 } from '@/services/userManagementService'
-import type { UserDto, RoleDto, InvitationDto, SendInvitationRequest } from '@/types/userManagement'
+import type { UserDto, RoleDto, InvitationDto, SendInvitationRequest, AdminResetPasswordRequest } from '@/types/userManagement'
 import { useFormatters } from '@/composables/useFormatters'
 import { useAuthStore } from '@/stores/auth'
 
@@ -34,6 +35,7 @@ const authStore = useAuthStore()
 
 const canCreateUser = computed(() => authStore.hasPermission('users.create'))
 const canEditUser = computed(() => authStore.hasPermission('users.edit'))
+const canResetPassword = computed(() => authStore.hasPermission('users.reset_password'))
 // const canDeleteUser = computed(() => authStore.hasPermission('users.delete'))
 
 /* State */
@@ -66,6 +68,7 @@ const showInviteDialog = ref(false)
 const showEditDialog = ref(false)
 const showRoleDialog = ref(false)
 const showUserDetailDialog = ref(false)
+const showResetPasswordDialog = ref(false)
 const isSubmitting = ref(false)
 const selectedUser = ref<UserDto | null>(null)
 
@@ -75,6 +78,15 @@ const inviteForm = ref<SendInvitationRequest>({
 })
 const editForm = ref({ firstName: '', lastName: '', phoneNumber: '' })
 const selectedRoleId = ref('')
+const resetPasswordForm = ref<AdminResetPasswordRequest>({
+  newPassword: '',
+  confirmPassword: '',
+  notifyUser: true,
+  forceChangeOnLogin: true,
+})
+const showNewPassword = ref(false)
+const showConfirmPassword = ref(false)
+const passwordStrength = ref<{ level: string; label: string; color: string }>({ level: '', label: '', color: '' })
 
 /* Computed */
 const totalPages = computed(() => Math.ceil(totalCount.value / pageSize.value) || 1)
@@ -258,6 +270,72 @@ async function handleRevokeInvitation(invitationId: string) {
     const detail = e?.response?.data?.detail || e?.response?.data?.title || e?.message || ''
     error.value = detail ? `${t('settings.users.errors.revokeFailed')}: ${detail}` : t('settings.users.errors.revokeFailed')
   }
+}
+
+/* Password Reset Handlers */
+function checkPasswordStrength(password: string) {
+  if (!password) { passwordStrength.value = { level: '', label: '', color: '' }; return }
+  let score = 0
+  if (password.length >= 8) score++
+  if (password.length >= 12) score++
+  if (/[A-Z]/.test(password)) score++
+  if (/[a-z]/.test(password)) score++
+  if (/[0-9]/.test(password)) score++
+  if (/[^A-Za-z0-9]/.test(password)) score++
+  if (score <= 2) passwordStrength.value = { level: 'weak', label: t('settings.users.resetPassword.strengthWeak'), color: 'bg-red-500' }
+  else if (score <= 4) passwordStrength.value = { level: 'medium', label: t('settings.users.resetPassword.strengthMedium'), color: 'bg-amber-500' }
+  else passwordStrength.value = { level: 'strong', label: t('settings.users.resetPassword.strengthStrong'), color: 'bg-green-500' }
+}
+
+function openResetPasswordDialog(user: UserDto) {
+  selectedUser.value = user
+  resetPasswordForm.value = { newPassword: '', confirmPassword: '', notifyUser: true, forceChangeOnLogin: true }
+  showNewPassword.value = false
+  showConfirmPassword.value = false
+  passwordStrength.value = { level: '', label: '', color: '' }
+  showResetPasswordDialog.value = true
+}
+
+function generateRandomPassword() {
+  const upper = 'ABCDEFGHJKLMNPQRSTUVWXYZ'
+  const lower = 'abcdefghjkmnpqrstuvwxyz'
+  const digits = '23456789'
+  const special = '@#$%&*!'
+  const all = upper + lower + digits + special
+  let pwd = ''
+  pwd += upper[Math.floor(Math.random() * upper.length)]
+  pwd += lower[Math.floor(Math.random() * lower.length)]
+  pwd += digits[Math.floor(Math.random() * digits.length)]
+  pwd += special[Math.floor(Math.random() * special.length)]
+  for (let i = 0; i < 8; i++) pwd += all[Math.floor(Math.random() * all.length)]
+  pwd = pwd.split('').sort(() => Math.random() - 0.5).join('')
+  resetPasswordForm.value.newPassword = pwd
+  resetPasswordForm.value.confirmPassword = pwd
+  showNewPassword.value = true
+  showConfirmPassword.value = true
+  checkPasswordStrength(pwd)
+}
+
+async function handleResetPassword() {
+  if (!selectedUser.value) return
+  if (resetPasswordForm.value.newPassword !== resetPasswordForm.value.confirmPassword) {
+    error.value = t('settings.users.resetPassword.passwordMismatch')
+    return
+  }
+  if (resetPasswordForm.value.newPassword.length < 8) {
+    error.value = t('settings.users.resetPassword.passwordTooShort')
+    return
+  }
+  isSubmitting.value = true; error.value = ''
+  try {
+    await adminResetPassword(selectedUser.value.id, resetPasswordForm.value)
+    showResetPasswordDialog.value = false
+    successMessage.value = t('settings.users.resetPassword.success')
+    setTimeout(() => { successMessage.value = '' }, 5000)
+  } catch (e: any) {
+    const detail = e?.response?.data?.detail || e?.response?.data?.title || e?.message || ''
+    error.value = detail ? `${t('settings.users.resetPassword.failed')}: ${detail}` : t('settings.users.resetPassword.failed')
+  } finally { isSubmitting.value = false }
 }
 
 /* Form Helpers */
@@ -449,6 +527,7 @@ onMounted(() => { loadUsers(); loadRoles() })
                   <div class="flex items-center justify-center gap-1">
                     <button v-if="canEditUser" class="rounded-lg p-1.5 text-tertiary transition-colors hover:bg-surface-ground hover:text-primary" :title="t('settings.users.editDialogTitle')" @click="openEditDialog(user)"><i class="pi pi-pencil text-sm"></i></button>
                     <button v-if="canEditUser" class="rounded-lg p-1.5 text-tertiary transition-colors hover:bg-surface-ground hover:text-primary" :title="t('settings.users.manageRoles')" @click="openRoleDialog(user)"><i class="pi pi-shield text-sm"></i></button>
+                    <button v-if="canResetPassword" class="rounded-lg p-1.5 text-tertiary transition-colors hover:bg-amber-50 hover:text-amber-600" :title="t('settings.users.resetPassword.title')" @click="openResetPasswordDialog(user)"><i class="pi pi-key text-sm"></i></button>
                     <button v-if="canEditUser" :class="['rounded-lg p-1.5 transition-colors', user.isActive ? 'text-tertiary hover:bg-red-50 hover:text-red-600' : 'text-tertiary hover:bg-green-50 hover:text-green-600']" :title="user.isActive ? t('settings.users.deactivate') : t('settings.users.activate')" @click="handleToggleStatus(user)">
                       <i :class="['pi text-sm', user.isActive ? 'pi-ban' : 'pi-check-circle']"></i>
                     </button>
@@ -567,6 +646,7 @@ onMounted(() => { loadUsers(); loadRoles() })
             <div class="flex gap-2 border-t border-surface-dim pt-4">
               <button v-if="canEditUser" class="flex items-center gap-2 rounded-lg border border-surface-dim px-4 py-2 text-sm font-medium text-secondary transition-colors hover:bg-surface-ground" @click="showUserDetailDialog = false; openEditDialog(selectedUser!)"><i class="pi pi-pencil text-xs"></i>{{ t('settings.users.editDialogTitle') }}</button>
               <button v-if="canEditUser" class="flex items-center gap-2 rounded-lg border border-surface-dim px-4 py-2 text-sm font-medium text-secondary transition-colors hover:bg-surface-ground" @click="showUserDetailDialog = false; openRoleDialog(selectedUser!)"><i class="pi pi-shield text-xs"></i>{{ t('settings.users.manageRoles') }}</button>
+              <button v-if="canResetPassword" class="flex items-center gap-2 rounded-lg border border-amber-200 bg-amber-50 px-4 py-2 text-sm font-medium text-amber-700 transition-colors hover:bg-amber-100" @click="showUserDetailDialog = false; openResetPasswordDialog(selectedUser!)"><i class="pi pi-key text-xs"></i>{{ t('settings.users.resetPassword.title') }}</button>
             </div>
           </div>
         </div>
@@ -732,6 +812,118 @@ onMounted(() => { loadUsers(); loadRoles() })
               </div>
             </div>
           </div>
+        </div>
+      </div>
+    </Teleport>
+
+    <!-- RESET PASSWORD DIALOG -->
+    <Teleport to="body">
+      <div v-if="showResetPasswordDialog && selectedUser" class="fixed inset-0 z-50 flex items-center justify-center bg-black/40" @click.self="showResetPasswordDialog = false">
+        <div class="w-full max-w-lg rounded-xl bg-white shadow-xl">
+          <div class="flex items-center justify-between border-b border-surface-dim px-6 py-4">
+            <div class="flex items-center gap-2">
+              <div class="flex h-8 w-8 items-center justify-center rounded-lg bg-amber-50">
+                <i class="pi pi-key text-amber-600"></i>
+              </div>
+              <h3 class="text-lg font-semibold text-secondary">{{ t('settings.users.resetPassword.title') }}</h3>
+            </div>
+            <button class="rounded-lg p-1 text-tertiary hover:bg-surface-ground" @click="showResetPasswordDialog = false"><i class="pi pi-times"></i></button>
+          </div>
+          <form class="p-6" @submit.prevent="handleResetPassword">
+            <!-- User info header -->
+            <div class="mb-5 flex items-center gap-3 rounded-lg border border-surface-dim bg-surface-ground p-3">
+              <div class="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10 text-sm font-semibold text-primary">{{ selectedUser.firstName?.charAt(0) || '' }}{{ selectedUser.lastName?.charAt(0) || '' }}</div>
+              <div>
+                <p class="text-sm font-medium text-secondary">{{ selectedUser.firstName }} {{ selectedUser.lastName }}</p>
+                <p class="text-xs text-tertiary" dir="ltr">{{ selectedUser.email }}</p>
+              </div>
+            </div>
+
+            <!-- Warning -->
+            <div class="mb-5 flex items-start gap-2 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-700">
+              <i class="pi pi-exclamation-triangle mt-0.5 text-sm"></i>
+              <p>{{ t('settings.users.resetPassword.warning') }}</p>
+            </div>
+
+            <div class="space-y-4">
+              <!-- New Password -->
+              <div>
+                <label class="mb-1 block text-sm font-medium text-secondary">{{ t('settings.users.resetPassword.newPassword') }} *</label>
+                <div class="relative">
+                  <input v-model="resetPasswordForm.newPassword" :type="showNewPassword ? 'text' : 'password'" required minlength="8" dir="ltr" class="w-full rounded-lg border border-surface-dim bg-surface-ground py-2.5 ps-4 pe-10 text-sm text-secondary focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary" :placeholder="t('settings.users.resetPassword.newPasswordPlaceholder')" @input="checkPasswordStrength(resetPasswordForm.newPassword)" />
+                  <button type="button" class="absolute end-3 top-1/2 -translate-y-1/2 text-tertiary hover:text-secondary" @click="showNewPassword = !showNewPassword">
+                    <i :class="['pi text-sm', showNewPassword ? 'pi-eye-slash' : 'pi-eye']"></i>
+                  </button>
+                </div>
+                <!-- Password Strength -->
+                <div v-if="passwordStrength.level" class="mt-2">
+                  <div class="flex items-center gap-2">
+                    <div class="h-1.5 flex-1 overflow-hidden rounded-full bg-gray-200">
+                      <div :class="[passwordStrength.color, 'h-full rounded-full transition-all']" :style="{ width: passwordStrength.level === 'weak' ? '33%' : passwordStrength.level === 'medium' ? '66%' : '100%' }"></div>
+                    </div>
+                    <span class="text-xs font-medium" :class="passwordStrength.level === 'weak' ? 'text-red-600' : passwordStrength.level === 'medium' ? 'text-amber-600' : 'text-green-600'">{{ passwordStrength.label }}</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Confirm Password -->
+              <div>
+                <label class="mb-1 block text-sm font-medium text-secondary">{{ t('settings.users.resetPassword.confirmPassword') }} *</label>
+                <div class="relative">
+                  <input v-model="resetPasswordForm.confirmPassword" :type="showConfirmPassword ? 'text' : 'password'" required minlength="8" dir="ltr" class="w-full rounded-lg border border-surface-dim bg-surface-ground py-2.5 ps-4 pe-10 text-sm text-secondary focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary" :placeholder="t('settings.users.resetPassword.confirmPasswordPlaceholder')" />
+                  <button type="button" class="absolute end-3 top-1/2 -translate-y-1/2 text-tertiary hover:text-secondary" @click="showConfirmPassword = !showConfirmPassword">
+                    <i :class="['pi text-sm', showConfirmPassword ? 'pi-eye-slash' : 'pi-eye']"></i>
+                  </button>
+                </div>
+                <p v-if="resetPasswordForm.confirmPassword && resetPasswordForm.newPassword !== resetPasswordForm.confirmPassword" class="mt-1 text-xs text-red-600">{{ t('settings.users.resetPassword.passwordMismatch') }}</p>
+              </div>
+
+              <!-- Generate Random Password -->
+              <button type="button" class="flex items-center gap-2 rounded-lg border border-dashed border-primary/30 bg-primary/5 px-4 py-2.5 text-sm font-medium text-primary transition-colors hover:bg-primary/10" @click="generateRandomPassword">
+                <i class="pi pi-refresh text-sm"></i>
+                {{ t('settings.users.resetPassword.generateRandom') }}
+              </button>
+
+              <!-- Options -->
+              <div class="rounded-lg border border-surface-dim bg-surface-ground/50 p-4 space-y-3">
+                <label class="flex items-center gap-3 cursor-pointer">
+                  <input v-model="resetPasswordForm.notifyUser" type="checkbox" class="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary" />
+                  <div>
+                    <p class="text-sm font-medium text-secondary">{{ t('settings.users.resetPassword.notifyUser') }}</p>
+                    <p class="text-xs text-tertiary">{{ t('settings.users.resetPassword.notifyUserDesc') }}</p>
+                  </div>
+                </label>
+                <label class="flex items-center gap-3 cursor-pointer">
+                  <input v-model="resetPasswordForm.forceChangeOnLogin" type="checkbox" class="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary" />
+                  <div>
+                    <p class="text-sm font-medium text-secondary">{{ t('settings.users.resetPassword.forceChange') }}</p>
+                    <p class="text-xs text-tertiary">{{ t('settings.users.resetPassword.forceChangeDesc') }}</p>
+                  </div>
+                </label>
+              </div>
+
+              <!-- Password Policy -->
+              <div class="rounded-lg border border-blue-100 bg-blue-50 px-4 py-3">
+                <p class="mb-1 text-xs font-medium text-blue-700">{{ t('settings.users.resetPassword.policyTitle') }}</p>
+                <ul class="space-y-0.5 text-xs text-blue-600">
+                  <li class="flex items-center gap-1"><i class="pi pi-check text-xs"></i>{{ t('settings.users.resetPassword.policyMinLength') }}</li>
+                  <li class="flex items-center gap-1"><i class="pi pi-check text-xs"></i>{{ t('settings.users.resetPassword.policyUppercase') }}</li>
+                  <li class="flex items-center gap-1"><i class="pi pi-check text-xs"></i>{{ t('settings.users.resetPassword.policyLowercase') }}</li>
+                  <li class="flex items-center gap-1"><i class="pi pi-check text-xs"></i>{{ t('settings.users.resetPassword.policyDigit') }}</li>
+                  <li class="flex items-center gap-1"><i class="pi pi-check text-xs"></i>{{ t('settings.users.resetPassword.policySpecial') }}</li>
+                </ul>
+              </div>
+            </div>
+
+            <div class="mt-6 flex items-center justify-end gap-3">
+              <button type="button" class="rounded-lg border border-surface-dim px-5 py-2.5 text-sm font-medium text-secondary transition-colors hover:bg-surface-ground" @click="showResetPasswordDialog = false">{{ t('common.cancel') }}</button>
+              <button type="submit" :disabled="isSubmitting || !resetPasswordForm.newPassword || resetPasswordForm.newPassword !== resetPasswordForm.confirmPassword" class="flex items-center gap-2 rounded-lg bg-amber-600 px-5 py-2.5 text-sm font-medium text-white shadow-sm transition-all hover:bg-amber-700 disabled:opacity-50">
+                <i v-if="isSubmitting" class="pi pi-spin pi-spinner text-xs"></i>
+                <i v-else class="pi pi-key text-xs"></i>
+                {{ t('settings.users.resetPassword.submit') }}
+              </button>
+            </div>
+          </form>
         </div>
       </div>
     </Teleport>

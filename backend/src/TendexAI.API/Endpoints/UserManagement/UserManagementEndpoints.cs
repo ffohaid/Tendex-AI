@@ -2,6 +2,7 @@ using System.Security.Claims;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
 using TendexAI.Application.Features.UserManagement.Commands.AcceptInvitation;
+using TendexAI.Application.Features.UserManagement.Commands.AdminResetPassword;
 using TendexAI.Application.Features.UserManagement.Commands.AssignRole;
 using TendexAI.Application.Features.UserManagement.Commands.CreateRole;
 using TendexAI.Application.Features.UserManagement.Commands.RemoveRole;
@@ -74,6 +75,14 @@ public static class UserManagementEndpoints
             .RequireAuthorization(PermissionPolicies.UsersManageRoles)
             .Produces(StatusCodes.Status204NoContent)
             .Produces<ProblemDetails>(StatusCodes.Status400BadRequest);
+
+        usersGroup.MapPost("/{userId:guid}/reset-password", AdminResetPasswordAsync)
+            .WithName("AdminResetPassword")
+            .WithSummary("Admin-initiated password reset for a user")
+            .RequireAuthorization(PermissionPolicies.UsersResetPassword)
+            .Produces(StatusCodes.Status204NoContent)
+            .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+            .Produces<ProblemDetails>(StatusCodes.Status404NotFound);
 
         usersGroup.MapDelete("/{userId:guid}/roles/{roleId:guid}", RemoveRoleAsync)
             .WithName("RemoveRole")
@@ -570,6 +579,39 @@ public static class UserManagementEndpoints
             RoleName: invitation.Role?.NameAr ?? "عضو",
             TenantName: "Tendex AI"
         ));
+    }
+
+    private static async Task<IResult> AdminResetPasswordAsync(
+        Guid userId,
+        [FromBody] AdminResetPasswordRequest request,
+        ISender mediator,
+        HttpContext httpContext)
+    {
+        var tenantId = GetTenantId(httpContext);
+        if (tenantId == Guid.Empty)
+            return Results.Problem("Tenant ID is required.", statusCode: 400);
+
+        var adminUserId = GetCurrentUserId(httpContext);
+        if (adminUserId == Guid.Empty)
+            return Results.Problem("Admin user ID is required.", statusCode: 401);
+
+        var command = new AdminResetPasswordCommand(
+            UserId: userId,
+            NewPassword: request.NewPassword,
+            ConfirmPassword: request.ConfirmPassword,
+            NotifyUser: request.NotifyUser,
+            ForceChangeOnLogin: request.ForceChangeOnLogin,
+            TenantId: tenantId,
+            AdminUserId: adminUserId,
+            AdminName: GetCurrentUserName(httpContext),
+            IpAddress: httpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+            UserAgent: httpContext.Request.Headers.UserAgent.FirstOrDefault());
+
+        var result = await mediator.Send(command);
+
+        return result.IsSuccess
+            ? Results.NoContent()
+            : Results.Problem(result.Error, statusCode: 400);
     }
 
     // ===== Helper Methods =====

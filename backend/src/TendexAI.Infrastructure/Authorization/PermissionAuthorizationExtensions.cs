@@ -28,6 +28,7 @@ public static class PermissionAuthorizationExtensions
             .AddPermissionPolicy(PermissionPolicies.UsersDelete, "users.delete")
             .AddPermissionPolicy(PermissionPolicies.UsersManageRoles, "users.manage_roles")
             .AddPermissionPolicy(PermissionPolicies.UsersImpersonate, "users.impersonate")
+            .AddPermissionPolicy(PermissionPolicies.UsersResetPassword, "users.reset_password")
 
             // ─── Roles ───
             .AddPermissionPolicy(PermissionPolicies.RolesView, "roles.view")

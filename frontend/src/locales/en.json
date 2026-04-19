@@ -1908,7 +1908,34 @@
         "activeUsers": "Active Users",
         "inactiveUsers": "Inactive Users"
       },
-      "allRolesAssigned": "All available roles have been assigned to this user"
+      "allRolesAssigned": "All available roles have been assigned to this user",
+      "resetPassword": {
+        "title": "Reset Password",
+        "warning": "The user's password will be changed immediately and all active sessions will be terminated. Make sure to inform the user of the new password.",
+        "newPassword": "New Password",
+        "newPasswordPlaceholder": "Enter new password",
+        "confirmPassword": "Confirm Password",
+        "confirmPasswordPlaceholder": "Re-enter the password",
+        "generateRandom": "Generate Random Password",
+        "notifyUser": "Notify User",
+        "notifyUserDesc": "Send an email to the user informing them of the password change",
+        "forceChange": "Force Change on Login",
+        "forceChangeDesc": "Require the user to change their password on next login",
+        "policyTitle": "Password Policy",
+        "policyMinLength": "At least 8 characters",
+        "policyUppercase": "At least one uppercase letter (A-Z)",
+        "policyLowercase": "At least one lowercase letter (a-z)",
+        "policyDigit": "At least one digit (0-9)",
+        "policySpecial": "At least one special character (@#$%&*!)",
+        "submit": "Reset Password",
+        "success": "Password has been reset successfully",
+        "failed": "Failed to reset password",
+        "passwordMismatch": "Passwords do not match",
+        "passwordTooShort": "Password must be at least 8 characters",
+        "strengthWeak": "Weak",
+        "strengthMedium": "Medium",
+        "strengthStrong": "Strong"
+      }
     },
     "roles": {
       "title": "Roles & Permissions",

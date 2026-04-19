@@ -29,6 +29,8 @@ import type {
   ToggleRoleStatusRequest,
   UserListParams,
   InvitationListParams,
+  AdminResetPasswordRequest,
+  AdminResetPasswordResponse,
 } from '@/types/userManagement'
 
 /* ------------------------------------------------------------------ */
@@ -105,6 +107,17 @@ export async function removeRole(
   roleId: string,
 ): Promise<void> {
   await httpDelete<void>(`${USERS_URL}/${userId}/roles/${roleId}`)
+}
+
+/**
+ * Admin resets a user's password.
+ * Generates a temporary password and optionally sends it via email.
+ */
+export async function adminResetPassword(
+  userId: string,
+  request: AdminResetPasswordRequest,
+): Promise<AdminResetPasswordResponse> {
+  return httpPost<AdminResetPasswordResponse>(`${USERS_URL}/${userId}/reset-password`, request)
 }
 
 /* ------------------------------------------------------------------ */

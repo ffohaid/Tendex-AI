@@ -240,6 +240,28 @@ export interface InvitationListParams {
 }
 
 /* ------------------------------------------------------------------ */
+/*  Admin Reset Password                                               */
+/* ------------------------------------------------------------------ */
+
+/**
+ * Request model for admin-initiated password reset.
+ */
+export interface AdminResetPasswordRequest {
+  newPassword: string
+  confirmPassword: string
+  notifyUser: boolean
+  forceChangeOnLogin: boolean
+}
+
+/**
+ * Response model for admin-initiated password reset.
+ */
+export interface AdminResetPasswordResponse {
+  success: boolean
+  message: string
+}
+
+/* ------------------------------------------------------------------ */
 /*  AI DTOs                                                            */
 /* ------------------------------------------------------------------ */
 

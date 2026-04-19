@@ -32,6 +32,15 @@ public sealed record SendInvitationRequest(
     string? BaseUrl);
 
 /// <summary>
+/// Request model for admin-initiated password reset.
+/// </summary>
+public sealed record AdminResetPasswordRequest(
+    string NewPassword,
+    string ConfirmPassword,
+    bool NotifyUser = true,
+    bool ForceChangeOnLogin = true);
+
+/// <summary>
 /// Request model for accepting an invitation and completing registration.
 /// </summary>
 public sealed record AcceptInvitationRequest(
