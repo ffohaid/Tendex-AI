@@ -92,7 +92,7 @@ public sealed class OperatorResetTenantAdminPasswordCommandHandler
             return resetResult;
         }
 
-        var adminInfo = resetResult.Value;
+        var adminInfo = resetResult.Value!;
 
         // 7. Revoke all active sessions for the admin user
         try
