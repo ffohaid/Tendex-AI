@@ -1926,7 +1926,7 @@
         "policyUppercase": "At least one uppercase letter (A-Z)",
         "policyLowercase": "At least one lowercase letter (a-z)",
         "policyDigit": "At least one digit (0-9)",
-        "policySpecial": "At least one special character (@#$%&*!)",
+        "policySpecial": "At least one special character",
         "submit": "Reset Password",
         "success": "Password has been reset successfully",
         "failed": "Failed to reset password",
