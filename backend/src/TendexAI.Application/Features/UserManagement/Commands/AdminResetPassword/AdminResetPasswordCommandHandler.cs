@@ -97,7 +97,7 @@ public sealed class AdminResetPasswordCommandHandler : ICommandHandler<AdminRese
             "User",
             user.Id.ToString(),
             null,
-            $"{{\"targetUserId\":\"{user.Id}\",\"targetEmail\":\"{user.Email}\",\"notifyUser\":{request.NotifyUser.ToString().ToLower()},\"forceChange\":{request.ForceChangeOnLogin.ToString().ToLower()}}}",
+            $"{{\"targetUserId\":\"{user.Id}\",\"targetEmail\":\"{user.Email}\",\"notifyUser\":{request.NotifyUser.ToString().ToLowerInvariant()},\"forceChange\":{request.ForceChangeOnLogin.ToString().ToLowerInvariant()}}}",
             request.IpAddress,
             request.UserAgent,
             request.TenantId);
