@@ -254,3 +254,107 @@ Built a complete Admin Reset Password feature allowing tenant administrators to 
 - Fixed VITE_API_BASE_URL from `https://api.netaq.pro` to `/api` (relative path)
 - Reset password for ahmed@mof.gov.sa to `Admin@123456`
 - Fixed Docker networking issues between frontend/backend/nginx containers
+
+---
+
+## 2026-04-19: Operator Reset Tenant Admin Password Feature
+
+### Overview
+Built a complete feature allowing the Platform Operator (Operator Super Admin) to reset the password of any tenant's primary admin directly from the Operator Dashboard tenant detail page. This is a critical administrative capability for managing government entities on the platform.
+
+### Backend Changes
+
+1. **OperatorResetTenantAdminPasswordCommand** (NEW)
+   - `backend/src/TendexAI.Application/Features/Tenants/Commands/OperatorResetTenantAdminPassword/OperatorResetTenantAdminPasswordCommand.cs`
+   - CQRS command with TenantId, NewPassword, ConfirmPassword, NotifyAdmin, ForcePasswordChange, Reason, OperatorId, OperatorName, IpAddress
+
+2. **OperatorResetTenantAdminPasswordCommandHandler** (NEW)
+   - `backend/src/TendexAI.Application/Features/Tenants/Commands/OperatorResetTenantAdminPassword/OperatorResetTenantAdminPasswordCommandHandler.cs`
+   - Validates tenant exists, calls ITenantAdminPasswordResetService for cross-tenant DB access
+   - Logs action to immutable audit trail with full details
+   - Sends email notification to admin if NotifyAdmin is true
+
+3. **OperatorResetTenantAdminPasswordCommandValidator** (NEW)
+   - `backend/src/TendexAI.Application/Features/Tenants/Commands/OperatorResetTenantAdminPassword/OperatorResetTenantAdminPasswordCommandValidator.cs`
+   - FluentValidation: min 8 chars, uppercase, lowercase, digit, special char, password match
+
+4. **ITenantAdminPasswordResetService** (NEW - Clean Architecture Interface)
+   - `backend/src/TendexAI.Application/Common/Interfaces/ITenantAdminPasswordResetService.cs`
+   - Interface in Application layer for cross-tenant password reset
+
+5. **TenantAdminPasswordResetService** (NEW - Infrastructure Implementation)
+   - `backend/src/TendexAI.Infrastructure/Services/TenantAdminPasswordResetService.cs`
+   - Decrypts tenant connection string, connects to tenant DB
+   - Finds primary admin (first user with TenantAdmin role)
+   - Hashes password with BCrypt, updates user record
+   - Regenerates security stamp to invalidate existing sessions
+
+6. **Endpoint Registration**
+   - Added `POST /api/v1/tenants/{id}/reset-admin-password` in `TenantEndpoints.cs`
+   - Protected by `tenants.reset_admin_password` permission policy
+
+7. **Permission Policy**
+   - Added `TenantsResetAdminPassword` to `PermissionPolicies.cs`
+   - Registered in `PermissionAuthorizationExtensions.cs`
+   - Added to `DependencyInjection.cs` (ITenantAdminPasswordResetService registration)
+
+### Frontend Changes
+
+1. **Reset Admin Password Dialog** in `TenantDetailView.vue`
+   - Quick action card with key icon in tenant detail page
+   - Professional dialog showing tenant info (name + admin email)
+   - Warning banner about immediate password change and session termination
+   - Password and confirm password fields with show/hide toggle
+   - Random password generator (12 chars: upper, lower, digits, special)
+   - Password strength indicator (weak/medium/strong) with color coding
+   - Password policy checklist (8+ chars, uppercase, lowercase, digit, special char)
+   - Notify admin via email checkbox (default: checked)
+   - Force password change on next login checkbox (default: checked)
+   - Cancel and Submit buttons with loading state
+   - Full RTL/LTR support
+
+2. **Service & Store**
+   - `tenantService.ts`: Added `operatorResetTenantAdminPassword()` API function
+   - `tenant.ts` (types): Added `OperatorResetTenantAdminPasswordRequest` type
+   - `tenant.ts` (store): Added `operatorResetTenantAdminPassword` store action
+
+3. **Translations** (ar.json & en.json)
+   - Full Arabic and English translations for all dialog elements
+   - Keys under `tenants.quickActions.resetAdminPassword` and `tenants.resetAdminPassword`
+
+### Database Changes
+- Added `tenants.reset_admin_password` permission to both `master_platform` and `tenant_a86f3588` (operator tenant) databases
+- Linked permission to `Operator Super Admin` role in both databases
+
+### Files Modified:
+- `backend/src/TendexAI.Application/Features/Tenants/Commands/OperatorResetTenantAdminPassword/OperatorResetTenantAdminPasswordCommand.cs` (NEW)
+- `backend/src/TendexAI.Application/Features/Tenants/Commands/OperatorResetTenantAdminPassword/OperatorResetTenantAdminPasswordCommandHandler.cs` (NEW)
+- `backend/src/TendexAI.Application/Features/Tenants/Commands/OperatorResetTenantAdminPassword/OperatorResetTenantAdminPasswordCommandValidator.cs` (NEW)
+- `backend/src/TendexAI.Application/Common/Interfaces/ITenantAdminPasswordResetService.cs` (NEW)
+- `backend/src/TendexAI.Infrastructure/Services/TenantAdminPasswordResetService.cs` (NEW)
+- `backend/src/TendexAI.Application/Features/Tenants/Dtos/TenantDtos.cs`
+- `backend/src/TendexAI.Infrastructure/Authorization/PermissionPolicies.cs`
+- `backend/src/TendexAI.Infrastructure/Authorization/PermissionAuthorizationExtensions.cs`
+- `backend/src/TendexAI.Infrastructure/DependencyInjection.cs`
+- `backend/src/TendexAI.API/Endpoints/TenantEndpoints.cs`
+- `frontend/src/types/tenant.ts`
+- `frontend/src/services/tenantService.ts`
+- `frontend/src/stores/tenant.ts`
+- `frontend/src/views/tenants/TenantDetailView.vue`
+- `frontend/src/locales/ar.json`
+- `frontend/src/locales/en.json`
+
+### Commits:
+- `feat: add operator reset tenant admin password feature`
+- `fix: resolve CS8602 null reference warning in handler`
+
+### Verification:
+- Tested on netaq.pro with admin@netaq.pro (Operator Super Admin)
+- Navigated to tenant detail page for Ministry of Health
+- Quick action card "إعادة تعيين كلمة مرور المسؤول" visible
+- Dialog opens correctly with tenant info (وزارة الصحة - sara@moh.gov.sa)
+- Random password generator produces strong 12-char passwords
+- Password strength indicator works correctly
+- API call succeeds - backend logs confirm: "Successfully reset password for primary admin mohammed@moh.gov.sa of tenant gov-moh-003"
+- Audit log entry created successfully
+- Note: Email notification shows "host name cannot be empty" error (SMTP not configured yet - non-blocking)
