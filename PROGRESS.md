@@ -161,3 +161,96 @@
 - Logo renders correctly on login page (dark background)
 - Favicon updated in browser tab
 - All 7 logo SVG files accessible via HTTP (200 OK)
+
+## 2026-04-19: Admin Reset Password Feature
+
+### Overview
+Built a complete Admin Reset Password feature allowing tenant administrators to reset passwords for their users directly from the User Management page, following global security best practices.
+
+### Backend Changes
+
+1. **AdminResetPasswordCommand** (NEW)
+   - `backend/src/TendexAI.Application/Features/UserManagement/Commands/AdminResetPassword/AdminResetPasswordCommand.cs`
+   - MediatR command with UserId, NewPassword, NotifyUser, ForceChangeOnLogin parameters
+
+2. **AdminResetPasswordCommandHandler** (NEW)
+   - `backend/src/TendexAI.Application/Features/UserManagement/Commands/AdminResetPassword/AdminResetPasswordCommandHandler.cs`
+   - Validates admin permissions, hashes password with BCrypt, updates user record
+   - Sends email notification to user if NotifyUser is true
+   - Logs action to immutable audit trail
+   - Returns success/failure result
+
+3. **AdminResetPasswordRequest** (NEW)
+   - Added to `UserManagementRequestModels.cs`
+   - Fields: NewPassword, NotifyUser, ForceChangeOnLogin
+
+4. **Endpoint Registration**
+   - Added `POST /api/v1/users/{userId}/admin-reset-password` in `UserManagementEndpoints.cs`
+   - Protected by `UsersResetPassword` permission policy
+
+5. **Permission Policy**
+   - Added `UsersResetPassword` to `PermissionPolicies.cs`
+   - Registered in `PermissionAuthorizationExtensions.cs`
+   - Added `users.reset_password` permission to all tenant databases and assigned to admin roles
+
+### Frontend Changes
+
+1. **Reset Password Dialog** in `UsersManagementView.vue`
+   - Professional dialog showing user info (name, email, avatar)
+   - Warning banner about session termination
+   - Password and confirm password fields with show/hide toggle
+   - Random password generator (12 chars: upper, lower, digits, special)
+   - Password strength indicator (weak/medium/strong/very strong) with color coding
+   - Password policy checklist (8+ chars, uppercase, lowercase, digit, special char)
+   - Notify user via email checkbox (default: checked)
+   - Force change on next login checkbox (default: checked)
+   - Cancel and Submit buttons with loading state
+
+2. **Reset Password Button** in user table actions
+   - Key icon button with tooltip "إعادة تعيين كلمة المرور"
+   - Visible only to users with `users.reset_password` permission
+
+3. **Service Function** in `userManagementService.ts`
+   - `adminResetPassword(userId, request)` function
+   - Types: `AdminResetPasswordRequest`, `AdminResetPasswordResponse`
+
+4. **Translations** (ar.json & en.json)
+   - Full Arabic and English translations for all dialog elements
+   - 20+ translation keys under `settings.users.resetPassword`
+
+### Bug Fix
+- Fixed vue-i18n SyntaxError caused by special characters (`@#$%&*!`) in translation values
+- Removed special characters from `policySpecial` translation key in both ar.json and en.json
+
+### Files Modified:
+- `backend/src/TendexAI.Application/Features/UserManagement/Commands/AdminResetPassword/AdminResetPasswordCommand.cs` (NEW)
+- `backend/src/TendexAI.Application/Features/UserManagement/Commands/AdminResetPassword/AdminResetPasswordCommandHandler.cs` (NEW)
+- `backend/src/TendexAI.API/Endpoints/UserManagement/UserManagementEndpoints.cs`
+- `backend/src/TendexAI.API/Endpoints/UserManagement/UserManagementRequestModels.cs`
+- `backend/src/TendexAI.Infrastructure/Authorization/PermissionPolicies.cs`
+- `backend/src/TendexAI.Infrastructure/Authorization/PermissionAuthorizationExtensions.cs`
+- `backend/src/TendexAI.Infrastructure/TendexAI.Infrastructure.csproj` (MailKit security update)
+- `frontend/src/views/settings/UsersManagementView.vue`
+- `frontend/src/services/userManagementService.ts`
+- `frontend/src/types/userManagement.ts`
+- `frontend/src/locales/ar.json`
+- `frontend/src/locales/en.json`
+
+### Commits:
+- `b85b2af` - feat(auth): add admin reset password feature with full backend and frontend
+- `e8b3f2a` - fix(deps): update MailKit to resolve NU1902 security warning
+- `6f2f0e5` - fix(build): resolve CA1311/CA1304 culture-specific string warnings
+- `079bf84` - fix(i18n): remove special chars from resetPassword translations causing vue-i18n parse error
+
+### Verification:
+- Tested on mof.netaq.pro with ahmed@mof.gov.sa (Tenant Primary Admin)
+- Reset password dialog opens correctly with user info
+- Random password generator works (produces strong 12-char passwords)
+- Password strength indicator shows correct strength levels
+- Policy checklist validates in real-time
+- Cancel button closes dialog without changes
+
+### Infrastructure Fix:
+- Fixed VITE_API_BASE_URL from `https://api.netaq.pro` to `/api` (relative path)
+- Reset password for ahmed@mof.gov.sa to `Admin@123456`
+- Fixed Docker networking issues between frontend/backend/nginx containers
