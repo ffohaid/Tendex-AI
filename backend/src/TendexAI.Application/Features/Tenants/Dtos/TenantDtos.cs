@@ -105,3 +105,12 @@ public sealed record TenantBrandingDto(
     string? LogoUrl,
     string? PrimaryColor,
     string? SecondaryColor);
+
+/// <summary>
+/// Request DTO for operator-initiated tenant admin password reset.
+/// </summary>
+public sealed record OperatorResetTenantAdminPasswordRequest(
+    string NewPassword,
+    string ConfirmPassword,
+    bool NotifyAdmin = true,
+    bool ForceChangeOnLogin = true);

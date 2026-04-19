@@ -985,7 +985,8 @@
       "noTransitions": "No transitions available",
       "brandingSuccess": "Branding updated successfully",
       "provisionSuccess": "Tenant provisioned successfully",
-      "statusChanged": "Tenant status changed successfully"
+      "statusChanged": "Tenant status changed successfully",
+      "resetAdminPasswordSuccess": "Tenant admin password has been reset successfully"
     },
     "labels": {
       "totalTenants": "Total Entities",
@@ -1010,7 +1011,36 @@
       "featureFlags": "Feature Flags",
       "featureFlagsDesc": "Manage available features and modules for this entity",
       "branding": "Visual Identity",
-      "brandingDesc": "Customize logo and brand colors for this entity"
+      "brandingDesc": "Customize logo and brand colors for this entity",
+      "resetAdminPassword": "Reset Admin Password",
+      "resetAdminPasswordDesc": "Reset the primary admin password for this entity"
+    },
+    "resetAdminPassword": {
+      "title": "Reset Tenant Admin Password",
+      "warning": "The primary admin's password will be changed immediately and all their active sessions will be terminated. Make sure to securely communicate the new password to the tenant admin.",
+      "newPassword": "New Password",
+      "newPasswordPlaceholder": "Enter new password",
+      "confirmPassword": "Confirm Password",
+      "confirmPasswordPlaceholder": "Re-enter new password",
+      "generateRandom": "Generate Random Password",
+      "notifyAdmin": "Notify Admin via Email",
+      "notifyAdminDesc": "Send an email notification to the tenant admin about the password change",
+      "forceChange": "Force Password Change on Login",
+      "forceChangeDesc": "Require the admin to change their password upon next login",
+      "policyTitle": "Password Policy Requirements",
+      "policyMinLength": "Minimum 8 characters",
+      "policyUppercase": "At least one uppercase letter",
+      "policyLowercase": "At least one lowercase letter",
+      "policyDigit": "At least one digit",
+      "policySpecial": "At least one special character",
+      "submit": "Reset Password",
+      "passwordMismatch": "Passwords do not match",
+      "passwordTooShort": "Password must be at least 8 characters",
+      "strengthWeak": "Weak",
+      "strengthMedium": "Medium",
+      "strengthStrong": "Strong",
+      "success": "Tenant admin password has been reset successfully",
+      "failed": "Failed to reset tenant admin password"
     },
     "dialogs": {
       "statusChangeMessage": "Are you sure you want to change this tenant's status?",

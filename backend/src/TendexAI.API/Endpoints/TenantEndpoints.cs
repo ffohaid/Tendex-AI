@@ -1,7 +1,9 @@
 using MediatR;
+using System.Security.Claims;
 using Microsoft.AspNetCore.Mvc;
 using TendexAI.Application.Features.Tenants.Commands.ChangeTenantStatus;
 using TendexAI.Application.Features.Tenants.Commands.CreateTenant;
+using TendexAI.Application.Features.Tenants.Commands.OperatorResetTenantAdminPassword;
 using TendexAI.Application.Features.Tenants.Commands.ProvisionTenantDatabase;
 using TendexAI.Application.Features.Tenants.Commands.UpdateTenant;
 using TendexAI.Application.Features.Tenants.Commands.UpdateTenantBranding;
@@ -103,6 +105,15 @@ public static class TenantEndpoints
             .WithSummary("Returns all available tenant lifecycle statuses.")
             .Produces<IEnumerable<TenantStatusDto>>(StatusCodes.Status200OK)
             .RequireAuthorization(PermissionPolicies.TenantsEdit);
+
+        // POST /api/v1/tenants/{id}/reset-admin-password - Operator resets tenant admin password
+        group.MapPost("/{id:guid}/reset-admin-password", OperatorResetTenantAdminPasswordAsync)
+            .WithName("OperatorResetTenantAdminPassword")
+            .WithSummary("Operator-initiated password reset for a tenant's primary admin.")
+            .Produces(StatusCodes.Status204NoContent)
+            .Produces(StatusCodes.Status400BadRequest)
+            .Produces(StatusCodes.Status404NotFound)
+            .RequireAuthorization(PermissionPolicies.TenantsResetAdminPassword);
 
         // GET /api/v1/tenants/resolve?hostname={hostname} - Resolve tenant by hostname (public, no auth)
         // TASK-905: Tenant resolve endpoint is registered outside the group
@@ -371,6 +382,70 @@ public static class TenantEndpoints
             LogoUrl: tenant.LogoUrl,
             PrimaryColor: tenant.PrimaryColor,
             SecondaryColor: tenant.SecondaryColor));
+    }
+
+    /// <summary>
+    /// Operator-initiated password reset for a tenant's primary admin.
+    /// This endpoint allows the platform operator (Super Admin) to reset the password
+    /// of the primary admin user in a tenant's isolated database.
+    /// </summary>
+    private static async Task<IResult> OperatorResetTenantAdminPasswordAsync(
+        Guid id,
+        [FromBody] OperatorResetTenantAdminPasswordRequest request,
+        ISender mediator,
+        HttpContext httpContext)
+    {
+        var operatorUserId = GetOperatorUserId(httpContext);
+        if (operatorUserId == Guid.Empty)
+            return Results.Problem("Operator user ID is required.", statusCode: 401);
+
+        var command = new OperatorResetTenantAdminPasswordCommand(
+            TenantId: id,
+            NewPassword: request.NewPassword,
+            ConfirmPassword: request.ConfirmPassword,
+            NotifyAdmin: request.NotifyAdmin,
+            ForceChangeOnLogin: request.ForceChangeOnLogin,
+            OperatorUserId: operatorUserId,
+            OperatorName: GetOperatorName(httpContext),
+            IpAddress: GetClientIpAddress(httpContext),
+            UserAgent: httpContext.Request.Headers.UserAgent.FirstOrDefault());
+
+        var result = await mediator.Send(command);
+
+        return result.IsSuccess
+            ? Results.NoContent()
+            : Results.Problem(result.Error, statusCode: 400);
+    }
+
+    // ----- Helper Methods -----
+
+    private static Guid GetOperatorUserId(HttpContext httpContext)
+    {
+        var userIdClaim = httpContext.User.FindFirstValue(ClaimTypes.NameIdentifier)
+            ?? httpContext.User.FindFirstValue("sub");
+        return Guid.TryParse(userIdClaim, out var userId) ? userId : Guid.Empty;
+    }
+
+    private static string GetOperatorName(HttpContext httpContext)
+    {
+        var firstName = httpContext.User.FindFirstValue("first_name");
+        var lastName = httpContext.User.FindFirstValue("last_name");
+
+        if (!string.IsNullOrWhiteSpace(firstName) || !string.IsNullOrWhiteSpace(lastName))
+            return $"{firstName} {lastName}".Trim();
+
+        return httpContext.User.FindFirstValue(ClaimTypes.Name)
+            ?? httpContext.User.FindFirstValue("name")
+            ?? "مشغل المنصة";
+    }
+
+    private static string GetClientIpAddress(HttpContext httpContext)
+    {
+        var forwardedFor = httpContext.Request.Headers["X-Forwarded-For"].FirstOrDefault();
+        if (!string.IsNullOrWhiteSpace(forwardedFor))
+            return forwardedFor.Split(',')[0].Trim();
+
+        return httpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown";
     }
 }
 

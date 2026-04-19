@@ -275,6 +275,14 @@ export interface TenantListParams {
   status?: TenantStatus
 }
 
+/** Request to reset the primary admin password for a tenant (operator action). */
+export interface OperatorResetTenantAdminPasswordRequest {
+  newPassword: string
+  confirmPassword: string
+  notifyAdmin: boolean
+  forceChangeOnLogin: boolean
+}
+
 /** Query parameters for PO list endpoint. */
 export interface PurchaseOrderListParams {
   page?: number

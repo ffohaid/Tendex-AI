@@ -18,6 +18,7 @@ import type {
   UpdateTenantRequest,
   ChangeTenantStatusRequest,
   UpdateTenantBrandingRequest,
+  OperatorResetTenantAdminPasswordRequest,
   TenantListParams,
   TenantSelectorOption,
   TenantStatus,
@@ -229,6 +230,26 @@ export const useTenantStore = defineStore('tenant', () => {
     }
   }
 
+  /** Operator: Reset tenant admin password. */
+  async function resetTenantAdminPassword(
+    id: string,
+    request: OperatorResetTenantAdminPasswordRequest,
+  ): Promise<boolean> {
+    isSubmitting.value = true
+    error.value = null
+
+    try {
+      await tenantService.operatorResetTenantAdminPassword(id, request)
+      successMessage.value = 'tenants.messages.resetAdminPasswordSuccess'
+      return true
+    } catch (err) {
+      error.value = extractError(err)
+      return false
+    } finally {
+      isSubmitting.value = false
+    }
+  }
+
   /** Load available status options. */
   async function loadStatusOptions(): Promise<void> {
     try {
@@ -321,6 +342,7 @@ export const useTenantStore = defineStore('tenant', () => {
     updateBranding,
     changeStatus,
     provision,
+    resetTenantAdminPassword,
     loadStatusOptions,
     loadSelectorOptions,
     selectTenant,

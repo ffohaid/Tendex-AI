@@ -105,6 +105,7 @@ public static class DependencyInjection
         // ----- Audit Trail Services -----
         services.AddScoped<ICurrentUserService, CurrentUserService>();
         services.AddScoped<IAuditLogService, AuditLogService>();
+        services.AddScoped<ITenantAdminPasswordResetService, TenantAdminPasswordResetService>();
 
         // ----- Multi-Tenancy Services -----
         services.AddHttpContextAccessor();

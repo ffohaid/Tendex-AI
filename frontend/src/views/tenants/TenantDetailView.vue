@@ -20,6 +20,7 @@ import type {
   UpdateTenantRequest,
   UpdateTenantBrandingRequest,
   ChangeTenantStatusRequest,
+  OperatorResetTenantAdminPasswordRequest,
 } from '@/types/tenant'
 
 const { t, locale } = useI18n()
@@ -68,6 +69,24 @@ const statusChangeForm = ref<ChangeTenantStatusRequest>({
   newStatus: TenantStatus.Active,
 })
 const showStatusDialog = ref(false)
+
+/** Reset Admin Password dialog */
+const showResetAdminPasswordDialog = ref(false)
+const resetAdminPasswordForm = ref<OperatorResetTenantAdminPasswordRequest>({
+  newPassword: '',
+  confirmPassword: '',
+  notifyAdmin: true,
+  forceChangeOnLogin: true,
+})
+const showNewPassword = ref(false)
+const showConfirmPassword = ref(false)
+const passwordStrength = ref<{ level: string; label: string; color: string }>({
+  level: '',
+  label: '',
+  color: '',
+})
+const resetPasswordError = ref('')
+const resetPasswordSubmitting = ref(false)
 
 /** Tenant ID from route */
 const tenantId = computed(() => route.params.id as string)
@@ -254,6 +273,121 @@ function goBack() {
   router.push({ name: 'TenantList' })
 }
 
+/** Open Reset Admin Password dialog */
+function openResetAdminPasswordDialog() {
+  resetAdminPasswordForm.value = {
+    newPassword: '',
+    confirmPassword: '',
+    notifyAdmin: true,
+    forceChangeOnLogin: true,
+  }
+  showNewPassword.value = false
+  showConfirmPassword.value = false
+  passwordStrength.value = { level: '', label: '', color: '' }
+  resetPasswordError.value = ''
+  showResetAdminPasswordDialog.value = true
+}
+
+/** Check password strength */
+function checkPasswordStrength(password: string) {
+  if (!password) {
+    passwordStrength.value = { level: '', label: '', color: '' }
+    return
+  }
+  let score = 0
+  if (password.length >= 8) score++
+  if (password.length >= 12) score++
+  if (/[A-Z]/.test(password)) score++
+  if (/[a-z]/.test(password)) score++
+  if (/[0-9]/.test(password)) score++
+  if (/[^A-Za-z0-9]/.test(password)) score++
+  if (score <= 2)
+    passwordStrength.value = {
+      level: 'weak',
+      label: t('tenants.resetAdminPassword.strengthWeak'),
+      color: 'bg-red-500',
+    }
+  else if (score <= 4)
+    passwordStrength.value = {
+      level: 'medium',
+      label: t('tenants.resetAdminPassword.strengthMedium'),
+      color: 'bg-amber-500',
+    }
+  else
+    passwordStrength.value = {
+      level: 'strong',
+      label: t('tenants.resetAdminPassword.strengthStrong'),
+      color: 'bg-green-500',
+    }
+}
+
+/** Generate random password */
+function generateRandomPassword() {
+  const upper = 'ABCDEFGHJKLMNPQRSTUVWXYZ'
+  const lower = 'abcdefghjkmnpqrstuvwxyz'
+  const digits = '23456789'
+  const special = '@#$%&*!'
+  const all = upper + lower + digits + special
+  let pwd = ''
+  pwd += upper[Math.floor(Math.random() * upper.length)]
+  pwd += lower[Math.floor(Math.random() * lower.length)]
+  pwd += digits[Math.floor(Math.random() * digits.length)]
+  pwd += special[Math.floor(Math.random() * special.length)]
+  for (let i = 0; i < 8; i++) pwd += all[Math.floor(Math.random() * all.length)]
+  pwd = pwd
+    .split('')
+    .sort(() => Math.random() - 0.5)
+    .join('')
+  resetAdminPasswordForm.value.newPassword = pwd
+  resetAdminPasswordForm.value.confirmPassword = pwd
+  showNewPassword.value = true
+  showConfirmPassword.value = true
+  checkPasswordStrength(pwd)
+}
+
+/** Handle Reset Admin Password submission */
+async function handleResetAdminPassword() {
+  resetPasswordError.value = ''
+  if (
+    resetAdminPasswordForm.value.newPassword !==
+    resetAdminPasswordForm.value.confirmPassword
+  ) {
+    resetPasswordError.value = t('tenants.resetAdminPassword.passwordMismatch')
+    return
+  }
+  if (resetAdminPasswordForm.value.newPassword.length < 8) {
+    resetPasswordError.value = t('tenants.resetAdminPassword.passwordTooShort')
+    return
+  }
+  resetPasswordSubmitting.value = true
+  try {
+    const success = await tenantStore.resetTenantAdminPassword(
+      tenantId.value,
+      resetAdminPasswordForm.value,
+    )
+    if (success) {
+      showResetAdminPasswordDialog.value = false
+      setTimeout(() => {
+        tenantStore.clearMessages()
+      }, 5000)
+    } else {
+      resetPasswordError.value =
+        error.value || t('tenants.resetAdminPassword.failed')
+    }
+  } catch (e: any) {
+    const detail =
+      e?.response?.data?.detail ||
+      e?.response?.data?.title ||
+      e?.message ||
+      ''
+    resetPasswordError.value = detail
+      ? `${t('tenants.resetAdminPassword.failed')}: ${detail}`
+      : t('tenants.resetAdminPassword.failed')
+  } finally {
+    resetPasswordSubmitting.value = false
+  }
+}
+
 /** Load tenant on mount */
 onMounted(async () => {
   await tenantStore.loadTenantDetail(tenantId.value)
@@ -390,7 +524,7 @@ watch(activeTab, (newTab) => {
         </div>
 
         <!-- Quick action cards (TASK-604) -->
-        <div class="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <div class="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
           <button
             type="button"
             class="flex items-center gap-4 rounded-lg border border-surface-dim bg-white p-4 text-start transition-colors hover:border-primary/30 hover:bg-primary/5"
@@ -416,6 +550,21 @@ watch(activeTab, (newTab) => {
             <div>
               <p class="text-sm font-semibold text-secondary">{{ t('tenants.quickActions.branding') }}</p>
               <p class="text-xs text-tertiary">{{ t('tenants.quickActions.brandingDesc') }}</p>
+            </div>
+            <i class="pi pi-chevron-left ms-auto text-xs text-tertiary rtl:pi-chevron-right"></i>
+          </button>
+          <button
+            v-if="currentTenant.isProvisioned"
+            type="button"
+            class="flex items-center gap-4 rounded-lg border border-amber-200 bg-amber-50/50 p-4 text-start transition-colors hover:border-amber-300 hover:bg-amber-50"
+            @click="openResetAdminPasswordDialog"
+          >
+            <div class="flex h-10 w-10 items-center justify-center rounded-lg bg-amber-100">
+              <i class="pi pi-key text-lg text-amber-600"></i>
+            </div>
+            <div>
+              <p class="text-sm font-semibold text-secondary">{{ t('tenants.quickActions.resetAdminPassword') }}</p>
+              <p class="text-xs text-tertiary">{{ t('tenants.quickActions.resetAdminPasswordDesc') }}</p>
             </div>
             <i class="pi pi-chevron-left ms-auto text-xs text-tertiary rtl:pi-chevron-right"></i>
           </button>
@@ -805,6 +954,260 @@ watch(activeTab, (newTab) => {
               {{ t('common.confirm') }}
             </button>
           </div>
+        </div>
+      </div>
+    </Teleport>
+
+    <!-- Reset Admin Password Dialog -->
+    <Teleport to="body">
+      <div
+        v-if="showResetAdminPasswordDialog"
+        class="fixed inset-0 z-50 flex items-center justify-center bg-black/40"
+        @click.self="showResetAdminPasswordDialog = false"
+      >
+        <div class="w-full max-w-lg rounded-xl bg-white shadow-xl mx-4">
+          <!-- Header -->
+          <div class="flex items-center justify-between border-b border-surface-dim px-6 py-4">
+            <div class="flex items-center gap-2">
+              <div class="flex h-8 w-8 items-center justify-center rounded-lg bg-amber-50">
+                <i class="pi pi-key text-amber-600"></i>
+              </div>
+              <h3 class="text-lg font-semibold text-secondary">
+                {{ t('tenants.resetAdminPassword.title') }}
+              </h3>
+            </div>
+            <button
+              class="rounded-lg p-1 text-tertiary hover:bg-surface-ground"
+              @click="showResetAdminPasswordDialog = false"
+            >
+              <i class="pi pi-times"></i>
+            </button>
+          </div>
+
+          <!-- Form -->
+          <form class="p-6" @submit.prevent="handleResetAdminPassword">
+            <!-- Tenant info header -->
+            <div class="mb-5 flex items-center gap-3 rounded-lg border border-surface-dim bg-surface-ground p-3">
+              <div class="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10 text-sm font-semibold text-primary">
+                <i class="pi pi-building text-lg"></i>
+              </div>
+              <div>
+                <p class="text-sm font-medium text-secondary">{{ getTenantName() }}</p>
+                <p class="text-xs text-tertiary" dir="ltr">{{ currentTenant?.contactPersonEmail || currentTenant?.subdomain + '.tendex.ai' }}</p>
+              </div>
+            </div>
+
+            <!-- Warning -->
+            <div class="mb-5 flex items-start gap-2 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-700">
+              <i class="pi pi-exclamation-triangle mt-0.5 text-sm"></i>
+              <p>{{ t('tenants.resetAdminPassword.warning') }}</p>
+            </div>
+
+            <!-- Error -->
+            <div
+              v-if="resetPasswordError"
+              class="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700"
+            >
+              <div class="flex items-center gap-2">
+                <i class="pi pi-exclamation-circle text-sm"></i>
+                <p>{{ resetPasswordError }}</p>
+              </div>
+            </div>
+
+            <div class="space-y-4">
+              <!-- New Password -->
+              <div>
+                <label class="mb-1 block text-sm font-medium text-secondary">
+                  {{ t('tenants.resetAdminPassword.newPassword') }} *
+                </label>
+                <div class="relative">
+                  <input
+                    v-model="resetAdminPasswordForm.newPassword"
+                    :type="showNewPassword ? 'text' : 'password'"
+                    required
+                    minlength="8"
+                    dir="ltr"
+                    class="w-full rounded-lg border border-surface-dim bg-surface-ground py-2.5 ps-4 pe-10 text-sm text-secondary focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+                    :placeholder="t('tenants.resetAdminPassword.newPasswordPlaceholder')"
+                    @input="checkPasswordStrength(resetAdminPasswordForm.newPassword)"
+                  />
+                  <button
+                    type="button"
+                    class="absolute end-3 top-1/2 -translate-y-1/2 text-tertiary hover:text-secondary"
+                    @click="showNewPassword = !showNewPassword"
+                  >
+                    <i :class="['pi text-sm', showNewPassword ? 'pi-eye-slash' : 'pi-eye']"></i>
+                  </button>
+                </div>
+                <!-- Password Strength -->
+                <div v-if="passwordStrength.level" class="mt-2">
+                  <div class="flex items-center gap-2">
+                    <div class="h-1.5 flex-1 overflow-hidden rounded-full bg-gray-200">
+                      <div
+                        :class="[passwordStrength.color, 'h-full rounded-full transition-all']"
+                        :style="{
+                          width:
+                            passwordStrength.level === 'weak'
+                              ? '33%'
+                              : passwordStrength.level === 'medium'
+                                ? '66%'
+                                : '100%',
+                        }"
+                      ></div>
+                    </div>
+                    <span
+                      class="text-xs font-medium"
+                      :class="
+                        passwordStrength.level === 'weak'
+                          ? 'text-red-600'
+                          : passwordStrength.level === 'medium'
+                            ? 'text-amber-600'
+                            : 'text-green-600'
+                      "
+                    >
+                      {{ passwordStrength.label }}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Confirm Password -->
+              <div>
+                <label class="mb-1 block text-sm font-medium text-secondary">
+                  {{ t('tenants.resetAdminPassword.confirmPassword') }} *
+                </label>
+                <div class="relative">
+                  <input
+                    v-model="resetAdminPasswordForm.confirmPassword"
+                    :type="showConfirmPassword ? 'text' : 'password'"
+                    required
+                    minlength="8"
+                    dir="ltr"
+                    class="w-full rounded-lg border border-surface-dim bg-surface-ground py-2.5 ps-4 pe-10 text-sm text-secondary focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+                    :placeholder="t('tenants.resetAdminPassword.confirmPasswordPlaceholder')"
+                  />
+                  <button
+                    type="button"
+                    class="absolute end-3 top-1/2 -translate-y-1/2 text-tertiary hover:text-secondary"
+                    @click="showConfirmPassword = !showConfirmPassword"
+                  >
+                    <i :class="['pi text-sm', showConfirmPassword ? 'pi-eye-slash' : 'pi-eye']"></i>
+                  </button>
+                </div>
+                <p
+                  v-if="
+                    resetAdminPasswordForm.confirmPassword &&
+                    resetAdminPasswordForm.newPassword !==
+                      resetAdminPasswordForm.confirmPassword
+                  "
+                  class="mt-1 text-xs text-red-600"
+                >
+                  {{ t('tenants.resetAdminPassword.passwordMismatch') }}
+                </p>
+              </div>
+
+              <!-- Generate Random Password -->
+              <button
+                type="button"
+                class="flex items-center gap-2 rounded-lg border border-dashed border-primary/30 bg-primary/5 px-4 py-2.5 text-sm font-medium text-primary transition-colors hover:bg-primary/10"
+                @click="generateRandomPassword"
+              >
+                <i class="pi pi-refresh text-sm"></i>
+                {{ t('tenants.resetAdminPassword.generateRandom') }}
+              </button>
+
+              <!-- Options -->
+              <div class="rounded-lg border border-surface-dim bg-surface-ground/50 p-4 space-y-3">
+                <label class="flex items-center gap-3 cursor-pointer">
+                  <input
+                    v-model="resetAdminPasswordForm.notifyAdmin"
+                    type="checkbox"
+                    class="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
+                  />
+                  <div>
+                    <p class="text-sm font-medium text-secondary">
+                      {{ t('tenants.resetAdminPassword.notifyAdmin') }}
+                    </p>
+                    <p class="text-xs text-tertiary">
+                      {{ t('tenants.resetAdminPassword.notifyAdminDesc') }}
+                    </p>
+                  </div>
+                </label>
+                <label class="flex items-center gap-3 cursor-pointer">
+                  <input
+                    v-model="resetAdminPasswordForm.forceChangeOnLogin"
+                    type="checkbox"
+                    class="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
+                  />
+                  <div>
+                    <p class="text-sm font-medium text-secondary">
+                      {{ t('tenants.resetAdminPassword.forceChange') }}
+                    </p>
+                    <p class="text-xs text-tertiary">
+                      {{ t('tenants.resetAdminPassword.forceChangeDesc') }}
+                    </p>
+                  </div>
+                </label>
+              </div>
+
+              <!-- Password Policy -->
+              <div class="rounded-lg border border-blue-100 bg-blue-50 px-4 py-3">
+                <p class="mb-1 text-xs font-medium text-blue-700">
+                  {{ t('tenants.resetAdminPassword.policyTitle') }}
+                </p>
+                <ul class="space-y-0.5 text-xs text-blue-600">
+                  <li class="flex items-center gap-1">
+                    <i class="pi pi-check text-xs"></i>
+                    {{ t('tenants.resetAdminPassword.policyMinLength') }}
+                  </li>
+                  <li class="flex items-center gap-1">
+                    <i class="pi pi-check text-xs"></i>
+                    {{ t('tenants.resetAdminPassword.policyUppercase') }}
+                  </li>
+                  <li class="flex items-center gap-1">
+                    <i class="pi pi-check text-xs"></i>
+                    {{ t('tenants.resetAdminPassword.policyLowercase') }}
+                  </li>
+                  <li class="flex items-center gap-1">
+                    <i class="pi pi-check text-xs"></i>
+                    {{ t('tenants.resetAdminPassword.policyDigit') }}
+                  </li>
+                  <li class="flex items-center gap-1">
+                    <i class="pi pi-check text-xs"></i>
+                    {{ t('tenants.resetAdminPassword.policySpecial') }}
+                  </li>
+                </ul>
+              </div>
+            </div>
+
+            <!-- Footer -->
+            <div class="mt-6 flex items-center justify-end gap-3">
+              <button
+                type="button"
+                class="rounded-lg border border-surface-dim px-5 py-2.5 text-sm font-medium text-secondary transition-colors hover:bg-surface-ground"
+                @click="showResetAdminPasswordDialog = false"
+              >
+                {{ t('common.cancel') }}
+              </button>
+              <button
+                type="submit"
+                :disabled="
+                  resetPasswordSubmitting ||
+                  !resetAdminPasswordForm.newPassword ||
+                  resetAdminPasswordForm.newPassword !==
+                    resetAdminPasswordForm.confirmPassword
+                "
+                class="flex items-center gap-2 rounded-lg bg-amber-600 px-5 py-2.5 text-sm font-medium text-white shadow-sm transition-all hover:bg-amber-700 disabled:opacity-50"
+              >
+                <i
+                  v-if="resetPasswordSubmitting"
+                  class="pi pi-spin pi-spinner text-xs"
+                ></i>
+                <i v-else class="pi pi-key text-xs"></i>
+                {{ t('tenants.resetAdminPassword.submit') }}
+              </button>
+            </div>
+          </form>
         </div>
       </div>
     </Teleport>

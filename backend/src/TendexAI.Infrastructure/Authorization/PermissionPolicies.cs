@@ -201,6 +201,7 @@ public static class PermissionPolicies
     public const string TenantsView = "Permission:tenants.view";
     public const string TenantsCreate = "Permission:tenants.create";
     public const string TenantsEdit = "Permission:tenants.edit";
+    public const string TenantsResetAdminPassword = "Permission:tenants.reset_admin_password";
 
     // ═══════════════════════════════════════════════════════════
     //  Profile Module (self-service)

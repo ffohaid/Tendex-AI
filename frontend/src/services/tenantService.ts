@@ -17,6 +17,7 @@ import type {
   UpdateTenantRequest,
   ChangeTenantStatusRequest,
   UpdateTenantBrandingRequest,
+  OperatorResetTenantAdminPasswordRequest,
   TenantListParams,
   TenantSelectorOption,
 } from '@/types/tenant'
@@ -120,6 +121,21 @@ export async function provisionTenant(id: string): Promise<TenantDto> {
  */
 export async function fetchTenantStatuses(): Promise<TenantStatusOption[]> {
   return httpGet<TenantStatusOption[]>(`${BASE_URL}/statuses`)
+}
+
+/* ------------------------------------------------------------------ */
+/*  Operator: Reset Tenant Admin Password                              */
+/* ------------------------------------------------------------------ */
+
+/**
+ * Operator-initiated password reset for a tenant's primary admin.
+ * Endpoint: POST /api/v1/tenants/{id}/reset-admin-password
+ */
+export async function operatorResetTenantAdminPassword(
+  tenantId: string,
+  request: OperatorResetTenantAdminPasswordRequest,
+): Promise<void> {
+  await httpPost<void>(`${BASE_URL}/${tenantId}/reset-admin-password`, request)
 }
 
 /* ------------------------------------------------------------------ */
