@@ -426,3 +426,26 @@ Resolved a critical 500 Internal Server Error that occurred during the creation 
 ### Deployment
 - All database schema changes were applied directly to the SQL Server container (`tendex-sqlserver`) on the Hostinger VPS (187.124.41.141).
 - The backend API is now fully functional for creating new competitions with the added fields.
+
+## Login Fix (2026-04-20)
+
+### Problem
+Users could not login on both MOF tenant (mof.netaq.pro) and operator admin (netaq.pro). The backend returned 500 errors.
+
+### Root Causes
+1. **Corrupted BCrypt password hashes**: The password hashes stored in the database were invalid/mismatched with the actual passwords. The hashes were generated with Python bcrypt using `$2b$` prefix but the stored values were corrupted during a previous reset attempt.
+2. **Locked accounts**: Multiple failed login attempts caused accounts to be locked (AccessFailedCount > 0, LockoutEnd set).
+3. **Missing X-Tenant-Id header injection**: When API calls are made without the X-Tenant-Id header (e.g., direct API testing), the TenantProvider could not resolve the tenant connection string, causing 500 errors.
+
+### Fixes Applied
+1. **Password Reset**: Generated correct BCrypt hash for `Admin@123456` using `$2a$` prefix (compatible with BCrypt.Net) and updated all user accounts across MOF tenant and operator tenant databases.
+2. **Account Unlock**: Reset `AccessFailedCount` to 0 and cleared `LockoutEnd` for all users.
+3. **AuthEndpoints Enhancement**: Added X-Tenant-Id header injection from request body in `LoginAsync`, `RefreshTokenAsync`, `VerifyMfaAsync`, `ForgotPasswordAsync`, and `ResetPasswordAsync` endpoints. This ensures the TenantProvider can resolve the tenant even when the header is not explicitly sent by the client.
+
+### Verification
+- API login tested successfully for `ahmed@mof.gov.sa`, `admin@netaq.pro`, and `khalid@mof.gov.sa` (all HTTP 200)
+- Frontend login tested successfully on both `mof.netaq.pro` (MOF dashboard) and `netaq.pro` (Operator dashboard)
+
+### Default Credentials (All Users)
+- Password: `Admin@123456`
+- All accounts are active and unlocked

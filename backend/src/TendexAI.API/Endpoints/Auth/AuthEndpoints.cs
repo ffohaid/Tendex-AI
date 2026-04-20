@@ -91,6 +91,15 @@ public static class AuthEndpoints
         ISender mediator,
         HttpContext httpContext)
     {
+        // Inject the tenant ID from the request body into the HTTP header
+        // so that TenantProvider can resolve the tenant connection string.
+        // This is necessary because TenantDbContext is resolved via DI
+        // before the command handler runs, and TenantProvider reads from headers.
+        if (request.TenantId != Guid.Empty)
+        {
+            httpContext.Request.Headers["X-Tenant-Id"] = request.TenantId.ToString();
+        }
+
         var ipAddress = GetIpAddress(httpContext);
         var userAgent = httpContext.Request.Headers.UserAgent.ToString();
 
@@ -123,6 +132,12 @@ public static class AuthEndpoints
         ISender mediator,
         HttpContext httpContext)
     {
+        // Inject tenant ID into header for TenantProvider resolution
+        if (request.TenantId != Guid.Empty)
+        {
+            httpContext.Request.Headers["X-Tenant-Id"] = request.TenantId.ToString();
+        }
+
         var ipAddress = GetIpAddress(httpContext);
         var userAgent = httpContext.Request.Headers.UserAgent.ToString();
 
@@ -197,6 +212,12 @@ public static class AuthEndpoints
         ISender mediator,
         HttpContext httpContext)
     {
+        // Inject tenant ID into header for TenantProvider resolution
+        if (request.TenantId != Guid.Empty)
+        {
+            httpContext.Request.Headers["X-Tenant-Id"] = request.TenantId.ToString();
+        }
+
         var ipAddress = GetIpAddress(httpContext);
         var userAgent = httpContext.Request.Headers.UserAgent.ToString();
 
@@ -311,6 +332,12 @@ public static class AuthEndpoints
         ISender mediator,
         HttpContext httpContext)
     {
+        // Inject tenant ID into header for TenantProvider resolution
+        if (request.TenantId != Guid.Empty)
+        {
+            httpContext.Request.Headers["X-Tenant-Id"] = request.TenantId.ToString();
+        }
+
         var ipAddress = GetIpAddress(httpContext);
         var userAgent = httpContext.Request.Headers.UserAgent.ToString();
 
@@ -342,6 +369,12 @@ public static class AuthEndpoints
         ISender mediator,
         HttpContext httpContext)
     {
+        // Inject tenant ID into header for TenantProvider resolution
+        if (request.TenantId != Guid.Empty)
+        {
+            httpContext.Request.Headers["X-Tenant-Id"] = request.TenantId.ToString();
+        }
+
         var ipAddress = GetIpAddress(httpContext);
         var userAgent = httpContext.Request.Headers.UserAgent.ToString();
 
