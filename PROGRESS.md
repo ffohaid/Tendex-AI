@@ -358,3 +358,71 @@ Built a complete feature allowing the Platform Operator (Operator Super Admin) t
 - API call succeeds - backend logs confirm: "Successfully reset password for primary admin mohammed@moh.gov.sa of tenant gov-moh-003"
 - Audit log entry created successfully
 - Note: Email notification shows "host name cannot be empty" error (SMTP not configured yet - non-blocking)
+
+## 2026-04-19: QA Issues Resolution (37 Issues)
+
+### Overview
+Successfully resolved 37 QA issues across the platform, covering Backend, Frontend, AI integration, and UI/UX improvements. All changes have been deployed to the Hostinger production server.
+
+### Key Fixes & Improvements
+
+1. **RFP & Competitions (Issues 22-29)**
+   - Added missing fields (`StartDate`, `EndDate`, `Department`, `FiscalYear`) to all RFP creation/update flows (Issue 23).
+   - Implemented PDF export functionality for RFPs with a dedicated `RfpExportView` (Issue 22).
+   - Fixed BOQ items not saving correctly during RFP updates by sending `clearExisting=true` (Issue 24).
+   - Separated mandatory attachments selection from file upload in `Step5Attachments` (Issue 25).
+   - Fixed date picker validation to prevent selecting past dates (Issue 26).
+   - Added input validation for criteria weights in `Step2Settings` (Issue 27).
+   - Fixed fiscal year dropdown selection (Issue 28).
+   - Ensured default sections button is always visible in edit mode (Issue 29).
+
+2. **AI Integration (Issues 16-20)**
+   - Fixed AI text generation prompts to respect character limits (`maxCharacters`) and generate appropriate content for specific fields (Issues 19, 20).
+   - Improved error messages when AI BOQ generation fails (Issue 18).
+   - Fixed AI attachment recommendations to include suggestions not present in the predefined list (Issue 17).
+   - Verified AI RFP creation flow and file upload navigation (Issue 16).
+
+3. **Operator Platform & Templates (Issues 30-33)**
+   - Added automatic creation of a default admin user during tenant database provisioning (Issue 30).
+   - Improved error handling and added success notifications for template uploads (Issue 31).
+   - Fixed workflow edit/delete permissions to match Backend policies (`workflow.edit`, `workflow.delete`) (Issue 32).
+   - Enhanced `MapRoleNameToSystemRole` to correctly map roles and display pending tasks in the Task Center (Issue 33).
+
+4. **Supplier Offers & Evaluation (Issues 34-37)**
+   - Added `OfferCount` to `CompetitionListItemDto` to correctly display the number of offers in the project card (Issue 34).
+   - Added `min` attribute to submission date picker to prevent past dates (Issue 35).
+   - Implemented soft-delete functionality for supplier offers with a new `Delete` endpoint (Issue 36).
+   - Expanded `StartTechnicalEvaluationCommandHandler` to accept `Approved` status and automatically transition the competition to `TechnicalAnalysis` (Issue 37).
+
+5. **UI/UX & General Fixes (Issues 1-15, 21)**
+   - Expanded `AutoSaveCompetitionCommandHandler` to allow saving changes when the competition is in `PendingApproval` status (Issue 21).
+   - Created missing placeholder views and layouts (AuthLayout, MainLayout, Dashboard, UserManagement, etc.) to resolve navigation errors (Issues 1-14).
+   - Fixed status filter in RFP list view (Issue 15).
+
+### Deployment
+- Rebuilt and deployed both `tendex-backend` and `tendex-frontend` Docker containers on the Hostinger VPS (187.124.41.141).
+- Verified containers are running and healthy.
+
+## 2026-04-20: Fix Database Schema Issues for Competition Creation
+### Overview
+Resolved a critical 500 Internal Server Error that occurred during the creation of new RFPs (Competitions) in the production environment. The issue was caused by missing columns and incorrect data types in the tenant databases.
+
+### Key Fixes & Improvements
+1. **Database Schema Synchronization**
+   - Investigated the tenant databases and found that the `StartDate`, `EndDate`, `Department`, and `FiscalYear` columns were missing from the `rfp.Competitions` table.
+   - Found that the `IsDeleted` column was missing from the `evaluation.SupplierOffers` table.
+   - Created and executed a SQL migration script (`fix_columns_v2.sql`) to add these missing columns to all 6 tenant databases (`tendex_tenant_gov_mof_001`, `tendex_tenant_gov_edu_002`, `tendex_tenant_gov_moh_003`, `tendex_tenant_momrah_001`, `tendex_tenant_ff001`, `tenant_a86f3588`) and the `master_platform` database.
+
+2. **Data Type Correction**
+   - Discovered a `System.InvalidCastException` where Entity Framework Core was trying to cast `DateTimeOffset` to `DateTime`.
+   - Identified that the newly added `StartDate` and `EndDate` columns were incorrectly created as `DATETIMEOFFSET` instead of `DATETIME2` (which maps to C#'s `DateTime?`).
+   - Created and executed a secondary SQL script (`fix_column_types2.sql`) to alter the column types to `DATETIME2` across all tenant databases.
+
+3. **Authentication & Testing**
+   - Reset the password hash for the test user (`ahmed@mof.gov.sa`) to `Admin@123456` using BCrypt to facilitate testing.
+   - Successfully tested the competition creation API endpoint (`POST /api/v1/competitions`) using a Python script, verifying that it returns a `201 Created` status code and correctly saves the new fields.
+   - Verified the fix through the frontend UI by logging in and navigating the "Create RFP from Scratch" flow.
+
+### Deployment
+- All database schema changes were applied directly to the SQL Server container (`tendex-sqlserver`) on the Hostinger VPS (187.124.41.141).
+- The backend API is now fully functional for creating new competitions with the added fields.
