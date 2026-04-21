@@ -449,3 +449,46 @@ Users could not login on both MOF tenant (mof.netaq.pro) and operator admin (net
 ### Default Credentials (All Users)
 - Password: `Admin@123456`
 - All accounts are active and unlocked
+
+## 2026-04-21: Fix Stopper Issues - Setup Admin Dialog & Platform URL
+
+### Overview
+Resolved two critical stopper issues reported during QA testing. Both issues were caused by the same root cause: unescaped `@` symbols in vue-i18n locale files causing a SyntaxError that crashed the Vue rendering engine.
+
+### Root Cause
+The `@` symbol is a reserved character in vue-i18n (used for linked messages). When locale files contained email placeholders like `admin@example.gov.sa`, the i18n parser threw `SyntaxError: 10` (INVALID_TOKEN_IN_PLACEHOLDER), which caused the entire Vue component to crash and render a blank page.
+
+### Stopper Issue #1: Setup Admin Dialog
+**Problem:** Clicking "إعداد مسؤول الجهة" (Setup Entity Admin) button caused the page to go blank.
+**Fix:** Escaped `@` symbols in locale files using vue-i18n literal syntax: `admin{'@'}example.gov.sa`
+**Result:** Dialog now opens correctly with all fields (email, first name, last name, password, confirm password, generate random password, force change on login).
+
+### Stopper Issue #2: Platform URL
+**Problem:** Platform URL was not accessible after entity creation.
+**Status:** This was already working correctly. The URL `https://mof.netaq.pro` appears in the header, Quick Actions, and Basic Info sections, and correctly navigates to the tenant's login page.
+
+### Fixes Applied
+1. **Locale Files (ar.json & en.json):**
+   - `tenants.placeholders.email`: `example@gov.sa` → `example{'@'}gov.sa`
+   - `tenants.placeholders.adminEmail`: `admin@gov.sa` → `admin{'@'}gov.sa`
+   - `tenants.setupAdmin.adminEmailPlaceholder`: `admin@example.gov.sa` → `admin{'@'}example.gov.sa`
+   - `purchaseOrders.placeholders.contactEmail`: `contact@gov.sa` → `contact{'@'}gov.sa`
+
+2. **Deployment Fix:**
+   - Identified that Docker build context (`/opt/tendex-ai/frontend/`) was not synced with the git repo (`/opt/tendex-ai/repo/frontend/`)
+   - Added `rsync` step to sync repo files to deploy directories before Docker build
+   - Rebuilt frontend Docker image with `--no-cache` and recreated container
+
+### Files Modified:
+- `frontend/src/locales/ar.json`
+- `frontend/src/locales/en.json`
+- `frontend/src/views/tenants/TenantDetailView.vue` (removed debug console.log statements)
+
+### Commits:
+- `345311f` - fix: escape @ symbol in i18n locale files to prevent vue-i18n SyntaxError
+
+### Verification:
+- Tested on netaq.pro with admin@netaq.pro (Operator Super Admin)
+- Setup Admin dialog opens correctly with all form fields
+- Platform URL link opens tenant login page (https://mof.netaq.pro)
+- No Vue errors in browser console
