@@ -35,6 +35,14 @@ public sealed class CreateAiConfigurationCommandHandler
             // Encrypt the API key with AES-256 before storage
             var encryptedApiKey = _encryptionService.Encrypt(request.PlainApiKey);
 
+            // Round-trip validation: ensure the key can be decrypted back correctly
+            var roundTripCheck = _encryptionService.Decrypt(encryptedApiKey);
+            if (roundTripCheck != request.PlainApiKey)
+            {
+                throw new InvalidOperationException(
+                    "Encryption round-trip validation failed. The encryption key may be misconfigured.");
+            }
+
             var configuration = new AiConfiguration(
                 tenantId: request.TenantId,
                 provider: request.Provider,

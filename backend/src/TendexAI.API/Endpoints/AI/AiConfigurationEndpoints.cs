@@ -2,6 +2,7 @@ using MediatR;
 using TendexAI.Application.Features.AI.Commands.CreateAiConfiguration;
 using TendexAI.Application.Features.AI.Commands.DeleteAiConfiguration;
 using TendexAI.Application.Features.AI.Commands.RotateAiApiKey;
+using TendexAI.Application.Features.AI.Commands.TestAiConnection;
 using TendexAI.Application.Features.AI.Commands.UpdateAiConfiguration;
 using TendexAI.Application.Features.AI.Queries.GetAiConfigurations;
 using TendexAI.Domain.Enums;
@@ -147,6 +148,29 @@ public static class AiConfigurationEndpoints
         .WithSummary("Rotate the API key for an AI configuration (AES-256 encrypted)")
         .Produces(StatusCodes.Status204NoContent)
         .Produces(StatusCodes.Status404NotFound)
+        .RequireAuthorization(PermissionPolicies.AiSettingsManage);
+
+        // POST /api/v1/ai/configurations/{configurationId}/test-connection
+        group.MapPost("/{configurationId:guid}/test-connection", async (
+            Guid configurationId,
+            IMediator mediator,
+            CancellationToken ct) =>
+        {
+            var command = new TestAiConnectionCommand
+            {
+                ConfigurationId = configurationId
+            };
+
+            var result = await mediator.Send(command, ct);
+
+            return result.IsSuccess
+                ? Results.Ok(result)
+                : Results.UnprocessableEntity(result);
+        })
+        .WithName("TestAiConnection")
+        .WithSummary("Test connectivity and API key validity for an AI configuration")
+        .Produces<TestAiConnectionResult>()
+        .Produces<TestAiConnectionResult>(StatusCodes.Status422UnprocessableEntity)
         .RequireAuthorization(PermissionPolicies.AiSettingsManage);
     }
 }
