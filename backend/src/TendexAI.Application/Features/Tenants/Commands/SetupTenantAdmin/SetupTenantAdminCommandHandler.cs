@@ -2,6 +2,7 @@ using Microsoft.Extensions.Logging;
 using TendexAI.Application.Common.Interfaces;
 using TendexAI.Application.Common.Messaging;
 using TendexAI.Domain.Common;
+using TendexAI.Domain.Entities;
 
 namespace TendexAI.Application.Features.Tenants.Commands.SetupTenantAdmin;
 
