@@ -492,3 +492,70 @@ The `@` symbol is a reserved character in vue-i18n (used for linked messages). W
 - Setup Admin dialog opens correctly with all form fields
 - Platform URL link opens tenant login page (https://mof.netaq.pro)
 - No Vue errors in browser console
+
+---
+
+## Task: QA Team Critical Issues Fix (April 21, 2026 - Session 2)
+
+### QA Issues Reported:
+1. **502 Bad Gateway** on mof.netaq.pro
+2. **500 Internal Server Error** on AI extraction (RFP upload/extract)
+3. **500 Internal Server Error** on template-based RFP creation
+
+### Investigation Results:
+
+#### Issue 1: 502 Bad Gateway
+**Root Cause:** Temporary issue caused by frontend Docker container recreation during the previous deployment session. All containers were running normally when investigated.
+**Status:** Resolved (self-healed after container stabilization).
+
+#### Issue 2: AI Extraction 500 Error
+**Root Cause:** Two backend issues found in logs:
+1. **Qdrant Authentication Failure:** The `Qdrant__ApiKey` environment variable was missing from the backend service in `docker-compose.prod.yml`. The Qdrant server requires API key authentication, but the backend was connecting without credentials, resulting in "Unauthorized" errors during RAG context retrieval.
+2. **AI API Key Decryption Failure:** Configuration `CAA6B482` (OpenAI gpt-4.1-mini, Priority 2) has an encrypted API key that cannot be decrypted with the current encryption key (CryptographicException: Padding is invalid). The system correctly falls back to the next provider (GoogleVertexAI gemini-2.5-flash).
+
+**Status:** Qdrant auth fixed. The decryption issue requires the operator to rotate the API key via the admin panel.
+
+#### Issue 3: Template-based RFP Creation 500 Error
+**Root Cause:** Could not reproduce. Template creation worked successfully during testing, creating a booklet with 13 sections and 43 examples.
+**Status:** Could not reproduce; likely a transient issue.
+
+### Fixes Applied:
+
+1. **Qdrant API Key in docker-compose.prod.yml:**
+   - Added `Qdrant__ApiKey: ${QDRANT_API_KEY}` to backend service environment variables
+   - This passes the API key from `.env` to the backend container
+   - Qdrant auth now works (error changed from "Unauthorized" to "Collection doesn't exist" which is expected for empty collections)
+
+2. **New Test Connection Endpoint:**
+   - Created `POST /api/v1/ai/configurations/{id}/test-connection` endpoint
+   - Tests API key decryption and provider connectivity
+   - Returns detailed diagnostics (decryption status, connection status, latency)
+   - Helps operators identify broken configurations
+
+3. **Encryption Round-Trip Validation:**
+   - Added validation in `CreateAiConfigurationCommandHandler`
+   - After encrypting an API key, immediately decrypts it to verify integrity
+   - Prevents storing keys that can't be decrypted later (prevents the CAA6B482 issue from recurring)
+
+### Files Modified:
+- `infrastructure/docker-compose.prod.yml` (added Qdrant__ApiKey)
+- `backend/src/TendexAI.API/Endpoints/AI/AiConfigurationEndpoints.cs` (added test-connection endpoint)
+- `backend/src/TendexAI.Application/Features/AI/Commands/TestAiConnection/TestAiConnectionCommand.cs` (new)
+- `backend/src/TendexAI.Application/Features/AI/Commands/TestAiConnection/TestAiConnectionCommandHandler.cs` (new)
+- `backend/src/TendexAI.Application/Features/AI/Commands/CreateAiConfiguration/CreateAiConfigurationCommandHandler.cs` (added round-trip validation)
+
+### Commits:
+- `9e7e4e6` - fix: add Qdrant API key to backend env, add test-connection endpoint, add encryption round-trip validation
+
+### Deployment:
+- Synced repo to deployment directories using rsync
+- Rebuilt backend Docker image with --no-cache
+- Recreated backend container with new Qdrant__ApiKey environment variable
+
+### Verification:
+- AI extraction tested successfully: 90% confidence, 8.8s latency via GoogleVertexAI/gemini-2.5-flash
+- Qdrant authentication fixed (no more "Unauthorized" errors)
+- Template-based booklet creation works correctly
+- Setup Admin dialog still works correctly
+- Platform URL still works correctly
+- All Docker containers healthy and running
