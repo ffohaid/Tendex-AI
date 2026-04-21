@@ -559,3 +559,64 @@ The `@` symbol is a reserved character in vue-i18n (used for linked messages). W
 - Setup Admin dialog still works correctly
 - Platform URL still works correctly
 - All Docker containers healthy and running
+
+
+---
+
+## 2026-04-21: Fix Stopper Issues #3 and #4
+
+### Stopper Issue #3: Error when adding admin user for new tenant
+
+**Root Cause:** The `SeedDefaultAdminUserAsync` method in `TenantDatabaseProvisioner.cs` had two SQL INSERT statements with missing NOT NULL columns:
+
+1. **Users INSERT** was missing the `MfaEnabled` column (NOT NULL, no default).
+2. **UserRoles INSERT** was missing `Id`, `AssignedAt`, `AssignedBy`, and `CreatedAt` columns (all NOT NULL, no defaults).
+
+**Fix:**
+- Added `MfaEnabled = 0` to the Users INSERT statement.
+- Added `Id = NEWID()`, `AssignedAt`, `AssignedBy = 'SYSTEM'`, and `CreatedAt` to the UserRoles INSERT statement.
+
+### Stopper Issue #4: New tenant URL doesn't work
+
+**Root Cause (Two Issues):**
+
+1. **SSL Certificate:** The Let's Encrypt certificate for `netaq.pro` did not include `ffc.netaq.pro` in its Subject Alternative Names (SANs). The certificate only covered a predefined list of subdomains.
+2. **Tenant Resolution:** The `TenantProvider` class was filtering tenants with `Status == TenantStatus.Active` (value 4), but newly provisioned tenants start in `EnvironmentSetup` status (value 1). This meant no provisioned tenant could be accessed until manually set to Active.
+
+**Fix:**
+1. **SSL:** Expanded the Let's Encrypt certificate using certbot to include `ffc.netaq.pro` and `ff.netaq.pro`. Reloaded nginx to apply.
+2. **TenantProvider:** Changed the tenant lookup filter from `Status == Active` to exclude only blocked statuses (`Suspended`, `Cancelled`, `Archived`) and require `IsProvisioned == true`. This allows tenants in `EnvironmentSetup`, `Training`, `FinalAcceptance`, `Active`, and `RenewalWindow` statuses to be accessible.
+
+### Files Modified:
+- `backend/src/TendexAI.Infrastructure/MultiTenancy/TenantDatabaseProvisioner.cs` (fixed INSERT statements)
+- `backend/src/TendexAI.Infrastructure/MultiTenancy/TenantProvider.cs` (fixed tenant status filter)
+
+### Commits:
+- `0699885` - fix: add missing MfaEnabled column and UserRoles columns to SeedDefaultAdminUserAsync
+- `d7bede4` - fix: allow provisioned tenants in operational statuses to be resolved
+
+### Deployment:
+- Synced repo to deployment directories using rsync
+- Dropped partially created `tendex_tenant_ffc_001` database
+- Reset FFC tenant status to PendingProvisioning
+- Rebuilt backend Docker image with --no-cache
+- Recreated backend container
+- Re-provisioned FFC tenant via API (success)
+- Expanded SSL certificate to include ffc.netaq.pro and ff.netaq.pro
+- Reloaded nginx
+
+### Verification:
+- FFC tenant provisioning: SUCCESS (database created, migrations applied, admin user seeded)
+- Setup Admin API: SUCCESS (HTTP 204)
+- SSL for ffc.netaq.pro: VALID (HTTP 200)
+- Tenant resolve: SUCCESS (returns correct tenant data)
+- FFC tenant login: SUCCESS (HTTP 200, JWT token returned)
+- Operator login (netaq.pro): Still works correctly
+
+### Important Note for Future Agents:
+When adding new tenants, the SSL certificate must be expanded to include the new subdomain. Use:
+```bash
+docker exec tendex-certbot certbot certonly --expand --webroot -w /var/www/certbot --cert-name netaq.pro -d netaq.pro -d www.netaq.pro -d [all existing domains] -d [new-subdomain].netaq.pro --non-interactive --agree-tos
+docker exec tendex-nginx nginx -s reload
+```
+Consider automating this in the tenant provisioning workflow.
