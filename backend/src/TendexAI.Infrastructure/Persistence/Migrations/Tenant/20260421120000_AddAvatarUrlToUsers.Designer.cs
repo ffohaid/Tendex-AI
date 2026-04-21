@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using TendexAI.Infrastructure.Persistence;
 
@@ -11,9 +12,11 @@ using TendexAI.Infrastructure.Persistence;
 namespace TendexAI.Infrastructure.Persistence.Migrations.Tenant
 {
     [DbContext(typeof(TenantDbContext))]
-    partial class TenantDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260421120000_AddAvatarUrlToUsers")]
+    partial class AddAvatarUrlToUsers
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -218,6 +221,7 @@ namespace TendexAI.Infrastructure.Persistence.Migrations.Tenant
                         .IsRequired()
                         .HasMaxLength(200)
                         .HasColumnType("nvarchar(200)");
+
 
 
                     b.Property<string>("PhasesString")
@@ -3169,13 +3173,6 @@ namespace TendexAI.Infrastructure.Persistence.Migrations.Tenant
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
-
-                    b.Property<int?>("ActiveFromPhase")
-                        .HasColumnType("int");
-
-                    b.Property<int?>("ActiveToPhase")
-                        .HasColumnType("int");
-
                     b.Property<DateTime>("AssignedAt")
                         .HasColumnType("datetime2");
 
