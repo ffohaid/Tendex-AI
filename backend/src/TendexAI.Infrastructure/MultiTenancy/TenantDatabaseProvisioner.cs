@@ -239,22 +239,20 @@ public sealed class TenantDatabaseProvisioner : ITenantDatabaseProvisioner
         var insertUserCommand = connection.CreateCommand();
         insertUserCommand.CommandText = @"
             INSERT INTO [identity].Users
-                (Id, FirstNameAr, FirstNameEn, LastNameAr, LastNameEn, Email, NormalizedEmail,
+                (Id, FirstName, LastName, Email, NormalizedEmail,
                  UserName, NormalizedUserName, PasswordHash, TenantId, IsActive,
-                 EmailConfirmed, PhoneNumberConfirmed, TwoFactorEnabled, LockoutEnabled,
-                 AccessFailedCount, SecurityStamp, ConcurrencyStamp, CreatedAt, MustChangePassword)
+                 EmailConfirmed, PhoneNumberConfirmed, LockoutEnabled,
+                 AccessFailedCount, SecurityStamp, ConcurrencyStamp, CreatedAt)
             VALUES
-                (@Id, @FirstNameAr, @FirstNameEn, @LastNameAr, @LastNameEn, @Email, @NormalizedEmail,
+                (@Id, @FirstName, @LastName, @Email, @NormalizedEmail,
                  @UserName, @NormalizedUserName, @PasswordHash, @TenantId, 1,
-                 1, 0, 0, 1,
-                 0, @SecurityStamp, @ConcurrencyStamp, @CreatedAt, 1)";
+                 1, 0, 1,
+                 0, @SecurityStamp, @ConcurrencyStamp, @CreatedAt)";
 
         var adminEmail = $"admin@{tenantId:N}.tendex.local";
         insertUserCommand.Parameters.Add(new SqlParameter("@Id", userId));
-        insertUserCommand.Parameters.Add(new SqlParameter("@FirstNameAr", "مدير"));
-        insertUserCommand.Parameters.Add(new SqlParameter("@FirstNameEn", "Admin"));
-        insertUserCommand.Parameters.Add(new SqlParameter("@LastNameAr", "النظام"));
-        insertUserCommand.Parameters.Add(new SqlParameter("@LastNameEn", "System"));
+        insertUserCommand.Parameters.Add(new SqlParameter("@FirstName", "مدير"));
+        insertUserCommand.Parameters.Add(new SqlParameter("@LastName", "النظام"));
         insertUserCommand.Parameters.Add(new SqlParameter("@Email", adminEmail));
         insertUserCommand.Parameters.Add(new SqlParameter("@NormalizedEmail", adminEmail.ToUpperInvariant()));
         insertUserCommand.Parameters.Add(new SqlParameter("@UserName", adminEmail));
