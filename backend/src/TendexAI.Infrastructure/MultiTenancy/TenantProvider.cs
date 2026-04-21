@@ -71,10 +71,21 @@ public sealed class TenantProvider : ITenantProvider
             return;
         }
 
-        // Look up the tenant in the master database (synchronous to avoid deadlocks in DI resolution)
+        // Look up the tenant in the master database (synchronous to avoid deadlocks in DI resolution).
+        // Allow access for all operational statuses (EnvironmentSetup through RenewalWindow).
+        // Only Suspended, Cancelled, and Archived tenants are blocked.
+        var blockedStatuses = new[]
+        {
+            Domain.Enums.TenantStatus.Suspended,
+            Domain.Enums.TenantStatus.Cancelled,
+            Domain.Enums.TenantStatus.Archived
+        };
+
         var tenant = _masterDb.Tenants
             .AsNoTracking()
-            .Where(t => t.Id == tenantId && t.Status == Domain.Enums.TenantStatus.Active)
+            .Where(t => t.Id == tenantId
+                        && t.IsProvisioned
+                        && !blockedStatuses.Contains(t.Status))
             .Select(t => new { t.Id, t.ConnectionString })
             .FirstOrDefault();
 
