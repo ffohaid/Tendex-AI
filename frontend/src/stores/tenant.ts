@@ -19,6 +19,7 @@ import type {
   ChangeTenantStatusRequest,
   UpdateTenantBrandingRequest,
   OperatorResetTenantAdminPasswordRequest,
+  SetupTenantAdminRequest,
   TenantListParams,
   TenantSelectorOption,
   TenantStatus,
@@ -230,6 +231,26 @@ export const useTenantStore = defineStore('tenant', () => {
     }
   }
 
+  /** Operator: Setup tenant admin credentials. */
+  async function setupTenantAdmin(
+    id: string,
+    request: SetupTenantAdminRequest,
+  ): Promise<boolean> {
+    isSubmitting.value = true
+    error.value = null
+
+    try {
+      await tenantService.setupTenantAdmin(id, request)
+      successMessage.value = 'tenants.messages.setupAdminSuccess'
+      return true
+    } catch (err) {
+      error.value = extractError(err)
+      return false
+    } finally {
+      isSubmitting.value = false
+    }
+  }
+
   /** Operator: Reset tenant admin password. */
   async function resetTenantAdminPassword(
     id: string,
@@ -342,6 +363,7 @@ export const useTenantStore = defineStore('tenant', () => {
     updateBranding,
     changeStatus,
     provision,
+    setupTenantAdmin,
     resetTenantAdminPassword,
     loadStatusOptions,
     loadSelectorOptions,

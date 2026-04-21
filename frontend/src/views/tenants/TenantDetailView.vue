@@ -21,6 +21,7 @@ import type {
   UpdateTenantBrandingRequest,
   ChangeTenantStatusRequest,
   OperatorResetTenantAdminPasswordRequest,
+  SetupTenantAdminRequest,
 } from '@/types/tenant'
 
 const { t, locale } = useI18n()
@@ -69,6 +70,26 @@ const statusChangeForm = ref<ChangeTenantStatusRequest>({
   newStatus: TenantStatus.Active,
 })
 const showStatusDialog = ref(false)
+
+/** Setup Admin dialog */
+const showSetupAdminDialog = ref(false)
+const setupAdminForm = ref<SetupTenantAdminRequest>({
+  adminEmail: '',
+  firstName: '',
+  lastName: '',
+  password: '',
+  confirmPassword: '',
+  forceChangeOnLogin: true,
+})
+const showSetupPassword = ref(false)
+const showSetupConfirmPassword = ref(false)
+const setupPasswordStrength = ref<{ level: string; label: string; color: string }>({
+  level: '',
+  label: '',
+  color: '',
+})
+const setupAdminError = ref('')
+const setupAdminSubmitting = ref(false)
 
 /** Reset Admin Password dialog */
 const showResetAdminPasswordDialog = ref(false)
@@ -271,6 +292,125 @@ async function triggerProvisioning() {
 /** Go back */
 function goBack() {
   router.push({ name: 'TenantList' })
+}
+
+/** Open Setup Admin dialog */
+function openSetupAdminDialog() {
+  setupAdminForm.value = {
+    adminEmail: '',
+    firstName: '',
+    lastName: '',
+    password: '',
+    confirmPassword: '',
+    forceChangeOnLogin: true,
+  }
+  showSetupPassword.value = false
+  showSetupConfirmPassword.value = false
+  setupPasswordStrength.value = { level: '', label: '', color: '' }
+  setupAdminError.value = ''
+  showSetupAdminDialog.value = true
+}
+
+/** Check setup password strength */
+function checkSetupPasswordStrength(password: string) {
+  if (!password) {
+    setupPasswordStrength.value = { level: '', label: '', color: '' }
+    return
+  }
+  let score = 0
+  if (password.length >= 8) score++
+  if (password.length >= 12) score++
+  if (/[A-Z]/.test(password)) score++
+  if (/[a-z]/.test(password)) score++
+  if (/[0-9]/.test(password)) score++
+  if (/[^A-Za-z0-9]/.test(password)) score++
+  if (score <= 2)
+    setupPasswordStrength.value = {
+      level: 'weak',
+      label: t('tenants.resetAdminPassword.strengthWeak'),
+      color: 'bg-red-500',
+    }
+  else if (score <= 4)
+    setupPasswordStrength.value = {
+      level: 'medium',
+      label: t('tenants.resetAdminPassword.strengthMedium'),
+      color: 'bg-amber-500',
+    }
+  else
+    setupPasswordStrength.value = {
+      level: 'strong',
+      label: t('tenants.resetAdminPassword.strengthStrong'),
+      color: 'bg-green-500',
+    }
+}
+
+/** Generate random password for setup admin */
+function generateSetupRandomPassword() {
+  const upper = 'ABCDEFGHJKLMNPQRSTUVWXYZ'
+  const lower = 'abcdefghjkmnpqrstuvwxyz'
+  const digits = '23456789'
+  const special = '@#$%&*!'
+  const all = upper + lower + digits + special
+  let pwd = ''
+  pwd += upper[Math.floor(Math.random() * upper.length)]
+  pwd += lower[Math.floor(Math.random() * lower.length)]
+  pwd += digits[Math.floor(Math.random() * digits.length)]
+  pwd += special[Math.floor(Math.random() * special.length)]
+  for (let i = 0; i < 8; i++) pwd += all[Math.floor(Math.random() * all.length)]
+  pwd = pwd.split('').sort(() => Math.random() - 0.5).join('')
+  setupAdminForm.value.password = pwd
+  setupAdminForm.value.confirmPassword = pwd
+  showSetupPassword.value = true
+  showSetupConfirmPassword.value = true
+  checkSetupPasswordStrength(pwd)
+}
+
+/** Handle Setup Admin submission */
+async function handleSetupAdmin() {
+  setupAdminError.value = ''
+  if (!setupAdminForm.value.adminEmail) {
+    setupAdminError.value = t('tenants.setupAdmin.emailRequired')
+    return
+  }
+  if (!setupAdminForm.value.firstName || !setupAdminForm.value.lastName) {
+    setupAdminError.value = t('tenants.setupAdmin.nameRequired')
+    return
+  }
+  if (setupAdminForm.value.password !== setupAdminForm.value.confirmPassword) {
+    setupAdminError.value = t('tenants.resetAdminPassword.passwordMismatch')
+    return
+  }
+  if (setupAdminForm.value.password.length < 8) {
+    setupAdminError.value = t('tenants.resetAdminPassword.passwordTooShort')
+    return
+  }
+  setupAdminSubmitting.value = true
+  try {
+    const success = await tenantStore.setupTenantAdmin(
+      tenantId.value,
+      setupAdminForm.value,
+    )
+    if (success) {
+      showSetupAdminDialog.value = false
+      setTimeout(() => {
+        tenantStore.clearMessages()
+      }, 5000)
+    } else {
+      setupAdminError.value =
+        error.value || t('tenants.setupAdmin.failed')
+    }
+  } catch (e: any) {
+    const detail =
+      e?.response?.data?.detail ||
+      e?.response?.data?.title ||
+      e?.message ||
+      ''
+    setupAdminError.value = detail
+      ? `${t('tenants.setupAdmin.failed')}: ${detail}`
+      : t('tenants.setupAdmin.failed')
+  } finally {
+    setupAdminSubmitting.value = false
+  }
 }
 
 /** Open Reset Admin Password dialog */
@@ -501,8 +641,19 @@ watch(activeTab, (newTab) => {
                 {{ t(getStatusBadge(currentTenant.status).labelKey) }}
               </span>
             </div>
-            <p class="mt-1 text-sm text-tertiary" dir="ltr">
-              {{ currentTenant.subdomain }}.tendex.ai
+            <a
+              v-if="currentTenant.platformUrl"
+              :href="currentTenant.platformUrl"
+              target="_blank"
+              rel="noopener noreferrer"
+              class="mt-1 inline-flex items-center gap-1 text-sm text-primary hover:underline"
+              dir="ltr"
+            >
+              <i class="pi pi-external-link text-xs"></i>
+              {{ currentTenant.platformUrl }}
+            </a>
+            <p v-else class="mt-1 text-sm text-tertiary" dir="ltr">
+              {{ currentTenant.subdomain }}
             </p>
           </div>
           <div class="flex items-center gap-2">
@@ -553,6 +704,23 @@ watch(activeTab, (newTab) => {
             </div>
             <i class="pi pi-chevron-left ms-auto text-xs text-tertiary rtl:pi-chevron-right"></i>
           </button>
+          <!-- Setup Admin -->
+          <button
+            v-if="currentTenant.isProvisioned"
+            type="button"
+            class="flex items-center gap-4 rounded-lg border border-emerald-200 bg-emerald-50/50 p-4 text-start transition-colors hover:border-emerald-300 hover:bg-emerald-50"
+            @click="openSetupAdminDialog"
+          >
+            <div class="flex h-10 w-10 items-center justify-center rounded-lg bg-emerald-100">
+              <i class="pi pi-user-plus text-lg text-emerald-600"></i>
+            </div>
+            <div>
+              <p class="text-sm font-semibold text-secondary">{{ t('tenants.quickActions.setupAdmin') }}</p>
+              <p class="text-xs text-tertiary">{{ t('tenants.quickActions.setupAdminDesc') }}</p>
+            </div>
+            <i class="pi pi-chevron-left ms-auto text-xs text-tertiary rtl:pi-chevron-right"></i>
+          </button>
+          <!-- Reset Admin Password -->
           <button
             v-if="currentTenant.isProvisioned"
             type="button"
@@ -568,6 +736,23 @@ watch(activeTab, (newTab) => {
             </div>
             <i class="pi pi-chevron-left ms-auto text-xs text-tertiary rtl:pi-chevron-right"></i>
           </button>
+          <!-- Platform URL -->
+          <a
+            v-if="currentTenant.platformUrl"
+            :href="currentTenant.platformUrl"
+            target="_blank"
+            rel="noopener noreferrer"
+            class="flex items-center gap-4 rounded-lg border border-blue-200 bg-blue-50/50 p-4 text-start transition-colors hover:border-blue-300 hover:bg-blue-50"
+          >
+            <div class="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-100">
+              <i class="pi pi-globe text-lg text-blue-600"></i>
+            </div>
+            <div>
+              <p class="text-sm font-semibold text-secondary">{{ t('tenants.quickActions.platformUrl') }}</p>
+              <p class="text-xs text-tertiary" dir="ltr">{{ currentTenant.platformUrl }}</p>
+            </div>
+            <i class="pi pi-external-link ms-auto text-xs text-tertiary"></i>
+          </a>
         </div>
 
         <!-- Success message -->
@@ -652,7 +837,22 @@ watch(activeTab, (newTab) => {
               </div>
               <div>
                 <span class="text-xs text-tertiary">{{ t('tenants.fields.subdomain') }}</span>
-                <p class="text-sm font-mono text-secondary" dir="ltr">{{ currentTenant.subdomain }}.tendex.ai</p>
+                <p class="text-sm font-mono text-secondary" dir="ltr">{{ currentTenant.subdomain }}</p>
+              </div>
+              <div>
+                <span class="text-xs text-tertiary">{{ t('tenants.fields.platformUrl') }}</span>
+                <a
+                  v-if="currentTenant.platformUrl"
+                  :href="currentTenant.platformUrl"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  class="flex items-center gap-1 text-sm font-mono text-primary hover:underline"
+                  dir="ltr"
+                >
+                  <i class="pi pi-external-link text-[10px]"></i>
+                  {{ currentTenant.platformUrl }}
+                </a>
+                <p v-else class="text-sm text-tertiary">-</p>
               </div>
               <div>
                 <span class="text-xs text-tertiary">{{ t('tenants.fields.contactName') }}</span>
@@ -1205,6 +1405,289 @@ watch(activeTab, (newTab) => {
                 ></i>
                 <i v-else class="pi pi-key text-xs"></i>
                 {{ t('tenants.resetAdminPassword.submit') }}
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </Teleport>
+
+    <!-- Setup Admin Dialog -->
+    <Teleport to="body">
+      <div
+        v-if="showSetupAdminDialog"
+        class="fixed inset-0 z-50 flex items-center justify-center bg-black/40"
+        @click.self="showSetupAdminDialog = false"
+      >
+        <div class="w-full max-w-lg rounded-xl bg-white shadow-xl mx-4 max-h-[90vh] overflow-y-auto">
+          <!-- Header -->
+          <div class="flex items-center justify-between border-b border-surface-dim px-6 py-4">
+            <div class="flex items-center gap-2">
+              <div class="flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-50">
+                <i class="pi pi-user-plus text-emerald-600"></i>
+              </div>
+              <h3 class="text-lg font-semibold text-secondary">
+                {{ t('tenants.setupAdmin.title') }}
+              </h3>
+            </div>
+            <button
+              class="rounded-lg p-1 text-tertiary hover:bg-surface-ground"
+              @click="showSetupAdminDialog = false"
+            >
+              <i class="pi pi-times"></i>
+            </button>
+          </div>
+
+          <!-- Form -->
+          <form class="p-6" @submit.prevent="handleSetupAdmin">
+            <!-- Tenant info header -->
+            <div class="mb-5 flex items-center gap-3 rounded-lg border border-surface-dim bg-surface-ground p-3">
+              <div class="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10 text-sm font-semibold text-primary">
+                <i class="pi pi-building text-lg"></i>
+              </div>
+              <div>
+                <p class="text-sm font-medium text-secondary">{{ getTenantName() }}</p>
+                <p class="text-xs text-tertiary" dir="ltr">{{ currentTenant?.platformUrl || currentTenant?.subdomain }}</p>
+              </div>
+            </div>
+
+            <!-- Info -->
+            <div class="mb-5 flex items-start gap-2 rounded-lg border border-blue-200 bg-blue-50 px-4 py-3 text-sm text-blue-700">
+              <i class="pi pi-info-circle mt-0.5 text-sm"></i>
+              <p>{{ t('tenants.setupAdmin.info') }}</p>
+            </div>
+
+            <!-- Error -->
+            <div
+              v-if="setupAdminError"
+              class="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700"
+            >
+              <div class="flex items-center gap-2">
+                <i class="pi pi-exclamation-circle text-sm"></i>
+                <p>{{ setupAdminError }}</p>
+              </div>
+            </div>
+
+            <div class="space-y-4">
+              <!-- Admin Email -->
+              <div>
+                <label class="mb-1 block text-sm font-medium text-secondary">
+                  {{ t('tenants.setupAdmin.adminEmail') }} *
+                </label>
+                <input
+                  v-model="setupAdminForm.adminEmail"
+                  type="email"
+                  required
+                  dir="ltr"
+                  class="w-full rounded-lg border border-surface-dim bg-surface-ground py-2.5 ps-4 pe-4 text-sm text-secondary focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+                  :placeholder="t('tenants.setupAdmin.adminEmailPlaceholder')"
+                />
+              </div>
+
+              <!-- Name fields -->
+              <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
+                <div>
+                  <label class="mb-1 block text-sm font-medium text-secondary">
+                    {{ t('tenants.setupAdmin.firstName') }} *
+                  </label>
+                  <input
+                    v-model="setupAdminForm.firstName"
+                    type="text"
+                    required
+                    class="w-full rounded-lg border border-surface-dim bg-surface-ground py-2.5 ps-4 pe-4 text-sm text-secondary focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+                    :placeholder="t('tenants.setupAdmin.firstNamePlaceholder')"
+                  />
+                </div>
+                <div>
+                  <label class="mb-1 block text-sm font-medium text-secondary">
+                    {{ t('tenants.setupAdmin.lastName') }} *
+                  </label>
+                  <input
+                    v-model="setupAdminForm.lastName"
+                    type="text"
+                    required
+                    class="w-full rounded-lg border border-surface-dim bg-surface-ground py-2.5 ps-4 pe-4 text-sm text-secondary focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+                    :placeholder="t('tenants.setupAdmin.lastNamePlaceholder')"
+                  />
+                </div>
+              </div>
+
+              <!-- Password -->
+              <div>
+                <label class="mb-1 block text-sm font-medium text-secondary">
+                  {{ t('tenants.setupAdmin.password') }} *
+                </label>
+                <div class="relative">
+                  <input
+                    v-model="setupAdminForm.password"
+                    :type="showSetupPassword ? 'text' : 'password'"
+                    required
+                    minlength="8"
+                    dir="ltr"
+                    class="w-full rounded-lg border border-surface-dim bg-surface-ground py-2.5 ps-4 pe-10 text-sm text-secondary focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+                    :placeholder="t('tenants.setupAdmin.passwordPlaceholder')"
+                    @input="checkSetupPasswordStrength(setupAdminForm.password)"
+                  />
+                  <button
+                    type="button"
+                    class="absolute end-3 top-1/2 -translate-y-1/2 text-tertiary hover:text-secondary"
+                    @click="showSetupPassword = !showSetupPassword"
+                  >
+                    <i :class="['pi text-sm', showSetupPassword ? 'pi-eye-slash' : 'pi-eye']"></i>
+                  </button>
+                </div>
+                <!-- Password Strength -->
+                <div v-if="setupPasswordStrength.level" class="mt-2">
+                  <div class="flex items-center gap-2">
+                    <div class="h-1.5 flex-1 overflow-hidden rounded-full bg-gray-200">
+                      <div
+                        :class="[setupPasswordStrength.color, 'h-full rounded-full transition-all']"
+                        :style="{
+                          width:
+                            setupPasswordStrength.level === 'weak'
+                              ? '33%'
+                              : setupPasswordStrength.level === 'medium'
+                                ? '66%'
+                                : '100%',
+                        }"
+                      ></div>
+                    </div>
+                    <span
+                      class="text-xs font-medium"
+                      :class="
+                        setupPasswordStrength.level === 'weak'
+                          ? 'text-red-600'
+                          : setupPasswordStrength.level === 'medium'
+                            ? 'text-amber-600'
+                            : 'text-green-600'
+                      "
+                    >
+                      {{ setupPasswordStrength.label }}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Confirm Password -->
+              <div>
+                <label class="mb-1 block text-sm font-medium text-secondary">
+                  {{ t('tenants.setupAdmin.confirmPassword') }} *
+                </label>
+                <div class="relative">
+                  <input
+                    v-model="setupAdminForm.confirmPassword"
+                    :type="showSetupConfirmPassword ? 'text' : 'password'"
+                    required
+                    minlength="8"
+                    dir="ltr"
+                    class="w-full rounded-lg border border-surface-dim bg-surface-ground py-2.5 ps-4 pe-10 text-sm text-secondary focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+                    :placeholder="t('tenants.setupAdmin.confirmPasswordPlaceholder')"
+                  />
+                  <button
+                    type="button"
+                    class="absolute end-3 top-1/2 -translate-y-1/2 text-tertiary hover:text-secondary"
+                    @click="showSetupConfirmPassword = !showSetupConfirmPassword"
+                  >
+                    <i :class="['pi text-sm', showSetupConfirmPassword ? 'pi-eye-slash' : 'pi-eye']"></i>
+                  </button>
+                </div>
+                <p
+                  v-if="
+                    setupAdminForm.confirmPassword &&
+                    setupAdminForm.password !== setupAdminForm.confirmPassword
+                  "
+                  class="mt-1 text-xs text-red-600"
+                >
+                  {{ t('tenants.resetAdminPassword.passwordMismatch') }}
+                </p>
+              </div>
+
+              <!-- Generate Random Password -->
+              <button
+                type="button"
+                class="flex items-center gap-2 rounded-lg border border-dashed border-primary/30 bg-primary/5 px-4 py-2.5 text-sm font-medium text-primary transition-colors hover:bg-primary/10"
+                @click="generateSetupRandomPassword"
+              >
+                <i class="pi pi-refresh text-sm"></i>
+                {{ t('tenants.resetAdminPassword.generateRandom') }}
+              </button>
+
+              <!-- Options -->
+              <div class="rounded-lg border border-surface-dim bg-surface-ground/50 p-4">
+                <label class="flex items-center gap-3 cursor-pointer">
+                  <input
+                    v-model="setupAdminForm.forceChangeOnLogin"
+                    type="checkbox"
+                    class="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
+                  />
+                  <div>
+                    <p class="text-sm font-medium text-secondary">
+                      {{ t('tenants.resetAdminPassword.forceChange') }}
+                    </p>
+                    <p class="text-xs text-tertiary">
+                      {{ t('tenants.resetAdminPassword.forceChangeDesc') }}
+                    </p>
+                  </div>
+                </label>
+              </div>
+
+              <!-- Password Policy -->
+              <div class="rounded-lg border border-blue-100 bg-blue-50 px-4 py-3">
+                <p class="mb-1 text-xs font-medium text-blue-700">
+                  {{ t('tenants.resetAdminPassword.policyTitle') }}
+                </p>
+                <ul class="space-y-0.5 text-xs text-blue-600">
+                  <li class="flex items-center gap-1">
+                    <i class="pi pi-check text-xs"></i>
+                    {{ t('tenants.resetAdminPassword.policyMinLength') }}
+                  </li>
+                  <li class="flex items-center gap-1">
+                    <i class="pi pi-check text-xs"></i>
+                    {{ t('tenants.resetAdminPassword.policyUppercase') }}
+                  </li>
+                  <li class="flex items-center gap-1">
+                    <i class="pi pi-check text-xs"></i>
+                    {{ t('tenants.resetAdminPassword.policyLowercase') }}
+                  </li>
+                  <li class="flex items-center gap-1">
+                    <i class="pi pi-check text-xs"></i>
+                    {{ t('tenants.resetAdminPassword.policyDigit') }}
+                  </li>
+                  <li class="flex items-center gap-1">
+                    <i class="pi pi-check text-xs"></i>
+                    {{ t('tenants.resetAdminPassword.policySpecial') }}
+                  </li>
+                </ul>
+              </div>
+            </div>
+
+            <!-- Footer -->
+            <div class="mt-6 flex items-center justify-end gap-3">
+              <button
+                type="button"
+                class="rounded-lg border border-surface-dim px-5 py-2.5 text-sm font-medium text-secondary transition-colors hover:bg-surface-ground"
+                @click="showSetupAdminDialog = false"
+              >
+                {{ t('common.cancel') }}
+              </button>
+              <button
+                type="submit"
+                :disabled="
+                  setupAdminSubmitting ||
+                  !setupAdminForm.adminEmail ||
+                  !setupAdminForm.firstName ||
+                  !setupAdminForm.lastName ||
+                  !setupAdminForm.password ||
+                  setupAdminForm.password !== setupAdminForm.confirmPassword
+                "
+                class="flex items-center gap-2 rounded-lg bg-emerald-600 px-5 py-2.5 text-sm font-medium text-white shadow-sm transition-all hover:bg-emerald-700 disabled:opacity-50"
+              >
+                <i
+                  v-if="setupAdminSubmitting"
+                  class="pi pi-spin pi-spinner text-xs"
+                ></i>
+                <i v-else class="pi pi-user-plus text-xs"></i>
+                {{ t('tenants.setupAdmin.submit') }}
               </button>
             </div>
           </form>

@@ -163,6 +163,7 @@ public static class PermissionAuthorizationExtensions
             .AddPermissionPolicy(PermissionPolicies.TenantsCreate, "tenants.create")
             .AddPermissionPolicy(PermissionPolicies.TenantsEdit, "tenants.edit")
             .AddPermissionPolicy(PermissionPolicies.TenantsResetAdminPassword, "tenants.reset_admin_password")
+            .AddPermissionPolicy(PermissionPolicies.TenantsSetupAdmin, "tenants.setup_admin")
 
             // ─── Feature Flags (Operator) ───
             .AddPermissionPolicy(PermissionPolicies.FeatureFlagsManage, "feature_flags.manage")

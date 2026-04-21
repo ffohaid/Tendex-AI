@@ -18,6 +18,7 @@ import type {
   ChangeTenantStatusRequest,
   UpdateTenantBrandingRequest,
   OperatorResetTenantAdminPasswordRequest,
+  SetupTenantAdminRequest,
   TenantListParams,
   TenantSelectorOption,
 } from '@/types/tenant'
@@ -121,6 +122,21 @@ export async function provisionTenant(id: string): Promise<TenantDto> {
  */
 export async function fetchTenantStatuses(): Promise<TenantStatusOption[]> {
   return httpGet<TenantStatusOption[]>(`${BASE_URL}/statuses`)
+}
+
+/* ------------------------------------------------------------------ */
+/*  Operator: Setup Tenant Admin                                       */
+/* ------------------------------------------------------------------ */
+
+/**
+ * Configures the primary admin user credentials for a newly created tenant.
+ * Endpoint: POST /api/v1/tenants/{id}/setup-admin
+ */
+export async function setupTenantAdmin(
+  tenantId: string,
+  request: SetupTenantAdminRequest,
+): Promise<void> {
+  await httpPost<void>(`${BASE_URL}/${tenantId}/setup-admin`, request)
 }
 
 /* ------------------------------------------------------------------ */

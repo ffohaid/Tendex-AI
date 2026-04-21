@@ -911,7 +911,8 @@
       "primaryColor": "Primary Color",
       "provisionedAt": "Provisioned At",
       "secondaryColor": "Secondary Color",
-      "subdomain": "Subdomain"
+      "subdomain": "Subdomain",
+      "platformUrl": "Platform URL"
     },
     "placeholders": {
       "nameAr": "Enter entity name in Arabic",
@@ -986,7 +987,8 @@
       "brandingSuccess": "Branding updated successfully",
       "provisionSuccess": "Tenant provisioned successfully",
       "statusChanged": "Tenant status changed successfully",
-      "resetAdminPasswordSuccess": "Tenant admin password has been reset successfully"
+      "resetAdminPasswordSuccess": "Tenant admin password has been reset successfully",
+      "setupAdminSuccess": "Entity admin account created successfully"
     },
     "labels": {
       "totalTenants": "Total Entities",
@@ -1013,7 +1015,29 @@
       "branding": "Visual Identity",
       "brandingDesc": "Customize logo and brand colors for this entity",
       "resetAdminPassword": "Reset Admin Password",
-      "resetAdminPasswordDesc": "Reset the primary admin password for this entity"
+      "resetAdminPasswordDesc": "Reset the primary admin password for this entity",
+      "setupAdmin": "Setup Entity Admin",
+      "setupAdminDesc": "Create the primary admin account and set login credentials",
+      "platformUrl": "Platform URL"
+    },
+    "setupAdmin": {
+      "title": "Setup Entity Admin",
+      "info": "Create the primary admin account for this entity. This admin will be able to log in and manage the entity.",
+      "adminEmail": "Admin Email",
+      "adminEmailPlaceholder": "admin@example.gov.sa",
+      "firstName": "First Name",
+      "firstNamePlaceholder": "Enter first name",
+      "lastName": "Last Name",
+      "lastNamePlaceholder": "Enter last name",
+      "password": "Password",
+      "passwordPlaceholder": "Enter password",
+      "confirmPassword": "Confirm Password",
+      "confirmPasswordPlaceholder": "Re-enter password",
+      "submit": "Create Admin Account",
+      "emailRequired": "Email is required",
+      "nameRequired": "First name and last name are required",
+      "success": "Entity admin account created successfully",
+      "failed": "Failed to create entity admin account"
     },
     "resetAdminPassword": {
       "title": "Reset Tenant Admin Password",

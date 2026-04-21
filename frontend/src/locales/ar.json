@@ -911,7 +911,8 @@
       "primaryColor": "اللون الأساسي",
       "provisionedAt": "تاريخ التفعيل",
       "secondaryColor": "اللون الثانوي",
-      "subdomain": "النطاق الفرعي"
+      "subdomain": "النطاق الفرعي",
+      "platformUrl": "رابط المنصة"
     },
     "placeholders": {
       "nameAr": "أدخل اسم الجهة بالعربية",
@@ -986,7 +987,8 @@
       "brandingSuccess": "تم تحديث العلامة التجارية بنجاح",
       "provisionSuccess": "تم تفعيل الجهة بنجاح",
       "statusChanged": "تم تغيير حالة الجهة بنجاح",
-      "resetAdminPasswordSuccess": "تم إعادة تعيين كلمة مرور مسؤول الجهة بنجاح"
+      "resetAdminPasswordSuccess": "تم إعادة تعيين كلمة مرور مسؤول الجهة بنجاح",
+      "setupAdminSuccess": "تم إنشاء حساب مسؤول الجهة بنجاح"
     },
     "labels": {
       "totalTenants": "إجمالي الجهات",
@@ -1013,7 +1015,29 @@
       "branding": "الهوية البصرية",
       "brandingDesc": "تخصيص الشعار وألوان العلامة التجارية لهذه الجهة",
       "resetAdminPassword": "إعادة تعيين كلمة مرور المسؤول",
-      "resetAdminPasswordDesc": "إعادة تعيين كلمة مرور المسؤول الأول لهذه الجهة"
+      "resetAdminPasswordDesc": "إعادة تعيين كلمة مرور المسؤول الأول لهذه الجهة",
+      "setupAdmin": "إعداد مسؤول الجهة",
+      "setupAdminDesc": "إنشاء حساب المسؤول الأول وتعيين بيانات الدخول",
+      "platformUrl": "رابط المنصة"
+    },
+    "setupAdmin": {
+      "title": "إعداد مسؤول الجهة",
+      "info": "قم بإنشاء حساب المسؤول الأول لهذه الجهة. سيتمكن هذا المسؤول من تسجيل الدخول وإدارة الجهة.",
+      "adminEmail": "البريد الإلكتروني للمسؤول",
+      "adminEmailPlaceholder": "admin@example.gov.sa",
+      "firstName": "الاسم الأول",
+      "firstNamePlaceholder": "أدخل الاسم الأول",
+      "lastName": "اسم العائلة",
+      "lastNamePlaceholder": "أدخل اسم العائلة",
+      "password": "كلمة المرور",
+      "passwordPlaceholder": "أدخل كلمة المرور",
+      "confirmPassword": "تأكيد كلمة المرور",
+      "confirmPasswordPlaceholder": "أعد إدخال كلمة المرور",
+      "submit": "إنشاء حساب المسؤول",
+      "emailRequired": "البريد الإلكتروني مطلوب",
+      "nameRequired": "الاسم الأول واسم العائلة مطلوبان",
+      "success": "تم إنشاء حساب مسؤول الجهة بنجاح",
+      "failed": "فشل في إنشاء حساب مسؤول الجهة"
     },
     "resetAdminPassword": {
       "title": "إعادة تعيين كلمة مرور مسؤول الجهة",

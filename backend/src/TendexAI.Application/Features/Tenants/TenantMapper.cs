@@ -9,6 +9,12 @@ namespace TendexAI.Application.Features.Tenants;
 /// </summary>
 internal static class TenantMapper
 {
+    /// <summary>
+    /// The base domain used to construct platform URLs for tenants.
+    /// Format: https://{subdomain}.{BaseDomain}
+    /// </summary>
+    private const string BaseDomain = "netaq.pro";
+
     public static TenantDto MapToDto(Tenant tenant)
     {
         return new TenantDto(
@@ -18,6 +24,7 @@ internal static class TenantMapper
             Identifier: tenant.Identifier,
             Subdomain: tenant.Subdomain,
             DatabaseName: tenant.DatabaseName,
+            PlatformUrl: BuildPlatformUrl(tenant.Subdomain),
             IsProvisioned: tenant.IsProvisioned,
             ProvisionedAt: tenant.ProvisionedAt,
             Status: tenant.Status,
@@ -43,10 +50,22 @@ internal static class TenantMapper
             NameEn: tenant.NameEn,
             Identifier: tenant.Identifier,
             Subdomain: tenant.Subdomain,
+            PlatformUrl: BuildPlatformUrl(tenant.Subdomain),
             Status: tenant.Status,
             StatusName: tenant.Status.ToString(),
             IsProvisioned: tenant.IsProvisioned,
             SubscriptionExpiresAt: tenant.SubscriptionExpiresAt,
             CreatedAt: tenant.CreatedAt);
+    }
+
+    /// <summary>
+    /// Constructs the full platform URL for a tenant based on its subdomain.
+    /// </summary>
+    private static string BuildPlatformUrl(string subdomain)
+    {
+        if (string.IsNullOrWhiteSpace(subdomain))
+            return string.Empty;
+
+        return $"https://{subdomain}.{BaseDomain}";
     }
 }

@@ -12,6 +12,7 @@ public sealed record TenantDto(
     string Identifier,
     string Subdomain,
     string DatabaseName,
+    string PlatformUrl,
     bool IsProvisioned,
     DateTime? ProvisionedAt,
     TenantStatus Status,
@@ -37,6 +38,7 @@ public sealed record TenantListItemDto(
     string NameEn,
     string Identifier,
     string Subdomain,
+    string PlatformUrl,
     TenantStatus Status,
     string StatusName,
     bool IsProvisioned,
@@ -113,4 +115,16 @@ public sealed record OperatorResetTenantAdminPasswordRequest(
     string NewPassword,
     string ConfirmPassword,
     bool NotifyAdmin = true,
+    bool ForceChangeOnLogin = true);
+
+/// <summary>
+/// Request DTO for setting up the primary admin user of a tenant.
+/// Used by the operator after tenant creation and provisioning.
+/// </summary>
+public sealed record SetupTenantAdminRequest(
+    string AdminEmail,
+    string FirstName,
+    string LastName,
+    string Password,
+    string ConfirmPassword,
     bool ForceChangeOnLogin = true);

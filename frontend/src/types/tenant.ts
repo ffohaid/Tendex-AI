@@ -35,6 +35,7 @@ export interface TenantDto {
   identifier: string
   subdomain: string
   databaseName: string
+  platformUrl: string
   isProvisioned: boolean
   provisionedAt: string | null
   status: TenantStatus
@@ -59,6 +60,7 @@ export interface TenantListItemDto {
   nameEn: string
   identifier: string
   subdomain: string
+  platformUrl: string
   status: TenantStatus
   statusName: string
   isProvisioned: boolean
@@ -273,6 +275,16 @@ export interface TenantListParams {
   pageSize?: number
   search?: string
   status?: TenantStatus
+}
+
+/** Request to setup the primary admin user for a newly created tenant. */
+export interface SetupTenantAdminRequest {
+  adminEmail: string
+  firstName: string
+  lastName: string
+  password: string
+  confirmPassword: string
+  forceChangeOnLogin: boolean
 }
 
 /** Request to reset the primary admin password for a tenant (operator action). */

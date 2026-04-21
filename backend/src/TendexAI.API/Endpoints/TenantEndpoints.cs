@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 using TendexAI.Application.Features.Tenants.Commands.ChangeTenantStatus;
 using TendexAI.Application.Features.Tenants.Commands.CreateTenant;
 using TendexAI.Application.Features.Tenants.Commands.OperatorResetTenantAdminPassword;
+using TendexAI.Application.Features.Tenants.Commands.SetupTenantAdmin;
 using TendexAI.Application.Features.Tenants.Commands.ProvisionTenantDatabase;
 using TendexAI.Application.Features.Tenants.Commands.UpdateTenant;
 using TendexAI.Application.Features.Tenants.Commands.UpdateTenantBranding;
@@ -105,6 +106,15 @@ public static class TenantEndpoints
             .WithSummary("Returns all available tenant lifecycle statuses.")
             .Produces<IEnumerable<TenantStatusDto>>(StatusCodes.Status200OK)
             .RequireAuthorization(PermissionPolicies.TenantsEdit);
+
+        // POST /api/v1/tenants/{id}/setup-admin - Setup tenant admin credentials
+        group.MapPost("/{id:guid}/setup-admin", SetupTenantAdminAsync)
+            .WithName("SetupTenantAdmin")
+            .WithSummary("Configures the primary admin user credentials for a newly created tenant.")
+            .Produces(StatusCodes.Status204NoContent)
+            .Produces(StatusCodes.Status400BadRequest)
+            .Produces(StatusCodes.Status404NotFound)
+            .RequireAuthorization(PermissionPolicies.TenantsSetupAdmin);
 
         // POST /api/v1/tenants/{id}/reset-admin-password - Operator resets tenant admin password
         group.MapPost("/{id:guid}/reset-admin-password", OperatorResetTenantAdminPasswordAsync)
@@ -404,6 +414,40 @@ public static class TenantEndpoints
             NewPassword: request.NewPassword,
             ConfirmPassword: request.ConfirmPassword,
             NotifyAdmin: request.NotifyAdmin,
+            ForceChangeOnLogin: request.ForceChangeOnLogin,
+            OperatorUserId: operatorUserId,
+            OperatorName: GetOperatorName(httpContext),
+            IpAddress: GetClientIpAddress(httpContext),
+            UserAgent: httpContext.Request.Headers.UserAgent.FirstOrDefault());
+
+        var result = await mediator.Send(command);
+
+        return result.IsSuccess
+            ? Results.NoContent()
+            : Results.Problem(result.Error, statusCode: 400);
+    }
+
+    /// <summary>
+    /// Configures the primary admin user credentials for a newly created tenant.
+    /// Sets the admin email, name, and initial password.
+    /// </summary>
+    private static async Task<IResult> SetupTenantAdminAsync(
+        Guid id,
+        [FromBody] SetupTenantAdminRequest request,
+        ISender mediator,
+        HttpContext httpContext)
+    {
+        var operatorUserId = GetOperatorUserId(httpContext);
+        if (operatorUserId == Guid.Empty)
+            return Results.Problem("Operator user ID is required.", statusCode: 401);
+
+        var command = new SetupTenantAdminCommand(
+            TenantId: id,
+            AdminEmail: request.AdminEmail,
+            FirstName: request.FirstName,
+            LastName: request.LastName,
+            Password: request.Password,
+            ConfirmPassword: request.ConfirmPassword,
             ForceChangeOnLogin: request.ForceChangeOnLogin,
             OperatorUserId: operatorUserId,
             OperatorName: GetOperatorName(httpContext),

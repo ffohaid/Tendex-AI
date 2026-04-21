@@ -106,6 +106,7 @@ public static class DependencyInjection
         services.AddScoped<ICurrentUserService, CurrentUserService>();
         services.AddScoped<IAuditLogService, AuditLogService>();
         services.AddScoped<ITenantAdminPasswordResetService, TenantAdminPasswordResetService>();
+        services.AddScoped<ITenantAdminSetupService, TenantAdminSetupService>();
 
         // ----- Multi-Tenancy Services -----
         services.AddHttpContextAccessor();
