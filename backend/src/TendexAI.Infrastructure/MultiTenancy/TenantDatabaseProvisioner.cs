@@ -268,9 +268,11 @@ public sealed class TenantDatabaseProvisioner : ITenantDatabaseProvisioner
         // Assign TenantPrimaryAdmin role to the admin user
         var assignRoleCommand = connection.CreateCommand();
         assignRoleCommand.CommandText = @"
-            INSERT INTO [identity].UserRoles (UserId, RoleId)
-            SELECT @UserId, Id FROM [identity].Roles
+            INSERT INTO [identity].UserRoles (Id, UserId, RoleId, AssignedAt, AssignedBy, CreatedAt)
+            SELECT NEWID(), @UserId, Id, @AssignedAt, 'SYSTEM', @CreatedAt FROM [identity].Roles
             WHERE NormalizedName = 'TENANT PRIMARY ADMIN' AND TenantId = @TenantId";
+        assignRoleCommand.Parameters.Add(new SqlParameter("@AssignedAt", now));
+        assignRoleCommand.Parameters.Add(new SqlParameter("@CreatedAt", now));
         assignRoleCommand.Parameters.Add(new SqlParameter("@UserId", userId));
         assignRoleCommand.Parameters.Add(new SqlParameter("@TenantId", tenantId));
 
