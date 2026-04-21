@@ -241,12 +241,12 @@ public sealed class TenantDatabaseProvisioner : ITenantDatabaseProvisioner
             INSERT INTO [identity].Users
                 (Id, FirstName, LastName, Email, NormalizedEmail,
                  UserName, NormalizedUserName, PasswordHash, TenantId, IsActive,
-                 EmailConfirmed, PhoneNumberConfirmed, LockoutEnabled,
+                 EmailConfirmed, PhoneNumberConfirmed, MfaEnabled, LockoutEnabled,
                  AccessFailedCount, SecurityStamp, ConcurrencyStamp, CreatedAt)
             VALUES
                 (@Id, @FirstName, @LastName, @Email, @NormalizedEmail,
                  @UserName, @NormalizedUserName, @PasswordHash, @TenantId, 1,
-                 1, 0, 1,
+                 1, 0, 0, 1,
                  0, @SecurityStamp, @ConcurrencyStamp, @CreatedAt)";
 
         var adminEmail = $"admin@{tenantId:N}.tendex.local";
