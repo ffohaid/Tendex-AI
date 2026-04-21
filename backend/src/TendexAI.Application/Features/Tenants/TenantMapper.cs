@@ -7,7 +7,7 @@ namespace TendexAI.Application.Features.Tenants;
 /// Centralized mapping methods for Tenant entity to DTOs.
 /// Avoids duplication across command/query handlers.
 /// </summary>
-internal static class TenantMapper
+public static class TenantMapper
 {
     /// <summary>
     /// The base domain used to construct platform URLs for tenants.
@@ -61,6 +61,14 @@ internal static class TenantMapper
     /// <summary>
     /// Constructs the full platform URL for a tenant based on its subdomain.
     /// </summary>
+    /// <summary>
+    /// Public accessor for generating platform URL from subdomain.
+    /// </summary>
+    public static string GeneratePlatformUrl(string subdomain)
+    {
+        return BuildPlatformUrl(subdomain);
+    }
+
     private static string BuildPlatformUrl(string subdomain)
     {
         if (string.IsNullOrWhiteSpace(subdomain))

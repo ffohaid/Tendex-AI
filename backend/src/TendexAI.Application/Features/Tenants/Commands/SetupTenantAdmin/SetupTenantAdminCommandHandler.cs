@@ -66,16 +66,13 @@ public sealed class SetupTenantAdminCommandHandler
                 "لا يمكن إعداد المسؤول الأول قبل إكمال تهيئة قاعدة بيانات الجهة.");
         }
 
-        // 6. Hash the password using BCrypt
-        var passwordHash = BCrypt.Net.BCrypt.HashPassword(request.Password, 12);
-
-        // 7. Setup admin in tenant database
+        // 6. Setup admin in tenant database (password hashing done in infrastructure service)
         var setupResult = await _adminSetupService.SetupPrimaryAdminAsync(
             tenant,
             request.AdminEmail,
             request.FirstName,
             request.LastName,
-            passwordHash,
+            request.Password,
             request.ForceChangeOnLogin,
             cancellationToken);
 

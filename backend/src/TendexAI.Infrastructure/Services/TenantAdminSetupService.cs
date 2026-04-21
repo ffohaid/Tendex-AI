@@ -33,10 +33,13 @@ public sealed class TenantAdminSetupService : ITenantAdminSetupService
         string adminEmail,
         string firstName,
         string lastName,
-        string passwordHash,
+        string rawPassword,
         bool forceChangeOnLogin,
         CancellationToken cancellationToken = default)
     {
+        // Hash the password using BCrypt
+        var passwordHash = BCrypt.Net.BCrypt.HashPassword(rawPassword, 12);
+
         // 1. Resolve the tenant's connection string
         var connectionString = ResolveConnectionString(tenant.ConnectionString, tenant.Id);
         if (string.IsNullOrWhiteSpace(connectionString))

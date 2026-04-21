@@ -19,7 +19,7 @@ public interface ITenantAdminSetupService
     /// <param name="adminEmail">The real email address for the admin.</param>
     /// <param name="firstName">Admin's first name.</param>
     /// <param name="lastName">Admin's last name.</param>
-    /// <param name="passwordHash">The BCrypt-hashed password.</param>
+    /// <param name="rawPassword">The raw password (will be hashed in the implementation).</param>
     /// <param name="forceChangeOnLogin">Whether the admin must change password on first login.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>
@@ -31,7 +31,7 @@ public interface ITenantAdminSetupService
         string adminEmail,
         string firstName,
         string lastName,
-        string passwordHash,
+        string rawPassword,
         bool forceChangeOnLogin,
         CancellationToken cancellationToken = default);
 }

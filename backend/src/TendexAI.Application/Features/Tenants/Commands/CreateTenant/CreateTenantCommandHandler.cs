@@ -127,7 +127,7 @@ public sealed class CreateTenantCommandHandler : ICommandHandler<CreateTenantCom
             "Tenant '{Identifier}' created successfully with ID {TenantId}. Database: {DatabaseName}",
             tenant.Identifier, tenant.Id, tenant.DatabaseName);
 
-        return Result.Success(MapToDto(tenant));
+        return Result.Success(TenantMapper.MapToDto(tenant));
     }
 
     private string GenerateConnectionString(string databaseName)
@@ -165,29 +165,5 @@ public sealed class CreateTenantCommandHandler : ICommandHandler<CreateTenantCom
         return string.Join(";", newParts) + ";";
     }
 
-    private static TenantDto MapToDto(Tenant tenant)
-    {
-        return new TenantDto(
-            Id: tenant.Id,
-            NameAr: tenant.NameAr,
-            NameEn: tenant.NameEn,
-            Identifier: tenant.Identifier,
-            Subdomain: tenant.Subdomain,
-            DatabaseName: tenant.DatabaseName,
-            IsProvisioned: tenant.IsProvisioned,
-            ProvisionedAt: tenant.ProvisionedAt,
-            Status: tenant.Status,
-            StatusName: tenant.Status.ToString(),
-            SubscriptionExpiresAt: tenant.SubscriptionExpiresAt,
-            LogoUrl: tenant.LogoUrl,
-            PrimaryColor: tenant.PrimaryColor,
-            SecondaryColor: tenant.SecondaryColor,
-            ContactPersonName: tenant.ContactPersonName,
-            ContactPersonEmail: tenant.ContactPersonEmail,
-            ContactPersonPhone: tenant.ContactPersonPhone,
-            Notes: tenant.Notes,
-            CreatedAt: tenant.CreatedAt,
-            CreatedBy: tenant.CreatedBy,
-            LastModifiedAt: tenant.LastModifiedAt);
-    }
+
 }
