@@ -620,3 +620,62 @@ docker exec tendex-certbot certbot certonly --expand --webroot -w /var/www/certb
 docker exec tendex-nginx nginx -s reload
 ```
 Consider automating this in the tenant provisioning workflow.
+
+## 2026-04-22: Booklet Templates and Editor Critical Fixes
+
+### Overview
+Implemented a focused remediation batch for the critical issues reported in the booklet template flow, booklet editor UX, metadata visibility, required-content validation, and DOCX table preservation path.
+
+### Frontend Changes
+
+1. **Template Library Improvements**
+   - Added a dedicated **View Template Details** action on booklet template cards.
+   - Added a template preview dialog that consumes the existing details endpoint and shows sections and blocks before booklet creation.
+
+2. **Booklet Metadata Visibility and Editing**
+   - Extended booklet editor loading to include competition description.
+   - Added visible display for Arabic name, English name, and description in the editor header.
+   - Added inline metadata editing panel for updating booklet name and description after creation.
+
+3. **AI HTML Rendering Fix**
+   - Replaced plain-text rendering of AI output preview with rich HTML rendering through the existing rich text editor component.
+   - Adjusted loaded block content to prefer stored HTML when available, preventing raw HTML from appearing as plain text.
+
+4. **Validation and Color Semantics**
+   - Added blocking validation before save when red example blocks remain unchanged.
+   - Updated section summaries to separate **editable** blocks from **requires update** blocks instead of grouping them together.
+
+5. **Editor Navigation and Saving UX**
+   - Added `IntersectionObserver` synchronization so the active section in the side navigation follows page scrolling.
+   - Added delayed auto-save for modified content with visible pending-save feedback.
+
+6. **Read-Only Rich Rendering**
+   - Switched fixed and guidance blocks to rich read-only rendering so formatted HTML and imported structures can be displayed consistently.
+
+### Backend Changes
+
+1. **Booklet Editor Data Contract**
+   - Extended `BookletEditorDataDto` to include `Description` and mapped it from the competition entity.
+
+2. **Save Pipeline HTML Preservation**
+   - Reworked booklet block save HTML generation to preserve edited rich HTML instead of force-encoding everything into plain text.
+
+3. **DOCX Table Preservation Path**
+   - Updated `DocxTemplateParser` to walk body elements in document order and convert Word tables into parsed blocks with generated HTML.
+   - Added `HtmlContent` support to parsed blocks so table markup can flow through the existing booklet template storage path.
+   - Updated booklet template HTML builder to honor block HTML when present.
+
+### Files Modified
+- `frontend/src/views/rfp/TemplateLibraryView.vue`
+- `frontend/src/views/rfp/BookletEditorView.vue`
+- `backend/src/TendexAI.Infrastructure/Services/DocxTemplateParser.cs`
+- `backend/src/TendexAI.API/Endpoints/Rfp/BookletTemplateEndpoints.cs`
+
+### Validation
+- Frontend production build completed successfully using `pnpm build`.
+- `git diff --check` completed without whitespace or merge-marker issues.
+- Backend compile verification could not be executed in the current sandbox because the .NET SDK is not installed (`dotnet: command not found`).
+
+### Follow-up Recommendation
+- Run full backend compilation and API smoke tests in the target development or deployment environment where .NET is available.
+- Re-test booklet creation from DOCX templates containing nested tables and mixed colored content.

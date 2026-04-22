@@ -402,6 +402,7 @@ public static class BookletTemplateEndpoints
             TemplateNameAr = template.NameAr,
             ProjectNameAr = competition.ProjectNameAr,
             ProjectNameEn = competition.ProjectNameEn,
+            Description = competition.Description,
             Sections = template.Sections
                 .OrderBy(s => s.SortOrder)
                 .Select((ts, idx) => {
@@ -468,19 +469,7 @@ public static class BookletTemplateEndpoints
             // Build HTML from the edited blocks
             var htmlParts = editedSection.Blocks
                 .OrderBy(b => b.SortOrder)
-                .Select(b => {
-                    var colorClass = b.ColorType switch
-                    {
-                        "fixed" => "expro-fixed",
-                        "editable" => "expro-editable",
-                        "example" => "expro-example",
-                        "guidance" => "expro-guidance",
-                        _ => "expro-fixed"
-                    };
-                    var tag = b.IsHeading ? "h3" : "p";
-                    var encoded = System.Net.WebUtility.HtmlEncode(b.EditedContent);
-                    return $"<{tag} dir=\"rtl\"><span class=\"{colorClass}\" data-color-type=\"{b.ColorType}\">{encoded}</span></{tag}>";
-                });
+                .Select(BuildEditedBlockHtml);
 
             section.UpdateContent(string.Join("\n", htmlParts), userId);
         }
@@ -496,6 +485,9 @@ public static class BookletTemplateEndpoints
 
     private static string BuildColoredHtml(ParsedBlock block)
     {
+        if (!string.IsNullOrWhiteSpace(block.HtmlContent))
+            return block.HtmlContent;
+
         if (block.Segments.Count == 0)
             return $"<p>{System.Net.WebUtility.HtmlEncode(block.Text)}</p>";
 
@@ -518,6 +510,27 @@ public static class BookletTemplateEndpoints
         });
 
         return $"<{tag} dir=\"rtl\">{string.Join("", parts)}</{tag}>";
+    }
+
+    private static string BuildEditedBlockHtml(SaveBookletBlockDto block)
+    {
+        var colorClass = block.ColorType switch
+        {
+            "fixed" => "expro-fixed",
+            "editable" => "expro-editable",
+            "example" => "expro-example",
+            "guidance" => "expro-guidance",
+            _ => "expro-fixed"
+        };
+
+        var trimmed = block.EditedContent?.Trim() ?? string.Empty;
+        var tag = block.IsHeading ? "h3" : "div";
+        var containsHtml = trimmed.Contains('<') && trimmed.Contains('>');
+        var innerContent = containsHtml
+            ? trimmed
+            : $"<p>{System.Net.WebUtility.HtmlEncode(trimmed)}</p>";
+
+        return $"<{tag} dir=\"rtl\" class=\"{colorClass}\" data-color-type=\"{block.ColorType}\">{innerContent}</{tag}>";
     }
 
     private static string BuildSectionContentHtml(BookletTemplateSection section)
@@ -654,6 +667,7 @@ public sealed record BookletEditorDataDto
     public string TemplateNameAr { get; init; } = "";
     public string ProjectNameAr { get; init; } = "";
     public string ProjectNameEn { get; init; } = "";
+    public string? Description { get; init; }
     public List<BookletEditorSectionDto> Sections { get; init; } = [];
 }
 

@@ -43,83 +43,77 @@ public sealed class DocxTemplateParser
         int sectionOrder = 0;
         int paragraphOrder = 0;
 
-        foreach (var para in body.Elements(W + "p"))
+        foreach (var element in body.Elements())
         {
-            var paraText = GetParagraphText(para);
-            if (string.IsNullOrWhiteSpace(paraText))
-                continue;
-
-            // Detect section headers (القسم الأول، القسم الثاني، etc.)
-            var isMainSection = IsMainSectionHeader(paraText);
-            var isSubSection = IsSubSectionHeader(para);
-
-            if (isMainSection)
+            if (element.Name == W + "p")
             {
-                // Save previous section
-                if (currentSection.Blocks.Count > 0 || currentSection.Title != "غلاف الكراسة")
+                var para = element;
+                var paraText = GetParagraphText(para);
+                if (string.IsNullOrWhiteSpace(paraText))
+                    continue;
+
+                var isMainSection = IsMainSectionHeader(paraText);
+                var isSubSection = IsSubSectionHeader(para);
+
+                if (isMainSection)
                 {
-                    result.Sections.Add(currentSection);
+                    if (currentSection.Blocks.Count > 0 || currentSection.Title != "غلاف الكراسة")
+                    {
+                        result.Sections.Add(currentSection);
+                    }
+
+                    sectionOrder++;
+                    paragraphOrder = 0;
+                    currentSection = new ParsedSection
+                    {
+                        Title = paraText.Trim(),
+                        SortOrder = sectionOrder,
+                        IsMainSection = true
+                    };
+                    continue;
                 }
 
-                sectionOrder++;
-                paragraphOrder = 0;
-                currentSection = new ParsedSection
-                {
-                    Title = paraText.Trim(),
-                    SortOrder = sectionOrder,
-                    IsMainSection = true
-                };
-                continue;
-            }
+                var blocks = ExtractColoredBlocks(para, stylesMap);
+                if (blocks.Count == 0) continue;
 
-            // Extract runs with color information
-            var blocks = ExtractColoredBlocks(para, stylesMap);
-            if (blocks.Count == 0) continue;
-
-            paragraphOrder++;
-
-            // Check if this is a sub-heading
-            if (isSubSection)
-            {
-                var subBlock = new ParsedBlock
+                paragraphOrder++;
+                currentSection.Blocks.Add(new ParsedBlock
                 {
                     Order = paragraphOrder,
-                    IsHeading = true,
-                    Text = paraText.Trim(),
-                    ColorType = DetermineBlockColor(blocks),
-                    Segments = blocks
-                };
-                currentSection.Blocks.Add(subBlock);
-            }
-            else
-            {
-                var block = new ParsedBlock
-                {
-                    Order = paragraphOrder,
-                    IsHeading = false,
+                    IsHeading = isSubSection,
                     Text = paraText.Trim(),
                     ColorType = DetermineBlockColor(blocks),
                     Segments = blocks,
                     HasBracketPlaceholders = ContainsBracketPlaceholders(paraText)
-                };
-                currentSection.Blocks.Add(block);
+                });
+                continue;
+            }
+
+            if (element.Name == W + "tbl")
+            {
+                var parsedTable = ExtractTable(element, stylesMap);
+                if (parsedTable.Rows.Count == 0)
+                {
+                    continue;
+                }
+
+                result.Tables.Add(parsedTable);
+                paragraphOrder++;
+                currentSection.Blocks.Add(new ParsedBlock
+                {
+                    Order = paragraphOrder,
+                    IsHeading = false,
+                    Text = string.Join(" ", parsedTable.Rows.SelectMany(r => r.Cells).Select(c => c.Text).Where(t => !string.IsNullOrWhiteSpace(t))),
+                    ColorType = DetermineBlockColor(parsedTable.Rows.SelectMany(r => r.Cells).SelectMany(c => c.Segments).ToList()),
+                    HtmlContent = RenderTableHtml(parsedTable),
+                    Segments = []
+                });
             }
         }
 
-        // Add last section
         if (currentSection.Blocks.Count > 0)
         {
             result.Sections.Add(currentSection);
-        }
-
-        // Extract tables
-        foreach (var table in body.Elements(W + "tbl"))
-        {
-            var parsedTable = ExtractTable(table, stylesMap);
-            if (parsedTable.Rows.Count > 0)
-            {
-                result.Tables.Add(parsedTable);
-            }
         }
 
         return result;
@@ -279,6 +273,32 @@ public sealed class DocxTemplateParser
         return Regex.IsMatch(text, @"\[.*?\]");
     }
 
+    private static string RenderTableHtml(ParsedTable table)
+    {
+        var rows = table.Rows.Select((row, rowIndex) =>
+        {
+            var cells = row.Cells.Select(cell =>
+            {
+                var tag = rowIndex == 0 ? "th" : "td";
+                var cssClass = cell.ColorType switch
+                {
+                    ExprocColorType.Black => "expro-fixed",
+                    ExprocColorType.Green => "expro-editable",
+                    ExprocColorType.Red => "expro-example",
+                    ExprocColorType.Blue => "expro-guidance",
+                    _ => "expro-fixed"
+                };
+                var content = string.IsNullOrWhiteSpace(cell.Text)
+                    ? "&nbsp;"
+                    : System.Net.WebUtility.HtmlEncode(cell.Text);
+                return $"<{tag} class=\"{cssClass}\">{content}</{tag}>";
+            });
+            return $"<tr>{string.Join(string.Empty, cells)}</tr>";
+        });
+
+        return $"<div dir=\"rtl\" class=\"overflow-x-auto\"><table class=\"min-w-full border-collapse\">{string.Join(string.Empty, rows)}</table></div>";
+    }
+
     private static ParsedTable ExtractTable(XElement table, Dictionary<string, string> stylesMap)
     {
         var parsedTable = new ParsedTable();
@@ -349,6 +369,7 @@ public sealed class ParsedBlock
     public int Order { get; set; }
     public bool IsHeading { get; set; }
     public string Text { get; set; } = "";
+    public string? HtmlContent { get; set; }
     public ExprocColorType ColorType { get; set; }
     public bool HasBracketPlaceholders { get; set; }
     public List<TextSegment> Segments { get; set; } = [];

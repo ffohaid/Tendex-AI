@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, onBeforeUnmount, nextTick, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { httpGet, httpPost, httpPut } from '@/services/http'
@@ -42,6 +42,7 @@ interface BookletEditorData {
   templateNameAr: string
   projectNameAr: string
   projectNameEn: string
+  description: string | null
   sections: {
     id: string
     competitionSectionId: string | null
@@ -73,9 +74,17 @@ const loadError = ref('')
 const projectNameAr = ref('')
 const projectNameEn = ref('')
 const templateNameAr = ref('')
+const description = ref('')
 const sections = ref<BookletSection[]>([])
 const activeSectionId = ref('')
 const showGuidance = ref(true)
+const showMetadataDialog = ref(false)
+const isSavingMetadata = ref(false)
+const metadataError = ref('')
+const validationError = ref('')
+let sectionObserver: IntersectionObserver | null = null
+let autoSaveTimer: ReturnType<typeof setTimeout> | null = null
+const hasPendingAutoSave = ref(false)
 
 // Save state
 const isSaving = ref(false)
@@ -152,6 +161,7 @@ async function loadBookletData() {
     projectNameAr.value = data.projectNameAr
     projectNameEn.value = data.projectNameEn
     templateNameAr.value = data.templateNameAr
+    description.value = data.description ?? ''
 
     sections.value = data.sections.map(s => ({
       id: s.id,
@@ -163,7 +173,7 @@ async function loadBookletData() {
         id: b.id,
         sortOrder: b.sortOrder,
         originalContent: b.originalContent,
-        editedContent: b.originalContent,
+        editedContent: b.contentHtml?.trim() ? b.contentHtml : b.originalContent,
         contentHtml: b.contentHtml,
         colorType: (b.colorType as BookletBlock['colorType']) || 'fixed',
         isHeading: b.isHeading,
@@ -198,18 +208,64 @@ function scrollToSection(sectionId: string) {
   }
 }
 
+function initializeSectionObserver() {
+  sectionObserver?.disconnect()
+  sectionObserver = new IntersectionObserver((entries) => {
+    const visibleSections = entries
+      .filter(entry => entry.isIntersecting)
+      .sort((a, b) => b.intersectionRatio - a.intersectionRatio)
+    if (visibleSections.length > 0) {
+      activeSectionId.value = visibleSections[0].target.id.replace('section-', '')
+    }
+  }, {
+    root: null,
+    rootMargin: '-20% 0px -55% 0px',
+    threshold: [0.2, 0.35, 0.5, 0.75]
+  })
+
+  sections.value.forEach((section) => {
+    const el = document.getElementById(`section-${section.id}`)
+    if (el) {
+      sectionObserver?.observe(el)
+    }
+  })
+}
+
 function updateBlockContent(blockId: string, newContent: string) {
+  validationError.value = ''
   for (const section of sections.value) {
     const block = section.blocks.find(b => b.id === blockId)
     if (block) {
       block.editedContent = newContent
-      block.isModified = newContent !== block.originalContent
+      const baseline = block.contentHtml?.trim() ? block.contentHtml : block.originalContent
+      block.isModified = newContent.trim() !== baseline.trim()
       break
     }
   }
 }
 
+function validateBeforeSave(): boolean {
+  const hasPendingExamples = sections.value
+    .flatMap(section => section.blocks)
+    .some(block => block.colorType === 'example' && !block.isModified)
+
+  if (hasPendingExamples) {
+    validationError.value = locale.value === 'ar'
+      ? 'لا يمكن الحفظ قبل استبدال جميع النصوص ذات الإطار الأحمر.'
+      : 'Replace all required example fields before saving.'
+    return false
+  }
+
+  return true
+}
+
 async function saveChanges() {
+  validationError.value = ''
+  if (!validateBeforeSave()) {
+    saveStatus.value = 'error'
+    return
+  }
+
   isSaving.value = true
   saveStatus.value = 'saving'
   try {
@@ -236,6 +292,32 @@ async function saveChanges() {
     setTimeout(() => { saveStatus.value = 'idle' }, 5000)
   } finally {
     isSaving.value = false
+  }
+}
+
+async function saveMetadataChanges() {
+  isSavingMetadata.value = true
+  metadataError.value = ''
+  try {
+    const current = await httpGet<Record<string, unknown>>(`/v1/competitions/${competitionId.value}`)
+    await httpPut(`/v1/competitions/${competitionId.value}`, {
+      projectNameAr: projectNameAr.value,
+      projectNameEn: projectNameEn.value,
+      description: description.value,
+      competitionType: current.competitionType,
+      estimatedBudget: current.estimatedBudget,
+      submissionDeadline: current.submissionDeadline,
+      projectDurationDays: current.projectDurationDays,
+      startDate: current.startDate,
+      endDate: current.endDate,
+      department: current.department,
+      fiscalYear: current.fiscalYear
+    })
+    showMetadataDialog.value = false
+  } catch (err: unknown) {
+    metadataError.value = err instanceof Error ? err.message : String(err)
+  } finally {
+    isSavingMetadata.value = false
   }
 }
 
@@ -354,10 +436,12 @@ function getBlockBorderClass(colorType: ColorType): string {
 // ─── Approval Workflow Methods ──────────────────────────
 async function loadCompetitionStatus() {
   try {
-    const data = await httpGet<{ status: number }>(`/v1/competitions/${competitionId.value}`)
+    const data = await httpGet<{ status: number; projectNameAr?: string; projectNameEn?: string; description?: string | null }>(`/v1/competitions/${competitionId.value}`)
     competitionStatus.value = data.status
+    projectNameAr.value = data.projectNameAr || projectNameAr.value
+    projectNameEn.value = data.projectNameEn || projectNameEn.value
+    description.value = data.description || description.value
   } catch {
-    // Default to UnderPreparation if API not available
     competitionStatus.value = 1
   }
 }
@@ -474,12 +558,42 @@ function getStepStatusBadge(status: ApprovalStepStatus) {
   return badges[status] || badges[ApprovalStepStatus.Pending]
 }
 
+watch(
+  sections,
+  () => {
+    if (isLoading.value || isReadOnly.value) return
+    const hasModifiedBlocks = sections.value.some(section => section.blocks.some(block => block.isModified))
+    if (!hasModifiedBlocks) return
+
+    hasPendingAutoSave.value = true
+    if (autoSaveTimer) clearTimeout(autoSaveTimer)
+    autoSaveTimer = setTimeout(async () => {
+      if (!validateBeforeSave()) {
+        hasPendingAutoSave.value = false
+        return
+      }
+      if (!isSaving.value) {
+        await saveChanges()
+      }
+      hasPendingAutoSave.value = false
+    }, 2000)
+  },
+  { deep: true }
+)
+
 onMounted(async () => {
   await loadBookletData()
   await loadCompetitionStatus()
+  await nextTick()
+  initializeSectionObserver()
   if (competitionStatus.value >= 2) {
     await loadApprovalStatus()
   }
+})
+
+onBeforeUnmount(() => {
+  sectionObserver?.disconnect()
+  if (autoSaveTimer) clearTimeout(autoSaveTimer)
 })
 </script>
 
@@ -495,9 +609,20 @@ onMounted(async () => {
           <i class="pi pi-arrow-right"></i>
         </button>
         <div>
-          <h1 class="text-lg font-bold text-secondary-800">
-            {{ projectNameAr || (locale === 'ar' ? 'محرر الكراسة' : 'Booklet Editor') }}
-          </h1>
+          <div class="flex items-center gap-3">
+            <h1 class="text-lg font-bold text-secondary-800">
+              {{ projectNameAr || (locale === 'ar' ? 'محرر الكراسة' : 'Booklet Editor') }}
+            </h1>
+            <button
+              v-if="!isReadOnly"
+              class="rounded-lg border border-secondary-200 px-3 py-1 text-xs font-medium text-secondary-600 hover:bg-secondary-50"
+              @click="showMetadataDialog = true"
+            >
+              <i class="pi pi-pencil me-1"></i>{{ locale === 'ar' ? 'تعديل البيانات' : 'Edit Details' }}
+            </button>
+          </div>
+          <p v-if="projectNameEn" class="mt-1 text-xs text-secondary-400" dir="ltr">{{ projectNameEn }}</p>
+          <p v-if="description" class="mt-1 max-w-3xl text-xs text-secondary-500">{{ description }}</p>
           <div class="flex items-center gap-3 text-xs text-secondary-500">
             <span>{{ sections.length }} {{ locale === 'ar' ? 'قسم' : 'sections' }}</span>
             <span class="text-secondary-300">|</span>
@@ -551,6 +676,10 @@ onMounted(async () => {
         <span v-else-if="saveStatus === 'error'" class="text-xs text-red-500">
           <i class="pi pi-exclamation-triangle me-1"></i>{{ locale === 'ar' ? 'خطأ في الحفظ' : 'Save Error' }}
         </span>
+        <span v-else-if="hasPendingAutoSave" class="text-xs text-amber-500">
+          <i class="pi pi-clock me-1"></i>{{ locale === 'ar' ? 'سيتم الحفظ تلقائياً...' : 'Auto-save pending...' }}
+        </span>
+        <span v-if="validationError" class="max-w-xs text-xs text-red-500">{{ validationError }}</span>
 
         <!-- Save Button -->
         <button
@@ -576,7 +705,28 @@ onMounted(async () => {
       </div>
     </div>
 
-    <!-- Loading -->
+    <!-- Metadata Editor -->
+    <div v-if="showMetadataDialog && !isReadOnly" class="border-b border-secondary-100 bg-white px-6 py-4">
+      <div class="grid grid-cols-1 gap-4 lg:grid-cols-3">
+        <div>
+          <label class="mb-1 block text-xs font-semibold text-secondary-600">{{ locale === 'ar' ? 'اسم المشروع بالعربية' : 'Project Name (Arabic)' }}</label>
+          <input v-model="projectNameAr" type="text" class="w-full rounded-xl border border-secondary-200 px-3 py-2 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20" />
+        </div>
+        <div>
+          <label class="mb-1 block text-xs font-semibold text-secondary-600">{{ locale === 'ar' ? 'اسم المشروع بالإنجليزية' : 'Project Name (English)' }}</label>
+          <input v-model="projectNameEn" type="text" dir="ltr" class="w-full rounded-xl border border-secondary-200 px-3 py-2 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20" />
+        </div>
+        <div class="lg:col-span-3">
+          <label class="mb-1 block text-xs font-semibold text-secondary-600">{{ locale === 'ar' ? 'الوصف' : 'Description' }}</label>
+          <textarea v-model="description" rows="3" class="w-full rounded-xl border border-secondary-200 px-3 py-2 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"></textarea>
+        </div>
+      </div>
+      <div class="mt-3 flex items-center justify-end gap-3">
+        <span v-if="metadataError" class="text-xs text-red-500">{{ metadataError }}</span>
+        <button class="rounded-lg border border-secondary-200 px-4 py-2 text-sm text-secondary-600 hover:bg-secondary-50" @click="showMetadataDialog = false">{{ locale === 'ar' ? 'إلغاء' : 'Cancel' }}</button>
+        <button class="rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-white hover:bg-primary-600 disabled:opacity-50" :disabled="isSavingMetadata" @click="saveMetadataChanges">{{ locale === 'ar' ? 'حفظ البيانات' : 'Save Details' }}</button>
+      </div>
+    </div>
     <div v-if="isLoading" class="flex flex-1 items-center justify-center">
       <div class="text-center">
         <i class="pi pi-spin pi-spinner text-4xl text-primary"></i>
@@ -668,8 +818,11 @@ onMounted(async () => {
               <h2 class="text-xl font-bold text-secondary-800">{{ section.titleAr }}</h2>
               <div class="mt-1 flex gap-2 text-xs text-secondary-400">
                 <span>{{ section.blocks.length }} {{ locale === 'ar' ? 'كتلة' : 'blocks' }}</span>
-                <span v-if="section.blocks.filter(b => b.isEditable).length > 0" class="text-green-500">
-                  {{ section.blocks.filter(b => b.isEditable).length }} {{ locale === 'ar' ? 'قابلة للتعديل' : 'editable' }}
+                <span v-if="section.blocks.filter(b => b.colorType === 'editable').length > 0" class="text-green-500">
+                  {{ section.blocks.filter(b => b.colorType === 'editable').length }} {{ locale === 'ar' ? 'قابلة للتعديل' : 'editable' }}
+                </span>
+                <span v-if="section.blocks.filter(b => b.colorType === 'example').length > 0" class="text-red-500">
+                  {{ section.blocks.filter(b => b.colorType === 'example').length }} {{ locale === 'ar' ? 'تتطلب تحديثاً' : 'requires update' }}
                 </span>
               </div>
             </div>
@@ -708,16 +861,29 @@ onMounted(async () => {
 
                   <!-- Fixed Block (read-only) -->
                   <div v-if="block.colorType === 'fixed'" class="text-sm leading-relaxed text-secondary-700">
-                    <component :is="block.isHeading ? 'h3' : 'p'" :class="block.isHeading ? 'font-bold text-base' : ''">
-                      {{ block.editedContent }}
-                    </component>
+                    <RichTextEditor
+                      :model-value="block.editedContent || block.contentHtml || block.originalContent"
+                      :editable="false"
+                      dir="rtl"
+                      min-height="80px"
+                      max-height="500px"
+                      compact
+                    />
                   </div>
-
                   <!-- Guidance Block (read-only, info style) -->
                   <div v-else-if="block.colorType === 'guidance'" class="text-sm leading-relaxed text-blue-600 italic">
                     <div class="flex items-start gap-2">
                       <i class="pi pi-info-circle mt-0.5 shrink-0"></i>
-                      <p>{{ block.editedContent }}</p>
+                      <div class="flex-1">
+                        <RichTextEditor
+                          :model-value="block.editedContent || block.contentHtml || block.originalContent"
+                          :editable="false"
+                          dir="rtl"
+                          min-height="80px"
+                          max-height="500px"
+                          compact
+                        />
+                      </div>
                     </div>
                   </div>
 
@@ -897,7 +1063,14 @@ onMounted(async () => {
                     {{ locale === 'ar' ? 'النتيجة' : 'Result' }}
                   </h4>
                   <div class="rounded-xl border border-purple-200 bg-purple-50/50 p-4">
-                    <p class="whitespace-pre-wrap text-sm leading-relaxed text-secondary-700">{{ aiResult }}</p>
+                    <RichTextEditor
+                      :model-value="aiResult"
+                      :editable="false"
+                      dir="rtl"
+                      min-height="120px"
+                      max-height="320px"
+                      compact
+                    />
                   </div>
                   <div class="mt-3 flex gap-2">
                     <button

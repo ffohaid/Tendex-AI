@@ -121,11 +121,31 @@ const createTemplateForm = ref({
 })
 
 // Use template dialog (create booklet from booklet template)
+interface BookletTemplateDetail extends BookletTemplate {
+  sections: {
+    id: string
+    titleAr: string
+    sortOrder: number
+    isMainSection: boolean
+    blocks: {
+      id: string
+      sortOrder: number
+      contentAr: string
+      colorType: string
+      isHeading: boolean
+    }[]
+  }[]
+}
+
 const showUseBookletDialog = ref(false)
+const showTemplatePreviewDialog = ref(false)
+const isLoadingTemplatePreview = ref(false)
+const templatePreviewError = ref('')
 const isCreatingBooklet = ref(false)
 const createBookletError = ref('')
 const createBookletSuccess = ref(false)
 const selectedBookletTemplate = ref<BookletTemplate | null>(null)
+const selectedBookletTemplateDetail = ref<BookletTemplateDetail | null>(null)
 const useBookletForm = ref({
   projectNameAr: '',
   projectNameEn: '',
@@ -394,7 +414,20 @@ function openUseBookletDialog(tmpl: BookletTemplate): void {
   createBookletSuccess.value = false
   showUseBookletDialog.value = true
 }
-
+async function openTemplatePreviewDialog(tmpl: BookletTemplate): Promise<void> {
+  showTemplatePreviewDialog.value = true
+  isLoadingTemplatePreview.value = true
+  templatePreviewError.value = ''
+  selectedBookletTemplateDetail.value = null
+  try {
+    selectedBookletTemplateDetail.value = await httpGet<BookletTemplateDetail>(`/v1/booklet-templates/${tmpl.id}`)
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : String(err)
+    templatePreviewError.value = msg
+  } finally {
+    isLoadingTemplatePreview.value = false
+  }
+}
 async function handleCreateBooklet(): Promise<void> {
   if (!selectedBookletTemplate.value || !useBookletForm.value.projectNameAr.trim()) return
 
@@ -711,13 +744,22 @@ onMounted(() => {
 
           <!-- Action -->
           <div class="border-t border-secondary-100 p-4">
-            <button
-              class="w-full rounded-xl bg-primary py-2.5 text-xs font-semibold text-white transition-all hover:bg-primary-600"
-              @click="openUseBookletDialog(tmpl)"
-            >
-              <i class="pi pi-file-edit me-1.5 text-[10px]"></i>
-              {{ locale === 'ar' ? 'إنشاء كراسة من هذا القالب' : 'Create Booklet from Template' }}
-            </button>
+            <div class="flex flex-col gap-2">
+              <button
+                class="w-full rounded-xl border border-secondary-200 bg-white py-2.5 text-xs font-semibold text-secondary-700 transition-all hover:bg-secondary-50"
+                @click="openTemplatePreviewDialog(tmpl)"
+              >
+                <i class="pi pi-eye me-1.5 text-[10px]"></i>
+                {{ locale === 'ar' ? 'عرض تفاصيل القالب' : 'View Template Details' }}
+              </button>
+              <button
+                class="w-full rounded-xl bg-primary py-2.5 text-xs font-semibold text-white transition-all hover:bg-primary-600"
+                @click="openUseBookletDialog(tmpl)"
+              >
+                <i class="pi pi-file-edit me-1.5 text-[10px]"></i>
+                {{ locale === 'ar' ? 'إنشاء كراسة من هذا القالب' : 'Create Booklet from Template' }}
+              </button>
+            </div>
           </div>
         </div>
       </div>
@@ -1100,6 +1142,71 @@ onMounted(() => {
                 <i v-else class="pi pi-check text-xs"></i>
                 {{ locale === 'ar' ? 'حفظ كقالب' : 'Save as Template' }}
               </button>
+            </div>
+          </div>
+        </div>
+      </Transition>
+    </Teleport>
+
+    <!-- ═══════════════════════════════════════════════════════════ -->
+    <!--  DIALOG: Template Preview                                   -->
+    <!-- ═══════════════════════════════════════════════════════════ -->
+    <Teleport to="body">
+      <Transition name="fade">
+        <div v-if="showTemplatePreviewDialog" class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" @click.self="showTemplatePreviewDialog = false">
+          <div class="flex max-h-[90vh] w-full max-w-4xl flex-col overflow-hidden rounded-2xl bg-white shadow-2xl">
+            <div class="flex items-center justify-between border-b border-secondary-100 p-5">
+              <div>
+                <h2 class="text-lg font-bold text-secondary-800">{{ locale === 'ar' ? 'تفاصيل القالب' : 'Template Details' }}</h2>
+                <p v-if="selectedBookletTemplateDetail" class="mt-1 text-xs text-secondary-500">
+                  {{ locale === 'ar' ? selectedBookletTemplateDetail.nameAr : selectedBookletTemplateDetail.nameEn }}
+                </p>
+              </div>
+              <button class="rounded-lg p-1 text-secondary-400 hover:bg-secondary-100" @click="showTemplatePreviewDialog = false">
+                <i class="pi pi-times"></i>
+              </button>
+            </div>
+            <div class="flex-1 overflow-y-auto p-5">
+              <div v-if="isLoadingTemplatePreview" class="py-12 text-center">
+                <i class="pi pi-spin pi-spinner text-2xl text-primary"></i>
+                <p class="mt-3 text-sm text-secondary-500">{{ locale === 'ar' ? 'جاري تحميل تفاصيل القالب...' : 'Loading template details...' }}</p>
+              </div>
+              <div v-else-if="templatePreviewError" class="rounded-xl bg-red-50 p-4 text-sm text-red-600">
+                <i class="pi pi-exclamation-triangle me-1"></i>{{ templatePreviewError }}
+              </div>
+              <div v-else-if="selectedBookletTemplateDetail" class="space-y-4">
+                <div class="grid grid-cols-1 gap-4 md:grid-cols-3">
+                  <div class="rounded-xl bg-secondary-50 p-4">
+                    <div class="text-xs text-secondary-400">{{ locale === 'ar' ? 'عدد الأقسام' : 'Sections' }}</div>
+                    <div class="mt-1 text-lg font-bold text-secondary-800">{{ selectedBookletTemplateDetail.sections.length }}</div>
+                  </div>
+                  <div class="rounded-xl bg-secondary-50 p-4">
+                    <div class="text-xs text-secondary-400">{{ locale === 'ar' ? 'التصنيف' : 'Category' }}</div>
+                    <div class="mt-1 text-sm font-semibold text-secondary-800">{{ getCategoryLabel(selectedBookletTemplateDetail.category) }}</div>
+                  </div>
+                  <div class="rounded-xl bg-secondary-50 p-4">
+                    <div class="text-xs text-secondary-400">{{ locale === 'ar' ? 'عدد مرات الاستخدام' : 'Usage Count' }}</div>
+                    <div class="mt-1 text-lg font-bold text-secondary-800">{{ selectedBookletTemplateDetail.usageCount }}</div>
+                  </div>
+                </div>
+                <div v-if="selectedBookletTemplateDetail.descriptionAr || selectedBookletTemplateDetail.descriptionEn" class="rounded-xl border border-secondary-100 p-4">
+                  <h3 class="mb-2 text-sm font-semibold text-secondary-700">{{ locale === 'ar' ? 'وصف القالب' : 'Template Description' }}</h3>
+                  <p class="text-sm leading-relaxed text-secondary-600">{{ locale === 'ar' ? selectedBookletTemplateDetail.descriptionAr : (selectedBookletTemplateDetail.descriptionEn || selectedBookletTemplateDetail.descriptionAr) }}</p>
+                </div>
+                <div class="space-y-3">
+                  <div v-for="section in selectedBookletTemplateDetail.sections" :key="section.id" class="rounded-xl border border-secondary-100 p-4">
+                    <div class="mb-3 flex items-center justify-between">
+                      <h3 class="text-sm font-bold text-secondary-800">{{ section.titleAr }}</h3>
+                      <span class="text-xs text-secondary-400">{{ section.blocks.length }} {{ locale === 'ar' ? 'كتلة' : 'blocks' }}</span>
+                    </div>
+                    <div class="space-y-2">
+                      <div v-for="block in section.blocks" :key="block.id" class="rounded-lg px-3 py-2 text-sm" :class="block.colorType === 'example' ? 'bg-red-50 text-red-700' : block.colorType === 'editable' ? 'bg-green-50 text-green-700' : block.colorType === 'guidance' ? 'bg-blue-50 text-blue-700' : 'bg-secondary-50 text-secondary-700'">
+                        {{ block.contentAr }}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </div>
