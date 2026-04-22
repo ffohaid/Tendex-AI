@@ -149,7 +149,15 @@ const selectedBookletTemplateDetail = ref<BookletTemplateDetail | null>(null)
 const useBookletForm = ref({
   projectNameAr: '',
   projectNameEn: '',
-  descriptionAr: ''
+  descriptionAr: '',
+  competitionType: 0,
+  estimatedBudget: null as number | null,
+  referenceNumber: '',
+  department: '',
+  fiscalYear: '',
+  startDate: '',
+  endDate: '',
+  submissionDeadline: ''
 })
 
 // Use template dialog (create competition from competition template)
@@ -409,7 +417,19 @@ async function handleCreateCompTemplate(): Promise<void> {
 
 function openUseBookletDialog(tmpl: BookletTemplate): void {
   selectedBookletTemplate.value = tmpl
-  useBookletForm.value = { projectNameAr: '', projectNameEn: '', descriptionAr: '' }
+  useBookletForm.value = {
+    projectNameAr: '',
+    projectNameEn: '',
+    descriptionAr: '',
+    competitionType: 0,
+    estimatedBudget: null,
+    referenceNumber: '',
+    department: '',
+    fiscalYear: new Date().getFullYear().toString(),
+    startDate: '',
+    endDate: '',
+    submissionDeadline: ''
+  }
   createBookletError.value = ''
   createBookletSuccess.value = false
   showUseBookletDialog.value = true
@@ -429,16 +449,51 @@ async function openTemplatePreviewDialog(tmpl: BookletTemplate): Promise<void> {
   }
 }
 async function handleCreateBooklet(): Promise<void> {
-  if (!selectedBookletTemplate.value || !useBookletForm.value.projectNameAr.trim()) return
+  if (!selectedBookletTemplate.value) return
+
+  const payload = {
+    projectNameAr: useBookletForm.value.projectNameAr.trim(),
+    projectNameEn: (useBookletForm.value.projectNameEn || useBookletForm.value.projectNameAr).trim(),
+    descriptionAr: useBookletForm.value.descriptionAr.trim(),
+    competitionType: useBookletForm.value.competitionType,
+    estimatedBudget: useBookletForm.value.estimatedBudget,
+    referenceNumber: useBookletForm.value.referenceNumber.trim(),
+    department: useBookletForm.value.department.trim(),
+    fiscalYear: useBookletForm.value.fiscalYear.trim(),
+    startDate: useBookletForm.value.startDate || null,
+    endDate: useBookletForm.value.endDate || null,
+    submissionDeadline: useBookletForm.value.submissionDeadline || null
+  }
+
+  if (
+    !payload.projectNameAr ||
+    !payload.descriptionAr ||
+    payload.estimatedBudget === null ||
+    payload.estimatedBudget <= 0 ||
+    !payload.referenceNumber ||
+    !payload.department ||
+    !payload.fiscalYear ||
+    !payload.startDate ||
+    !payload.endDate ||
+    !payload.submissionDeadline
+  ) {
+    createBookletError.value = locale.value === 'ar'
+      ? 'يرجى استكمال جميع الحقول الأساسية المطلوبة قبل إنشاء الكراسة.'
+      : 'Please complete all required business fields before creating the booklet.'
+    return
+  }
+
+  if (payload.endDate <= payload.startDate) {
+    createBookletError.value = locale.value === 'ar'
+      ? 'يجب أن يكون تاريخ الانتهاء بعد تاريخ البداية.'
+      : 'End date must be after start date.'
+    return
+  }
 
   isCreatingBooklet.value = true
   createBookletError.value = ''
   try {
-    const result = await httpPost<{ rfpId: string }>(`/v1/booklet-templates/${selectedBookletTemplate.value.id}/create-booklet`, {
-      projectNameAr: useBookletForm.value.projectNameAr,
-      projectNameEn: useBookletForm.value.projectNameEn || useBookletForm.value.projectNameAr,
-      descriptionAr: useBookletForm.value.descriptionAr || null
-    })
+    const result = await httpPost<{ rfpId: string }>(`/v1/booklet-templates/${selectedBookletTemplate.value.id}/create-booklet`, payload)
     showUseBookletDialog.value = false
     createBookletSuccess.value = true
     setTimeout(() => {
@@ -1219,7 +1274,7 @@ onMounted(() => {
     <Teleport to="body">
       <Transition name="fade">
         <div v-if="showUseBookletDialog" class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" @click.self="showUseBookletDialog = false">
-          <div class="w-full max-w-lg rounded-2xl bg-white shadow-2xl">
+          <div class="w-full max-w-3xl rounded-2xl bg-white shadow-2xl">
             <div class="flex items-center justify-between border-b border-secondary-100 p-5">
               <h2 class="text-lg font-bold text-secondary-800">
                 {{ locale === 'ar' ? 'إنشاء كراسة من القالب' : 'Create Booklet from Template' }}
@@ -1228,7 +1283,7 @@ onMounted(() => {
                 <i class="pi pi-times"></i>
               </button>
             </div>
-            <div class="space-y-4 p-5">
+            <div class="max-h-[70vh] space-y-4 overflow-y-auto p-5">
               <div v-if="selectedBookletTemplate" class="rounded-lg bg-primary/5 p-3">
                 <p class="text-sm font-semibold text-primary">
                   {{ locale === 'ar' ? selectedBookletTemplate.nameAr : selectedBookletTemplate.nameEn }}
@@ -1238,41 +1293,139 @@ onMounted(() => {
                 </p>
               </div>
 
-              <div>
-                <label class="mb-1 block text-sm font-medium text-secondary-700">
-                  {{ locale === 'ar' ? 'اسم المشروع (عربي)' : 'Project Name (Arabic)' }} *
-                </label>
-                <input
-                  v-model="useBookletForm.projectNameAr"
-                  type="text"
-                  :placeholder="locale === 'ar' ? 'أدخل اسم المشروع' : 'Enter project name'"
-                  class="w-full rounded-xl border border-secondary-200 bg-secondary-50 px-4 py-2.5 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
-                />
-              </div>
+              <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
+                <div class="md:col-span-2">
+                  <label class="mb-1 block text-sm font-medium text-secondary-700">
+                    {{ locale === 'ar' ? 'اسم المشروع (عربي)' : 'Project Name (Arabic)' }} *
+                  </label>
+                  <input
+                    v-model="useBookletForm.projectNameAr"
+                    type="text"
+                    :placeholder="locale === 'ar' ? 'أدخل اسم المشروع' : 'Enter project name'"
+                    class="w-full rounded-xl border border-secondary-200 bg-secondary-50 px-4 py-2.5 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
+                  />
+                </div>
 
-              <div>
-                <label class="mb-1 block text-sm font-medium text-secondary-700">
-                  {{ locale === 'ar' ? 'اسم المشروع (إنجليزي)' : 'Project Name (English)' }}
-                </label>
-                <input
-                  v-model="useBookletForm.projectNameEn"
-                  type="text"
-                  dir="ltr"
-                  placeholder="Enter project name in English"
-                  class="w-full rounded-xl border border-secondary-200 bg-secondary-50 px-4 py-2.5 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
-                />
-              </div>
+                <div class="md:col-span-2">
+                  <label class="mb-1 block text-sm font-medium text-secondary-700">
+                    {{ locale === 'ar' ? 'اسم المشروع (إنجليزي)' : 'Project Name (English)' }}
+                  </label>
+                  <input
+                    v-model="useBookletForm.projectNameEn"
+                    type="text"
+                    dir="ltr"
+                    placeholder="Enter project name in English"
+                    class="w-full rounded-xl border border-secondary-200 bg-secondary-50 px-4 py-2.5 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
+                  />
+                </div>
 
-              <div>
-                <label class="mb-1 block text-sm font-medium text-secondary-700">
-                  {{ locale === 'ar' ? 'وصف المشروع' : 'Project Description' }}
-                </label>
-                <textarea
-                  v-model="useBookletForm.descriptionAr"
-                  rows="3"
-                  :placeholder="locale === 'ar' ? 'وصف مختصر للمشروع' : 'Brief project description'"
-                  class="w-full rounded-xl border border-secondary-200 bg-secondary-50 px-4 py-2.5 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
-                ></textarea>
+                <div class="md:col-span-2">
+                  <label class="mb-1 block text-sm font-medium text-secondary-700">
+                    {{ locale === 'ar' ? 'وصف المشروع' : 'Project Description' }} *
+                  </label>
+                  <textarea
+                    v-model="useBookletForm.descriptionAr"
+                    rows="3"
+                    :placeholder="locale === 'ar' ? 'وصف مختصر للمشروع' : 'Brief project description'"
+                    class="w-full rounded-xl border border-secondary-200 bg-secondary-50 px-4 py-2.5 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
+                  ></textarea>
+                </div>
+
+                <div>
+                  <label class="mb-1 block text-sm font-medium text-secondary-700">
+                    {{ locale === 'ar' ? 'نوع المنافسة' : 'Competition Type' }} *
+                  </label>
+                  <select
+                    v-model="useBookletForm.competitionType"
+                    class="w-full rounded-xl border border-secondary-200 bg-secondary-50 px-4 py-2.5 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
+                  >
+                    <option v-for="ct in competitionTypes" :key="ct.value" :value="ct.value">
+                      {{ locale === 'ar' ? ct.labelAr : ct.labelEn }}
+                    </option>
+                  </select>
+                </div>
+
+                <div>
+                  <label class="mb-1 block text-sm font-medium text-secondary-700">
+                    {{ locale === 'ar' ? 'القيمة التقديرية' : 'Estimated Value' }} *
+                  </label>
+                  <input
+                    v-model.number="useBookletForm.estimatedBudget"
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    class="w-full rounded-xl border border-secondary-200 bg-secondary-50 px-4 py-2.5 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
+                  />
+                </div>
+
+                <div>
+                  <label class="mb-1 block text-sm font-medium text-secondary-700">
+                    {{ locale === 'ar' ? 'الرقم المرجعي' : 'Reference Number' }} *
+                  </label>
+                  <input
+                    v-model="useBookletForm.referenceNumber"
+                    type="text"
+                    class="w-full rounded-xl border border-secondary-200 bg-secondary-50 px-4 py-2.5 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
+                  />
+                </div>
+
+                <div>
+                  <label class="mb-1 block text-sm font-medium text-secondary-700">
+                    {{ locale === 'ar' ? 'الإدارة' : 'Department' }} *
+                  </label>
+                  <input
+                    v-model="useBookletForm.department"
+                    type="text"
+                    class="w-full rounded-xl border border-secondary-200 bg-secondary-50 px-4 py-2.5 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
+                  />
+                </div>
+
+                <div>
+                  <label class="mb-1 block text-sm font-medium text-secondary-700">
+                    {{ locale === 'ar' ? 'السنة المالية' : 'Fiscal Year' }} *
+                  </label>
+                  <input
+                    v-model="useBookletForm.fiscalYear"
+                    type="text"
+                    inputmode="numeric"
+                    placeholder="2026"
+                    class="w-full rounded-xl border border-secondary-200 bg-secondary-50 px-4 py-2.5 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
+                  />
+                </div>
+
+                <div>
+                  <label class="mb-1 block text-sm font-medium text-secondary-700">
+                    {{ locale === 'ar' ? 'تاريخ البداية' : 'Start Date' }} *
+                  </label>
+                  <input
+                    v-model="useBookletForm.startDate"
+                    type="date"
+                    class="w-full rounded-xl border border-secondary-200 bg-secondary-50 px-4 py-2.5 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
+                  />
+                </div>
+
+                <div>
+                  <label class="mb-1 block text-sm font-medium text-secondary-700">
+                    {{ locale === 'ar' ? 'تاريخ الانتهاء' : 'End Date' }} *
+                  </label>
+                  <input
+                    v-model="useBookletForm.endDate"
+                    type="date"
+                    :min="useBookletForm.startDate || undefined"
+                    class="w-full rounded-xl border border-secondary-200 bg-secondary-50 px-4 py-2.5 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
+                  />
+                </div>
+
+                <div>
+                  <label class="mb-1 block text-sm font-medium text-secondary-700">
+                    {{ locale === 'ar' ? 'آخر موعد لتقديم العروض' : 'Submission Deadline' }} *
+                  </label>
+                  <input
+                    v-model="useBookletForm.submissionDeadline"
+                    type="date"
+                    class="w-full rounded-xl border border-secondary-200 bg-secondary-50 px-4 py-2.5 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
+                  />
+                </div>
               </div>
 
               <div v-if="createBookletError" class="rounded-lg bg-red-50 p-3 text-sm text-red-600">
@@ -1288,7 +1441,7 @@ onMounted(() => {
               </button>
               <button
                 class="rounded-xl bg-primary px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition-all hover:bg-primary-600 disabled:opacity-50"
-                :disabled="isCreatingBooklet || !useBookletForm.projectNameAr.trim()"
+                :disabled="isCreatingBooklet"
                 @click="handleCreateBooklet"
               >
                 <i v-if="isCreatingBooklet" class="pi pi-spin pi-spinner me-2 text-xs"></i>

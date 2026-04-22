@@ -287,28 +287,70 @@ public static class BookletTemplateEndpoints
         if (template is null)
             return Results.NotFound(new { error = "القالب غير موجود" });
 
+        if (string.IsNullOrWhiteSpace(request.ProjectNameAr)
+            || string.IsNullOrWhiteSpace(request.DescriptionAr)
+            || string.IsNullOrWhiteSpace(request.ReferenceNumber)
+            || string.IsNullOrWhiteSpace(request.Department)
+            || string.IsNullOrWhiteSpace(request.FiscalYear)
+            || request.EstimatedBudget is null or <= 0
+            || request.StartDate is null
+            || request.EndDate is null
+            || request.SubmissionDeadline is null)
+        {
+            return Results.BadRequest(new { error = "جميع الحقول الأساسية مطلوبة لإنشاء الكراسة من القالب." });
+        }
+
+        if (request.EndDate <= request.StartDate)
+            return Results.BadRequest(new { error = "يجب أن يكون تاريخ الانتهاء بعد تاريخ البداية." });
+
         var userId = GetCurrentUserId(httpContext);
         var tenantId = GetTenantId(httpContext);
+        var projectNameAr = request.ProjectNameAr.Trim();
+        var projectNameEn = string.IsNullOrWhiteSpace(request.ProjectNameEn)
+            ? projectNameAr
+            : request.ProjectNameEn.Trim();
+        var descriptionAr = request.DescriptionAr.Trim();
+        var projectDurationDays = request.StartDate.HasValue && request.EndDate.HasValue
+            ? Math.Max(1, (request.EndDate.Value.Date - request.StartDate.Value.Date).Days)
+            : null;
 
         // Create a new competition from the template
         var competition = Competition.Create(
             tenantId: tenantId,
-            projectNameAr: request.ProjectNameAr,
-            projectNameEn: request.ProjectNameEn ?? request.ProjectNameAr,
-            competitionType: TendexAI.Domain.Enums.CompetitionType.PublicTender,
+            projectNameAr: projectNameAr,
+            projectNameEn: projectNameEn,
+            competitionType: request.CompetitionType,
             creationMethod: TendexAI.Domain.Enums.RfpCreationMethod.FromTemplate,
             createdByUserId: userId,
-            description: request.DescriptionAr,
+            referenceNumber: request.ReferenceNumber.Trim(),
+            description: descriptionAr,
             sourceTemplateId: template.Id);
+
+        var basicInfoResult = competition.UpdateBasicInfo(
+            projectNameAr: projectNameAr,
+            projectNameEn: projectNameEn,
+            description: descriptionAr,
+            competitionType: request.CompetitionType,
+            estimatedBudget: request.EstimatedBudget,
+            submissionDeadline: request.SubmissionDeadline,
+            projectDurationDays: projectDurationDays,
+            startDate: request.StartDate,
+            endDate: request.EndDate,
+            department: request.Department.Trim(),
+            fiscalYear: request.FiscalYear.Trim(),
+            modifiedBy: userId);
+
+        if (basicInfoResult.IsFailure)
+            return Results.BadRequest(new { error = basicInfoResult.Error });
 
         // Copy sections from template as RFP sections
         foreach (var templateSection in template.Sections.OrderBy(s => s.SortOrder))
         {
             // Build combined content HTML from all blocks
-            var contentHtml = BuildSectionContentHtml(templateSection);
-            var plainText = string.Join("\n", templateSection.Blocks
+            var contentHtml = ApplyCompetitionAutoFill(BuildSectionContentHtml(templateSection), competition);
+            var plainText = ApplyCompetitionAutoFill(string.Join("\n", templateSection.Blocks
                 .OrderBy(b => b.SortOrder)
-                .Select(b => b.ContentAr));
+                .Select(b => b.ContentAr)), competition);
 
             // Determine section editability
             var hasEditableBlocks = templateSection.Blocks.Any(b => b.IsEditable);
@@ -424,8 +466,8 @@ public static class BookletTemplateEndpoints
                             {
                                 Id = b.Id,
                                 SortOrder = b.SortOrder,
-                                OriginalContent = b.ContentAr,
-                                ContentHtml = b.ContentHtml ?? "",
+                                OriginalContent = ApplyCompetitionAutoFill(b.ContentAr, competition),
+                                ContentHtml = ApplyCompetitionAutoFill(b.ContentHtml ?? "", competition),
                                 ColorType = b.ColorType.ToString().ToLowerInvariant(),
                                 IsHeading = b.IsHeading,
                                 HasBracketPlaceholders = b.HasBracketPlaceholders,
@@ -510,6 +552,70 @@ public static class BookletTemplateEndpoints
         });
 
         return $"<{tag} dir=\"rtl\">{string.Join("", parts)}</{tag}>";
+    }
+
+    private static string ApplyCompetitionAutoFill(string? content, Competition competition)
+    {
+        if (string.IsNullOrWhiteSpace(content))
+            return content ?? string.Empty;
+
+        var replacements = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+        {
+            ["{{project_name_ar}}"] = competition.ProjectNameAr,
+            ["{{project_name}}"] = competition.ProjectNameAr,
+            ["{{competition_name}}"] = competition.ProjectNameAr,
+            ["{{competition_name_ar}}"] = competition.ProjectNameAr,
+            ["{اسم المشروع}"] = competition.ProjectNameAr,
+            ["{اسم المنافسة}"] = competition.ProjectNameAr,
+            ["[اسم المشروع]"] = competition.ProjectNameAr,
+            ["[اسم المنافسة]"] = competition.ProjectNameAr,
+            ["{{project_name_en}}"] = competition.ProjectNameEn,
+            ["{{competition_name_en}}"] = competition.ProjectNameEn,
+            ["{{project_description}}"] = competition.Description ?? string.Empty,
+            ["{{description}}"] = competition.Description ?? string.Empty,
+            ["[وصف المشروع]"] = competition.Description ?? string.Empty,
+            ["{{reference_number}}"] = competition.ReferenceNumber,
+            ["[الرقم المرجعي]"] = competition.ReferenceNumber,
+            ["{{department}}"] = competition.Department ?? string.Empty,
+            ["[الإدارة]"] = competition.Department ?? string.Empty,
+            ["{{fiscal_year}}"] = competition.FiscalYear ?? string.Empty,
+            ["[السنة المالية]"] = competition.FiscalYear ?? string.Empty,
+            ["{{estimated_budget}}"] = competition.EstimatedBudget?.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture) ?? string.Empty,
+            ["[القيمة التقديرية]"] = competition.EstimatedBudget?.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture) ?? string.Empty,
+            ["{{start_date}}"] = competition.StartDate?.ToString("yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture) ?? string.Empty,
+            ["{{issue_date}}"] = competition.StartDate?.ToString("yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture) ?? string.Empty,
+            ["{{rfp_issue_date}}"] = competition.StartDate?.ToString("yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture) ?? string.Empty,
+            ["[تاريخ البداية]"] = competition.StartDate?.ToString("yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture) ?? string.Empty,
+            ["[تاريخ الطرح]"] = competition.StartDate?.ToString("yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture) ?? string.Empty,
+            ["[تاريخ إصدار الكراسة]"] = competition.StartDate?.ToString("yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture) ?? string.Empty,
+            ["[تاريخ الإصدار]"] = competition.StartDate?.ToString("yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture) ?? string.Empty,
+            ["{{end_date}}"] = competition.EndDate?.ToString("yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture) ?? string.Empty,
+            ["[تاريخ الانتهاء]"] = competition.EndDate?.ToString("yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture) ?? string.Empty,
+            ["{{submission_deadline}}"] = competition.SubmissionDeadline?.ToString("yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture) ?? string.Empty,
+            ["[آخر موعد لتقديم العروض]"] = competition.SubmissionDeadline?.ToString("yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture) ?? string.Empty,
+            ["{{competition_type}}"] = GetCompetitionTypeLabelAr(competition.CompetitionType),
+            ["[نوع المنافسة]"] = GetCompetitionTypeLabelAr(competition.CompetitionType)
+        };
+
+        var result = content;
+        foreach (var replacement in replacements)
+            result = result.Replace(replacement.Key, replacement.Value, StringComparison.OrdinalIgnoreCase);
+
+        return result;
+    }
+
+    private static string GetCompetitionTypeLabelAr(TendexAI.Domain.Enums.CompetitionType competitionType)
+    {
+        return competitionType switch
+        {
+            TendexAI.Domain.Enums.CompetitionType.PublicTender => "منافسة عامة",
+            TendexAI.Domain.Enums.CompetitionType.LimitedTender => "منافسة محدودة",
+            TendexAI.Domain.Enums.CompetitionType.DirectPurchase => "شراء مباشر",
+            TendexAI.Domain.Enums.CompetitionType.FrameworkAgreement => "اتفاقية إطارية",
+            TendexAI.Domain.Enums.CompetitionType.TwoStageTender => "منافسة على مرحلتين",
+            TendexAI.Domain.Enums.CompetitionType.ReverseAuction => "مزايدة عكسية",
+            _ => competitionType.ToString()
+        };
     }
 
     private static string BuildEditedBlockHtml(SaveBookletBlockDto block)
@@ -654,7 +760,15 @@ public sealed record BookletTemplateBlockDto
 public sealed record CreateBookletFromTemplateRequest(
     string ProjectNameAr,
     string? ProjectNameEn,
-    string? DescriptionAr);
+    string DescriptionAr,
+    TendexAI.Domain.Enums.CompetitionType CompetitionType,
+    decimal? EstimatedBudget,
+    string ReferenceNumber,
+    string Department,
+    string FiscalYear,
+    DateTime? StartDate,
+    DateTime? EndDate,
+    DateTime? SubmissionDeadline);
 
 // ═══════════════════════════════════════════════════════════
 //  Booklet Editor DTOs

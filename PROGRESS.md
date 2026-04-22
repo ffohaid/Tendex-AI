@@ -679,3 +679,39 @@ Implemented a focused remediation batch for the critical issues reported in the 
 ### Follow-up Recommendation
 - Run full backend compilation and API smoke tests in the target development or deployment environment where .NET is available.
 - Re-test booklet creation from DOCX templates containing nested tables and mixed colored content.
+
+## 2026-04-22: Template-Based RFP Creation Alignment Fix
+
+### Scope
+Addressed the critical inconsistencies reported on 2026-04-22 between **template-based booklet creation** and the **manual competition creation** workflow.
+
+### Changes Made
+
+1. **Template creation dialog expanded in `TemplateLibraryView.vue`**
+   - Added the missing core business fields required by the manual flow: `competitionType`, `estimatedBudget`, `referenceNumber`, `department`, `fiscalYear`, `startDate`, `endDate`, and `submissionDeadline`.
+   - Kept `projectNameAr`, `projectNameEn`, and `descriptionAr`, but moved the dialog to a wider structured layout for complete data capture.
+   - Added client-side validation to prevent incomplete template-based creation and enforce logical date order.
+
+2. **Template creation API contract upgraded in `BookletTemplateEndpoints.cs`**
+   - Expanded `CreateBookletFromTemplateRequest` to accept the full core business payload.
+   - Added backend validation for all required fields and invalid date ranges.
+   - Removed the hardcoded `PublicTender` default by accepting the competition type from the request.
+   - Passed `referenceNumber` during entity creation and invoked `competition.UpdateBasicInfo(...)` so the generated competition persists the same essential metadata as the manual workflow.
+
+3. **Initial auto-fill mapping added for booklet content**
+   - Added `ApplyCompetitionAutoFill(...)` helper to inject competition metadata into template content using supported placeholder forms.
+   - Covered initial mappings for project name, description, reference number, department, fiscal year, estimated budget, start date / issue date, end date, submission deadline, and competition type.
+   - Applied the mapping both when generating competition sections from the booklet template and when loading blocks in the booklet editor.
+
+### Verification
+- `pnpm build` completed successfully for the frontend after the `TemplateLibraryView.vue` changes.
+- `git diff --check` passed with no whitespace or patch-format issues.
+- Local backend compilation could not be executed in the sandbox because `.NET SDK` is not installed in the local environment, so backend verification remains dependent on server-side build/runtime validation during deployment.
+
+### Files Modified
+- `frontend/src/views/rfp/TemplateLibraryView.vue`
+- `backend/src/TendexAI.API/Endpoints/Rfp/BookletTemplateEndpoints.cs`
+
+### Notes
+- The fix intentionally targets the **active routed screen** (`TemplateLibraryView.vue`) instead of the older `BookletTemplatesView.vue` file.
+- The new auto-fill logic is placeholder-driven, so actual coverage depends on the placeholder patterns present inside uploaded booklet templates.
