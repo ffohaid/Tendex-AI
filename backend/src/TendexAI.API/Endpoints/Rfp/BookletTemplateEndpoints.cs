@@ -310,7 +310,7 @@ public static class BookletTemplateEndpoints
             ? projectNameAr
             : request.ProjectNameEn.Trim();
         var descriptionAr = request.DescriptionAr.Trim();
-        var projectDurationDays = request.StartDate.HasValue && request.EndDate.HasValue
+        int? projectDurationDays = request.StartDate.HasValue && request.EndDate.HasValue
             ? Math.Max(1, (request.EndDate.Value.Date - request.StartDate.Value.Date).Days)
             : null;
 
