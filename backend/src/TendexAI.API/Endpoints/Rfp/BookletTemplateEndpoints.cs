@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using System.Text.RegularExpressions;
 using TendexAI.Domain.Entities.Rfp;
 using TendexAI.Infrastructure.Services;
 using TendexAI.Infrastructure.Persistence;
@@ -559,16 +560,19 @@ public static class BookletTemplateEndpoints
         if (string.IsNullOrWhiteSpace(content))
             return content ?? string.Empty;
 
+        var competitionName = competition.ProjectNameAr;
+        var issueDate = competition.StartDate?.ToString("yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture) ?? string.Empty;
+
         var replacements = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
         {
-            ["{{project_name_ar}}"] = competition.ProjectNameAr,
-            ["{{project_name}}"] = competition.ProjectNameAr,
-            ["{{competition_name}}"] = competition.ProjectNameAr,
-            ["{{competition_name_ar}}"] = competition.ProjectNameAr,
-            ["{اسم المشروع}"] = competition.ProjectNameAr,
-            ["{اسم المنافسة}"] = competition.ProjectNameAr,
-            ["[اسم المشروع]"] = competition.ProjectNameAr,
-            ["[اسم المنافسة]"] = competition.ProjectNameAr,
+            ["{{project_name_ar}}"] = competitionName,
+            ["{{project_name}}"] = competitionName,
+            ["{{competition_name}}"] = competitionName,
+            ["{{competition_name_ar}}"] = competitionName,
+            ["{اسم المشروع}"] = competitionName,
+            ["{اسم المنافسة}"] = competitionName,
+            ["[اسم المشروع]"] = competitionName,
+            ["[اسم المنافسة]"] = competitionName,
             ["{{project_name_en}}"] = competition.ProjectNameEn,
             ["{{competition_name_en}}"] = competition.ProjectNameEn,
             ["{{project_description}}"] = competition.Description ?? string.Empty,
@@ -582,13 +586,13 @@ public static class BookletTemplateEndpoints
             ["[السنة المالية]"] = competition.FiscalYear ?? string.Empty,
             ["{{estimated_budget}}"] = competition.EstimatedBudget?.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture) ?? string.Empty,
             ["[القيمة التقديرية]"] = competition.EstimatedBudget?.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture) ?? string.Empty,
-            ["{{start_date}}"] = competition.StartDate?.ToString("yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture) ?? string.Empty,
-            ["{{issue_date}}"] = competition.StartDate?.ToString("yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture) ?? string.Empty,
-            ["{{rfp_issue_date}}"] = competition.StartDate?.ToString("yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture) ?? string.Empty,
-            ["[تاريخ البداية]"] = competition.StartDate?.ToString("yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture) ?? string.Empty,
-            ["[تاريخ الطرح]"] = competition.StartDate?.ToString("yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture) ?? string.Empty,
-            ["[تاريخ إصدار الكراسة]"] = competition.StartDate?.ToString("yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture) ?? string.Empty,
-            ["[تاريخ الإصدار]"] = competition.StartDate?.ToString("yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture) ?? string.Empty,
+            ["{{start_date}}"] = issueDate,
+            ["{{issue_date}}"] = issueDate,
+            ["{{rfp_issue_date}}"] = issueDate,
+            ["[تاريخ البداية]"] = issueDate,
+            ["[تاريخ الطرح]"] = issueDate,
+            ["[تاريخ إصدار الكراسة]"] = issueDate,
+            ["[تاريخ الإصدار]"] = issueDate,
             ["{{end_date}}"] = competition.EndDate?.ToString("yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture) ?? string.Empty,
             ["[تاريخ الانتهاء]"] = competition.EndDate?.ToString("yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture) ?? string.Empty,
             ["{{submission_deadline}}"] = competition.SubmissionDeadline?.ToString("yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture) ?? string.Empty,
@@ -600,6 +604,53 @@ public static class BookletTemplateEndpoints
         var result = content;
         foreach (var replacement in replacements)
             result = result.Replace(replacement.Key, replacement.Value, StringComparison.OrdinalIgnoreCase);
+
+        result = ApplyLabeledFieldReplacement(result, new[]
+        {
+            "اسم المنافسة",
+            "اسم المشروع",
+            "Competition Name",
+            "Project Name"
+        }, competitionName);
+
+        result = ApplyLabeledFieldReplacement(result, new[]
+        {
+            "تاريخ طرح الكراسة",
+            "تاريخ إصدار الكراسة",
+            "تاريخ الإصدار",
+            "تاريخ الطرح",
+            "RFP Issue Date",
+            "Issue Date"
+        }, issueDate);
+
+        return result;
+    }
+
+    private static string ApplyLabeledFieldReplacement(string content, IEnumerable<string> labels, string value)
+    {
+        if (string.IsNullOrWhiteSpace(content) || string.IsNullOrWhiteSpace(value))
+            return content;
+
+        var result = content;
+        foreach (var label in labels)
+        {
+            var escapedLabel = Regex.Escape(label);
+
+            result = Regex.Replace(
+                result,
+                $@"(?im)(^|>)(\s*{escapedLabel}\s*[:：-]?\s*)(\[.*?\]|\{{\{{.*?\}}\}}|\{{.*?\}}|_+|\.{3,}|&nbsp;|\s*)($|<)",
+                m => $"{m.Groups[1].Value}{m.Groups[2].Value}{value}{m.Groups[4].Value}");
+
+            result = Regex.Replace(
+                result,
+                $@"(?im)(^|>)(\s*{escapedLabel}\s*[:：-]?\s*)($|<)",
+                m => $"{m.Groups[1].Value}{m.Groups[2].Value}{value}{m.Groups[3].Value}");
+
+            result = Regex.Replace(
+                result,
+                $@"(?im)(^\s*{escapedLabel}\s*$\r?\n)(\s*(?:\[.*?\]|\{{\{{.*?\}}\}}|\{{.*?\}}|_+|\.{3,})\s*)",
+                m => $"{m.Groups[1].Value}{value}");
+        }
 
         return result;
     }

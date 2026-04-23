@@ -715,3 +715,15 @@ Addressed the critical inconsistencies reported on 2026-04-22 between **template
 ### Notes
 - The fix intentionally targets the **active routed screen** (`TemplateLibraryView.vue`) instead of the older `BookletTemplatesView.vue` file.
 - The new auto-fill logic is placeholder-driven, so actual coverage depends on the placeholder patterns present inside uploaded booklet templates.
+
+## 2026-04-23: Complementary fix for Issue 2 (targeted scope)
+
+Implemented a focused complementary fix for the April 22 Issue 2 scope, limited strictly to **Competition Name** and **Booklet Issue Date** auto-fill behavior in template-based RFP creation.
+
+### Changes Made
+- Enhanced `BookletTemplateEndpoints.cs` auto-fill logic so the two targeted fields can be populated not only through explicit placeholders, but also through common labeled field patterns in template content.
+- Kept the scope intentionally narrow and did not expand mapping for the remaining business fields, pending later field-location decisions.
+
+### Validation
+- Local text-level sanity checks completed successfully with `git diff --check`.
+- No deployment performed in this step.
