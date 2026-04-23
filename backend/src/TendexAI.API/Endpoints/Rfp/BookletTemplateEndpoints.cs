@@ -15,6 +15,24 @@ namespace TendexAI.API.Endpoints.Rfp;
 /// </summary>
 public static class BookletTemplateEndpoints
 {
+    private static readonly string[] CompetitionNameLabels =
+    [
+        "اسم المنافسة",
+        "اسم المشروع",
+        "Competition Name",
+        "Project Name"
+    ];
+
+    private static readonly string[] BookletIssueDateLabels =
+    [
+        "تاريخ طرح الكراسة",
+        "تاريخ إصدار الكراسة",
+        "تاريخ الإصدار",
+        "تاريخ الطرح",
+        "RFP Issue Date",
+        "Issue Date"
+    ];
+
     public static WebApplication MapBookletTemplateEndpoints(this WebApplication app)
     {
         var group = app.MapGroup("/api/v1/booklet-templates")
@@ -605,23 +623,9 @@ public static class BookletTemplateEndpoints
         foreach (var replacement in replacements)
             result = result.Replace(replacement.Key, replacement.Value, StringComparison.OrdinalIgnoreCase);
 
-        result = ApplyLabeledFieldReplacement(result, new[]
-        {
-            "اسم المنافسة",
-            "اسم المشروع",
-            "Competition Name",
-            "Project Name"
-        }, competitionName);
+        result = ApplyLabeledFieldReplacement(result, CompetitionNameLabels, competitionName);
 
-        result = ApplyLabeledFieldReplacement(result, new[]
-        {
-            "تاريخ طرح الكراسة",
-            "تاريخ إصدار الكراسة",
-            "تاريخ الإصدار",
-            "تاريخ الطرح",
-            "RFP Issue Date",
-            "Issue Date"
-        }, issueDate);
+        result = ApplyLabeledFieldReplacement(result, BookletIssueDateLabels, issueDate);
 
         return result;
     }
