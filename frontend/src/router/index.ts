@@ -447,26 +447,6 @@ const routes: RouteRecordRaw[] = [
           requiredPermission: 'support.view',
         },
       },
-      {
-        path: 'legal/privacy',
-        name: 'PrivacyPolicy',
-        component: () => import('@/views/public/StaticLegalView.vue'),
-        meta: {
-          title: 'Tendex AI - Privacy Policy',
-          requiresAuth: true,
-          legalVariant: 'privacy',
-        },
-      },
-      {
-        path: 'legal/terms',
-        name: 'TermsOfService',
-        component: () => import('@/views/public/StaticLegalView.vue'),
-        meta: {
-          title: 'Tendex AI - Terms of Service',
-          requiresAuth: true,
-          legalVariant: 'terms',
-        },
-      },
     ],
   },
   {
@@ -502,6 +482,30 @@ const routes: RouteRecordRaw[] = [
         name: 'ResetPassword',
         component: () => import('@/views/auth/ResetPasswordView.vue'),
         meta: { title: 'Tendex AI - Reset Password', guest: true },
+      },
+    ],
+  },
+  {
+    path: '/',
+    component: () => import('@/layouts/AuthLayout.vue'),
+    children: [
+      {
+        path: 'privacy',
+        name: 'PrivacyPolicy',
+        component: () => import('@/views/public/StaticLegalView.vue'),
+        meta: {
+          title: 'Tendex AI - Privacy Policy',
+          legalVariant: 'privacy',
+        },
+      },
+      {
+        path: 'terms',
+        name: 'TermsOfService',
+        component: () => import('@/views/public/StaticLegalView.vue'),
+        meta: {
+          title: 'Tendex AI - Terms of Service',
+          legalVariant: 'terms',
+        },
       },
     ],
   },

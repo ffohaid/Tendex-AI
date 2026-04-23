@@ -789,3 +789,6 @@ Completed the second batch of fixes from the 21-04-2026 issue report with produc
 ### Deployment Status
 - Local code changes prepared.
 - Git commit/push and production deployment still pending at the time of this entry.
+
+### 2026-04-23 Addendum — public legal routes exposure fix
+After deployment verification, it was confirmed that the new legal pages were still nested under the authenticated route tree, which caused `/privacy` and `/terms` to redirect unauthenticated visitors to the login page. The router was corrected so both pages are now mounted as public top-level routes under the guest layout, preserving the same route names and legal-variant rendering while making them externally reachable from the production domain.
