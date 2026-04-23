@@ -486,28 +486,22 @@ const routes: RouteRecordRaw[] = [
     ],
   },
   {
-    path: '/',
-    component: () => import('@/layouts/AuthLayout.vue'),
-    children: [
-      {
-        path: 'privacy',
-        name: 'PrivacyPolicy',
-        component: () => import('@/views/public/StaticLegalView.vue'),
-        meta: {
-          title: 'Tendex AI - Privacy Policy',
-          legalVariant: 'privacy',
-        },
-      },
-      {
-        path: 'terms',
-        name: 'TermsOfService',
-        component: () => import('@/views/public/StaticLegalView.vue'),
-        meta: {
-          title: 'Tendex AI - Terms of Service',
-          legalVariant: 'terms',
-        },
-      },
-    ],
+    path: '/privacy',
+    name: 'PrivacyPolicy',
+    component: () => import('@/views/public/StaticLegalView.vue'),
+    meta: {
+      title: 'Tendex AI - Privacy Policy',
+      legalVariant: 'privacy',
+    },
+  },
+  {
+    path: '/terms',
+    name: 'TermsOfService',
+    component: () => import('@/views/public/StaticLegalView.vue'),
+    meta: {
+      title: 'Tendex AI - Terms of Service',
+      legalVariant: 'terms',
+    },
   },
   /* Access Denied page */
   {
