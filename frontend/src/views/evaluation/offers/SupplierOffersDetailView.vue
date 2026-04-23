@@ -12,6 +12,7 @@ import {
   createSupplierOffer,
   deleteSupplierOffer,
   fetchCompetitionEvaluation,
+  startTechnicalEvaluation,
 } from '@/services/evaluationApi'
 import type { SupplierOffer } from '@/types/evaluation'
 
@@ -102,13 +103,29 @@ async function doDelete() {
     successMsg.value = isRtl.value ? 'تم حذف العرض بنجاح' : 'Offer deleted successfully'
     setTimeout(() => successMsg.value = '', 3000)
   } catch (e: any) {
-    error.value = e?.message || 'حدث خطأ أثناء حذف العرض'
+    error.value = e?.response?.data?.detail || e?.response?.data?.error || e?.message || 'حدث خطأ أثناء حذف العرض'
   } finally {
     saving.value = false
   }
 }
 
-function goToTechnicalEvaluation() {
+async function goToTechnicalEvaluation() {
+  saving.value = true
+  error.value = ''
+  try {
+    await startTechnicalEvaluation(competitionId.value)
+  } catch (e: any) {
+    const detail = e?.response?.data?.detail || e?.response?.data?.error || e?.message || ''
+    const alreadyExists = typeof detail === 'string' && detail.toLowerCase().includes('already exists')
+
+    if (!alreadyExists) {
+      error.value = detail || (isRtl.value ? 'تعذر بدء التقييم الفني' : 'Failed to start technical evaluation')
+      return
+    }
+  } finally {
+    saving.value = false
+  }
+
   router.push({ name: 'TechnicalEvaluationDetail', params: { id: competitionId.value } })
 }
 
@@ -151,9 +168,10 @@ onMounted(loadData)
           <button
             v-if="offers.length >= 2"
             @click="goToTechnicalEvaluation"
-            class="rounded-lg bg-green-600 px-4 py-2 text-sm font-medium text-white hover:bg-green-700"
+            :disabled="saving"
+            class="rounded-lg bg-green-600 px-4 py-2 text-sm font-medium text-white hover:bg-green-700 disabled:cursor-not-allowed disabled:opacity-60"
           >
-            {{ isRtl ? 'بدء التقييم الفني' : 'Start Technical Evaluation' }}
+            {{ saving ? (isRtl ? 'جارٍ البدء...' : 'Starting...') : (isRtl ? 'بدء التقييم الفني' : 'Start Technical Evaluation') }}
           </button>
           <button
             @click="showAddForm = !showAddForm"

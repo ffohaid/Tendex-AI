@@ -11,9 +11,8 @@ public sealed class StartTechnicalEvaluationCommandValidator
             .NotEmpty()
             .WithMessage("Competition ID is required.");
 
-        // CommitteeId is optional — when empty, the system assigns the default committee
         RuleFor(x => x.CommitteeId)
-            .Must(id => id == Guid.Empty || id != Guid.Empty)
+            .Must(id => !id.HasValue || id.Value != Guid.Empty)
             .WithMessage("Committee ID must be a valid GUID if provided.");
 
         RuleFor(x => x.StartedByUserId)

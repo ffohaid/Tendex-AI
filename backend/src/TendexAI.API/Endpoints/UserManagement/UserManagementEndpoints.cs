@@ -1,6 +1,7 @@
 using System.Security.Claims;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using TendexAI.Application.Features.UserManagement.Commands.AcceptInvitation;
 using TendexAI.Application.Features.UserManagement.Commands.AdminResetPassword;
 using TendexAI.Application.Features.UserManagement.Commands.AssignRole;
@@ -20,6 +21,7 @@ using TendexAI.Application.Features.UserManagement.Queries.GetRoleById;
 using TendexAI.Application.Features.UserManagement.Queries.GetRoles;
 using TendexAI.Application.Features.UserManagement.Queries.GetUserById;
 using TendexAI.Application.Features.UserManagement.Queries.GetUsers;
+using TendexAI.Domain.Entities.Identity;
 using TendexAI.Infrastructure.Authorization;
 
 namespace TendexAI.API.Endpoints.UserManagement;
@@ -130,6 +132,14 @@ public static class UserManagementEndpoints
             .Produces(StatusCodes.Status204NoContent)
             .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
             .RequireAuthorization(PermissionPolicies.RolesEdit);
+
+        rolesGroup.MapDelete("/{roleId:guid}", DeleteRoleAsync)
+            .WithName("DeleteRole")
+            .WithSummary("Delete a custom role when it has no assigned users")
+            .RequireAuthorization(PermissionPolicies.RolesDelete)
+            .Produces(StatusCodes.Status204NoContent)
+            .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+            .Produces<ProblemDetails>(StatusCodes.Status404NotFound);
 
         // ----- Permission Endpoints -----
         var permissionsGroup = app.MapGroup("/api/v1/permissions")
@@ -416,6 +426,46 @@ public static class UserManagementEndpoints
         return result.IsSuccess
             ? Results.NoContent()
             : Results.Problem(result.Error, statusCode: 400);
+    }
+
+    private static async Task<IResult> DeleteRoleAsync(
+        Guid roleId,
+        [FromServices] Application.Common.Interfaces.ITenantDbContextFactory dbContextFactory,
+        HttpContext httpContext)
+    {
+        var tenantId = GetTenantId(httpContext);
+        if (tenantId == Guid.Empty)
+            return Results.Problem("Tenant ID is required.", statusCode: 400);
+
+        var dbContext = dbContextFactory.CreateDbContext();
+        var roles = dbContext.GetDbSet<Role>();
+        var userRoles = dbContext.GetDbSet<UserRole>();
+        var rolePermissions = dbContext.GetDbSet<RolePermission>();
+
+        var role = await roles
+            .FirstOrDefaultAsync(r => r.Id == roleId && r.TenantId == tenantId);
+
+        if (role is null)
+            return Results.NotFound();
+
+        if (role.IsProtected || role.IsSystemRole)
+            return Results.BadRequest(new { error = "Cannot delete a protected or system role." });
+
+        var hasAssignedUsers = await userRoles.AnyAsync(ur => ur.RoleId == roleId);
+        if (hasAssignedUsers)
+            return Results.BadRequest(new { error = "Cannot delete a role that is assigned to users." });
+
+        var permissionsToRemove = await rolePermissions
+            .Where(rp => rp.RoleId == roleId)
+            .ToListAsync();
+
+        if (permissionsToRemove.Count > 0)
+            rolePermissions.RemoveRange(permissionsToRemove);
+
+        roles.Remove(role);
+        await dbContext.SaveChangesAsync();
+
+        return Results.NoContent();
     }
 
     // ===== Permission Handlers =====

@@ -179,7 +179,7 @@ public static class TechnicalEvaluationEndpoints
 
         var command = new StartTechnicalEvaluationCommand(
             competitionId,
-            request.CommitteeId ?? Guid.Empty,
+            request.CommitteeId,
             userId);
 
         var result = await mediator.Send(command);

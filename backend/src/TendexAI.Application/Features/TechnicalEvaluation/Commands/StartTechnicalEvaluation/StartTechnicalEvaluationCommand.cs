@@ -10,5 +10,5 @@ namespace TendexAI.Application.Features.TechnicalEvaluation.Commands.StartTechni
 /// </summary>
 public sealed record StartTechnicalEvaluationCommand(
     Guid CompetitionId,
-    Guid CommitteeId,
+    Guid? CommitteeId,
     string StartedByUserId) : ICommand<TechnicalEvaluationDetailDto>;

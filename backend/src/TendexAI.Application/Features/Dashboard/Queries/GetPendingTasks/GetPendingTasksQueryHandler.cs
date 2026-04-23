@@ -312,7 +312,16 @@ public sealed class GetPendingTasksQueryHandler
         var normalized = roleNameEn.Trim().ToLowerInvariant();
         return normalized switch
         {
-            "tenant primary admin" or "tenantprimaryadmin" or "primary admin" => SystemRole.TenantPrimaryAdmin,
+            "tenant primary admin"
+                or "tenantprimaryadmin"
+                or "primary admin"
+                or "authority owner"
+                or "authorityowner"
+                or "tenant owner"
+                or "tenantowner"
+                or "tenant admin"
+                or "tenantadmin"
+                or "owner" => SystemRole.TenantPrimaryAdmin,
             "procurement manager" or "procurementmanager" => SystemRole.ProcurementManager,
             "financial controller" or "financialcontroller" => SystemRole.FinancialController,
             "sector representative" or "sectorrepresentative" => SystemRole.SectorRepresentative,

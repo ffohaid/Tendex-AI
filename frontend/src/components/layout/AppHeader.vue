@@ -9,18 +9,22 @@
  * - Search bar
  * - Notifications, language switcher, user menu with logout
  */
-import { computed, onMounted } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
+import { useRouter } from 'vue-router'
 import { useAppStore } from '@/stores/app'
 import { useAuthStore } from '@/stores/auth'
 import { useBrandingStore } from '@/stores/branding'
 import TenantSelector from '@/components/operator/TenantSelector.vue'
+import NotificationBell from '@/components/common/NotificationBell.vue'
 import UserMenu from '@/components/layout/UserMenu.vue'
 
 const { t, locale } = useI18n()
+const router = useRouter()
 const appStore = useAppStore()
 const authStore = useAuthStore()
 const brandingStore = useBrandingStore()
+const headerSearch = ref('')
 
 /** Check if user is Super Admin to show tenant selector */
 const isSuperAdmin = computed(() => {
@@ -58,6 +62,14 @@ function switchLanguage(): void {
  */
 function toggleSidebar(): void {
   appStore.toggleSidebar()
+}
+
+function submitHeaderSearch(): void {
+  const normalizedSearch = headerSearch.value.trim()
+  router.push({
+    name: 'rfp-list',
+    query: normalizedSearch ? { search: normalizedSearch } : {},
+  })
 }
 
 /** Load branding on mount if user is authenticated */
@@ -131,16 +143,17 @@ onMounted(async () => {
 
     <!-- Center section: Search bar -->
     <div class="mx-6 hidden flex-1 md:flex">
-      <div class="relative w-full max-w-md">
+      <form class="relative w-full max-w-md" @submit.prevent="submitHeaderSearch">
         <i
           class="pi pi-search absolute start-3 top-1/2 -translate-y-1/2 text-sm text-surface-dim"
         ></i>
         <input
+          v-model="headerSearch"
           type="text"
           :placeholder="t('header.searchPlaceholder')"
           class="w-full rounded-xl border border-secondary-200 bg-surface-subtle py-2.5 pe-4 ps-10 text-sm text-secondary outline-none transition-all placeholder:text-secondary-400 focus:border-primary focus:bg-white focus:ring-2 focus:ring-primary/20"
         />
-      </div>
+      </form>
     </div>
 
     <!-- End section: Actions -->
@@ -156,20 +169,7 @@ onMounted(async () => {
       </div>
 
       <!-- Notifications -->
-      <button
-        type="button"
-        class="relative flex h-10 w-10 items-center justify-center rounded-xl text-secondary-600 transition-all hover:bg-surface-subtle hover:text-secondary"
-        :aria-label="t('common.notifications')"
-      >
-        <i class="pi pi-bell text-lg"></i>
-        <!-- Notification dot -->
-        <span
-          class="absolute end-2 top-2 flex h-2.5 w-2.5 items-center justify-center"
-        >
-          <span class="absolute h-full w-full animate-ping rounded-full bg-danger opacity-75"></span>
-          <span class="relative h-2 w-2 rounded-full bg-danger"></span>
-        </span>
-      </button>
+      <NotificationBell />
 
       <!-- Language switcher -->
       <button

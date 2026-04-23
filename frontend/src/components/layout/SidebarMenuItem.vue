@@ -44,9 +44,20 @@ const isActive = computed(() => {
  */
 function handleClick(): void {
   if (hasChildren.value) {
+    if (props.isCollapsed) {
+      const fallbackRoute = props.item.route ?? props.item.children?.[0]?.route
+      if (fallbackRoute) {
+        void router.push({ name: fallbackRoute })
+      }
+      return
+    }
+
     emit('toggle', props.item.key)
-  } else if (props.item.route) {
-    router.push({ name: props.item.route })
+    return
+  }
+
+  if (props.item.route) {
+    void router.push({ name: props.item.route })
   }
 }
 

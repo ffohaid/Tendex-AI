@@ -447,6 +447,26 @@ const routes: RouteRecordRaw[] = [
           requiredPermission: 'support.view',
         },
       },
+      {
+        path: 'legal/privacy',
+        name: 'PrivacyPolicy',
+        component: () => import('@/views/public/StaticLegalView.vue'),
+        meta: {
+          title: 'Tendex AI - Privacy Policy',
+          requiresAuth: true,
+          legalVariant: 'privacy',
+        },
+      },
+      {
+        path: 'legal/terms',
+        name: 'TermsOfService',
+        component: () => import('@/views/public/StaticLegalView.vue'),
+        meta: {
+          title: 'Tendex AI - Terms of Service',
+          requiresAuth: true,
+          legalVariant: 'terms',
+        },
+      },
     ],
   },
   {

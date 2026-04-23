@@ -19,7 +19,7 @@ import { useAuthStore } from '@/stores/auth'
 import AiUserManagementAssistant from '@/components/ai/AiUserManagementAssistant.vue'
 import {
   fetchRoles, fetchRoleById, createRole, updateRole,
-  toggleRoleStatus, fetchPermissions,
+  toggleRoleStatus, deleteRole, fetchPermissions,
 } from '@/services/userManagementService'
 import type {
   RoleDto, RoleDetailDto, PermissionGroupDto, PermissionDto,
@@ -33,6 +33,7 @@ const authStore = useAuthStore()
 
 const canCreateRole = computed(() => authStore.hasPermission('roles.create'))
 const canEditRole = computed(() => authStore.hasPermission('roles.edit'))
+const canDeleteRole = computed(() => authStore.hasPermission('roles.delete'))
 
 /* State */
 const rolesData = ref<RoleDto[]>([])
@@ -193,6 +194,24 @@ async function handleToggleRoleStatus(role: RoleDto) {
   }
 }
 
+async function handleDeleteRole(role: RoleDto | RoleDetailDto) {
+  const roleName = getRoleName(role)
+  const confirmed = window.confirm(`${t('common.confirm')} ${t('common.delete')}: ${roleName}`)
+  if (!confirmed) return
+
+  error.value = ''
+  try {
+    await deleteRole(role.id)
+    showDetailDialog.value = false
+    successMessage.value = `${t('common.delete')} - ${roleName}`
+    await loadRoles()
+    setTimeout(() => { successMessage.value = '' }, 3000)
+  } catch (e: any) {
+    const detail = e?.response?.data?.detail || e?.response?.data?.error || e?.response?.data?.title || e?.message || ''
+    error.value = detail ? `${t('common.delete')}: ${detail}` : t('common.delete')
+  }
+}
+
 /* View Role Details */
 async function openDetailDialog(role: RoleDto) {
   try {
@@ -346,6 +365,7 @@ onMounted(() => {
           </div>
           <div class="flex items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100" @click.stop>
             <button v-if="!role.isSystemRole && canEditRole" class="rounded-lg p-1.5 text-tertiary transition-colors hover:bg-surface-ground hover:text-primary" :title="t('common.edit')" @click="openEditDialog(role)"><i class="pi pi-pencil text-sm"></i></button>
+            <button v-if="!role.isSystemRole && canDeleteRole" class="rounded-lg p-1.5 text-tertiary transition-colors hover:bg-red-50 hover:text-red-600" :title="t('common.delete')" @click="handleDeleteRole(role)"><i class="pi pi-trash text-sm"></i></button>
             <button v-if="!role.isSystemRole" :class="['rounded-lg p-1.5 transition-colors', role.isActive ? 'text-tertiary hover:bg-red-50 hover:text-red-600' : 'text-tertiary hover:bg-green-50 hover:text-green-600']" :title="role.isActive ? t('settings.roles.deactivateRole') : t('settings.roles.activateRole')" @click="handleToggleRoleStatus(role)">
               <i :class="['pi text-sm', role.isActive ? 'pi-ban' : 'pi-check-circle']"></i>
             </button>
@@ -423,6 +443,7 @@ onMounted(() => {
             <!-- Actions -->
             <div v-if="!selectedRole.isSystemRole" class="flex gap-2 border-t border-surface-dim pt-4">
               <button v-if="canEditRole" class="flex items-center gap-2 rounded-lg border border-surface-dim px-4 py-2 text-sm font-medium text-secondary transition-colors hover:bg-surface-ground" @click="showDetailDialog = false; openEditDialog(selectedRole as any)"><i class="pi pi-pencil text-xs"></i>{{ t('common.edit') }}</button>
+              <button v-if="canDeleteRole" class="flex items-center gap-2 rounded-lg border border-red-200 px-4 py-2 text-sm font-medium text-red-600 transition-colors hover:bg-red-50" @click="handleDeleteRole(selectedRole)"><i class="pi pi-trash text-xs"></i>{{ t('common.delete') }}</button>
               <button :class="['flex items-center gap-2 rounded-lg border px-4 py-2 text-sm font-medium transition-colors', selectedRole.isActive ? 'border-red-200 text-red-600 hover:bg-red-50' : 'border-green-200 text-green-600 hover:bg-green-50']" @click="handleToggleRoleStatus(selectedRole as any); showDetailDialog = false">
                 <i :class="['pi text-xs', selectedRole.isActive ? 'pi-ban' : 'pi-check-circle']"></i>
                 {{ selectedRole.isActive ? t('settings.roles.deactivateRole') : t('settings.roles.activateRole') }}

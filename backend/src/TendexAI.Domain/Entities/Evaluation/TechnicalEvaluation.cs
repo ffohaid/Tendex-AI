@@ -18,7 +18,7 @@ public sealed class TechnicalEvaluation : AggregateRoot<Guid>
     public static TechnicalEvaluation Create(
         Guid competitionId,
         Guid tenantId,
-        Guid committeeId,
+        Guid? committeeId,
         decimal minimumPassingScore,
         string createdBy)
     {
@@ -40,8 +40,8 @@ public sealed class TechnicalEvaluation : AggregateRoot<Guid>
 
     public Guid TenantId { get; private set; }
 
-    /// <summary>The technical evaluation committee responsible for this evaluation.</summary>
-    public Guid CommitteeId { get; private set; }
+    /// <summary>The technical evaluation committee responsible for this evaluation when explicitly selected.</summary>
+    public Guid? CommitteeId { get; private set; }
 
     /// <summary>Current status of the evaluation.</summary>
     public TechnicalEvaluationStatus Status { get; private set; }

@@ -167,6 +167,13 @@ export async function toggleRoleStatus(
   await httpPatch<void>(`${ROLES_URL}/${roleId}/status`, request)
 }
 
+/**
+ * Deletes a custom role that is not protected and has no active user assignments.
+ */
+export async function deleteRole(roleId: string): Promise<void> {
+  await httpDelete<void>(`${ROLES_URL}/${roleId}`)
+}
+
 /* ------------------------------------------------------------------ */
 /*  Permission Endpoints (/api/v1/permissions)                         */
 /* ------------------------------------------------------------------ */

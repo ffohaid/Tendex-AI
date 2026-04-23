@@ -71,6 +71,9 @@ const showUserDetailDialog = ref(false)
 const showResetPasswordDialog = ref(false)
 const isSubmitting = ref(false)
 const selectedUser = ref<UserDto | null>(null)
+const inviteDialogError = ref('')
+const editDialogError = ref('')
+const resetPasswordDialogError = ref('')
 
 /* Forms */
 const inviteForm = ref<SendInvitationRequest>({
@@ -172,7 +175,9 @@ function getInvitationStatusBadge(status: string) {
 
 /* Action Handlers */
 async function handleSendInvitation() {
-  isSubmitting.value = true; error.value = ''
+  isSubmitting.value = true
+  error.value = ''
+  inviteDialogError.value = ''
   try {
     await sendInvitation(inviteForm.value)
     showInviteDialog.value = false
@@ -181,14 +186,21 @@ async function handleSendInvitation() {
     setTimeout(() => { successMessage.value = '' }, 3000)
   } catch (e: any) {
     const detail = e?.response?.data?.detail || e?.response?.data?.title || e?.message || ''
-    error.value = detail ? `${t('settings.users.errors.inviteFailed')}: ${detail}` : t('settings.users.errors.inviteFailed')
+    const message = detail
+      ? `${t('settings.users.errors.inviteFailed')}: ${detail}`
+      : t('settings.users.errors.inviteFailed')
+    inviteDialogError.value = message
+    error.value = message
+  } finally {
+    isSubmitting.value = false
   }
-  finally { isSubmitting.value = false }
 }
 
 async function handleUpdateUser() {
   if (!selectedUser.value) return
-  isSubmitting.value = true; error.value = ''
+  isSubmitting.value = true
+  error.value = ''
+  editDialogError.value = ''
   try {
     await updateUser(selectedUser.value.id, editForm.value)
     showEditDialog.value = false
@@ -197,9 +209,14 @@ async function handleUpdateUser() {
     setTimeout(() => { successMessage.value = '' }, 3000)
   } catch (e: any) {
     const detail = e?.response?.data?.detail || e?.response?.data?.title || e?.message || ''
-    error.value = detail ? `${t('settings.users.errors.updateFailed')}: ${detail}` : t('settings.users.errors.updateFailed')
+    const message = detail
+      ? `${t('settings.users.errors.updateFailed')}: ${detail}`
+      : t('settings.users.errors.updateFailed')
+    editDialogError.value = message
+    error.value = message
+  } finally {
+    isSubmitting.value = false
   }
-  finally { isSubmitting.value = false }
 }
 
 async function handleToggleStatus(user: UserDto) {
@@ -293,6 +310,7 @@ function openResetPasswordDialog(user: UserDto) {
   showNewPassword.value = false
   showConfirmPassword.value = false
   passwordStrength.value = { level: '', label: '', color: '' }
+  resetPasswordDialogError.value = ''
   showResetPasswordDialog.value = true
 }
 
@@ -319,14 +337,18 @@ function generateRandomPassword() {
 async function handleResetPassword() {
   if (!selectedUser.value) return
   if (resetPasswordForm.value.newPassword !== resetPasswordForm.value.confirmPassword) {
-    error.value = t('settings.users.resetPassword.passwordMismatch')
+    resetPasswordDialogError.value = t('settings.users.resetPassword.passwordMismatch')
+    error.value = resetPasswordDialogError.value
     return
   }
   if (resetPasswordForm.value.newPassword.length < 8) {
-    error.value = t('settings.users.resetPassword.passwordTooShort')
+    resetPasswordDialogError.value = t('settings.users.resetPassword.passwordTooShort')
+    error.value = resetPasswordDialogError.value
     return
   }
-  isSubmitting.value = true; error.value = ''
+  isSubmitting.value = true
+  error.value = ''
+  resetPasswordDialogError.value = ''
   try {
     await adminResetPassword(selectedUser.value.id, resetPasswordForm.value)
     showResetPasswordDialog.value = false
@@ -334,18 +356,24 @@ async function handleResetPassword() {
     setTimeout(() => { successMessage.value = '' }, 5000)
   } catch (e: any) {
     const detail = e?.response?.data?.detail || e?.response?.data?.title || e?.message || ''
-    error.value = detail ? `${t('settings.users.resetPassword.failed')}: ${detail}` : t('settings.users.resetPassword.failed')
+    const message = detail
+      ? `${t('settings.users.resetPassword.failed')}: ${detail}`
+      : t('settings.users.resetPassword.failed')
+    resetPasswordDialogError.value = message
+    error.value = message
   } finally { isSubmitting.value = false }
 }
 
 /* Form Helpers */
 function openInviteDialog() {
   inviteForm.value = { email: '', firstNameAr: '', lastNameAr: '', firstNameEn: '', lastNameEn: '', roleId: null }
+  inviteDialogError.value = ''
   showInviteDialog.value = true
 }
 function openEditDialog(user: UserDto) {
   selectedUser.value = user
   editForm.value = { firstName: user.firstName, lastName: user.lastName, phoneNumber: user.phoneNumber || '' }
+  editDialogError.value = ''
   showEditDialog.value = true
 }
 function openRoleDialog(user: UserDto) {
@@ -502,8 +530,8 @@ onMounted(() => { loadUsers(); loadRoles() })
               </tr>
             </thead>
             <tbody>
-              <tr v-for="user in users" :key="user.id" class="border-b border-surface-dim last:border-b-0 transition-colors hover:bg-surface-ground/50 cursor-pointer" @click="openUserDetail(user)">
-                <td class="px-4 py-3">
+              <tr v-for="user in users" :key="user.id" class="cursor-pointer border-b border-surface-dim transition-colors hover:bg-surface-ground/50 last:border-b-0" @click="openUserDetail(user)">
+                <td class="align-top px-4 py-3">
                   <div class="flex items-center gap-3">
                     <div class="flex h-9 w-9 items-center justify-center rounded-full bg-primary/10 text-sm font-semibold text-primary">{{ user.firstName?.charAt(0) || '' }}{{ user.lastName?.charAt(0) || '' }}</div>
                     <div>
@@ -512,18 +540,18 @@ onMounted(() => { loadUsers(); loadRoles() })
                     </div>
                   </div>
                 </td>
-                <td class="px-4 py-3 text-tertiary" dir="ltr">{{ user.email }}</td>
-                <td class="px-4 py-3">
+                <td class="align-top px-4 py-3 text-tertiary" dir="ltr">{{ user.email }}</td>
+                <td class="align-top px-4 py-3">
                   <div class="flex flex-wrap gap-1">
                     <span v-for="role in user.roles" :key="role.roleId" class="inline-block rounded-full bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary">{{ locale === 'ar' ? role.nameAr : role.nameEn }}</span>
                     <span v-if="!user.roles || user.roles.length === 0" class="text-tertiary">&mdash;</span>
                   </div>
                 </td>
-                <td class="px-4 py-3 text-center">
+                <td class="align-top px-4 py-3 text-center">
                   <span :class="[getStatusBadge(user.isActive).bgClass, getStatusBadge(user.isActive).textClass]" class="inline-block rounded-full px-2.5 py-0.5 text-xs font-medium">{{ getStatusBadge(user.isActive).label }}</span>
                 </td>
-                <td class="px-4 py-3 text-tertiary">{{ formatDateTime(user.lastLoginAt) }}</td>
-                <td class="px-4 py-3 text-center" @click.stop>
+                <td class="align-top px-4 py-3 text-tertiary">{{ formatDateTime(user.lastLoginAt) }}</td>
+                <td class="align-top px-4 py-3 text-center" @click.stop>
                   <div class="flex items-center justify-center gap-1">
                     <button v-if="canEditUser" class="rounded-lg p-1.5 text-tertiary transition-colors hover:bg-surface-ground hover:text-primary" :title="t('settings.users.editDialogTitle')" @click="openEditDialog(user)"><i class="pi pi-pencil text-sm"></i></button>
                     <button v-if="canEditUser" class="rounded-lg p-1.5 text-tertiary transition-colors hover:bg-surface-ground hover:text-primary" :title="t('settings.users.manageRoles')" @click="openRoleDialog(user)"><i class="pi pi-shield text-sm"></i></button>
@@ -574,15 +602,16 @@ onMounted(() => { loadUsers(); loadRoles() })
               </tr>
             </thead>
             <tbody>
-              <tr v-for="inv in invitations" :key="inv.id" class="border-b border-surface-dim last:border-b-0 transition-colors hover:bg-surface-ground/50">
-                <td class="px-4 py-3 font-medium text-secondary">{{ locale === 'ar' ? `${inv.firstNameAr} ${inv.lastNameAr}` : `${inv.firstNameEn || inv.firstNameAr} ${inv.lastNameEn || inv.lastNameAr}` }}</td>
-                <td class="px-4 py-3 text-tertiary" dir="ltr">{{ inv.email }}</td>
-                <td class="px-4 py-3 text-tertiary">{{ inv.roleName || '&mdash;' }}</td>
-                <td class="px-4 py-3 text-center">
+              <tr v-for="inv in invitations" :key="inv.id" class="border-b border-surface-dim transition-colors hover:bg-surface-ground/50 last:border-b-0">
+                <td class="align-top px-4 py-3 font-medium text-secondary">{{ locale === 'ar' ? `${inv.firstNameAr} ${inv.lastNameAr}` : `${inv.firstNameEn || inv.firstNameAr} ${inv.lastNameEn || inv.lastNameAr}` }}</td>
+                <td class="align-top px-4 py-3 text-tertiary" dir="ltr">{{ inv.email }}</td>
+                <td class="align-top px-4 py-3 text-tertiary">{{ inv.roleName || '—' }}</td>
+                <td class="align-top px-4 py-3 text-center">
                   <span :class="[getInvitationStatusBadge(inv.status).bgClass, getInvitationStatusBadge(inv.status).textClass]" class="inline-block rounded-full px-2.5 py-0.5 text-xs font-medium">{{ getInvitationStatusBadge(inv.status).label }}</span>
                 </td>
-                <td class="px-4 py-3 text-tertiary">{{ formatDate(inv.expiresAt) }}</td>
-                <td class="px-4 py-3 text-center">
+                       <td class="align-top px-4 py-3 text-tertiary">{{ formatDate(inv.expiresAt) }}</td>
+                <td class="align-top px-4 py-3 text-center">
+">
                   <div class="flex items-center justify-center gap-1">
                     <button v-if="inv.status === 'Pending'" class="rounded-lg p-1.5 text-tertiary transition-colors hover:bg-surface-ground hover:text-primary" :title="t('settings.users.resendInvitation')" @click="handleResendInvitation(inv.id)"><i class="pi pi-refresh text-sm"></i></button>
                     <button v-if="inv.status === 'Pending'" class="rounded-lg p-1.5 text-tertiary transition-colors hover:bg-red-50 hover:text-red-600" :title="t('settings.users.revokeInvitation')" @click="handleRevokeInvitation(inv.id)"><i class="pi pi-times text-sm"></i></button>
@@ -621,7 +650,7 @@ onMounted(() => { loadUsers(); loadRoles() })
             <div class="grid grid-cols-2 gap-4 rounded-lg border border-surface-dim bg-surface-ground p-4">
               <div>
                 <p class="text-xs text-tertiary">{{ t('settings.users.fields.phone') }}</p>
-                <p class="text-sm font-medium text-secondary" dir="ltr">{{ selectedUser.phoneNumber || '&mdash;' }}</p>
+                <p class="text-sm font-medium text-secondary" dir="ltr">{{ selectedUser.phoneNumber || '—' }}</p>
               </div>
               <div>
                 <p class="text-xs text-tertiary">{{ t('settings.users.table.status') }}</p>
@@ -662,6 +691,10 @@ onMounted(() => { loadUsers(); loadRoles() })
             <button class="rounded-lg p-1 text-tertiary hover:bg-surface-ground" @click="showInviteDialog = false"><i class="pi pi-times"></i></button>
           </div>
           <form class="p-6" @submit.prevent="handleSendInvitation">
+            <div v-if="inviteDialogError" class="mb-4 flex items-start gap-2 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+              <i class="pi pi-exclamation-circle mt-0.5 text-sm"></i>
+              <p>{{ inviteDialogError }}</p>
+            </div>
             <div class="space-y-4">
               <div>
                 <label class="mb-1 block text-sm font-medium text-secondary">{{ t('settings.users.fields.email') }} *</label>
@@ -715,6 +748,10 @@ onMounted(() => { loadUsers(); loadRoles() })
             <button class="rounded-lg p-1 text-tertiary hover:bg-surface-ground" @click="showEditDialog = false"><i class="pi pi-times"></i></button>
           </div>
           <form class="p-6" @submit.prevent="handleUpdateUser">
+            <div v-if="editDialogError" class="mb-4 flex items-start gap-2 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+              <i class="pi pi-exclamation-circle mt-0.5 text-sm"></i>
+              <p>{{ editDialogError }}</p>
+            </div>
             <!-- User info header -->
             <div class="mb-5 flex items-center gap-3 rounded-lg border border-surface-dim bg-surface-ground p-3">
               <div class="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10 text-sm font-semibold text-primary">{{ selectedUser.firstName?.charAt(0) || '' }}{{ selectedUser.lastName?.charAt(0) || '' }}</div>
@@ -830,6 +867,10 @@ onMounted(() => { loadUsers(); loadRoles() })
             <button class="rounded-lg p-1 text-tertiary hover:bg-surface-ground" @click="showResetPasswordDialog = false"><i class="pi pi-times"></i></button>
           </div>
           <form class="p-6" @submit.prevent="handleResetPassword">
+            <div v-if="resetPasswordDialogError" class="mb-4 flex items-start gap-2 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+              <i class="pi pi-exclamation-circle mt-0.5 text-sm"></i>
+              <p>{{ resetPasswordDialogError }}</p>
+            </div>
             <!-- User info header -->
             <div class="mb-5 flex items-center gap-3 rounded-lg border border-surface-dim bg-surface-ground p-3">
               <div class="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10 text-sm font-semibold text-primary">{{ selectedUser.firstName?.charAt(0) || '' }}{{ selectedUser.lastName?.charAt(0) || '' }}</div>

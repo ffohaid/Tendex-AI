@@ -207,7 +207,7 @@ function getActivityColor(type: string): string {
                 v-for="comp in activeCompetitions.slice(0, 5)"
                 :key="comp.id"
                 class="group flex cursor-pointer items-center gap-4 rounded-xl p-3 transition-all hover:bg-surface-subtle"
-                @click="navigateTo(`/rfp/${comp.id}`)"
+                @click="navigateTo(`/rfp/${comp.id}/edit`)"
               >
                 <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-interactive-50">
                   <i class="pi pi-file-edit text-interactive"></i>

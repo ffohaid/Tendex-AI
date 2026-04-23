@@ -13,7 +13,7 @@ namespace TendexAI.Application.Features.TechnicalEvaluation.Dtos;
 public sealed record TechnicalEvaluationDetailDto(
     Guid Id,
     Guid CompetitionId,
-    Guid CommitteeId,
+    Guid? CommitteeId,
     TechnicalEvaluationStatus Status,
     decimal MinimumPassingScore,
     bool IsBlindEvaluationActive,

@@ -7,13 +7,14 @@
  * - Links to profile page
  * - Logout with confirmation dialog
  */
-import { ref, computed } from 'vue'
+import { ref, computed, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { useRouter } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 
 const { t } = useI18n()
 const router = useRouter()
+const route = useRoute()
 const authStore = useAuthStore()
 
 const isOpen = ref(false)
@@ -72,6 +73,10 @@ function handleClickOutside(): void {
     closeMenu()
   }
 }
+
+watch(() => route.fullPath, () => {
+  closeMenu()
+})
 </script>
 
 <template>

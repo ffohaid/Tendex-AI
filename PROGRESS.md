@@ -727,3 +727,65 @@ Implemented a focused complementary fix for the April 22 Issue 2 scope, limited 
 ### Validation
 - Local text-level sanity checks completed successfully with `git diff --check`.
 - No deployment performed in this step.
+
+## 2026-04-23: Ongoing remediation batch for issue report 21-04-2026
+
+### Completed and verified locally so far
+
+- Consolidated current working-tree fixes across header, login branding, footer navigation, dashboard recent-RFP navigation, sidebar collapsed navigation, user-menu close behavior, roles deletion wiring, supplier-offers actions, and approval-task role-name mapping.
+- Applied an additional safe Users Management fix in `frontend/src/views/settings/UsersManagementView.vue` to show invitation/edit/reset-password errors **inside the active dialogs**, improve empty-value rendering, and make the users/invitations tables more visually consistent.
+- Rebuilt the frontend successfully after the latest Users Management changes.
+
+### Important architectural findings
+
+- The missing English-name fields in **Edit User** are not a UI-only omission. They are currently absent from the persisted user model, API contract, and domain update flow, so a real production-grade fix requires a broader domain/persistence/API/UI change.
+- Workflow edit/delete appears already implemented end-to-end in the current source, which suggests the originally reported workflow issue is likely permission-specific, environment-specific, or based on an older deployed build.
+
+### Current status
+
+- The remediation batch for report `21042026.docx` is still in progress.
+- Working tree intentionally remains uncommitted pending completion of the remaining high-priority fixes and final verification.
+
+## 2026-04-23: Issue Report 21-04-2026 Batch 2 Completion
+
+### Overview
+Completed the second batch of fixes from the 21-04-2026 issue report with production-focused frontend and backend corrections. This batch concentrated on navigation consistency, branding source-of-truth alignment, legal/public route completeness, role deletion support, user-management validation cleanup, task-center role mapping, and a backend contract fix for starting technical evaluation when no explicit committee is selected.
+
+### Key Fixes
+1. **Layout, Navigation, and Branding Consistency**
+   - Updated `AppHeader.vue` so competition search reads from the real competitions source and the live notification component is rendered instead of a placeholder bell.
+   - Updated `LoginView.vue` and `AuthLayout.vue` to use the branding store as the single source of truth, fixing background/branding regressions after refresh.
+   - Updated `UserMenu.vue` so the menu closes automatically after route changes.
+   - Updated `DashboardView.vue` so recent competition cards navigate to the real target route.
+   - Fixed collapsed-sidebar navigation behavior in `SidebarMenuItem.vue`.
+
+2. **Public Legal Pages and Footer Links**
+   - Added reusable `StaticLegalView.vue` for public legal content rendering.
+   - Registered legal routes in `router/index.ts`.
+   - Wired footer links in `AppFooter.vue` to real privacy and terms routes.
+
+3. **User and Role Management**
+   - Added role deletion support in `RolesManagementView.vue` and `userManagementService.ts`.
+   - Added a safe delete-role endpoint in `UserManagementEndpoints.cs` with protected-role guards.
+   - Cleaned validation messaging and table consistency in `UsersManagementView.vue`.
+
+4. **Task Center and Evaluation Flow**
+   - Extended role-name mapping in `GetPendingTasksQueryHandler.cs` so `authority owner`, `tenant owner`, and `owner` resolve to `SystemRole.TenantPrimaryAdmin`, restoring pending approval visibility for the authority owner persona.
+   - Updated `SupplierOffersDetailView.vue` so starting technical evaluation is actually invoked before navigation and supplier-offer deletion errors are surfaced more clearly.
+   - Hardened the backend technical-evaluation contract by making `CommitteeId` optional end-to-end instead of coercing a missing committee into `Guid.Empty`.
+
+### Backend Technical Evaluation Contract Fix
+- `TechnicalEvaluationEndpoints.cs`: stop converting missing `CommitteeId` into `Guid.Empty`.
+- `StartTechnicalEvaluationCommand.cs`: changed `CommitteeId` to `Guid?`.
+- `StartTechnicalEvaluationCommandValidator.cs`: validate only when a non-null committee is supplied.
+- `TechnicalEvaluation.cs`: changed aggregate `CommitteeId` and factory input to `Guid?`.
+- `TechnicalEvaluationDtos.cs`: changed response `CommitteeId` to `Guid?`.
+- `TechnicalEvaluationConfiguration.cs`: marked `CommitteeId` as optional in EF Core configuration.
+
+### Verification
+- Frontend build re-run successfully with `pnpm build` on 2026-04-23.
+- Local backend build could not be executed because `dotnet` is not installed in the sandbox; backend validation must be completed on the server during deployment.
+
+### Deployment Status
+- Local code changes prepared.
+- Git commit/push and production deployment still pending at the time of this entry.

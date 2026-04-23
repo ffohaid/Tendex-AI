@@ -19,6 +19,7 @@ import { useForm, useField } from 'vee-validate'
 import { toTypedSchema } from '@vee-validate/zod'
 import { z } from 'zod'
 import { useAuthStore } from '@/stores/auth'
+import { useBrandingStore } from '@/stores/branding'
 import { resolveTenantByHostname } from '@/services/tenantService'
 import type { TenantResolveDto } from '@/types/tenant'
 import InputText from 'primevue/inputtext'
@@ -28,6 +29,7 @@ import Message from 'primevue/message'
 const router = useRouter()
 const { t, locale } = useI18n()
 const authStore = useAuthStore()
+const brandingStore = useBrandingStore()
 
 /* ------------------------------------------------------------------ */
 /*  Tenant Auto-Resolution                                             */
@@ -71,20 +73,15 @@ async function autoResolveTenant(): Promise<void> {
   const { isOperator } = detectSubdomain(hostname)
   isOperatorLogin.value = isOperator
 
-  // Always clear previous tenant data when visiting login page
-  // to ensure fresh resolution based on current hostname
+  // Always clear previous tenant context when visiting login page,
+  // but preserve branding storage format managed by the branding store.
   localStorage.removeItem('tenant_id')
-  localStorage.removeItem('tenant_branding')
-  sessionStorage.removeItem('tenant_branding')
 
   try {
     const resolved = await resolveTenantByHostname(hostname)
     tenantInfo.value = resolved
     authStore.setTenantId(resolved.id)
-
-    // Store branding info for use in other components
-    sessionStorage.setItem('tenant_branding', JSON.stringify(resolved))
-
+    await brandingStore.loadAndApplyBranding(resolved.id)
     tenantResolved.value = true
   } catch {
     tenantError.value = true
@@ -93,6 +90,7 @@ async function autoResolveTenant(): Promise<void> {
 }
 
 onMounted(() => {
+  brandingStore.restoreFromStorage()
   autoResolveTenant()
 })
 
@@ -102,14 +100,19 @@ onMounted(() => {
 
 /** Tenant display name based on current locale */
 const tenantDisplayName = computed(() => {
-  if (!tenantInfo.value) return ''
-  return locale.value === 'ar' ? tenantInfo.value.nameAr : tenantInfo.value.nameEn
+  if (locale.value === 'ar') {
+    return brandingStore.activeBranding.tenantNameAr || tenantInfo.value?.nameAr || ''
+  }
+
+  return brandingStore.activeBranding.tenantNameEn || tenantInfo.value?.nameEn || ''
 })
 
 /** Whether the tenant has a custom logo */
 const hasLogo = computed(() => {
-  return tenantInfo.value?.logoUrl && tenantInfo.value.logoUrl.trim() !== ''
+  return !!brandingStore.activeBranding.logoUrl || !!tenantInfo.value?.logoUrl?.trim()
 })
+
+const activeLogoUrl = computed(() => brandingStore.activeBranding.logoUrl || tenantInfo.value?.logoUrl || null)
 
 
 /* ------------------------------------------------------------------ */
@@ -183,7 +186,7 @@ const onSubmit = handleSubmit(async (values) => {
           class="mx-auto mb-4 flex h-20 w-20 items-center justify-center rounded-2xl bg-white p-2 shadow-md"
         >
           <img
-            :src="tenantInfo!.logoUrl!"
+            :src="activeLogoUrl ?? undefined"
             :alt="tenantDisplayName"
             class="h-full w-full object-contain"
           />

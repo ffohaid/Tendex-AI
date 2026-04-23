@@ -1,7 +1,13 @@
 <script setup lang="ts">
 import { useI18n } from 'vue-i18n'
+import { useRouter } from 'vue-router'
 
 const { t } = useI18n()
+const router = useRouter()
+
+function navigateTo(name: 'PrivacyPolicy' | 'TermsOfService' | 'SupportTickets') {
+  void router.push({ name })
+}
 </script>
 
 <template>
@@ -15,26 +21,29 @@ const { t } = useI18n()
 
     <!-- Footer links -->
     <div class="flex items-center gap-4">
-      <a
-        href="#"
+      <button
+        type="button"
         class="transition-colors hover:text-primary"
+        @click="navigateTo('PrivacyPolicy')"
       >
         {{ t('footer.privacyPolicy') }}
-      </a>
+      </button>
       <span class="text-surface-dim">|</span>
-      <a
-        href="#"
+      <button
+        type="button"
         class="transition-colors hover:text-primary"
+        @click="navigateTo('TermsOfService')"
       >
         {{ t('footer.termsOfService') }}
-      </a>
+      </button>
       <span class="text-surface-dim">|</span>
-      <a
-        href="#"
+      <button
+        type="button"
         class="transition-colors hover:text-primary"
+        @click="navigateTo('SupportTickets')"
       >
         {{ t('footer.support') }}
-      </a>
+      </button>
     </div>
 
     <!-- AI Year badge (small) -->

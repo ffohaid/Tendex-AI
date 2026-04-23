@@ -24,7 +24,7 @@ public sealed class TechnicalEvaluationConfiguration
             .IsRequired();
 
         builder.Property(e => e.CommitteeId)
-            .IsRequired();
+            .IsRequired(false);
 
         builder.Property(e => e.Status)
             .HasConversion<string>()
