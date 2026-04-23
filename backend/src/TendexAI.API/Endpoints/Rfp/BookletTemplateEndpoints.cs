@@ -638,7 +638,7 @@ public static class BookletTemplateEndpoints
 
             result = Regex.Replace(
                 result,
-                $@"(?im)(^|>)(\s*{escapedLabel}\s*[:：-]?\s*)(\[.*?\]|\{{\{{.*?\}}\}}|\{{.*?\}}|_+|\.{3,}|&nbsp;|\s*)($|<)",
+                $@"(?im)(^|>)(\s*{escapedLabel}\s*[:：-]?\s*)(\[.*?\]|\{{\{{.*?\}}\}}|\{{.*?\}}|_+|\.{{3,}}|&nbsp;|\s*)($|<)",
                 m => $"{m.Groups[1].Value}{m.Groups[2].Value}{value}{m.Groups[4].Value}");
 
             result = Regex.Replace(
@@ -648,7 +648,7 @@ public static class BookletTemplateEndpoints
 
             result = Regex.Replace(
                 result,
-                $@"(?im)(^\s*{escapedLabel}\s*$\r?\n)(\s*(?:\[.*?\]|\{{\{{.*?\}}\}}|\{{.*?\}}|_+|\.{3,})\s*)",
+                $@"(?im)(^\s*{escapedLabel}\s*$\r?\n)(\s*(?:\[.*?\]|\{{\{{.*?\}}\}}|\{{.*?\}}|_+|\.{{3,}})\s*)",
                 m => $"{m.Groups[1].Value}{value}");
         }
 
