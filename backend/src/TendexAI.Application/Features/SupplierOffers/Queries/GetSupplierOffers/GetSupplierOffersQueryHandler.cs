@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using TendexAI.Application.Common.Interfaces;
+using TendexAI.Application.Common.Messaging;
 using TendexAI.Application.Features.SupplierOffers.Dtos;
 using TendexAI.Domain.Common;
 using TendexAI.Domain.Entities.Evaluation;
