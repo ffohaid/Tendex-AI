@@ -172,8 +172,21 @@ public sealed class PermissionMatrixSyncService
 
             case ResourceType.WorkflowDefinitions:
                 if (actions.HasFlag(PermissionAction.Read)) { codes.Add("workflow.view"); codes.Add("workflows.view"); }
-                if (actions.HasFlag(PermissionAction.Update) || actions.HasFlag(PermissionAction.Create))
+                if (actions.HasFlag(PermissionAction.Create))
+                {
+                    codes.Add("workflow.create");
                     codes.Add("workflow.manage");
+                }
+                if (actions.HasFlag(PermissionAction.Update))
+                {
+                    codes.Add("workflow.edit");
+                    codes.Add("workflow.manage");
+                }
+                if (actions.HasFlag(PermissionAction.Delete))
+                {
+                    codes.Add("workflow.delete");
+                    codes.Add("workflow.manage");
+                }
                 if (actions.HasFlag(PermissionAction.Approve)) codes.Add("workflow.approve");
                 break;
 

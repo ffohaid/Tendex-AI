@@ -1,13 +1,16 @@
 <script setup lang="ts">
+import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { useRouter } from 'vue-router'
+import { useAuthStore } from '@/stores/auth'
 
 const { t } = useI18n()
-const router = useRouter()
+const authStore = useAuthStore()
 
-function navigateTo(name: 'PrivacyPolicy' | 'TermsOfService' | 'SupportTickets') {
-  void router.push({ name })
-}
+const supportRoute = computed(() => (
+  authStore.isAuthenticated
+    ? { name: 'SupportTickets' }
+    : { name: 'Login', query: { redirect: '/support' } }
+))
 </script>
 
 <template>
@@ -21,29 +24,26 @@ function navigateTo(name: 'PrivacyPolicy' | 'TermsOfService' | 'SupportTickets')
 
     <!-- Footer links -->
     <div class="flex items-center gap-4">
-      <button
-        type="button"
+      <router-link
+        :to="{ name: 'PrivacyPolicy' }"
         class="transition-colors hover:text-primary"
-        @click="navigateTo('PrivacyPolicy')"
       >
         {{ t('footer.privacyPolicy') }}
-      </button>
+      </router-link>
       <span class="text-surface-dim">|</span>
-      <button
-        type="button"
+      <router-link
+        :to="{ name: 'TermsOfService' }"
         class="transition-colors hover:text-primary"
-        @click="navigateTo('TermsOfService')"
       >
         {{ t('footer.termsOfService') }}
-      </button>
+      </router-link>
       <span class="text-surface-dim">|</span>
-      <button
-        type="button"
+      <router-link
+        :to="supportRoute"
         class="transition-colors hover:text-primary"
-        @click="navigateTo('SupportTickets')"
       >
         {{ t('footer.support') }}
-      </button>
+      </router-link>
     </div>
 
     <!-- AI Year badge (small) -->

@@ -62,7 +62,15 @@ const selectedTemplate = ref<BookletTemplate | null>(null)
 const createForm = ref({
   projectNameAr: '',
   projectNameEn: '',
-  descriptionAr: ''
+  descriptionAr: '',
+  competitionType: 1,
+  estimatedBudget: '',
+  referenceNumber: '',
+  department: '',
+  fiscalYear: '',
+  startDate: '',
+  endDate: '',
+  submissionDeadline: '',
 })
 
 const categories = [
@@ -171,14 +179,37 @@ async function handleUpload(): Promise<void> {
 
 function openCreateDialog(tmpl: BookletTemplate): void {
   selectedTemplate.value = tmpl
-  createForm.value = { projectNameAr: '', projectNameEn: '', descriptionAr: '' }
+  createForm.value = {
+    projectNameAr: '',
+    projectNameEn: '',
+    descriptionAr: '',
+    competitionType: 1,
+    estimatedBudget: '',
+    referenceNumber: '',
+    department: '',
+    fiscalYear: '',
+    startDate: '',
+    endDate: '',
+    submissionDeadline: '',
+  }
   createError.value = ''
   createSuccess.value = false
   showCreateDialog.value = true
 }
 
 async function handleCreateBooklet(): Promise<void> {
-  if (!selectedTemplate.value || !createForm.value.projectNameAr.trim()) return
+  if (
+    !selectedTemplate.value ||
+    !createForm.value.projectNameAr.trim() ||
+    !createForm.value.descriptionAr.trim() ||
+    !createForm.value.referenceNumber.trim() ||
+    !createForm.value.department.trim() ||
+    !createForm.value.fiscalYear.trim() ||
+    !createForm.value.estimatedBudget ||
+    !createForm.value.startDate ||
+    !createForm.value.endDate ||
+    !createForm.value.submissionDeadline
+  ) return
 
   isCreating.value = true
   createError.value = ''
@@ -186,7 +217,15 @@ async function handleCreateBooklet(): Promise<void> {
     const result = await httpPost<{ rfpId: string }>(`/v1/booklet-templates/${selectedTemplate.value.id}/create-booklet`, {
       projectNameAr: createForm.value.projectNameAr,
       projectNameEn: createForm.value.projectNameEn || createForm.value.projectNameAr,
-      descriptionAr: createForm.value.descriptionAr || null
+      descriptionAr: createForm.value.descriptionAr,
+      competitionType: createForm.value.competitionType,
+      estimatedBudget: Number(createForm.value.estimatedBudget),
+      referenceNumber: createForm.value.referenceNumber,
+      department: createForm.value.department,
+      fiscalYear: createForm.value.fiscalYear,
+      startDate: createForm.value.startDate,
+      endDate: createForm.value.endDate,
+      submissionDeadline: createForm.value.submissionDeadline,
     })
     showCreateDialog.value = false
     createSuccess.value = true
@@ -557,7 +596,7 @@ onMounted(() => {
 
               <div>
                 <label class="mb-1 block text-sm font-medium text-secondary-700">
-                  {{ locale === 'ar' ? 'وصف المشروع' : 'Project Description' }}
+                  {{ locale === 'ar' ? 'وصف المشروع' : 'Project Description' }} *
                 </label>
                 <textarea
                   v-model="createForm.descriptionAr"
@@ -565,6 +604,62 @@ onMounted(() => {
                   :placeholder="locale === 'ar' ? 'وصف مختصر للمشروع' : 'Brief project description'"
                   class="w-full rounded-xl border border-secondary-200 bg-secondary-50 px-4 py-2.5 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
                 ></textarea>
+              </div>
+
+              <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
+                <div>
+                  <label class="mb-1 block text-sm font-medium text-secondary-700">
+                    {{ locale === 'ar' ? 'الرقم المرجعي' : 'Reference Number' }} *
+                  </label>
+                  <input v-model="createForm.referenceNumber" type="text" class="w-full rounded-xl border border-secondary-200 bg-secondary-50 px-4 py-2.5 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20" />
+                </div>
+                <div>
+                  <label class="mb-1 block text-sm font-medium text-secondary-700">
+                    {{ locale === 'ar' ? 'الإدارة' : 'Department' }} *
+                  </label>
+                  <input v-model="createForm.department" type="text" class="w-full rounded-xl border border-secondary-200 bg-secondary-50 px-4 py-2.5 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20" />
+                </div>
+                <div>
+                  <label class="mb-1 block text-sm font-medium text-secondary-700">
+                    {{ locale === 'ar' ? 'السنة المالية' : 'Fiscal Year' }} *
+                  </label>
+                  <input v-model="createForm.fiscalYear" type="text" inputmode="numeric" class="w-full rounded-xl border border-secondary-200 bg-secondary-50 px-4 py-2.5 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20" />
+                </div>
+                <div>
+                  <label class="mb-1 block text-sm font-medium text-secondary-700">
+                    {{ locale === 'ar' ? 'القيمة التقديرية' : 'Estimated Budget' }} *
+                  </label>
+                  <input v-model="createForm.estimatedBudget" type="number" min="0" step="0.01" class="w-full rounded-xl border border-secondary-200 bg-secondary-50 px-4 py-2.5 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20" />
+                </div>
+                <div>
+                  <label class="mb-1 block text-sm font-medium text-secondary-700">
+                    {{ locale === 'ar' ? 'تاريخ البداية' : 'Start Date' }} *
+                  </label>
+                  <input v-model="createForm.startDate" type="date" class="w-full rounded-xl border border-secondary-200 bg-secondary-50 px-4 py-2.5 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20" />
+                </div>
+                <div>
+                  <label class="mb-1 block text-sm font-medium text-secondary-700">
+                    {{ locale === 'ar' ? 'تاريخ الانتهاء' : 'End Date' }} *
+                  </label>
+                  <input v-model="createForm.endDate" type="date" class="w-full rounded-xl border border-secondary-200 bg-secondary-50 px-4 py-2.5 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20" />
+                </div>
+                <div>
+                  <label class="mb-1 block text-sm font-medium text-secondary-700">
+                    {{ locale === 'ar' ? 'آخر موعد لتقديم العروض' : 'Submission Deadline' }} *
+                  </label>
+                  <input v-model="createForm.submissionDeadline" type="date" class="w-full rounded-xl border border-secondary-200 bg-secondary-50 px-4 py-2.5 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20" />
+                </div>
+                <div>
+                  <label class="mb-1 block text-sm font-medium text-secondary-700">
+                    {{ locale === 'ar' ? 'نوع المنافسة' : 'Competition Type' }} *
+                  </label>
+                  <select v-model="createForm.competitionType" class="w-full rounded-xl border border-secondary-200 bg-secondary-50 px-4 py-2.5 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20">
+                    <option :value="1">{{ locale === 'ar' ? 'منافسة عامة' : 'Public Tender' }}</option>
+                    <option :value="2">{{ locale === 'ar' ? 'منافسة محدودة' : 'Limited Tender' }}</option>
+                    <option :value="3">{{ locale === 'ar' ? 'ممارسة' : 'Practice' }}</option>
+                    <option :value="4">{{ locale === 'ar' ? 'شراء مباشر' : 'Direct Purchase' }}</option>
+                  </select>
+                </div>
               </div>
 
               <div v-if="createError" class="rounded-lg bg-red-50 p-3 text-sm text-red-600">
@@ -580,7 +675,7 @@ onMounted(() => {
               </button>
               <button
                 class="rounded-xl bg-primary px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition-all hover:bg-primary-600 disabled:opacity-50"
-                :disabled="isCreating || !createForm.projectNameAr.trim()"
+                :disabled="isCreating || !createForm.projectNameAr.trim() || !createForm.descriptionAr.trim() || !createForm.referenceNumber.trim() || !createForm.department.trim() || !createForm.fiscalYear.trim() || !createForm.estimatedBudget || !createForm.startDate || !createForm.endDate || !createForm.submissionDeadline"
                 @click="handleCreateBooklet"
               >
                 <i v-if="isCreating" class="pi pi-spin pi-spinner me-2 text-xs"></i>

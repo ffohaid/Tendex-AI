@@ -24,6 +24,14 @@ public sealed class UpdateUserCommandValidator : AbstractValidator<UpdateUserCom
             .Matches(@"^\+?\d{9,15}$").WithMessage("Phone number must be between 9 and 15 digits.")
             .When(x => !string.IsNullOrEmpty(x.PhoneNumber));
 
+        RuleFor(x => x.FirstNameEn)
+            .MaximumLength(100).WithMessage("English first name must not exceed 100 characters.")
+            .When(x => !string.IsNullOrWhiteSpace(x.FirstNameEn));
+
+        RuleFor(x => x.LastNameEn)
+            .MaximumLength(100).WithMessage("English last name must not exceed 100 characters.")
+            .When(x => !string.IsNullOrWhiteSpace(x.LastNameEn));
+
         RuleFor(x => x.TenantId)
             .NotEmpty().WithMessage("Tenant ID is required.");
     }

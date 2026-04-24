@@ -188,11 +188,27 @@ public sealed class ApplicationUser : AggregateRoot<Guid>
     }
 
     /// <summary>Updates the user's profile information.</summary>
-    public void UpdateProfile(string firstName, string lastName, string? phoneNumber)
+    public void UpdateProfile(
+        string firstName,
+        string lastName,
+        string? phoneNumber,
+        string? firstNameEn = null,
+        string? lastNameEn = null)
     {
         FirstName = firstName;
         LastName = lastName;
         PhoneNumber = phoneNumber;
+
+        if (firstNameEn is not null)
+        {
+            FirstNameEn = string.IsNullOrWhiteSpace(firstNameEn) ? null : firstNameEn;
+        }
+
+        if (lastNameEn is not null)
+        {
+            LastNameEn = string.IsNullOrWhiteSpace(lastNameEn) ? null : lastNameEn;
+        }
+
         LastModifiedAt = DateTime.UtcNow;
     }
 

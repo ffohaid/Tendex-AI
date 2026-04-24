@@ -20,22 +20,24 @@ public sealed class WorkflowDefinitionRepository : IWorkflowDefinitionRepository
     }
 
     public async Task<WorkflowDefinition?> GetByIdWithStepsAsync(
+        Guid tenantId,
         Guid id,
         CancellationToken cancellationToken = default)
     {
         return await _context.WorkflowDefinitions
             .Include(w => w.Steps.Where(s => s.IsActive).OrderBy(s => s.StepOrder))
             .AsNoTracking()
-            .FirstOrDefaultAsync(w => w.Id == id, cancellationToken);
+            .FirstOrDefaultAsync(w => w.Id == id && w.TenantId == tenantId, cancellationToken);
     }
 
     public async Task<WorkflowDefinition?> GetByIdWithStepsForUpdateAsync(
+        Guid tenantId,
         Guid id,
         CancellationToken cancellationToken = default)
     {
         return await _context.WorkflowDefinitions
             .Include(w => w.Steps.OrderBy(s => s.StepOrder))
-            .FirstOrDefaultAsync(w => w.Id == id, cancellationToken);
+            .FirstOrDefaultAsync(w => w.Id == id && w.TenantId == tenantId, cancellationToken);
     }
 
     public async Task<WorkflowDefinition?> GetActiveByTransitionAsync(

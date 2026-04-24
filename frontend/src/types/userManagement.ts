@@ -30,6 +30,8 @@ export interface UserDto {
   email: string
   firstName: string
   lastName: string
+  firstNameEn: string | null
+  lastNameEn: string | null
   phoneNumber: string | null
   isActive: boolean
   mfaEnabled: boolean
@@ -158,6 +160,8 @@ export interface UpdateUserRequest {
   firstName: string
   lastName: string
   phoneNumber?: string | null
+  firstNameEn?: string | null
+  lastNameEn?: string | null
 }
 
 /**
@@ -205,7 +209,8 @@ export interface CreateRoleRequest {
 export interface UpdateRoleRequest {
   nameAr: string
   nameEn: string
-  description?: string | null
+  descriptionAr?: string | null
+  descriptionEn?: string | null
   permissionIds?: string[] | null
 }
 

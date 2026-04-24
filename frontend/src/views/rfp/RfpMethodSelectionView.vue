@@ -13,7 +13,7 @@
  * - Step 3: Review extracted content (sections, BOQ, metadata)
  * - Step 4: Create competition and navigate to editor
  */
-import { ref, computed } from 'vue'
+import { ref, computed, nextTick } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
 import { useRfpStore } from '@/stores/rfp'
@@ -52,6 +52,7 @@ const uploadProgress = ref(0)
 const extractionResult = ref<BookletExtractionResult | null>(null)
 const errorMessage = ref('')
 const dragOver = ref(false)
+const uploadFlowSectionRef = ref<HTMLElement | null>(null)
 
 /** Extraction status messages for the progress display */
 const extractionSteps = ref([
@@ -167,9 +168,17 @@ const methods: CreationMethod[] = [
 //  Upload & Extract Handlers
 // ═══════════════════════════════════════════════════════════════
 
-function handleMethodClick(method: CreationMethod): void {
+async function handleMethodClick(method: CreationMethod): Promise<void> {
   selectedMethod.value = method.key
   method.action()
+
+  if (method.key === 'upload') {
+    await nextTick()
+    uploadFlowSectionRef.value?.scrollIntoView({
+      behavior: 'smooth',
+      block: 'start',
+    })
+  }
 }
 
 function handleDragOver(e: DragEvent): void {
@@ -475,7 +484,8 @@ async function createFromExtraction(): Promise<void> {
     >
       <div
         v-if="selectedMethod === 'upload' && (extractPhase === 'idle' || extractPhase === 'error')"
-        class="mt-8 w-full max-w-5xl"
+        ref="uploadFlowSectionRef"
+        class="mt-8 w-full max-w-5xl scroll-mt-24"
       >
         <!-- Error Message -->
         <div

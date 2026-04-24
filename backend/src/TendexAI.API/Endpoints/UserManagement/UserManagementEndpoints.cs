@@ -263,7 +263,14 @@ public static class UserManagementEndpoints
         if (tenantId == Guid.Empty)
             return Results.Problem("Tenant ID is required.", statusCode: 400);
 
-        var command = new UpdateUserCommand(userId, request.FirstName, request.LastName, request.PhoneNumber, tenantId);
+        var command = new UpdateUserCommand(
+            userId,
+            request.FirstName,
+            request.LastName,
+            request.PhoneNumber,
+            request.FirstNameEn,
+            request.LastNameEn,
+            tenantId);
         var result = await mediator.Send(command);
 
         return result.IsSuccess
@@ -399,7 +406,8 @@ public static class UserManagementEndpoints
             roleId,
             request.NameAr,
             request.NameEn,
-            request.Description,
+            request.DescriptionAr,
+            request.DescriptionEn,
             tenantId,
             request.PermissionIds);
 

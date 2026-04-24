@@ -86,10 +86,14 @@ public static class BookletTemplateEndpoints
         [FromServices] TenantDbContext dbCtx,
         HttpContext httpContext)
     {
+        var tenantId = GetTenantId(httpContext);
+        if (tenantId == Guid.Empty)
+            return Results.Problem("Tenant ID is required.", statusCode: StatusCodes.Status400BadRequest);
+
         if (page < 1) page = 1;
         if (pageSize < 1) pageSize = 20;
         var query = dbCtx.BookletTemplates
-            .Where(t => t.IsActive)
+            .Where(t => t.IsActive && t.TenantId == tenantId)
             .AsNoTracking();
 
         if (!string.IsNullOrWhiteSpace(category))
@@ -125,13 +129,18 @@ public static class BookletTemplateEndpoints
 
     private static async Task<IResult> GetBookletTemplateByIdAsync(
         Guid id,
-        [FromServices] TenantDbContext dbCtx)
+        [FromServices] TenantDbContext dbCtx,
+        HttpContext httpContext)
     {
+        var tenantId = GetTenantId(httpContext);
+        if (tenantId == Guid.Empty)
+            return Results.Problem("Tenant ID is required.", statusCode: StatusCodes.Status400BadRequest);
+
         var template = await dbCtx.BookletTemplates
             .Include(t => t.Sections)
                 .ThenInclude(s => s.Blocks)
             .AsNoTracking()
-            .FirstOrDefaultAsync(t => t.Id == id);
+            .FirstOrDefaultAsync(t => t.Id == id && t.TenantId == tenantId && t.IsActive);
 
         if (template is null)
             return Results.NotFound(new { error = "القالب غير موجود" });
@@ -298,10 +307,14 @@ public static class BookletTemplateEndpoints
         [FromServices] TenantDbContext dbCtx,
         HttpContext httpContext)
     {
+        var tenantId = GetTenantId(httpContext);
+        if (tenantId == Guid.Empty)
+            return Results.Problem("Tenant ID is required.", statusCode: StatusCodes.Status400BadRequest);
+
         var template = await dbCtx.BookletTemplates
             .Include(t => t.Sections)
                 .ThenInclude(s => s.Blocks)
-            .FirstOrDefaultAsync(t => t.Id == id && t.IsActive);
+            .FirstOrDefaultAsync(t => t.Id == id && t.TenantId == tenantId && t.IsActive);
 
         if (template is null)
             return Results.NotFound(new { error = "القالب غير موجود" });
@@ -323,7 +336,6 @@ public static class BookletTemplateEndpoints
             return Results.BadRequest(new { error = "يجب أن يكون تاريخ الانتهاء بعد تاريخ البداية." });
 
         var userId = GetCurrentUserId(httpContext);
-        var tenantId = GetTenantId(httpContext);
         var projectNameAr = request.ProjectNameAr.Trim();
         var projectNameEn = string.IsNullOrWhiteSpace(request.ProjectNameEn)
             ? projectNameAr
@@ -406,7 +418,12 @@ public static class BookletTemplateEndpoints
         [FromServices] TenantDbContext dbCtx,
         HttpContext httpContext)
     {
-        var template = await dbCtx.BookletTemplates.FindAsync(id);
+        var tenantId = GetTenantId(httpContext);
+        if (tenantId == Guid.Empty)
+            return Results.Problem("Tenant ID is required.", statusCode: StatusCodes.Status400BadRequest);
+
+        var template = await dbCtx.BookletTemplates
+            .FirstOrDefaultAsync(t => t.Id == id && t.TenantId == tenantId);
         if (template is null)
             return Results.NotFound(new { error = "القالب غير موجود" });
 
@@ -424,12 +441,17 @@ public static class BookletTemplateEndpoints
     /// </summary>
     private static async Task<IResult> GetBookletBlocksByCompetitionAsync(
         Guid competitionId,
-        [FromServices] TenantDbContext dbCtx)
+        [FromServices] TenantDbContext dbCtx,
+        HttpContext httpContext)
     {
+        var tenantId = GetTenantId(httpContext);
+        if (tenantId == Guid.Empty)
+            return Results.Problem("Tenant ID is required.", statusCode: StatusCodes.Status400BadRequest);
+
         // Find the competition and its source template
         var competition = await dbCtx.Competitions
             .AsNoTracking()
-            .FirstOrDefaultAsync(c => c.Id == competitionId);
+            .FirstOrDefaultAsync(c => c.Id == competitionId && c.TenantId == tenantId);
 
         if (competition is null)
             return Results.NotFound(new { error = "المنافسة غير موجودة" });
@@ -442,7 +464,7 @@ public static class BookletTemplateEndpoints
             .Include(t => t.Sections)
                 .ThenInclude(s => s.Blocks)
             .AsNoTracking()
-            .FirstOrDefaultAsync(t => t.Id == competition.SourceTemplateId);
+            .FirstOrDefaultAsync(t => t.Id == competition.SourceTemplateId && t.TenantId == tenantId && t.IsActive);
 
         if (template is null)
             return Results.NotFound(new { error = "القالب المصدر غير موجود" });
@@ -511,9 +533,13 @@ public static class BookletTemplateEndpoints
         [FromServices] TenantDbContext dbCtx,
         HttpContext httpContext)
     {
+        var tenantId = GetTenantId(httpContext);
+        if (tenantId == Guid.Empty)
+            return Results.Problem("Tenant ID is required.", statusCode: StatusCodes.Status400BadRequest);
+
         var competition = await dbCtx.Competitions
             .Include(c => c.Sections)
-            .FirstOrDefaultAsync(c => c.Id == competitionId);
+            .FirstOrDefaultAsync(c => c.Id == competitionId && c.TenantId == tenantId);
 
         if (competition is null)
             return Results.NotFound(new { error = "المنافسة غير موجودة" });
@@ -745,7 +771,7 @@ public static class BookletTemplateEndpoints
         var tenantClaim = httpContext.User.FindFirst("tenant_id")?.Value;
         return Guid.TryParse(tenantClaim, out var tenantId)
             ? tenantId
-            : Guid.Parse("a1b2c3d4-e5f6-7890-abcd-ef1234567890");
+            : Guid.Empty;
     }
 
     private static string GetCurrentUserId(HttpContext httpContext)

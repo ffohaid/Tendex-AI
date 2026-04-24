@@ -198,23 +198,34 @@ public sealed class GetPendingTasksQueryHandler
             var userRoles = dbContext.GetDbSet<UserRole>();
             var roles = dbContext.GetDbSet<Role>();
 
-            // 1. Get the user's system role(s) by matching NormalizedName to SystemRole enum
-            var userRoleNames = await userRoles
+            // 1. Get the user's role identifiers using normalized names first, with NameEn as fallback
+            var userRoleIdentifiers = await userRoles
                 .AsNoTracking()
                 .Where(ur => ur.UserId == userId)
                 .Join(
                     roles.AsNoTracking(),
                     ur => ur.RoleId,
                     r => r.Id,
-                    (ur, r) => r.NameEn)
+                    (ur, r) => new
+                    {
+                        r.NormalizedName,
+                        r.NameEn
+                    })
                 .ToListAsync(cancellationToken);
 
 
-            // Map role names to SystemRole enum values
+            // Map role identifiers to SystemRole enum values
             var userSystemRoles = new List<SystemRole>();
-            foreach (var roleName in userRoleNames)
+            foreach (var role in userRoleIdentifiers)
             {
-                var systemRole = MapRoleNameToSystemRole(roleName);
+                var roleIdentifier = !string.IsNullOrWhiteSpace(role.NormalizedName)
+                    ? role.NormalizedName
+                    : role.NameEn;
+
+                if (string.IsNullOrWhiteSpace(roleIdentifier))
+                    continue;
+
+                var systemRole = MapRoleNameToSystemRole(roleIdentifier);
                 if (systemRole.HasValue)
                     userSystemRoles.Add(systemRole.Value);
             }

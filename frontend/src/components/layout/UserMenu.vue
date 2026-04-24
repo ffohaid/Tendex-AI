@@ -7,7 +7,7 @@
  * - Links to profile page
  * - Logout with confirmation dialog
  */
-import { ref, computed, watch } from 'vue'
+import { ref, computed, watch, onBeforeUnmount } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
@@ -20,6 +20,7 @@ const authStore = useAuthStore()
 const isOpen = ref(false)
 const showLogoutConfirm = ref(false)
 const isLoggingOut = ref(false)
+const menuRef = ref<HTMLElement | null>(null)
 
 const userInitials = computed(() => {
   if (!authStore.user) return '?'
@@ -33,11 +34,22 @@ const displayName = computed(() => authStore.fullName || t('common.profile'))
 const userEmail = computed(() => authStore.user?.email || '')
 
 function toggleMenu(): void {
-  isOpen.value = !isOpen.value
+  if (isOpen.value) {
+    closeMenu()
+    return
+  }
+
+  isOpen.value = true
+  bindGlobalListeners()
 }
 
 function closeMenu(): void {
+  if (!isOpen.value) {
+    return
+  }
+
   isOpen.value = false
+  unbindGlobalListeners()
 }
 
 function goToProfile(): void {
@@ -68,26 +80,45 @@ async function confirmLogout(): Promise<void> {
   }
 }
 
-function handleClickOutside(): void {
-  if (isOpen.value) {
+function handleDocumentPointerDown(event: MouseEvent): void {
+  const target = event.target as Node | null
+
+  if (!target || !menuRef.value) {
+    return
+  }
+
+  if (!menuRef.value.contains(target)) {
     closeMenu()
   }
+}
+
+function handleEscapeKey(event: KeyboardEvent): void {
+  if (event.key === 'Escape') {
+    closeMenu()
+  }
+}
+
+function bindGlobalListeners(): void {
+  document.addEventListener('mousedown', handleDocumentPointerDown)
+  document.addEventListener('keydown', handleEscapeKey)
+}
+
+function unbindGlobalListeners(): void {
+  document.removeEventListener('mousedown', handleDocumentPointerDown)
+  document.removeEventListener('keydown', handleEscapeKey)
 }
 
 watch(() => route.fullPath, () => {
   closeMenu()
 })
+
+onBeforeUnmount(() => {
+  unbindGlobalListeners()
+})
 </script>
 
 <template>
-  <!-- Click-outside overlay -->
-  <div
-    v-if="isOpen"
-    class="fixed inset-0 z-40"
-    @click="handleClickOutside"
-  ></div>
-
-  <div class="relative">
+  <div ref="menuRef" class="relative">
     <!-- User avatar button -->
     <button
       type="button"

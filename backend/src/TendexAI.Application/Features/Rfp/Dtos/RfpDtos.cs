@@ -75,6 +75,7 @@ public sealed record RfpSectionDto(
     string TitleEn,
     RfpSectionType SectionType,
     string? ContentHtml,
+    string? ContentPlainText,
     bool IsMandatory,
     bool IsFromTemplate,
     TextColorType DefaultTextColor,

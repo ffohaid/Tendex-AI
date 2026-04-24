@@ -55,7 +55,11 @@ public sealed class UpdateRoleCommandHandler : ICommandHandler<UpdateRoleCommand
             role.UpdateName(request.NameAr, request.NameEn);
         }
 
-        role.SetDescription(request.Description);
+        var description = !string.IsNullOrWhiteSpace(request.DescriptionAr)
+            ? request.DescriptionAr
+            : request.DescriptionEn;
+
+        role.SetDescription(description);
 
         // Update permissions if provided
         if (request.PermissionIds is not null)

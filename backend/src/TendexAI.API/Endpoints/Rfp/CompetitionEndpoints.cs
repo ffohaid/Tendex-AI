@@ -217,9 +217,13 @@ public static class CompetitionEndpoints
         var query = new GetCompetitionByIdQuery(competitionId);
         var result = await mediator.Send(query);
 
-        return result.IsSuccess
-            ? Results.Ok(result.Value)
-            : Results.Problem(result.Error, statusCode: 404);
+        if (!result.IsSuccess || result.Value is null)
+            return Results.Problem(result.Error, statusCode: 404);
+
+        if (result.Value.TenantId != tenantId)
+            return Results.NotFound();
+
+        return Results.Ok(result.Value);
     }
 
     private static async Task<IResult> CreateCompetitionAsync(

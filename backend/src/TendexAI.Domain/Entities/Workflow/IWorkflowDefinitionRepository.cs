@@ -12,6 +12,7 @@ public interface IWorkflowDefinitionRepository
     /// Gets a workflow definition by its unique identifier, including its step definitions.
     /// </summary>
     Task<WorkflowDefinition?> GetByIdWithStepsAsync(
+        Guid tenantId,
         Guid id,
         CancellationToken cancellationToken = default);
 
@@ -19,6 +20,7 @@ public interface IWorkflowDefinitionRepository
     /// Gets a workflow definition by its unique identifier for update operations (with tracking).
     /// </summary>
     Task<WorkflowDefinition?> GetByIdWithStepsForUpdateAsync(
+        Guid tenantId,
         Guid id,
         CancellationToken cancellationToken = default);
 

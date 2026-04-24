@@ -10,6 +10,7 @@ public sealed record UpdateRoleCommand(
     Guid RoleId,
     string NameAr,
     string NameEn,
-    string? Description,
+    string? DescriptionAr,
+    string? DescriptionEn,
     Guid TenantId,
     List<Guid>? PermissionIds) : ICommand;

@@ -56,7 +56,7 @@ const createForm = ref<CreateRoleRequest>({
 
 /* Edit Form */
 const editForm = ref<UpdateRoleRequest>({
-  nameAr: '', nameEn: '', description: '', permissionIds: [],
+  nameAr: '', nameEn: '', descriptionAr: '', descriptionEn: '', permissionIds: [],
 })
 
 /* Computed */
@@ -151,7 +151,8 @@ async function openEditDialog(role: RoleDto) {
     editForm.value = {
       nameAr: detail.nameAr,
       nameEn: detail.nameEn,
-      description: detail.description || '',
+      descriptionAr: detail.description || '',
+      descriptionEn: detail.description || '',
       permissionIds: detail.permissions.map(p => p.id),
     }
     showEditDialog.value = true
@@ -543,9 +544,15 @@ onMounted(() => {
                   <input v-model="editForm.nameEn" type="text" required dir="ltr" class="w-full rounded-lg border border-surface-dim bg-surface-ground px-4 py-2.5 text-sm text-secondary focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary" />
                 </div>
               </div>
-              <div>
-                <label class="mb-1 block text-sm font-medium text-secondary">{{ t('settings.roles.fields.description') }}</label>
-                <textarea v-model="editForm.description" rows="2" class="w-full rounded-lg border border-surface-dim bg-surface-ground px-4 py-2.5 text-sm text-secondary focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"></textarea>
+              <div class="grid grid-cols-2 gap-4">
+                <div>
+                  <label class="mb-1 block text-sm font-medium text-secondary">{{ t('settings.roles.fields.descriptionAr') }}</label>
+                  <textarea v-model="editForm.descriptionAr" rows="2" class="w-full rounded-lg border border-surface-dim bg-surface-ground px-4 py-2.5 text-sm text-secondary focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"></textarea>
+                </div>
+                <div>
+                  <label class="mb-1 block text-sm font-medium text-secondary">{{ t('settings.roles.fields.descriptionEn') }}</label>
+                  <textarea v-model="editForm.descriptionEn" rows="2" dir="ltr" class="w-full rounded-lg border border-surface-dim bg-surface-ground px-4 py-2.5 text-sm text-secondary focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"></textarea>
+                </div>
               </div>
               <!-- Permissions Section -->
               <div>

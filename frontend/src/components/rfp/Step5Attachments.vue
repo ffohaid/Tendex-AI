@@ -152,12 +152,13 @@ function removeAttachment(id: string) {
 
 /** Handle AI attachment recommendations */
 function handleAiAttachments(keys: string[]) {
-  // Select all recommended attachment types
-  keys.forEach(key => {
-    if (!isRequiredAttachmentSelected(key)) {
-      toggleRequiredType(key)
-    }
-  })
+  // Merge AI recommendations idempotently so duplicate keys never toggle a
+  // previously selected attachment type back off.
+  const uniqueKeys = Array.from(new Set(keys.filter(Boolean)))
+  const existing = rfpStore.formData.attachments.requiredAttachmentTypes || []
+  const merged = Array.from(new Set([...existing, ...uniqueKeys]))
+
+  rfpStore.updateAttachments({ requiredAttachmentTypes: merged })
 }
 
 /** Count selected required attachments */

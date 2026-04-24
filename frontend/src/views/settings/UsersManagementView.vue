@@ -79,7 +79,7 @@ const resetPasswordDialogError = ref('')
 const inviteForm = ref<SendInvitationRequest>({
   email: '', firstNameAr: '', lastNameAr: '', firstNameEn: '', lastNameEn: '', roleId: null,
 })
-const editForm = ref({ firstName: '', lastName: '', phoneNumber: '' })
+const editForm = ref({ firstName: '', lastName: '', phoneNumber: '', firstNameEn: '', lastNameEn: '' })
 const selectedRoleId = ref('')
 const resetPasswordForm = ref<AdminResetPasswordRequest>({
   newPassword: '',
@@ -190,7 +190,6 @@ async function handleSendInvitation() {
       ? `${t('settings.users.errors.inviteFailed')}: ${detail}`
       : t('settings.users.errors.inviteFailed')
     inviteDialogError.value = message
-    error.value = message
   } finally {
     isSubmitting.value = false
   }
@@ -213,7 +212,6 @@ async function handleUpdateUser() {
       ? `${t('settings.users.errors.updateFailed')}: ${detail}`
       : t('settings.users.errors.updateFailed')
     editDialogError.value = message
-    error.value = message
   } finally {
     isSubmitting.value = false
   }
@@ -372,7 +370,13 @@ function openInviteDialog() {
 }
 function openEditDialog(user: UserDto) {
   selectedUser.value = user
-  editForm.value = { firstName: user.firstName, lastName: user.lastName, phoneNumber: user.phoneNumber || '' }
+  editForm.value = {
+    firstName: user.firstName,
+    lastName: user.lastName,
+    phoneNumber: user.phoneNumber || '',
+    firstNameEn: user.firstNameEn || '',
+    lastNameEn: user.lastNameEn || '',
+  }
   editDialogError.value = ''
   showEditDialog.value = true
 }
@@ -771,6 +775,16 @@ onMounted(() => { loadUsers(); loadRoles() })
                 <div>
                   <label class="mb-1 block text-sm font-medium text-secondary">{{ t('settings.users.fields.lastName') }} *</label>
                   <input v-model="editForm.lastName" type="text" required class="w-full rounded-lg border border-surface-dim bg-surface-ground px-4 py-2.5 text-sm text-secondary focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary" />
+                </div>
+              </div>
+              <div class="grid grid-cols-2 gap-4">
+                <div>
+                  <label class="mb-1 block text-sm font-medium text-secondary">{{ t('settings.users.fields.firstNameEn') }}</label>
+                  <input v-model="editForm.firstNameEn" type="text" dir="ltr" class="w-full rounded-lg border border-surface-dim bg-surface-ground px-4 py-2.5 text-sm text-secondary focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary" />
+                </div>
+                <div>
+                  <label class="mb-1 block text-sm font-medium text-secondary">{{ t('settings.users.fields.lastNameEn') }}</label>
+                  <input v-model="editForm.lastNameEn" type="text" dir="ltr" class="w-full rounded-lg border border-surface-dim bg-surface-ground px-4 py-2.5 text-sm text-secondary focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary" />
                 </div>
               </div>
               <div>

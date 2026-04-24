@@ -81,7 +81,7 @@ export const PERMISSIONS = {
   // Workflow
   WORKFLOW_VIEW: 'workflow.view',
   WORKFLOW_CREATE: 'workflow.create',
-  WORKFLOW_UPDATE: 'workflow.update',
+  WORKFLOW_UPDATE: 'workflow.edit',
   WORKFLOW_DELETE: 'workflow.delete',
   WORKFLOW_MANAGE: 'workflow.manage',
 

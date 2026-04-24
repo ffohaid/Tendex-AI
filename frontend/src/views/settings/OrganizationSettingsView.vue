@@ -247,6 +247,12 @@ async function handleSaveBranding() {
         logoFile.value,
       )
       finalLogoUrl = uploadResult.fileId || finalLogoUrl
+
+      if (uploadResult.fileId) {
+        brandingData.value.logoUrl = uploadResult.fileId
+        logoPreview.value = await brandingService.getFileDownloadUrl(uploadResult.fileId)
+      }
+
       isUploadingLogo.value = false
     }
 

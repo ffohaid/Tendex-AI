@@ -792,3 +792,83 @@ Completed the second batch of fixes from the 21-04-2026 issue report with produc
 
 ### 2026-04-23 Addendum — public legal routes exposure fix
 After deployment verification, it was confirmed that the new legal pages were still nested under the authenticated route tree, which caused `/privacy` and `/terms` to redirect unauthenticated visitors to the login page. The router was corrected so both pages are now mounted as public top-level routes under the guest layout, preserving the same route names and legal-variant rendering while making them externally reachable from the production domain.
+
+## 2026-04-23: Report 23042026 remediation batch (in progress)
+
+### Implemented so far
+- Fixed header user menu dismissal behavior to close on outside click, route changes, and Escape.
+- Improved collapsed sidebar UX to support safer temporary hover expansion without overriding the manual pinned state.
+- Clarified the global header search placeholder in Arabic and English so it reflects the actual searchable scope.
+- Hardened footer navigation by switching legal/support actions to explicit route links.
+- Extended user update contracts across frontend and backend to support `FirstNameEn` and `LastNameEn`, including validation and domain update flow.
+- Updated the user edit dialog so English name fields are rendered and included in save operations.
+- Fixed tenant branding retrieval so logo values stored as uploaded file identifiers are resolved to displayable download URLs at read time.
+- Fixed organization branding save flow so newly uploaded logos preview correctly immediately after upload while still storing the underlying file identifier.
+- Fixed the booklet `Upload & Extract` path to scroll directly to the upload section once that creation method is selected.
+- Fixed the role update contract mismatch between frontend and backend by restoring Arabic/English description fields through API request models, application commands, validators, handlers, and the edit dialog form.
+
+### Validation status
+- Frontend production build completed successfully after the current UI and contract fixes.
+- Backend build could not be executed in the sandbox because the `dotnet` CLI is not available in the current environment, so backend verification is currently limited to static consistency review.
+
+## 2026-04-23 — Issue Batch 23042026 (in progress)
+
+- Hardened the user profile menu behavior so it closes reliably on outside click, Escape, and route navigation.
+- Improved collapsed sidebar behavior to support hover expansion while preserving the pinned state.
+- Clarified the global search placeholder text in Arabic and English to match the actual current search scope.
+- Strengthened footer legal/support navigation for more reliable route transitions.
+- Extended user edit contracts end-to-end to support English first/last names in both frontend and backend.
+- Updated users management modal behavior to keep validation/error feedback inside the dialog flow.
+- Fixed tenant branding retrieval and save/display flow so logo references are resolved to usable URLs and reflected more consistently.
+- Aligned role update contracts between frontend and backend to use bilingual descriptions.
+- Added automatic scroll guidance for the upload-and-extract booklet creation path.
+- Fixed task-center role resolution to use normalized role identifiers first, which restores approval-task visibility for authority-owner style roles.
+- Expanded booklet creation from template on the frontend to send the mandatory fields required by the backend endpoint.
+- Frontend production build completed successfully after the latest template-creation fix.
+
+## 2026-04-23 — Issue Batch 23042026 (continued)
+- Fixed workflow permission matrix synchronization to emit granular `workflow.create`, `workflow.edit`, and `workflow.delete` codes alongside `workflow.manage`, reducing cases where workflow edit/delete actions were blocked despite administrative access.
+- Corrected task-center role resolution to prefer normalized role identifiers, restoring approval-task visibility for authority-owner style roles.
+- Hardened booklet-template tenant isolation in backend endpoints by enforcing tenant filtering on list/detail/create-from-template/delete/template-block reads and removing an unsafe tenant fallback path.
+- Corrected the frontend workflow permission constant so workflow edit routes/actions now reference `workflow.edit` instead of a non-existent `workflow.update` code.
+- Frontend production build completed successfully after the latest workflow-permission constant fix.
+
+Additional progress checkpoint for 2026-04-23 batch:
+The supplier-offers detail screen was hardened to normalize `technicalResult` values coming from the API whether they arrive as numeric enums or string enums, preventing incorrect badges and summary counts in the offers detail workflow. A final tenant-isolation gap was also closed in `SaveBookletBlocksAsync`, which now verifies `tenantId` before loading and updating competition booklet sections.
+The workflow-definition management path was further hardened by making definition reads, updates, and deactivation tenant-scoped end to end. This included extending the workflow-definition repository contract and implementation to require `tenantId` for by-id reads, and updating the API handlers for detail, update, and delete operations to enforce the tenant context before loading any workflow definition.
+The competition detail endpoint was additionally hardened with a tenant-consistency guard at the API layer so that detail reads cannot return cross-tenant data even while the underlying query contract remains ID-based.
+## 2026-04-23 — Issue Batch 23042026 (continued live verification)
+- Extended the RFP read contract so section detail responses now include `ContentPlainText`, and updated the competition mapper to derive plain-text section content from stored HTML for safer edit/view hydration.
+- Fixed the step-5 AI attachment recommendation apply flow to merge recommended attachment-type keys idempotently instead of toggling previously selected keys back off.
+- Reproduced the supplier-offers detail failure live on `mof.netaq.pro` after a successful authenticated session, confirming the list screen loads while the detail screen still hit HTTP 500 for specific competitions.
+- Reworked `GetSupplierOffersQueryHandler` to query supplier-offer DTOs directly from the tenant DbContext with a defensive fallback path when `evaluation.SupplierOffers.IsDeleted` is missing in a tenant database, reducing dependence on fragile entity materialization during the offers-detail read flow.
+### Validation status
+- Frontend production build completed successfully after the `ContentPlainText` contract fix.
+- Frontend production build completed successfully after the step-5 AI attachment recommendation merge fix.
+- Live verification confirmed the supplier-offers list screen loads successfully for the MOF tenant, while the detail-screen backend fix still requires deployment before re-testing the HTTP 500 path on production.
+
+## 2026-04-24 — Issue Batch 23042026 (pre-deployment consolidation)
+
+### Overview
+The current remediation batch for report `23042026.docx` was consolidated locally with both frontend and backend fixes prepared for a single deployment wave. The work focused on dialog reliability, workflow permission alignment, tenant-isolation hardening, branding/logo URL consistency, booklet flows, and the supplier-offers detail failure path.
+
+### Consolidated fixes in this wave
+- Extended user update support end-to-end so English first and last names are available in the edit flow across request models, validators, handlers, domain methods, DTOs, and the frontend form state.
+- Aligned role-update contracts between frontend and backend to preserve bilingual descriptions during edit operations.
+- Kept validation feedback anchored within active dialogs in Users Management and confirmed the invite dialog keeps immediate validation inside the modal interaction flow.
+- Resolved tenant-branding logo reads to downloadable URLs and improved organization-branding post-save preview consistency.
+- Corrected workflow permission naming on the frontend from `workflow.update` to `workflow.edit` and extended backend permission sync to emit granular workflow permission codes.
+- Hardened workflow-definition operations and booklet-template endpoints so tenant context is enforced across detail, update, delete, template reads, and create-from-template flows.
+- Added `ContentPlainText` to RFP section DTOs and derived it from stored HTML for safer section hydration.
+- Fixed the step-5 AI attachment recommendation apply-all behavior so merges are idempotent and do not undo previous attachment-type selections.
+- Reworked the supplier-offers detail query path to project DTOs directly with a defensive fallback when the `IsDeleted` column is absent in tenant data, targeting the live HTTP 500 failure reproduced on production.
+
+### Validation completed before deployment
+- Frontend production build completed successfully after the latest fixes in the current batch.
+- Live authenticated checks on `mof.netaq.pro` confirmed the workflows page loads with 14 workflows and visible per-card actions.
+- Live checks on Users Management confirmed the invite dialog renders English name fields and retains immediate validation inside the active dialog context.
+- A fresh baseline check reconfirmed that the supplier-offers detail page on production still fails with `Request failed with status code 500`, which remains the primary post-deployment verification target for this batch.
+
+### Pending actions
+- Final review of the remaining structural items (`requiredAttachmentTypes` persistence and centralized fiscal-year management) before deciding whether they stay in this deployment wave or move to a separate migration-focused batch.
+- Commit, push, deploy, and execute post-deployment live verification.

@@ -37,7 +37,12 @@ public sealed class UpdateUserCommandHandler : ICommandHandler<UpdateUserCommand
             return Result.Failure("User does not belong to the current tenant.");
         }
 
-        user.UpdateProfile(request.FirstName, request.LastName, request.PhoneNumber);
+        user.UpdateProfile(
+            request.FirstName,
+            request.LastName,
+            request.PhoneNumber,
+            request.FirstNameEn,
+            request.LastNameEn);
         _userRepository.Update(user);
         // CRITICAL FIX: Use repository's SaveChangesAsync which operates on TenantDbContext
         await _userRepository.SaveChangesAsync(cancellationToken);

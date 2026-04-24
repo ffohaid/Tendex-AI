@@ -6,7 +6,9 @@ namespace TendexAI.API.Endpoints.UserManagement;
 public sealed record UpdateUserRequest(
     string FirstName,
     string LastName,
-    string? PhoneNumber);
+    string? PhoneNumber,
+    string? FirstNameEn,
+    string? LastNameEn);
 
 /// <summary>
 /// Request model for activating/deactivating a user.
@@ -65,7 +67,8 @@ public sealed record CreateRoleRequest(
 public sealed record UpdateRoleRequest(
     string NameAr,
     string NameEn,
-    string? Description,
+    string? DescriptionAr,
+    string? DescriptionEn,
     List<Guid>? PermissionIds);
 
 /// <summary>

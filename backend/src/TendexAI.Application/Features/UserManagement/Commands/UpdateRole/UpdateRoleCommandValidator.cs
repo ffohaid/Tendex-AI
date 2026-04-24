@@ -20,6 +20,14 @@ public sealed class UpdateRoleCommandValidator : AbstractValidator<UpdateRoleCom
             .NotEmpty().WithMessage("English role name is required.")
             .MaximumLength(100).WithMessage("English role name must not exceed 100 characters.");
 
+        RuleFor(x => x.DescriptionAr)
+            .MaximumLength(500).WithMessage("Arabic description must not exceed 500 characters.")
+            .When(x => !string.IsNullOrWhiteSpace(x.DescriptionAr));
+
+        RuleFor(x => x.DescriptionEn)
+            .MaximumLength(500).WithMessage("English description must not exceed 500 characters.")
+            .When(x => !string.IsNullOrWhiteSpace(x.DescriptionEn));
+
         RuleFor(x => x.TenantId)
             .NotEmpty().WithMessage("Tenant ID is required.");
     }

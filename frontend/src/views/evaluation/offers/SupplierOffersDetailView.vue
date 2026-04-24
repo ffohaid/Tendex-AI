@@ -129,15 +129,23 @@ async function goToTechnicalEvaluation() {
   router.push({ name: 'TechnicalEvaluationDetail', params: { id: competitionId.value } })
 }
 
-function getTechnicalResultLabel(result: number): string {
-  if (result === 1) return isRtl.value ? 'ناجح' : 'Passed'
-  if (result === 2) return isRtl.value ? 'راسب' : 'Failed'
+function normalizeTechnicalResult(result: number | string | null | undefined): 0 | 1 | 2 {
+  if (result === 1 || result === '1' || result === 'Passed') return 1
+  if (result === 2 || result === '2' || result === 'Failed') return 2
+  return 0
+}
+
+function getTechnicalResultLabel(result: number | string | null | undefined): string {
+  const normalized = normalizeTechnicalResult(result)
+  if (normalized === 1) return isRtl.value ? 'ناجح' : 'Passed'
+  if (normalized === 2) return isRtl.value ? 'راسب' : 'Failed'
   return isRtl.value ? 'قيد التقييم' : 'Pending'
 }
 
-function getTechnicalResultClass(result: number): string {
-  if (result === 1) return 'bg-green-100 text-green-800'
-  if (result === 2) return 'bg-red-100 text-red-800'
+function getTechnicalResultClass(result: number | string | null | undefined): string {
+  const normalized = normalizeTechnicalResult(result)
+  if (normalized === 1) return 'bg-green-100 text-green-800'
+  if (normalized === 2) return 'bg-red-100 text-red-800'
   return 'bg-gray-100 text-gray-800'
 }
 
@@ -353,11 +361,11 @@ onMounted(loadData)
       </div>
       <div class="rounded-lg border border-gray-200 bg-white p-4">
         <div class="text-sm text-gray-500">{{ isRtl ? 'ناجح فنياً' : 'Technically Passed' }}</div>
-        <div class="mt-1 text-2xl font-bold text-green-600">{{ offers.filter(o => o.technicalResult === 1).length }}</div>
+        <div class="mt-1 text-2xl font-bold text-green-600">{{ offers.filter(o => normalizeTechnicalResult(o.technicalResult) === 1).length }}</div>
       </div>
       <div class="rounded-lg border border-gray-200 bg-white p-4">
         <div class="text-sm text-gray-500">{{ isRtl ? 'قيد التقييم' : 'Pending Evaluation' }}</div>
-        <div class="mt-1 text-2xl font-bold text-yellow-600">{{ offers.filter(o => o.technicalResult === 0).length }}</div>
+        <div class="mt-1 text-2xl font-bold text-yellow-600">{{ offers.filter(o => normalizeTechnicalResult(o.technicalResult) === 0).length }}</div>
       </div>
     </div>
 

@@ -1,4 +1,5 @@
 using TendexAI.Application.Features.Rfp.Dtos;
+using System.Text.RegularExpressions;
 using TendexAI.Domain.Entities.Rfp;
 
 namespace TendexAI.Application.Features.Rfp.Mappers;
@@ -80,6 +81,7 @@ public static class CompetitionMapper
             TitleEn: entity.TitleEn,
             SectionType: entity.SectionType,
             ContentHtml: entity.ContentHtml,
+            ContentPlainText: ConvertHtmlToPlainText(entity.ContentHtml),
             IsMandatory: entity.IsMandatory,
             IsFromTemplate: entity.IsFromTemplate,
             DefaultTextColor: entity.DefaultTextColor,
@@ -140,5 +142,18 @@ public static class CompetitionMapper
             SortOrder: entity.SortOrder,
             CreatedAt: entity.CreatedAt,
             CreatedBy: entity.CreatedBy);
+    }
+
+    private static string? ConvertHtmlToPlainText(string? contentHtml)
+    {
+        if (string.IsNullOrWhiteSpace(contentHtml))
+            return contentHtml;
+
+        var withLineBreaks = Regex.Replace(contentHtml, "<(br|/p|/div|/li|/tr|/h[1-6])[^>]*>", "\n", RegexOptions.IgnoreCase);
+        var withoutTags = Regex.Replace(withLineBreaks, "<[^>]+>", string.Empty);
+        var decoded = System.Net.WebUtility.HtmlDecode(withoutTags);
+        var normalizedLines = Regex.Replace(decoded, "\n{3,}", "\n\n");
+
+        return normalizedLines.Trim();
     }
 }

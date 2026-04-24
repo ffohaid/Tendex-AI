@@ -247,9 +247,14 @@ public static class ApprovalWorkflowEndpoints
     private static async Task<IResult> GetWorkflowDefinitionByIdAsync(
         Guid id,
         [FromServices] Domain.Entities.Workflow.IWorkflowDefinitionRepository repository,
+        HttpContext httpContext,
         CancellationToken cancellationToken)
     {
-        var definition = await repository.GetByIdWithStepsAsync(id, cancellationToken);
+        var tenantId = httpContext.User.FindFirst("tenant_id")?.Value;
+        if (string.IsNullOrEmpty(tenantId) || !Guid.TryParse(tenantId, out var tenantGuid))
+            return Results.Problem("معرف الجهة غير موجود.", statusCode: StatusCodes.Status400BadRequest);
+
+        var definition = await repository.GetByIdWithStepsAsync(tenantGuid, id, cancellationToken);
         if (definition is null)
             return Results.NotFound("مسار الاعتماد غير موجود.");
 
@@ -326,9 +331,13 @@ public static class ApprovalWorkflowEndpoints
         HttpContext httpContext,
         CancellationToken cancellationToken)
     {
+        var tenantId = httpContext.User.FindFirst("tenant_id")?.Value;
+        if (string.IsNullOrEmpty(tenantId) || !Guid.TryParse(tenantId, out var tenantGuid))
+            return Results.Problem("معرف الجهة غير موجود.", statusCode: StatusCodes.Status400BadRequest);
+
         var userId = httpContext.User.FindFirst("sub")?.Value ?? "system";
 
-        var definition = await repository.GetByIdWithStepsForUpdateAsync(id, cancellationToken);
+        var definition = await repository.GetByIdWithStepsForUpdateAsync(tenantGuid, id, cancellationToken);
         if (definition is null)
             return Results.NotFound("مسار الاعتماد غير موجود.");
 
@@ -382,9 +391,13 @@ public static class ApprovalWorkflowEndpoints
         HttpContext httpContext,
         CancellationToken cancellationToken)
     {
+        var tenantId = httpContext.User.FindFirst("tenant_id")?.Value;
+        if (string.IsNullOrEmpty(tenantId) || !Guid.TryParse(tenantId, out var tenantGuid))
+            return Results.Problem("معرف الجهة غير موجود.", statusCode: StatusCodes.Status400BadRequest);
+
         var userId = httpContext.User.FindFirst("sub")?.Value ?? "system";
 
-        var definition = await repository.GetByIdWithStepsForUpdateAsync(id, cancellationToken);
+        var definition = await repository.GetByIdWithStepsForUpdateAsync(tenantGuid, id, cancellationToken);
         if (definition is null)
             return Results.NotFound("مسار الاعتماد غير موجود.");
 
