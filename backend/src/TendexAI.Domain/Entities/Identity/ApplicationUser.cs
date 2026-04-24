@@ -63,6 +63,12 @@ public sealed class ApplicationUser : AggregateRoot<Guid>
     /// <summary>User's last name.</summary>
     public string LastName { get; private set; } = null!;
 
+    /// <summary>User's first name in English (optional).</summary>
+    public string? FirstNameEn { get; private set; }
+
+    /// <summary>User's last name in English (optional).</summary>
+    public string? LastNameEn { get; private set; }
+
     /// <summary>User's phone number (optional).</summary>
     public string? PhoneNumber { get; private set; }
 
