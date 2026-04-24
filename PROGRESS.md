@@ -872,3 +872,33 @@ The current remediation batch for report `23042026.docx` was consolidated locall
 ### Pending actions
 - Final review of the remaining structural items (`requiredAttachmentTypes` persistence and centralized fiscal-year management) before deciding whether they stay in this deployment wave or move to a separate migration-focused batch.
 - Commit, push, deploy, and execute post-deployment live verification.
+
+## 2026-04-24: Post-deployment production recovery after batch 23042026
+
+### Summary
+After deploying batch `23042026`, live verification on production confirmed that the supplier-offers detail route no longer returned HTTP 500 and rendered successfully. During the same post-deployment verification window, two backend build blockers and one production compatibility regression were discovered and resolved in sequence.
+
+### Completed work
+- Added the missing `FirstNameEn` and `LastNameEn` properties to `ApplicationUser` so the updated user-management contract could compile during backend publish.
+- Restored the missing `TendexAI.Application.Common.Messaging` import in `GetSupplierOffersQueryHandler`, which removed the second backend publish blocker on production.
+- Redeployed production successfully after those compile fixes and re-verified that the supplier-offers detail screen loaded without the previous HTTP 500 failure.
+- Investigated a new post-deployment regression on the MOF tenant user-management screen and confirmed from backend logs that the active tenant schema did not yet contain the `FirstNameEn` column expected by EF Core.
+- Added a compatibility safeguard in `ApplicationUserConfiguration` to ignore `FirstNameEn` and `LastNameEn` at the EF mapping level until the corresponding tenant-database schema migration is rolled out.
+- Redeployed production again and verified that the MOF tenant user-management screen recovered successfully, rendering `8` users and all expected row actions.
+- Performed a final regression check on the supplier-offers detail route and confirmed that the original fix remained intact after the last redeploy.
+
+### Commits pushed
+- `b8c4a6b` — `fix(user-management): add missing english name fields to domain user`
+- `0a4ca14` — `fix(supplier-offers): restore query handler messaging import`
+- `7a39126` — `fix(user-management): ignore unmigrated english name columns`
+
+### Production verification results
+| Area | Result |
+|---|---|
+| Supplier offers detail page | Recovered and loading successfully |
+| User management page | Recovered after compatibility hotfix |
+| Backend publish on server | Passed after the two compile fixes |
+| Final production state | Stable for the verified routes |
+
+### Follow-up note
+The English-name fields are currently protected by an EF compatibility fallback because the active tenant databases have not yet received the matching schema columns. A dedicated schema rollout is still required before those fields can be persisted end-to-end.
