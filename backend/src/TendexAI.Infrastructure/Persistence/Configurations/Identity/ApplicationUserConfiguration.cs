@@ -51,6 +51,9 @@ public sealed class ApplicationUserConfiguration : IEntityTypeConfiguration<Appl
             .IsRequired()
             .HasMaxLength(100);
 
+        builder.Ignore(u => u.FirstNameEn);
+        builder.Ignore(u => u.LastNameEn);
+
         builder.Property(u => u.PhoneNumber)
             .HasMaxLength(20);
 
