@@ -372,12 +372,7 @@ public sealed class GetPendingTasksQueryHandler
 
     private static string BuildApprovalTaskActionUrl(Competition competition, ApprovalWorkflowStep step)
     {
-        if (competition.SourceTemplateId.HasValue)
-        {
-            return $"/rfp/booklet-editor/{competition.Id}?stepId={step.Id}";
-        }
-
-        return $"/approvals?competitionId={competition.Id}&stepId={step.Id}";
+        return $"/rfp/booklet-editor/{competition.Id}?stepId={step.Id}";
     }
 
     private static CommitteeRole? MapCommitteeAssignmentToWorkflowRole(

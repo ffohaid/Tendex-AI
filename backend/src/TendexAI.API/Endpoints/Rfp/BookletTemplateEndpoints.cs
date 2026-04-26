@@ -456,8 +456,50 @@ public static class BookletTemplateEndpoints
         if (competition is null)
             return Results.NotFound(new { error = "المنافسة غير موجودة" });
 
+        var competitionSections = await dbCtx.Set<RfpSection>()
+            .Where(s => s.CompetitionId == competitionId)
+            .AsNoTracking()
+            .OrderBy(s => s.SortOrder)
+            .ToListAsync();
+
         if (competition.SourceTemplateId is null)
-            return Results.BadRequest(new { error = "هذه المنافسة لم تُنشأ من قالب كراسة" });
+        {
+            var fallbackResult = new BookletEditorDataDto
+            {
+                CompetitionId = competitionId,
+                TemplateId = Guid.Empty,
+                TemplateNameAr = "الكراسة الحالية",
+                ProjectNameAr = competition.ProjectNameAr,
+                ProjectNameEn = competition.ProjectNameEn,
+                Description = competition.Description,
+                Sections = competitionSections
+                    .Select(section => new BookletEditorSectionDto
+                    {
+                        Id = section.Id,
+                        CompetitionSectionId = section.Id,
+                        TitleAr = section.TitleAr,
+                        SortOrder = section.SortOrder,
+                        IsMainSection = true,
+                        Blocks =
+                        [
+                            new BookletEditorBlockDto
+                            {
+                                Id = section.Id,
+                                SortOrder = 0,
+                                OriginalContent = section.ContentHtml ?? string.Empty,
+                                ContentHtml = section.ContentHtml ?? string.Empty,
+                                ColorType = "editable",
+                                IsHeading = false,
+                                HasBracketPlaceholders = false,
+                                IsEditable = false
+                            }
+                        ]
+                    })
+                    .ToList()
+            };
+
+            return Results.Ok(fallbackResult);
+        }
 
         // Load the template with sections and blocks
         var template = await dbCtx.BookletTemplates
@@ -468,13 +510,6 @@ public static class BookletTemplateEndpoints
 
         if (template is null)
             return Results.NotFound(new { error = "القالب المصدر غير موجود" });
-
-        // Also load the competition sections to get any user edits
-        var competitionSections = await dbCtx.Set<RfpSection>()
-            .Where(s => s.CompetitionId == competitionId)
-            .AsNoTracking()
-            .OrderBy(s => s.SortOrder)
-            .ToListAsync();
 
         // Build the response: template blocks grouped by section,
         // with user edits overlaid from competition sections
