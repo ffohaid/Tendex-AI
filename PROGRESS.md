@@ -953,3 +953,25 @@ A new remediation wave was completed locally for the issues reported in `2604202
 - `frontend/src/views/task-center/TaskCenterView.vue`
 - `frontend/src/views/rfp/BookletEditorView.vue`
 - `frontend/src/views/rfp/RfpExportView.vue`
+
+## 2026-04-26: Issue 3 follow-up — official booklet display and download alignment
+
+### Summary
+After receiving the official reference booklet file (`officialstandardtemplate.pdf`), the remaining gap in issue 3 was corrected at the actual booklet display and download surfaces rather than only the generic export logic. The solution introduced a shared official booklet renderer and made both the on-screen booklet view and the download/print path consume the same document-style layout as a single source of truth.
+
+### Completed work
+- Added `frontend/src/components/rfp/OfficialBookletDocument.vue` as a shared booklet renderer that models the official structure with a formal cover page, a dedicated table of contents, grouped major sections, framed body pages, and consistent block rendering for headings, tables, fixed content, example content, and guidance content.
+- Rebuilt `RfpExportView.vue` so template-based competitions now render through the shared official booklet component instead of a separate custom export-specific structure, keeping the generic structured export only as a fallback for non-template competitions.
+- Enhanced `BookletEditorView.vue` with an **Official View** mode that renders the same shared official document inside the real booklet viewing path, while retaining **Edit Mode** for structured content updates.
+- Added a direct booklet-download action from the booklet editor to the official export route so the user-facing view and the downloaded/printed booklet stay aligned to the same renderer.
+- Extended booklet metadata hydration in the booklet editor to feed the shared official renderer with competition-level reference number, department, and issue date data when available.
+
+### Validation
+- Frontend production build completed successfully after the follow-up fix for issue 3.
+- `git diff --check` completed successfully with no whitespace or patch-format issues.
+- The shared renderer is now referenced by both the booklet display path and the booklet download/print path, removing the previous split between the visible booklet surface and the exported booklet surface.
+
+### Files modified in this follow-up
+- `frontend/src/components/rfp/OfficialBookletDocument.vue`
+- `frontend/src/views/rfp/BookletEditorView.vue`
+- `frontend/src/views/rfp/RfpExportView.vue`

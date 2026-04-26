@@ -4,6 +4,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { httpGet, httpPost, httpPut } from '@/services/http'
 import RichTextEditor from '@/components/common/RichTextEditor.vue'
+import OfficialBookletDocument from '@/components/rfp/OfficialBookletDocument.vue'
 import {
   initiateWorkflow,
   getWorkflowStatus,
@@ -75,9 +76,13 @@ const projectNameAr = ref('')
 const projectNameEn = ref('')
 const templateNameAr = ref('')
 const description = ref('')
+const referenceNumber = ref('')
+const departmentName = ref('')
+const issueDate = ref('')
 const sections = ref<BookletSection[]>([])
 const activeSectionId = ref('')
 const showGuidance = ref(true)
+const viewMode = ref<'preview' | 'edit'>('preview')
 const showMetadataDialog = ref(false)
 const isSavingMetadata = ref(false)
 const metadataError = ref('')
@@ -149,6 +154,33 @@ const pendingBracketBlocks = computed(() => {
   return sections.value.flatMap(s => s.blocks)
     .filter(b => b.hasBracketPlaceholders && !b.isModified).length
 })
+
+const officialBookletSections = computed(() => {
+  return sections.value.map(section => ({
+    id: section.id,
+    titleAr: section.titleAr,
+    sortOrder: section.sortOrder,
+    isMainSection: section.isMainSection,
+    blocks: section.blocks.map(block => ({
+      id: block.id,
+      sortOrder: block.sortOrder,
+      html: block.editedContent?.trim() || block.contentHtml?.trim() || block.originalContent || '',
+      colorType: block.colorType,
+      isHeading: block.isHeading,
+    })),
+  }))
+})
+
+const officialBookletMeta = computed(() => ({
+  projectNameAr: projectNameAr.value,
+  projectNameEn: projectNameEn.value,
+  templateNameAr: templateNameAr.value,
+  referenceNumber: referenceNumber.value,
+  issueDate: issueDate.value,
+  administrationName: departmentName.value,
+  organizationName: 'المملكة العربية السعودية',
+  versionLabel: 'الأولى',
+}))
 
 // ─── Methods ────────────────────────────────────────────
 async function loadBookletData() {
@@ -436,11 +468,23 @@ function getBlockBorderClass(colorType: ColorType): string {
 // ─── Approval Workflow Methods ──────────────────────────
 async function loadCompetitionStatus() {
   try {
-    const data = await httpGet<{ status: number; projectNameAr?: string; projectNameEn?: string; description?: string | null }>(`/v1/competitions/${competitionId.value}`)
+    const data = await httpGet<{
+      status: number
+      projectNameAr?: string
+      projectNameEn?: string
+      description?: string | null
+      referenceNumber?: string
+      department?: string
+      submissionDeadline?: string
+      startDate?: string
+    }>(`/v1/competitions/${competitionId.value}`)
     competitionStatus.value = data.status
     projectNameAr.value = data.projectNameAr || projectNameAr.value
     projectNameEn.value = data.projectNameEn || projectNameEn.value
     description.value = data.description || description.value
+    referenceNumber.value = data.referenceNumber || referenceNumber.value
+    departmentName.value = data.department || departmentName.value
+    issueDate.value = data.submissionDeadline || data.startDate || issueDate.value
   } catch {
     competitionStatus.value = 1
   }
@@ -650,8 +694,27 @@ onBeforeUnmount(() => {
           {{ locale === 'ar' ? statusLabel.ar : statusLabel.en }}
         </span>
 
+        <!-- View Mode Toggle -->
+        <div class="inline-flex rounded-lg border border-secondary-200 bg-white p-1">
+          <button
+            class="rounded-md px-3 py-1.5 text-xs font-medium transition-all"
+            :class="viewMode === 'preview' ? 'bg-primary text-white shadow-sm' : 'text-secondary-500 hover:bg-secondary-50'"
+            @click="viewMode = 'preview'"
+          >
+            <i class="pi pi-eye me-1"></i>{{ locale === 'ar' ? 'العرض الرسمي' : 'Official View' }}
+          </button>
+          <button
+            class="rounded-md px-3 py-1.5 text-xs font-medium transition-all"
+            :class="viewMode === 'edit' ? 'bg-primary text-white shadow-sm' : 'text-secondary-500 hover:bg-secondary-50'"
+            @click="viewMode = 'edit'"
+          >
+            <i class="pi pi-pencil me-1"></i>{{ locale === 'ar' ? 'وضع التحرير' : 'Edit Mode' }}
+          </button>
+        </div>
+
         <!-- Toggle Guidance -->
         <button
+          v-if="viewMode === 'edit'"
           class="rounded-lg border px-3 py-1.5 text-xs font-medium transition-all"
           :class="showGuidance ? 'border-blue-200 bg-blue-50 text-blue-700' : 'border-secondary-200 text-secondary-500'"
           @click="showGuidance = !showGuidance"
@@ -669,6 +732,13 @@ onBeforeUnmount(() => {
         >
           <i class="pi pi-sitemap me-1"></i>
           {{ locale === 'ar' ? 'مسار الاعتماد' : 'Approval Path' }}
+        </button>
+
+        <button
+          class="rounded-lg border border-secondary-200 px-3 py-1.5 text-xs font-medium text-secondary-600 transition-all hover:bg-secondary-50"
+          @click="router.push({ name: 'rfp-export', params: { id: competitionId } })"
+        >
+          <i class="pi pi-download me-1"></i>{{ locale === 'ar' ? 'تنزيل الكراسة' : 'Download Booklet' }}
         </button>
 
         <!-- Save Status -->
@@ -753,7 +823,7 @@ onBeforeUnmount(() => {
     <!-- Editor Layout -->
     <div v-else class="flex flex-1 overflow-hidden">
       <!-- Sidebar - Section Navigation -->
-      <div class="w-72 shrink-0 overflow-y-auto border-e border-secondary-100 bg-secondary-50/50">
+      <div v-if="viewMode === 'edit'" class="w-72 shrink-0 overflow-y-auto border-e border-secondary-100 bg-secondary-50/50">
         <div class="p-4">
           <h3 class="mb-3 text-xs font-semibold uppercase tracking-wider text-secondary-400">
             {{ locale === 'ar' ? 'أقسام الكراسة' : 'Booklet Sections' }}
@@ -793,9 +863,18 @@ onBeforeUnmount(() => {
         </div>
       </div>
 
-      <!-- Main Editor Area -->
-      <div class="flex-1 overflow-y-auto bg-white">
-        <div class="mx-auto max-w-4xl px-8 py-6">
+      <!-- Main Area -->
+      <div class="flex-1 overflow-y-auto" :class="viewMode === 'preview' ? 'bg-surface-ground' : 'bg-white'">
+        <div v-if="viewMode === 'preview'" class="px-6 py-6">
+          <OfficialBookletDocument
+            :meta="officialBookletMeta"
+            :sections="officialBookletSections"
+            :include-guidance="false"
+            :include-example-blocks="true"
+          />
+        </div>
+
+        <div v-else class="mx-auto max-w-4xl px-8 py-6">
           <!-- Color Legend (compact) -->
           <div class="mb-6 flex flex-wrap gap-3 rounded-xl bg-secondary-50 p-3">
             <span class="flex items-center gap-1.5 text-xs text-secondary-500">
@@ -871,13 +950,11 @@ onBeforeUnmount(() => {
               </details>
 
               <template v-for="block in getBlocksForSection(section.id)" :key="block.id">
-                <!-- Skip guidance blocks if hidden -->
                 <div
                   v-if="block.colorType === 'editable' || block.colorType === 'example'"
                   class="group relative rounded-lg p-4 transition-all"
                   :class="getBlockBorderClass(block.colorType)"
                 >
-                  <!-- Color Badge -->
                   <div class="mb-2 flex items-center justify-between">
                     <span
                       class="inline-flex items-center gap-1 rounded-md border px-2 py-0.5 text-xs font-medium"
@@ -887,20 +964,17 @@ onBeforeUnmount(() => {
                       {{ getColorBadge(block.colorType).label }}
                     </span>
 
-                    <!-- Bracket placeholder indicator -->
                     <span v-if="block.hasBracketPlaceholders && !block.isModified" class="text-xs text-amber-500">
                       <i class="pi pi-exclamation-circle me-1"></i>
                       {{ locale === 'ar' ? 'يحتوي على حقول يجب ملؤها [...]' : 'Contains fields to fill [...]' }}
                     </span>
 
-                    <!-- Modified indicator -->
                     <span v-if="block.isModified" class="text-xs text-green-500">
                       <i class="pi pi-check-circle me-1"></i>
                       {{ locale === 'ar' ? 'تم التعديل' : 'Modified' }}
                     </span>
                   </div>
 
-                  <!-- Editable / Example Block -->
                   <div>
                     <component :is="block.isHeading ? 'h3' : 'div'" :class="block.isHeading ? 'font-bold text-base' : ''">
                       <RichTextEditor
@@ -914,13 +988,11 @@ onBeforeUnmount(() => {
                       />
                     </component>
 
-                    <!-- Example warning -->
                     <div v-if="block.colorType === 'example' && !block.isModified" class="mt-1 text-xs text-red-500">
                       <i class="pi pi-exclamation-triangle me-1"></i>
                       {{ locale === 'ar' ? 'هذا نص استرشادي يجب استبداله بالمحتوى الفعلي' : 'This is example text that must be replaced' }}
                     </div>
 
-                    <!-- AI Assist + Restore Buttons -->
                     <div class="mt-2 flex items-center gap-2">
                       <button
                         class="inline-flex items-center gap-1 rounded-lg bg-gradient-to-l from-purple-500 to-purple-600 px-3 py-1.5 text-xs font-medium text-white shadow-sm transition-all hover:shadow-md"
@@ -942,7 +1014,6 @@ onBeforeUnmount(() => {
                 </div>
               </template>
 
-              <!-- Empty section -->
               <div v-if="getBlocksForSection(section.id).length === 0" class="rounded-lg border-2 border-dashed border-secondary-200 p-8 text-center">
                 <i class="pi pi-file-edit text-3xl text-secondary-300"></i>
                 <p class="mt-2 text-sm text-secondary-400">
