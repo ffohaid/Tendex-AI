@@ -8,7 +8,7 @@ export function resolveTaskActionUrl(task: TaskNavigationInput): string | null {
     return null
   }
 
-  let targetUrl = task.actionUrl
+  const targetUrl = task.actionUrl
 
   if (targetUrl.startsWith('/competitions/')) {
     const id = targetUrl.replace('/competitions/', '').split('?')[0]
@@ -24,16 +24,13 @@ export function resolveTaskActionUrl(task: TaskNavigationInput): string | null {
     return `/approvals?competitionId=${id}`
   }
 
-  if (targetUrl.startsWith('/approvals')) {
-    const query = targetUrl.split('?')[1] || ''
-    const params = new URLSearchParams(query)
-    const competitionId = params.get('competitionId')
-    const stepId = params.get('stepId')
-
-    if (competitionId) {
-      const stepQuery = stepId ? `?stepId=${stepId}` : ''
-      return `/rfp/${competitionId}/edit${stepQuery}`
-    }
+  if (
+    targetUrl.startsWith('/approvals')
+    || targetUrl.startsWith('/rfp/booklet-editor/')
+    || targetUrl.startsWith('/evaluation/')
+    || targetUrl.startsWith('/inquiries/')
+  ) {
+    return targetUrl
   }
 
   return targetUrl
