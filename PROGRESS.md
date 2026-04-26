@@ -975,3 +975,26 @@ After receiving the official reference booklet file (`officialstandardtemplate.p
 - `frontend/src/components/rfp/OfficialBookletDocument.vue`
 - `frontend/src/views/rfp/BookletEditorView.vue`
 - `frontend/src/views/rfp/RfpExportView.vue`
+
+## 2026-04-26: Official Booklet Renderer Activated on Production
+
+### Summary
+The remaining issue in batch `26042026` was not a missing source-code fix inside `RfpExportView.vue`. The production export page was still serving stale frontend assets even though the official renderer source (`OfficialBookletDocument.vue`) was already present in both the repository and the runtime frontend source tree.
+
+### Live Diagnosis
+- Verified live on `https://mof.netaq.pro/rfp/c5c49270-8155-44bb-9bb2-dc47052eee72/export` that the page was still rendering the old generic booklet layout.
+- Inspected the production server through SSH and confirmed that the frontend source references to `OfficialBookletDocument.vue` existed under both `/opt/tendex-ai/repo/frontend` and `/opt/tendex-ai/frontend`.
+- Confirmed that the running `tendex-frontend` container assets did not reflect distinctive markers from the official renderer, which identified the problem as a stale frontend build rather than a missing code change.
+
+### Production Fix Applied
+- Rebuilt the production frontend image with `docker compose ... build --no-cache frontend`.
+- Recreated the `tendex-frontend` container with `up -d --no-deps --force-recreate frontend`.
+- Reloaded Nginx after the new frontend image was started.
+
+### Live Verification After Rebuild
+- Re-opened the same export page and confirmed that the official document renderer is now active on production.
+- The page now shows the formal cover layout with `EXPRO`, `وزارة المالية / Ministry of Finance`, the circular `Tendex AI` emblem, the official booklet title block, and a dedicated `الفهرس` section.
+- This verifies that issue 3 is resolved on the live display path for the tested competition.
+
+### Notes
+- The export button in `RfpExportView.vue` still uses `window.print()` for PDF generation, so browser automation cannot reliably complete the native print dialog. However, the PDF path now inherits the corrected official document DOM because the page itself is rendered through `OfficialBookletDocument.vue`.
