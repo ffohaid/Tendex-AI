@@ -197,6 +197,9 @@ public sealed class GetPendingTasksQueryHandler
             var competitions = dbContext.GetDbSet<Competition>();
             var userRoles = dbContext.GetDbSet<UserRole>();
             var roles = dbContext.GetDbSet<Role>();
+            var committeeMembers = dbContext.GetDbSet<CommitteeMember>();
+            var committees = dbContext.GetDbSet<Committee>();
+            var committeeCompetitions = dbContext.GetDbSet<CommitteeCompetition>();
 
             // 1. Get the user's role identifiers using normalized names first, with NameEn as fallback
             var userRoleIdentifiers = await userRoles
@@ -231,10 +234,43 @@ public sealed class GetPendingTasksQueryHandler
             }
 
 
+            var userCommitteeRoleAssignments = await committeeMembers
+                .AsNoTracking()
+                .Where(cm => cm.UserId == userId && cm.IsActive)
+                .Join(
+                    committees.AsNoTracking().Where(c => c.TenantId == tenantId),
+                    cm => cm.CommitteeId,
+                    c => c.Id,
+                    (cm, c) => new { c.Id, c.Type, cm.Role })
+                .Join(
+                    committeeCompetitions.AsNoTracking(),
+                    x => x.Id,
+                    cc => cc.CommitteeId,
+                    (x, cc) => new
+                    {
+                        cc.CompetitionId,
+                        WorkflowCommitteeRole = MapCommitteeAssignmentToWorkflowRole(x.Type, x.Role)
+                    })
+                .ToListAsync(cancellationToken);
+
+            var committeeRoleLookup = userCommitteeRoleAssignments
+                .Where(x => x.WorkflowCommitteeRole.HasValue)
+                .GroupBy(x => x.CompetitionId)
+                .ToDictionary(
+                    g => g.Key,
+                    g => g.Select(x => x.WorkflowCommitteeRole!.Value).ToHashSet());
+
+            if (userCommitteeRoleAssignments.Count > 0 && !userSystemRoles.Contains(SystemRole.Member))
+            {
+                userSystemRoles.Add(SystemRole.Member);
+            }
+
             if (userSystemRoles.Count == 0)
             {
                 return;
             }
+
+            var userSystemRoleSet = userSystemRoles.ToHashSet();
 
             // 2. Get pending approval steps that match the user's role(s)
             var pendingSteps = await approvalSteps
@@ -246,7 +282,7 @@ public sealed class GetPendingTasksQueryHandler
 
             // Filter steps matching the user's roles
             var matchingSteps = pendingSteps
-                .Where(s => userSystemRoles.Contains(s.RequiredRole))
+                .Where(s => IsStepVisibleToUser(s, userSystemRoleSet, committeeRoleLookup))
                 .ToList();
 
 
@@ -301,8 +337,9 @@ public sealed class GetPendingTasksQueryHandler
                     SlaStatus: slaStatus,
                     RemainingTimeSeconds: remainingSeconds,
                     Priority: priority,
-                    ActionRequired: actionableStepIds.Contains(step.Id) ? "review_and_approve" : "waiting_for_prior_step",
-                    ActionUrl: $"/approvals?competitionId={competition.Id}&stepId={step.Id}",
+                        ActionRequired: actionableStepIds.Contains(step.Id) ? "review_and_approve" : "waiting_for_prior_step",
+                        ActionUrl: BuildApprovalTaskActionUrl(competition, step),
+
                     AiRecommendationAr: GetAiRecommendationAr("approve_request", priority, slaStatus),
                     AiRecommendationEn: GetAiRecommendationEn("approve_request", priority, slaStatus),
                     AiConfidence: 0.90));
@@ -312,6 +349,58 @@ public sealed class GetPendingTasksQueryHandler
         {
             _logger.LogWarning(ex, "Failed to gather approval workflow tasks for task center");
         }
+    }
+
+    private static bool IsStepVisibleToUser(
+        ApprovalWorkflowStep step,
+        HashSet<SystemRole> userSystemRoles,
+        IReadOnlyDictionary<Guid, HashSet<CommitteeRole>> committeeRoleLookup)
+    {
+        if (!userSystemRoles.Contains(step.RequiredRole))
+        {
+            return false;
+        }
+
+        if (step.RequiredCommitteeRole == CommitteeRole.None)
+        {
+            return true;
+        }
+
+        return committeeRoleLookup.TryGetValue(step.CompetitionId, out var committeeRoles)
+            && committeeRoles.Contains(step.RequiredCommitteeRole);
+    }
+
+    private static string BuildApprovalTaskActionUrl(Competition competition, ApprovalWorkflowStep step)
+    {
+        if (competition.SourceTemplateId.HasValue)
+        {
+            return $"/rfp/booklet-editor/{competition.Id}?stepId={step.Id}";
+        }
+
+        return $"/approvals?competitionId={competition.Id}&stepId={step.Id}";
+    }
+
+    private static CommitteeRole? MapCommitteeAssignmentToWorkflowRole(
+        CommitteeType committeeType,
+        CommitteeMemberRole memberRole)
+    {
+        if (memberRole == CommitteeMemberRole.Secretary)
+        {
+            return CommitteeRole.CommitteeSecretary;
+        }
+
+        return committeeType switch
+        {
+            CommitteeType.BookletPreparation when memberRole == CommitteeMemberRole.Chair => CommitteeRole.PreparationCommitteeChair,
+            CommitteeType.BookletPreparation when memberRole == CommitteeMemberRole.Member => CommitteeRole.PreparationCommitteeMember,
+            CommitteeType.TechnicalEvaluation when memberRole == CommitteeMemberRole.Chair => CommitteeRole.TechnicalExamCommitteeChair,
+            CommitteeType.TechnicalEvaluation when memberRole == CommitteeMemberRole.Member => CommitteeRole.TechnicalExamCommitteeMember,
+            CommitteeType.FinancialEvaluation when memberRole == CommitteeMemberRole.Chair => CommitteeRole.FinancialExamCommitteeChair,
+            CommitteeType.FinancialEvaluation when memberRole == CommitteeMemberRole.Member => CommitteeRole.FinancialExamCommitteeMember,
+            CommitteeType.InquiryReview when memberRole == CommitteeMemberRole.Chair => CommitteeRole.InquiryReviewCommitteeChair,
+            CommitteeType.InquiryReview when memberRole == CommitteeMemberRole.Member => CommitteeRole.InquiryReviewCommitteeMember,
+            _ => null
+        };
     }
 
     /// <summary>

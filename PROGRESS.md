@@ -928,3 +928,28 @@ A new remediation wave was completed locally for the issues reported in `2304202
 - `frontend/src/views/rfp/BookletEditorView.vue`
 - `frontend/src/views/rfp/RfpCreateView.vue`
 - `frontend/src/views/rfp/RfpExportView.vue`
+
+## 2026-04-26: Issue Batch 26042026 — approval task routing, committee-role visibility, and template-aware export alignment
+
+### Summary
+A new remediation wave was completed locally for the issues reported in `26042026.docx`. The work focused on restoring approval-task visibility for committee-bound workflow steps, correcting approval-task navigation so booklet-based requests open in the correct review surface, and aligning booklet export output with the saved official template structure instead of relying only on the generic export layout.
+
+### Completed work
+- Hardened `GetPendingTasksQueryHandler` so approval tasks now match users by both system role and effective competition-scoped committee role. The handler now derives workflow committee roles from active committee memberships and committee type, which restores visibility for steps that require roles such as `PreparationCommitteeChair` instead of relying on system-role matching alone.
+- Updated approval-task action URL generation so competitions created from booklet templates now open directly in `BookletEditorView` with the relevant `stepId`, while preserving the existing fallback path for non-template competitions.
+- Introduced a shared frontend task-navigation helper used by both `TaskCenterView.vue` and `ApprovalsView.vue`, removing duplicated URL-rewrite logic and preventing the previous forced redirect that opened approval requests in the wrong generic edit screen.
+- Enhanced `BookletEditorView.vue` so arriving from an approval task with a `stepId` automatically loads workflow status and opens the approval timeline, reducing friction for reviewers who enter from the unified task surfaces.
+- Rebuilt `RfpExportView.vue` into a template-aware export path: when a competition originates from a booklet template, export now reads the persisted template block structure from the competition booklet endpoint and renders sections/blocks in saved order, while preserving the generic export path as a fallback for non-template competitions.
+
+### Validation
+- Frontend production build completed successfully after the final changes in this batch.
+- `git diff --check` completed successfully with no whitespace or patch-format issues.
+- Local backend build is still limited by the sandbox environment because the `dotnet` CLI is unavailable here, so backend verification in this batch remains based on targeted source-level review of the edited C# flow.
+
+### Files modified in this batch
+- `backend/src/TendexAI.Application/Features/Dashboard/Queries/GetPendingTasks/GetPendingTasksQueryHandler.cs`
+- `frontend/src/utils/taskNavigation.ts`
+- `frontend/src/views/approvals/ApprovalsView.vue`
+- `frontend/src/views/task-center/TaskCenterView.vue`
+- `frontend/src/views/rfp/BookletEditorView.vue`
+- `frontend/src/views/rfp/RfpExportView.vue`

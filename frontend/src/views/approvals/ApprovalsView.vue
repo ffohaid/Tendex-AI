@@ -15,6 +15,7 @@
  */
 import { ref, onMounted, computed, watch, onUnmounted } from 'vue'
 import { useI18n } from 'vue-i18n'
+import { resolveTaskActionUrl } from '@/utils/taskNavigation'
 import { useRouter } from 'vue-router'
 import { fetchPendingTasks } from '@/services/approvalService'
 import type { PendingTask } from '@/types/committee'
@@ -168,27 +169,10 @@ function getActionRequiredLabel(actionRequired: string): string {
 }
 
 function navigateToAction(task: PendingTask) {
-  if (!task.actionUrl) return
+  const targetUrl = resolveTaskActionUrl(task)
+  if (!targetUrl) return
 
-  let targetUrl = task.actionUrl
-
-  // Map legacy /competitions/{id} URLs to valid Vue Router paths
-  if (targetUrl.startsWith('/competitions/')) {
-    const id = targetUrl.replace('/competitions/', '').split('?')[0]
-    targetUrl = `/approvals?competitionId=${id}`
-  }
-
-  // If we're already on /approvals, handle navigation by opening the detail
-  // Extract competitionId from the URL to navigate to the RFP editor
-  const urlParams = new URLSearchParams(targetUrl.split('?')[1] || '')
-  const competitionId = urlParams.get('competitionId')
-  
-  if (competitionId && targetUrl.startsWith('/approvals')) {
-    // Navigate to the RFP detail/edit page for review
-    router.push(`/rfp/${competitionId}/edit`)
-  } else {
-    router.push(targetUrl)
-  }
+  router.push(targetUrl)
 }
 
 /* ------------------------------------------------------------------ */

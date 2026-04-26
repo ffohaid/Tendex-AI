@@ -24,6 +24,7 @@
 import { ref, computed, onMounted, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
+import { resolveTaskActionUrl } from '@/utils/taskNavigation'
 import { useFormatters } from '@/composables/useFormatters'
 import {
   fetchTasks,
@@ -155,32 +156,8 @@ function toggleSelect(taskId: string): void {
 }
 
 function navigateToTask(task: TaskItem): void {
-  if (!task.actionUrl) return
-
-  // Map legacy/incorrect actionUrls to valid Vue Router paths
-  const urlMappings: Record<string, (id: string) => string> = {
-    '/competitions/': (id) => {
-      // Route based on task type
-      if (task.type === 'approve_request' || task.type === 'approval') {
-        return `/approvals?competitionId=${id}`
-      }
-      if (task.type === 'evaluate_offer') {
-        return `/evaluation/offers/${id}`
-      }
-      return `/approvals?competitionId=${id}`
-    },
-  }
-
-  let targetUrl = task.actionUrl
-
-  // Check if the URL matches any legacy pattern and remap it
-  for (const [prefix, mapper] of Object.entries(urlMappings)) {
-    if (targetUrl.startsWith(prefix)) {
-      const id = targetUrl.replace(prefix, '').split('?')[0]
-      targetUrl = mapper(id)
-      break
-    }
-  }
+  const targetUrl = resolveTaskActionUrl(task)
+  if (!targetUrl) return
 
   router.push(targetUrl)
 }

@@ -586,8 +586,13 @@ onMounted(async () => {
   await loadCompetitionStatus()
   await nextTick()
   initializeSectionObserver()
-  if (competitionStatus.value >= 2) {
+
+  if (competitionStatus.value >= 2 || route.query.stepId) {
     await loadApprovalStatus()
+  }
+
+  if (route.query.stepId && approvalStatus.value?.hasWorkflow) {
+    showApprovalTimeline.value = true
   }
 })
 
