@@ -1,28 +1,30 @@
 <script setup lang="ts">
 /**
- * AiComplianceChecker Component
+ * Compliance checker for the full RFP.
  *
- * Performs an AI-powered compliance check on the entire RFP
- * before submission. Checks against Saudi government procurement
- * regulations and best practices.
+ * This component intentionally uses deterministic business rules instead of
+ * free-form AI output so that pass/fail states remain stable and actionable.
  */
-import { ref, computed } from 'vue'
+import { computed, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRfpStore } from '@/stores/rfp'
-import http from '@/services/http'
 
 const { locale } = useI18n()
 const rfpStore = useRfpStore()
 
+type CheckStatus = 'pass' | 'warning' | 'fail'
+
+interface ComplianceCheckItem {
+  category: string
+  status: CheckStatus
+  message: string
+  recommendation?: string
+}
+
 const isChecking = ref(false)
 const error = ref('')
 const showResults = ref(false)
-const checkItems = ref<Array<{
-  category: string
-  status: 'pass' | 'warning' | 'fail'
-  message: string
-  recommendation?: string
-}>>([])
+const checkItems = ref<ComplianceCheckItem[]>([])
 
 const passCount = computed(() => checkItems.value.filter(i => i.status === 'pass').length)
 const warningCount = computed(() => checkItems.value.filter(i => i.status === 'warning').length)
@@ -33,122 +35,306 @@ const overallScore = computed(() => {
   return Math.round(((passCount.value + warningCount.value * 0.5) / total) * 100)
 })
 
-async function runComplianceCheck() {
-  isChecking.value = true
-  error.value = ''
-  checkItems.value = []
-
-  try {
-    // Build comprehensive context from all RFP data
-    const basicInfo = rfpStore.formData.basicInfo
-    const settings = rfpStore.formData.settings
-    const sections = rfpStore.formData.content.sections
-    const boqItems = rfpStore.formData.boq.items
-    const attachments = rfpStore.formData.attachments
-
-    const rfpSummary = [
-      `اسم المشروع: ${basicInfo.projectName || 'غير محدد'}`,
-      `نوع المنافسة: ${basicInfo.competitionType || 'غير محدد'}`,
-      `القيمة التقديرية: ${basicInfo.estimatedValue || 'غير محددة'}`,
-      `تاريخ البداية: ${basicInfo.startDate || 'غير محدد'}`,
-      `تاريخ النهاية: ${basicInfo.endDate || 'غير محدد'}`,
-      `طريقة التقييم: ${settings.evaluationMethod || 'غير محددة'}`,
-      `الوزن الفني: ${settings.technicalWeight}%`,
-      `الوزن المالي: ${settings.financialWeight}%`,
-      `الحد الأدنى للدرجة الفنية: ${settings.minimumTechnicalScore}`,
-      `عدد معايير التقييم: ${settings.evaluationCriteria.length}`,
-      `مجموع أوزان المعايير: ${settings.evaluationCriteria.reduce((s, c) => s + c.weight, 0)}%`,
-      `عدد أقسام المحتوى: ${sections.length}`,
-      `عناوين الأقسام: ${sections.map(s => s.title).join('، ')}`,
-      `عدد بنود جدول الكميات: ${boqItems.length}`,
-      `المرفقات الإلزامية المختارة: ${attachments.requiredAttachmentTypes?.length || 0}`,
-      `ضمان بنكي مطلوب: ${settings.requireBankGuarantee ? 'نعم' : 'لا'}`,
-      `فترة الاستفسارات: ${settings.inquiryPeriodDays} يوم`,
-    ].join('\n')
-
-    const response = await http.post<{ isSuccess: boolean; generatedText: string; errorMessage?: string }>(
-      '/v1/ai/text/assist',
-      {
-        action: 'custom',
-        currentText: rfpSummary,
-        fieldName: 'فحص الامتثال',
-        fieldPurpose: 'التحقق من امتثال كراسة الشروط والمواصفات لنظام المنافسات والمشتريات الحكومية السعودي',
-        projectName: basicInfo.projectName || '',
-        projectDescription: basicInfo.projectDescription || '',
-        competitionType: basicInfo.competitionType || '',
-        additionalContext: '',
-        customPrompt: `أنت مدقق امتثال متخصص في نظام المنافسات والمشتريات الحكومية السعودي.
-
-قم بفحص بيانات كراسة الشروط والمواصفات التالية وأعطِ تقييماً شاملاً.
-
-لكل نقطة فحص، أعطِ النتيجة بالصيغة التالية (كل نقطة في سطر منفصل):
-الفئة|الحالة|الرسالة|التوصية
-
-حيث الحالة: pass أو warning أو fail
-
-النقاط المطلوب فحصها:
-1. اكتمال البيانات الأساسية (الاسم، النوع، القيمة، التواريخ)
-2. صحة إعدادات التقييم (مجموع الأوزان = 100%)
-3. كفاية معايير التقييم (عدد ونوع المعايير)
-4. اكتمال محتوى الكراسة (الأقسام الإلزامية)
-5. جدول الكميات (وجود بنود وأسعار)
-6. المرفقات الإلزامية
-7. الضمان البنكي (حسب قيمة المنافسة)
-8. فترة الاستفسارات (كافية حسب النظام)
-9. التواريخ (منطقية ومتسلسلة)
-10. الامتثال العام لنظام المنافسات والمشتريات الحكومية
-
-أعد النتائج بالصيغة المطلوبة فقط بدون أي نص إضافي.`,
-        language: 'ar',
-      },
-      { timeout: 120_000 },
-    )
-
-    if (response.data.isSuccess && response.data.generatedText) {
-      checkItems.value = parseComplianceResults(response.data.generatedText)
-      showResults.value = true
-    } else {
-      error.value = response.data.errorMessage
-        || (locale.value === 'ar' ? 'فشل في إجراء فحص الامتثال' : 'Compliance check failed')
-    }
-  } catch (err: any) {
-    error.value = err?.response?.data?.errorMessage
-      || (locale.value === 'ar' ? 'حدث خطأ أثناء فحص الامتثال' : 'Error during compliance check')
-  } finally {
-    isChecking.value = false
-  }
+function createItem(
+  category: string,
+  status: CheckStatus,
+  message: string,
+  recommendation?: string,
+): ComplianceCheckItem {
+  return { category, status, message, recommendation }
 }
 
-function parseComplianceResults(text: string): Array<{
-  category: string
-  status: 'pass' | 'warning' | 'fail'
-  message: string
-  recommendation?: string
-}> {
-  const lines = text.split('\n').filter(line => line.trim() && line.includes('|'))
-  const results: Array<{
-    category: string
-    status: 'pass' | 'warning' | 'fail'
-    message: string
-    recommendation?: string
-  }> = []
+function hasMeaningfulContent(value?: string | null): boolean {
+  return !!value && value.trim().length > 0
+}
 
-  for (const line of lines) {
-    const parts = line.split('|').map(p => p.trim())
-    if (parts.length >= 3) {
-      const category = parts[0]
-      const statusRaw = parts[1].toLowerCase()
-      const status: 'pass' | 'warning' | 'fail' =
-        statusRaw === 'pass' ? 'pass' :
-        statusRaw === 'warning' ? 'warning' : 'fail'
-      const message = parts[2]
-      const recommendation = parts[3] || undefined
+function buildComplianceResults(): ComplianceCheckItem[] {
+  const basicInfo = rfpStore.formData.basicInfo
+  const settings = rfpStore.formData.settings
+  const sections = rfpStore.formData.content.sections
+  const boqItems = rfpStore.formData.boq.items
+  const attachments = rfpStore.formData.attachments
 
-      results.push({ category, status, message, recommendation })
-    }
+  const results: ComplianceCheckItem[] = []
+
+  const hasProjectName = hasMeaningfulContent(basicInfo.projectName)
+  const hasCompetitionType = hasMeaningfulContent(basicInfo.competitionType)
+  const hasDescription = hasMeaningfulContent(basicInfo.projectDescription)
+  const hasReferenceNumber = hasMeaningfulContent(basicInfo.referenceNumber)
+  const hasStartDate = hasMeaningfulContent(basicInfo.startDate)
+  const hasEndDate = hasMeaningfulContent(basicInfo.endDate)
+  const hasSubmissionDeadline = hasMeaningfulContent(basicInfo.submissionDeadline)
+
+  const basicInfoMissing = [
+    !hasProjectName ? 'اسم المشروع' : null,
+    !hasCompetitionType ? 'نوع المنافسة' : null,
+    !hasDescription ? 'وصف المشروع' : null,
+    !hasReferenceNumber ? 'الرقم المرجعي' : null,
+    !hasStartDate ? 'تاريخ البداية' : null,
+    !hasEndDate ? 'تاريخ النهاية' : null,
+    !hasSubmissionDeadline ? 'آخر موعد للتقديم' : null,
+  ].filter(Boolean)
+
+  if (basicInfoMissing.length === 0) {
+    results.push(createItem(
+      'البيانات الأساسية',
+      'pass',
+      'جميع الحقول الأساسية المطلوبة موجودة ومكتملة.',
+    ))
+  } else {
+    results.push(createItem(
+      'البيانات الأساسية',
+      'fail',
+      `البيانات الأساسية غير مكتملة. الحقول الناقصة: ${basicInfoMissing.join('، ')}.`,
+      'أكمل الحقول الأساسية قبل المتابعة، خصوصاً الرقم المرجعي والتواريخ ووصف المشروع.',
+    ))
+  }
+
+  const technicalWeight = Number(settings.technicalWeight || 0)
+  const financialWeight = Number(settings.financialWeight || 0)
+  const weightsTotal = technicalWeight + financialWeight
+  const evaluationMethod = settings.evaluationMethod || ''
+  const criteriaCount = settings.evaluationCriteria.length
+  const criteriaWeightTotal = settings.evaluationCriteria.reduce((sum, criterion) => sum + Number(criterion.weight || 0), 0)
+
+  const evaluationSettingsIssues: string[] = []
+  if (!evaluationMethod) {
+    evaluationSettingsIssues.push('طريقة التقييم غير محددة')
+  }
+  if (weightsTotal !== 100) {
+    evaluationSettingsIssues.push(`مجموع الأوزان الفني والمالي يساوي ${weightsTotal}% بدلاً من 100%`)
+  }
+  if (evaluationMethod === 'weighted_criteria' && criteriaCount === 0) {
+    evaluationSettingsIssues.push('طريقة المعايير الموزونة محددة بدون أي معايير تقييم')
+  }
+  if (evaluationMethod === 'weighted_criteria' && criteriaWeightTotal !== 100) {
+    evaluationSettingsIssues.push(`مجموع أوزان معايير التقييم يساوي ${criteriaWeightTotal}% بدلاً من 100%`)
+  }
+
+  if (evaluationSettingsIssues.length === 0) {
+    results.push(createItem(
+      'إعدادات التقييم',
+      'pass',
+      'إعدادات التقييم متسقة، ومجاميع الأوزان صحيحة، ولا يوجد تعارض بين الطريقة والمعايير.',
+    ))
+  } else {
+    results.push(createItem(
+      'إعدادات التقييم',
+      'fail',
+      evaluationSettingsIssues.join('، '),
+      'اضبط طريقة التقييم ثم تأكد من أن مجموع الوزن الفني والمالي يساوي 100%، وإذا كانت الطريقة هي المعايير الموزونة فليكن مجموع أوزان المعايير 100% أيضاً.',
+    ))
+  }
+
+  if (criteriaCount === 0) {
+    results.push(createItem(
+      'معايير التقييم',
+      'fail',
+      'لا توجد أي معايير تقييم فنية معرفة حالياً.',
+      'أضف معايير تقييم فنية واضحة وحدد لكل معيار وزنه ووصفه قبل الاعتماد.',
+    ))
+  } else if (criteriaWeightTotal !== 100) {
+    results.push(createItem(
+      'معايير التقييم',
+      'fail',
+      `تم تعريف ${criteriaCount} معيار/معايير ولكن مجموع الأوزان يساوي ${criteriaWeightTotal}% بدلاً من 100%.`,
+      'راجع أوزان جميع المعايير بحيث يكون مجموعها 100% دون زيادة أو نقص.',
+    ))
+  } else {
+    const criteriaMissingDescriptions = settings.evaluationCriteria.filter(c => !hasMeaningfulContent(c.description)).length
+    results.push(createItem(
+      'معايير التقييم',
+      criteriaMissingDescriptions > 0 ? 'warning' : 'pass',
+      criteriaMissingDescriptions > 0
+        ? `المعايير معرفة ومجموع أوزانها صحيح، لكن يوجد ${criteriaMissingDescriptions} معيار/معايير بدون وصف توضيحي.`
+        : `تم تعريف ${criteriaCount} معيار/معايير ومجموع الأوزان يساوي 100% بشكل صحيح.`,
+      criteriaMissingDescriptions > 0
+        ? 'أضف وصفاً مختصراً لكل معيار لتوضيح آلية التقييم للمنافسين ولجان الفحص.'
+        : undefined,
+    ))
+  }
+
+  const completedSections = sections.filter(section => hasMeaningfulContent(section.contentHtml) || hasMeaningfulContent(section.content)).length
+  if (sections.length === 0) {
+    results.push(createItem(
+      'محتوى الكراسة',
+      'fail',
+      'لا توجد أي أقسام مضافة إلى محتوى الكراسة.',
+      'أضف أقسام الكراسة الإلزامية أولاً ثم راجع محتوى كل قسم قبل الاعتماد.',
+    ))
+  } else if (completedSections === 0) {
+    results.push(createItem(
+      'محتوى الكراسة',
+      'fail',
+      'تم إنشاء أقسام للكراسة ولكن بدون أي محتوى فعلي حتى الآن.',
+      'املأ محتوى الأقسام أو حمّل النصوص الفعلية قبل تقديم الكراسة للاعتماد.',
+    ))
+  } else if (completedSections < sections.length) {
+    results.push(createItem(
+      'محتوى الكراسة',
+      'warning',
+      `هناك ${completedSections} أقسام مكتملة من أصل ${sections.length} قسم/أقسام.`,
+      'راجع الأقسام غير المكتملة واستكمل النصوص الأساسية قبل التقديم النهائي.',
+    ))
+  } else {
+    results.push(createItem(
+      'محتوى الكراسة',
+      'pass',
+      `جميع أقسام الكراسة تحتوي على محتوى فعلي (${sections.length} قسم/أقسام).`,
+    ))
+  }
+
+  if (boqItems.length === 0) {
+    results.push(createItem(
+      'جدول الكميات',
+      'warning',
+      'لا يوجد أي بند في جدول الكميات حالياً.',
+      'إذا كانت المنافسة تتطلب جدول كميات، فأضف البنود والكميات المطلوبة قبل الاعتماد.',
+    ))
+  } else {
+    const missingBoqDescriptions = boqItems.filter(item => !hasMeaningfulContent(item.description)).length
+    const invalidQuantities = boqItems.filter(item => Number(item.quantity || 0) <= 0).length
+    const boqIssues: string[] = []
+
+    if (missingBoqDescriptions > 0) boqIssues.push(`${missingBoqDescriptions} بند/بنود بدون وصف`)
+    if (invalidQuantities > 0) boqIssues.push(`${invalidQuantities} بند/بنود بكميات غير صالحة`)
+
+    results.push(createItem(
+      'جدول الكميات',
+      boqIssues.length > 0 ? 'warning' : 'pass',
+      boqIssues.length > 0
+        ? `تمت إضافة ${boqItems.length} بند/بنود، لكن توجد ملاحظات: ${boqIssues.join('، ')}.`
+        : `تمت إضافة ${boqItems.length} بند/بنود إلى جدول الكميات مع بيانات كمية سليمة.`,
+      boqIssues.length > 0
+        ? 'استكمل أو صحح أوصاف البنود والكميات قبل التصدير أو الاعتماد.'
+        : undefined,
+    ))
+  }
+
+  const requiredAttachmentsCount = attachments.requiredAttachmentTypes?.length || 0
+  results.push(createItem(
+    'المرفقات الإلزامية',
+    requiredAttachmentsCount > 0 ? 'pass' : 'warning',
+    requiredAttachmentsCount > 0
+      ? `تم تحديد ${requiredAttachmentsCount} نوع/أنواع من المرفقات الإلزامية.`
+      : 'لم يتم تحديد أي مرفقات إلزامية حتى الآن.',
+    requiredAttachmentsCount > 0
+      ? undefined
+      : 'حدد المرفقات المطلوبة من المتنافسين إذا كانت المنافسة تستلزم وثائق داعمة أو نماذج إلزامية.',
+  ))
+
+  const estimatedValue = Number(basicInfo.estimatedValue || 0)
+  if (settings.requireBankGuarantee) {
+    results.push(createItem(
+      'الضمان البنكي',
+      'pass',
+      'تم تفعيل متطلب الضمان البنكي في إعدادات المنافسة.',
+    ))
+  } else {
+    results.push(createItem(
+      'الضمان البنكي',
+      estimatedValue > 0 ? 'warning' : 'pass',
+      estimatedValue > 0
+        ? 'الضمان البنكي غير مفعل رغم وجود قيمة تقديرية للمنافسة.'
+        : 'الضمان البنكي غير مفعل، ولا يمكن الجزم بضرورة تفعيله دون قيمة تقديرية واضحة.',
+      estimatedValue > 0
+        ? 'راجع ما إذا كانت هذه المنافسة تتطلب ضماناً بنكياً وفق السياسات الداخلية واللوائح المنظمة.'
+        : undefined,
+    ))
+  }
+
+  const inquiryPeriodDays = Number(settings.inquiryPeriodDays || 0)
+  results.push(createItem(
+    'فترة الاستفسارات',
+    inquiryPeriodDays >= 5 ? 'pass' : inquiryPeriodDays > 0 ? 'warning' : 'fail',
+    inquiryPeriodDays >= 5
+      ? `فترة الاستفسارات مضبوطة على ${inquiryPeriodDays} يوم/أيام.`
+      : inquiryPeriodDays > 0
+        ? `فترة الاستفسارات الحالية قصيرة (${inquiryPeriodDays} يوم/أيام).`
+        : 'فترة الاستفسارات غير محددة.',
+    inquiryPeriodDays >= 5
+      ? undefined
+      : 'اضبط فترة استفسارات كافية وواضحة قبل نشر المنافسة أو اعتمادها.',
+  ))
+
+  const parsedStartDate = hasStartDate ? new Date(basicInfo.startDate) : null
+  const parsedEndDate = hasEndDate ? new Date(basicInfo.endDate) : null
+  const parsedSubmissionDeadline = hasSubmissionDeadline ? new Date(basicInfo.submissionDeadline) : null
+  const dateIssues: string[] = []
+
+  if (parsedStartDate && parsedEndDate && parsedStartDate > parsedEndDate) {
+    dateIssues.push('تاريخ البداية بعد تاريخ النهاية')
+  }
+  if (parsedStartDate && parsedSubmissionDeadline && parsedSubmissionDeadline < parsedStartDate) {
+    dateIssues.push('آخر موعد للتقديم يسبق تاريخ البداية')
+  }
+  if (parsedEndDate && parsedSubmissionDeadline && parsedSubmissionDeadline > parsedEndDate) {
+    dateIssues.push('آخر موعد للتقديم يتجاوز تاريخ النهاية')
+  }
+
+  if (!hasStartDate || !hasEndDate || !hasSubmissionDeadline) {
+    results.push(createItem(
+      'التواريخ',
+      'fail',
+      'التسلسل الزمني غير مكتمل بسبب نقص واحد أو أكثر من التواريخ الأساسية.',
+      'حدد تاريخ البداية وتاريخ النهاية وآخر موعد للتقديم قبل الاعتماد.',
+    ))
+  } else if (dateIssues.length > 0) {
+    results.push(createItem(
+      'التواريخ',
+      'fail',
+      dateIssues.join('، '),
+      'راجع تسلسل التواريخ بحيث يكون البدء ثم فترة التنفيذ ثم موعد التقديم منطقياً ومتسقاً.',
+    ))
+  } else {
+    results.push(createItem(
+      'التواريخ',
+      'pass',
+      'التواريخ الأساسية موجودة وتسلسلها الزمني منطقي.',
+    ))
+  }
+
+  const failItems = results.filter(item => item.status === 'fail').length
+  const warningItems = results.filter(item => item.status === 'warning').length
+  if (failItems === 0 && warningItems === 0) {
+    results.push(createItem(
+      'الامتثال العام',
+      'pass',
+      'لا توجد ملاحظات جوهرية حالياً، والكراسة جاهزة مبدئياً للمرحلة التالية.',
+    ))
+  } else if (failItems === 0) {
+    results.push(createItem(
+      'الامتثال العام',
+      'warning',
+      `لا توجد حالات فشل، لكن توجد ${warningItems} ملاحظات تحتاج مراجعة قبل الاعتماد النهائي.`,
+      'راجع التحذيرات المفتوحة وحسّن جودة الكراسة قبل التقديم أو النشر النهائي.',
+    ))
+  } else {
+    results.push(createItem(
+      'الامتثال العام',
+      'fail',
+      `يوجد ${failItems} حالة فشل و${warningItems} حالة تحذير تمنع اعتبار الكراسة ممتثلة بشكل كامل.`,
+      'عالج حالات الفشل أولاً، ثم أعد تشغيل الفحص للتأكد من استقرار جميع النقاط الحاكمة.',
+    ))
   }
 
   return results
+}
+
+async function runComplianceCheck() {
+  isChecking.value = true
+  error.value = ''
+
+  try {
+    checkItems.value = buildComplianceResults()
+    showResults.value = true
+  } catch (err: unknown) {
+    error.value = err instanceof Error
+      ? err.message
+      : (locale.value === 'ar' ? 'حدث خطأ أثناء فحص الامتثال' : 'Error during compliance check')
+  } finally {
+    isChecking.value = false
+  }
 }
 
 const statusIcon = (status: string) => {
@@ -178,7 +364,6 @@ const scoreColor = computed(() => {
 
 <template>
   <div class="ai-compliance-checker">
-    <!-- Check Button -->
     <button
       type="button"
       class="group flex w-full items-center gap-3 rounded-xl border-2 border-dashed border-ai-300 bg-gradient-to-r from-ai-50 to-white px-5 py-4 text-sm font-semibold text-ai-600 transition-all duration-300 hover:border-ai-400 hover:shadow-lg hover:shadow-ai-100/50"
@@ -195,31 +380,28 @@ const scoreColor = computed(() => {
         <span class="block text-base">
           {{ isChecking
             ? (locale === 'ar' ? 'جارٍ فحص الامتثال...' : 'Running compliance check...')
-            : (locale === 'ar' ? 'فحص الامتثال بالذكاء الاصطناعي' : 'AI Compliance Check')
+            : (locale === 'ar' ? 'فحص الامتثال' : 'Compliance Check')
           }}
         </span>
         <span class="block text-[11px] font-normal text-ai-400">
           {{ locale === 'ar'
-            ? 'التحقق من امتثال الكراسة لنظام المنافسات والمشتريات الحكومية'
-            : 'Verify RFP compliance with government procurement regulations'
+            ? 'التحقق الحتمي من اكتمال واتساق الكراسة قبل الاعتماد'
+            : 'Deterministic validation of booklet completeness and consistency'
           }}
         </span>
       </div>
     </button>
 
-    <!-- Error -->
     <div v-if="error" class="mt-3 rounded-lg border border-danger/20 bg-danger/5 p-3 text-xs text-danger">
       <i class="pi pi-exclamation-circle me-1"></i>
       {{ error }}
     </div>
 
-    <!-- Results Panel -->
     <Transition name="fade">
       <div
         v-if="showResults && checkItems.length > 0"
         class="mt-4 overflow-hidden rounded-xl border border-ai-200 bg-white shadow-sm"
       >
-        <!-- Results Header -->
         <div class="border-b border-secondary-100 bg-gradient-to-r from-ai-50 to-white p-4">
           <div class="flex items-center justify-between">
             <div class="flex items-center gap-3">
@@ -236,7 +418,6 @@ const scoreColor = computed(() => {
               </div>
             </div>
 
-            <!-- Score Badge -->
             <div class="text-center">
               <span class="text-2xl font-bold" :class="scoreColor">{{ overallScore }}%</span>
               <p class="text-[10px] text-secondary-400">
@@ -245,7 +426,6 @@ const scoreColor = computed(() => {
             </div>
           </div>
 
-          <!-- Summary Stats -->
           <div class="mt-3 flex gap-4">
             <span class="flex items-center gap-1 text-xs text-success">
               <i class="pi pi-check-circle text-[10px]"></i>
@@ -262,7 +442,6 @@ const scoreColor = computed(() => {
           </div>
         </div>
 
-        <!-- Check Items -->
         <div class="max-h-[400px] overflow-auto p-4">
           <div class="space-y-2">
             <div
@@ -288,7 +467,6 @@ const scoreColor = computed(() => {
           </div>
         </div>
 
-        <!-- Close Button -->
         <div class="border-t border-secondary-100 bg-secondary-50 px-4 py-3 text-end">
           <button
             type="button"

@@ -40,11 +40,11 @@ public sealed class BookletExtractionService : IBookletExtractionService
             | System.Text.Json.Serialization.JsonNumberHandling.AllowNamedFloatingPointLiterals
     };
 
-    /// <summary>Maximum characters to send to the AI in a single request.</summary>
-    private const int MaxDocumentCharsFirstAttempt = 20000;
+    /// <summary>Maximum characters to send to the AI in the first extraction attempt.</summary>
+    private const int MaxDocumentCharsFirstAttempt = 90000;
 
-    /// <summary>Maximum characters for retry attempts.</summary>
-    private const int MaxDocumentCharsRetry = 12000;
+    /// <summary>Maximum characters for retry attempts when the initial parse fails.</summary>
+    private const int MaxDocumentCharsRetry = 60000;
 
     /// <summary>Maximum number of extraction attempts.</summary>
     private const int MaxAttempts = 2;
@@ -119,10 +119,11 @@ public sealed class BookletExtractionService : IBookletExtractionService
                     "Extraction attempt {Attempt}/{MaxAttempts}: sending {CharCount} chars (original: {OriginalChars})",
                     attempt, MaxAttempts, truncatedText.Length, request.DocumentText?.Length ?? 0);
 
-                // Build prompts - use summarized prompt for retries
-                var systemPrompt = BuildExtractionSystemPrompt(attempt > 1);
+                // Build prompts - extraction must remain verbatim-focused even on retries
+                var wasTruncated = truncatedText.Length < (request.DocumentText?.Length ?? 0);
+                var systemPrompt = BuildExtractionSystemPrompt(wasTruncated);
                 var modifiedRequest = request with { DocumentText = truncatedText };
-                var userPrompt = BuildExtractionUserPrompt(modifiedRequest, ragResult, attempt > 1);
+                var userPrompt = BuildExtractionUserPrompt(modifiedRequest, ragResult, wasTruncated);
 
                 // Send to AI Gateway
                 var aiRequest = new AiCompletionRequest
@@ -226,17 +227,18 @@ public sealed class BookletExtractionService : IBookletExtractionService
     /// <summary>
     /// Builds the system prompt for document extraction.
     /// </summary>
-    private static string BuildExtractionSystemPrompt(bool isSummarized = false)
+    private static string BuildExtractionSystemPrompt(bool isTruncated = false)
     {
-        var contentInstruction = isSummarized
+        var contentInstruction = isTruncated
             ? """
-              6. في حقل contentHtml: اكتب ملخصاً مختصراً للمحتوى الأساسي فقط (3-5 فقرات لكل قسم كحد أقصى).
-                 لا تنسخ النص الكامل. ركّز على النقاط الرئيسية والمتطلبات الأساسية.
+              6. في حقل contentHtml: انقل النص الموجود في المصدر **حرفياً قدر الإمكان** مع الحفاظ على ترتيب الفقرات والقوائم والعناوين الفرعية.
+                 إذا كان النص طويلًا جداً فاستخدم مقتطفات حرفية متتابعة من المصدر ولا تكتب ملخصاً أو إعادة صياغة.
+                 استخدم عناصر HTML بسيطة فقط: <p>, <ul>, <ol>, <li>, <strong>, <h3>, <h4>, <table>, <tr>, <td>.
               """
             : """
-              6. في حقل contentHtml: اكتب ملخصاً واضحاً ومنظماً للمحتوى الأساسي (5-8 فقرات لكل قسم كحد أقصى).
-                 استخدم عناصر HTML بسيطة: <p>, <ul>, <li>, <strong>, <h3>, <h4>.
-                 لا تنسخ النص الكامل حرفياً. ركّز على المتطلبات والشروط الأساسية.
+              6. في حقل contentHtml: انقل النص الموجود في المصدر **حرفياً قدر الإمكان** مع الحفاظ على ترتيب الفقرات والقوائم والعناوين الفرعية.
+                 يُمنع التلخيص أو إعادة الصياغة أو استبدال المصطلحات أو اختراع محتوى غير موجود.
+                 استخدم عناصر HTML بسيطة فقط: <p>, <ul>, <ol>, <li>, <strong>, <h3>, <h4>, <table>, <tr>, <td>.
               """;
 
         var jsonTemplate = """
@@ -252,7 +254,7 @@ public sealed class BookletExtractionService : IBookletExtractionService
                   "titleAr": "عنوان القسم بالعربية",
                   "titleEn": "Section Title in English",
                   "sectionType": "generalInformation|technicalSpecifications|termsAndConditions|evaluationCriteria|billOfQuantities|attachments|custom",
-                  "contentHtml": "<p>ملخص مختصر للمحتوى</p>",
+                  "contentHtml": "<p>نص منقول من المصدر كما ورد مع الحفاظ على البنية</p>",
                   "isMandatory": true,
                   "sortOrder": 1,
                   "confidenceScore": 85.0
@@ -297,9 +299,10 @@ public sealed class BookletExtractionService : IBookletExtractionService
                ز. بنود جدول الكميات (إن وُجدت)
 
             2. لكل قسم مستخرج، حدد:
-               - العنوان بالعربية (والإنجليزية إن أمكن)
+               - العنوان كما ورد في المصدر دون تعديل لغوي أو تلخيص أو تصحيح تلقائي
+               - العنوان بالإنجليزية فقط إذا كان موجوداً صراحة في المصدر
                - نوع القسم (generalInformation, technicalSpecifications, termsAndConditions, evaluationCriteria, billOfQuantities, attachments, custom)
-               - المحتوى بتنسيق HTML مختصر
+               - المحتوى بتنسيق HTML مع الحفاظ على النص الفعلي والبنية الأصلية قدر الإمكان
                - هل القسم إلزامي أم اختياري
                - ترتيب العرض
 
@@ -312,13 +315,14 @@ public sealed class BookletExtractionService : IBookletExtractionService
                - التصنيف
 
             4. استخدم الأرقام بالتنسيق الإنجليزي (0-9) حصراً.
-            5. إذا لم تتمكن من تحديد معلومة معينة، اتركها فارغة ولا تخمن.
+            5. إذا لم تتمكن من تحديد معلومة معينة، اتركها فارغة أو null ولا تخمن أبداً.
+            6. العناوين القانونية وأسماء الأقسام والمواد والنسب المئوية والأرقام المرجعية والتواريخ يجب أن تُنسخ كما وردت في المصدر دون استنتاج.
             {contentInstruction}
             7. قدّر مستوى الثقة (0-100) لجودة الاستخراج الكلية.
-            8. أضف تحذيرات لأي أقسام غير واضحة أو ناقصة.
+            8. أضف تحذيرات فقط عند وجود اقتطاع فعلي للنص، أو نص غير مقروء، أو أقسام لم يمكن تحديدها بثقة.
 
             ⚠️ مهم جداً: يجب أن يكون الرد JSON صالحاً ومكتملاً. لا تقطع الرد في المنتصف.
-            إذا كان المحتوى كثيراً، اختصر محتوى الأقسام بدلاً من قطع JSON.
+            إذا كان المحتوى كثيراً، فحافظ على النقل الحرفي لأهم المقاطع الظاهرة في النص المتاح ولا تكتب أي تلخيص إنشائي.
             </instructions>
 
             <output_format>
@@ -374,12 +378,10 @@ public sealed class BookletExtractionService : IBookletExtractionService
 
         if (isSummarized)
         {
-            sb.AppendLine("⚠️ اختصر محتوى كل قسم في 3-5 فقرات فقط. لا تنسخ النص الكامل.");
+            sb.AppendLine("⚠️ تم اقتطاع جزء من النص بسبب حدود المعالجة. اعمل فقط على النص الظاهر، ولا تذكر تحذير الحجم إلا إذا كان الاقتطاع واضحاً فعلاً داخل النص.");
         }
-        else
-        {
-            sb.AppendLine("اكتب ملخصاً منظماً لمحتوى كل قسم. لا تنسخ النص الكامل حرفياً.");
-        }
+
+        sb.AppendLine("انقل محتوى الأقسام والعناوين كما ورد في النص الظاهر. لا تلخّص ولا تعِد الصياغة ولا تستبدل أسماء الأقسام بمرادفات.");
 
         sb.AppendLine("⚠️ تأكد أن JSON مكتمل وصالح. لا تقطع الرد.");
         sb.AppendLine("</task>");
@@ -727,12 +729,12 @@ public sealed class BookletExtractionService : IBookletExtractionService
                 ProjectDurationDays = null,
                 Sections = sections,
                 BoqItems = [],
-                ExtractionSummaryAr = "تم استخراج جزئي للمحتوى. يرجى مراجعة الأقسام وإضافة المحتوى الناقص.",
+                ExtractionSummaryAr = "تم التقاط جزء من بيانات الاستخراج بعد تعذر تحليل الاستجابة كاملة. يرجى مراجعة الأقسام المستخرجة بعناية.",
                 ConfidenceScore = 30.0,
                 Warnings =
                 [
-                    "تم استخراج المحتوى بشكل جزئي بسبب حجم المستند الكبير",
-                    "يرجى مراجعة محتوى كل قسم وإضافة التفاصيل الناقصة يدوياً"
+                    "تمت استعادة جزء من الاستجابة فقط بعد فشل تحليل JSON الكامل",
+                    "يرجى مراجعة محتوى كل قسم والتأكد من اكتمال النص المنقول من المصدر"
                 ],
                 ProviderName = providerName,
                 ModelName = modelName,

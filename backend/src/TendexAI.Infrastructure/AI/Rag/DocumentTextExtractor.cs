@@ -1,4 +1,6 @@
+using System.IO.Compression;
 using System.Text;
+using System.Xml.Linq;
 using Microsoft.Extensions.Logging;
 
 namespace TendexAI.Infrastructure.AI.Rag;
@@ -6,10 +8,11 @@ namespace TendexAI.Infrastructure.AI.Rag;
 /// <summary>
 /// Extracts text content from various document formats (PDF, DOCX, TXT, etc.).
 /// This is a server-side text extraction service used by the document indexing pipeline.
-/// For production, consider integrating Apache Tika or a dedicated extraction service.
 /// </summary>
 public sealed partial class DocumentTextExtractor
 {
+    private static readonly XNamespace s_wordNs = "http://schemas.openxmlformats.org/wordprocessingml/2006/main";
+
     private readonly ILogger<DocumentTextExtractor> _logger;
 
     /// <summary>
@@ -21,8 +24,8 @@ public sealed partial class DocumentTextExtractor
         "text/csv",
         "text/markdown",
         "application/pdf",
-        "application/vnd.openxmlformats-officedocument.wordprocessingml.document", // .docx
-        "application/msword", // .doc
+        "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+        "application/msword",
     };
 
     public DocumentTextExtractor(ILogger<DocumentTextExtractor> logger)
@@ -43,7 +46,8 @@ public sealed partial class DocumentTextExtractor
         {
             LogExtractionStarted(_logger, fileName, contentType, fileBytes.Length);
 
-            var text = contentType.ToLowerInvariant() switch
+            var normalizedContentType = NormalizeContentType(contentType, fileName);
+            var text = normalizedContentType.ToLowerInvariant() switch
             {
                 "text/plain" or "text/csv" or "text/markdown"
                     => ExtractFromPlainText(fileBytes),
@@ -54,12 +58,15 @@ public sealed partial class DocumentTextExtractor
                 "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
                     => ExtractFromDocx(fileBytes),
 
+                "application/msword"
+                    => ExtractFromLegacyWord(fileBytes),
+
                 _ => null
             };
 
             if (string.IsNullOrWhiteSpace(text))
             {
-                LogExtractionEmpty(_logger, fileName, contentType);
+                LogExtractionEmpty(_logger, fileName, normalizedContentType);
                 return null;
             }
 
@@ -85,9 +92,27 @@ public sealed partial class DocumentTextExtractor
     // Format-specific extractors
     // -------------------------------------------------------------------------
 
+    private static string NormalizeContentType(string contentType, string fileName)
+    {
+        if (!string.IsNullOrWhiteSpace(contentType) && !contentType.Equals("application/octet-stream", StringComparison.OrdinalIgnoreCase))
+        {
+            return contentType;
+        }
+
+        var extension = Path.GetExtension(fileName)?.ToLowerInvariant();
+        return extension switch
+        {
+            ".pdf" => "application/pdf",
+            ".docx" => "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+            ".doc" => "application/msword",
+            ".md" => "text/markdown",
+            ".csv" => "text/csv",
+            _ => string.IsNullOrWhiteSpace(contentType) ? "text/plain" : contentType,
+        };
+    }
+
     private static string ExtractFromPlainText(byte[] fileBytes)
     {
-        // Try UTF-8 first, then fall back to other encodings
         try
         {
             return Encoding.UTF8.GetString(fileBytes);
@@ -100,9 +125,6 @@ public sealed partial class DocumentTextExtractor
 
     private static string? ExtractFromPdf(byte[] fileBytes)
     {
-        // Use a simple PDF text extraction approach
-        // For production, integrate with a proper PDF library (iTextSharp, PdfPig, etc.)
-        // This implementation uses PdfPig which handles Arabic text well
         try
         {
             using var stream = new MemoryStream(fileBytes);
@@ -113,7 +135,7 @@ public sealed partial class DocumentTextExtractor
             for (var i = 0; i < document.NumberOfPages; i++)
             {
                 var page = document.GetPage(i + 1);
-                var pageText = page.Text;
+                var pageText = NormalizeExtractedText(page.Text);
 
                 if (!string.IsNullOrWhiteSpace(pageText))
                 {
@@ -123,7 +145,7 @@ public sealed partial class DocumentTextExtractor
                 }
             }
 
-            return textBuilder.ToString();
+            return NormalizeExtractedText(textBuilder.ToString());
         }
         catch
         {
@@ -133,40 +155,218 @@ public sealed partial class DocumentTextExtractor
 
     private static string? ExtractFromDocx(byte[] fileBytes)
     {
-        // Simple DOCX text extraction using the Open XML SDK approach
-        // DOCX files are ZIP archives containing XML
         try
         {
             using var stream = new MemoryStream(fileBytes);
-            using var archive = new System.IO.Compression.ZipArchive(stream, System.IO.Compression.ZipArchiveMode.Read);
+            using var archive = new ZipArchive(stream, ZipArchiveMode.Read);
 
             var documentEntry = archive.GetEntry("word/document.xml");
-            if (documentEntry is null) return null;
+            if (documentEntry is null)
+            {
+                return null;
+            }
 
             using var entryStream = documentEntry.Open();
-            var doc = System.Xml.Linq.XDocument.Load(entryStream);
+            var doc = XDocument.Load(entryStream);
+            var body = doc.Root?.Element(s_wordNs + "body");
+            if (body is null)
+            {
+                return null;
+            }
 
             var textBuilder = new StringBuilder();
-            var ns = doc.Root?.GetDefaultNamespace() ?? System.Xml.Linq.XNamespace.None;
 
-            // Extract text from all paragraph elements
-            var paragraphs = doc.Descendants(ns + "p");
-            foreach (var para in paragraphs)
+            foreach (var element in body.Elements())
             {
-                var texts = para.Descendants(ns + "t").Select(t => t.Value);
-                var paraText = string.Join("", texts);
-                if (!string.IsNullOrWhiteSpace(paraText))
+                switch (element.Name.LocalName)
                 {
-                    textBuilder.AppendLine(paraText);
+                    case "p":
+                        AppendParagraphText(textBuilder, element);
+                        break;
+
+                    case "tbl":
+                        AppendTableText(textBuilder, element);
+                        break;
                 }
             }
 
-            return textBuilder.ToString();
+            return NormalizeExtractedText(textBuilder.ToString());
         }
         catch
         {
             return null;
         }
+    }
+
+    private static string? ExtractFromLegacyWord(byte[] fileBytes)
+    {
+        var extracted = ExtractFromPlainText(fileBytes);
+        if (string.IsNullOrWhiteSpace(extracted))
+        {
+            return null;
+        }
+
+        var sanitized = new string(extracted.Where(ch => !char.IsControl(ch) || ch == '\n' || ch == '\r' || ch == '\t').ToArray());
+        return NormalizeExtractedText(sanitized);
+    }
+
+    private static void AppendParagraphText(StringBuilder textBuilder, XElement paragraph)
+    {
+        var paragraphText = ExtractParagraphText(paragraph).Trim();
+        if (string.IsNullOrWhiteSpace(paragraphText))
+        {
+            return;
+        }
+
+        var styleId = paragraph
+            .Element(s_wordNs + "pPr")
+            ?.Element(s_wordNs + "pStyle")
+            ?.Attribute(s_wordNs + "val")
+            ?.Value;
+
+        if (IsHeadingStyle(styleId))
+        {
+            textBuilder.AppendLine($"## {paragraphText}");
+            textBuilder.AppendLine();
+            return;
+        }
+
+        if (IsListParagraph(paragraph, styleId))
+        {
+            textBuilder.AppendLine($"- {paragraphText}");
+            return;
+        }
+
+        textBuilder.AppendLine(paragraphText);
+        textBuilder.AppendLine();
+    }
+
+    private static string ExtractParagraphText(XElement paragraph)
+    {
+        var sb = new StringBuilder();
+
+        foreach (var node in paragraph.Descendants())
+        {
+            switch (node.Name.LocalName)
+            {
+                case "t":
+                    sb.Append(node.Value);
+                    break;
+                case "tab":
+                    sb.Append('\t');
+                    break;
+                case "br":
+                case "cr":
+                    sb.AppendLine();
+                    break;
+            }
+        }
+
+        return sb.ToString();
+    }
+
+    private static void AppendTableText(StringBuilder textBuilder, XElement table)
+    {
+        var rows = table.Elements(s_wordNs + "tr").ToList();
+        if (rows.Count == 0)
+        {
+            return;
+        }
+
+        textBuilder.AppendLine("[TABLE]");
+
+        foreach (var row in rows)
+        {
+            var cells = row.Elements(s_wordNs + "tc")
+                .Select(cell => NormalizeInlineWhitespace(string.Join(" ",
+                    cell.Elements(s_wordNs + "p")
+                        .Select(ExtractParagraphText)
+                        .Where(text => !string.IsNullOrWhiteSpace(text)))))
+                .Select(cellText => string.IsNullOrWhiteSpace(cellText) ? "-" : cellText)
+                .ToList();
+
+            if (cells.Count > 0)
+            {
+                textBuilder.AppendLine($"| {string.Join(" | ", cells)} |");
+            }
+        }
+
+        textBuilder.AppendLine("[/TABLE]");
+        textBuilder.AppendLine();
+    }
+
+    private static bool IsHeadingStyle(string? styleId)
+    {
+        if (string.IsNullOrWhiteSpace(styleId))
+        {
+            return false;
+        }
+
+        return styleId.StartsWith("Heading", StringComparison.OrdinalIgnoreCase)
+            || styleId.StartsWith("heading", StringComparison.OrdinalIgnoreCase)
+            || styleId.Equals("Title", StringComparison.OrdinalIgnoreCase)
+            || styleId.Equals("Subtitle", StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static bool IsListParagraph(XElement paragraph, string? styleId)
+    {
+        if (!string.IsNullOrWhiteSpace(styleId) && styleId.Contains("List", StringComparison.OrdinalIgnoreCase))
+        {
+            return true;
+        }
+
+        return paragraph
+            .Element(s_wordNs + "pPr")
+            ?.Element(s_wordNs + "numPr") is not null;
+    }
+
+    private static string NormalizeInlineWhitespace(string text)
+    {
+        if (string.IsNullOrWhiteSpace(text))
+        {
+            return string.Empty;
+        }
+
+        return string.Join(' ', text.Split((char[]?)null, StringSplitOptions.RemoveEmptyEntries));
+    }
+
+    private static string NormalizeExtractedText(string text)
+    {
+        if (string.IsNullOrWhiteSpace(text))
+        {
+            return string.Empty;
+        }
+
+        var normalizedLines = text
+            .Replace("\r\n", "\n", StringComparison.Ordinal)
+            .Replace('\r', '\n')
+            .Split('\n')
+            .Select(line => line.TrimEnd())
+            .ToList();
+
+        var builder = new StringBuilder();
+        var previousWasBlank = false;
+
+        foreach (var line in normalizedLines)
+        {
+            var current = line.Trim();
+            if (string.IsNullOrWhiteSpace(current))
+            {
+                if (previousWasBlank)
+                {
+                    continue;
+                }
+
+                builder.AppendLine();
+                previousWasBlank = true;
+                continue;
+            }
+
+            builder.AppendLine(current);
+            previousWasBlank = false;
+        }
+
+        return builder.ToString().Trim();
     }
 
     // -------------------------------------------------------------------------

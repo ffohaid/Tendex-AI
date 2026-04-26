@@ -829,10 +829,46 @@ onBeforeUnmount(() => {
 
             <!-- Content Blocks -->
             <div class="space-y-3">
+              <details
+                v-if="getBlocksForSection(section.id).some(b => b.colorType === 'fixed' || (b.colorType === 'guidance' && showGuidance))"
+                class="overflow-hidden rounded-xl border border-secondary-200 bg-secondary-50/70"
+                open
+              >
+                <summary class="cursor-pointer px-4 py-3 text-sm font-semibold text-secondary-700">
+                  {{ locale === 'ar' ? 'النص المرجعي غير القابل للتحرير' : 'Reference non-editable content' }}
+                </summary>
+                <div class="space-y-3 border-t border-secondary-200 p-4">
+                  <div
+                    v-for="block in getBlocksForSection(section.id).filter(b => b.colorType === 'fixed' || (b.colorType === 'guidance' && showGuidance))"
+                    :key="`reference-${block.id}`"
+                    class="rounded-lg p-4"
+                    :class="getBlockBorderClass(block.colorType)"
+                  >
+                    <div class="mb-2 flex items-center justify-between">
+                      <span
+                        class="inline-flex items-center gap-1 rounded-md border px-2 py-0.5 text-xs font-medium"
+                        :class="getColorBadge(block.colorType).class"
+                      >
+                        <i :class="`pi ${getColorBadge(block.colorType).icon}`" class="text-[10px]"></i>
+                        {{ getColorBadge(block.colorType).label }}
+                      </span>
+                    </div>
+                    <RichTextEditor
+                      :model-value="block.editedContent || block.contentHtml || block.originalContent"
+                      :editable="false"
+                      dir="rtl"
+                      min-height="80px"
+                      max-height="400px"
+                      compact
+                    />
+                  </div>
+                </div>
+              </details>
+
               <template v-for="block in getBlocksForSection(section.id)" :key="block.id">
                 <!-- Skip guidance blocks if hidden -->
                 <div
-                  v-if="block.colorType !== 'guidance' || showGuidance"
+                  v-if="block.colorType === 'editable' || block.colorType === 'example'"
                   class="group relative rounded-lg p-4 transition-all"
                   :class="getBlockBorderClass(block.colorType)"
                 >
@@ -859,36 +895,8 @@ onBeforeUnmount(() => {
                     </span>
                   </div>
 
-                  <!-- Fixed Block (read-only) -->
-                  <div v-if="block.colorType === 'fixed'" class="text-sm leading-relaxed text-secondary-700">
-                    <RichTextEditor
-                      :model-value="block.editedContent || block.contentHtml || block.originalContent"
-                      :editable="false"
-                      dir="rtl"
-                      min-height="80px"
-                      max-height="500px"
-                      compact
-                    />
-                  </div>
-                  <!-- Guidance Block (read-only, info style) -->
-                  <div v-else-if="block.colorType === 'guidance'" class="text-sm leading-relaxed text-blue-600 italic">
-                    <div class="flex items-start gap-2">
-                      <i class="pi pi-info-circle mt-0.5 shrink-0"></i>
-                      <div class="flex-1">
-                        <RichTextEditor
-                          :model-value="block.editedContent || block.contentHtml || block.originalContent"
-                          :editable="false"
-                          dir="rtl"
-                          min-height="80px"
-                          max-height="500px"
-                          compact
-                        />
-                      </div>
-                    </div>
-                  </div>
-
                   <!-- Editable / Example Block -->
-                  <div v-else>
+                  <div>
                     <component :is="block.isHeading ? 'h3' : 'div'" :class="block.isHeading ? 'font-bold text-base' : ''">
                       <RichTextEditor
                         :model-value="block.editedContent"

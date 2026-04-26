@@ -902,3 +902,29 @@ After deploying batch `23042026`, live verification on production confirmed that
 
 ### Follow-up note
 The English-name fields are currently protected by an EF compatibility fallback because the active tenant databases have not yet received the matching schema columns. A dedicated schema rollout is still required before those fields can be persisted end-to-end.
+
+## 2026-04-26: Issue Batch 23042026_3 — extraction, compliance, editor, and export hardening
+
+### Summary
+A new remediation wave was completed locally for the issues reported in `23042026_3.docx`. The work focused on stabilizing booklet extraction fidelity, reducing hallucination and summarization behavior, aligning compliance checks with deterministic business rules, improving booklet edit/navigation UX, and cleaning booklet export output so it better matches a procurement booklet rather than a priced commercial sheet.
+
+### Completed work
+- Hardened `DocumentTextExtractor` so DOCX extraction now preserves ordered paragraphs, heading markers, list-like paragraphs, and table rows instead of flattening only plain paragraph text. MIME normalization was also improved for common extension-based fallback cases.
+- Tightened `BookletExtractionService` prompts and extraction instructions to prefer verbatim transfer, preserve section titles exactly as found in the source, avoid hallucinating absent values, and avoid generic large-file warnings unless truncation actually occurs.
+- Replaced the AI-generated compliance pass/fail flow in `AiComplianceChecker.vue` with deterministic rule-based validation, including actionable remediation guidance for missing fields, inconsistent evaluation weights, incomplete criteria, missing content, date conflicts, and attachment/BOQ gaps.
+- Updated `RfpCreateView.vue` so opening an existing booklet/RFP in edit mode starts the user from wizard step 1 instead of restoring them directly to the previously saved final step.
+- Refined `BookletEditorView.vue` so non-editable reference content is separated visually from editable/example blocks, reducing confusion between static guidance and user-editable text.
+- Updated `RfpExportView.vue` so BOQ export no longer prints estimated prices, totals, or VAT total rows inside the booklet-style document output.
+
+### Validation
+- Frontend production build completed successfully after the final changes in this batch.
+- `git diff --check` completed successfully with no whitespace or patch-format issues.
+- Local backend build could not be executed because the current sandbox environment does not provide the `dotnet` CLI, so backend verification in this batch is limited to targeted static review of the edited C# files.
+
+### Files modified in this batch
+- `backend/src/TendexAI.Infrastructure/AI/BookletExtractionService.cs`
+- `backend/src/TendexAI.Infrastructure/AI/Rag/DocumentTextExtractor.cs`
+- `frontend/src/components/rfp/AiComplianceChecker.vue`
+- `frontend/src/views/rfp/BookletEditorView.vue`
+- `frontend/src/views/rfp/RfpCreateView.vue`
+- `frontend/src/views/rfp/RfpExportView.vue`

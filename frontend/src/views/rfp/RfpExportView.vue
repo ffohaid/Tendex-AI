@@ -248,12 +248,6 @@ onMounted(() => {
                 <th class="border border-surface-dim px-3 py-2 text-center font-medium text-secondary">
                   {{ $t('rfp.boq.quantity', 'الكمية') }}
                 </th>
-                <th class="border border-surface-dim px-3 py-2 text-end font-medium text-secondary">
-                  {{ $t('rfp.boq.estimatedPrice', 'السعر التقديري') }}
-                </th>
-                <th class="border border-surface-dim px-3 py-2 text-end font-medium text-secondary">
-                  {{ $t('rfp.boq.totalPrice', 'الإجمالي') }}
-                </th>
               </tr>
             </thead>
             <tbody>
@@ -262,28 +256,8 @@ onMounted(() => {
                 <td class="border border-surface-dim px-3 py-2">{{ item.description }}</td>
                 <td class="border border-surface-dim px-3 py-2 text-center">{{ item.unit }}</td>
                 <td class="border border-surface-dim px-3 py-2 text-center">{{ item.quantity }}</td>
-                <td class="border border-surface-dim px-3 py-2 text-end">{{ formatCurrency(item.estimatedPrice) }}</td>
-                <td class="border border-surface-dim px-3 py-2 text-end">{{ formatCurrency(item.totalPrice) }}</td>
               </tr>
             </tbody>
-            <tfoot>
-              <tr class="bg-surface-muted font-bold">
-                <td colspan="5" class="border border-surface-dim px-3 py-2 text-end">
-                  {{ $t('rfp.boq.total', 'الإجمالي') }}
-                </td>
-                <td class="border border-surface-dim px-3 py-2 text-end text-primary">
-                  {{ formatCurrency(rfpData.boq.totalEstimatedValue) }}
-                </td>
-              </tr>
-              <tr v-if="rfpData.boq.includesVat" class="bg-surface-muted">
-                <td colspan="5" class="border border-surface-dim px-3 py-2 text-end text-sm">
-                  {{ $t('rfp.boq.vatNote', 'شامل ضريبة القيمة المضافة') }} ({{ rfpData.boq.vatPercentage }}%)
-                </td>
-                <td class="border border-surface-dim px-3 py-2 text-end text-sm text-secondary">
-                  {{ formatCurrency(rfpData.boq.totalEstimatedValue * (1 + rfpData.boq.vatPercentage / 100)) }}
-                </td>
-              </tr>
-            </tfoot>
           </table>
         </div>
 
@@ -350,7 +324,7 @@ onMounted(() => {
 <style>
 @media print {
   /* Hide navigation and non-print elements */
-  nav, .print\\:hidden, header, footer, aside {
+  nav, [class~="print:hidden"], header, footer, aside {
     display: none !important;
   }
 

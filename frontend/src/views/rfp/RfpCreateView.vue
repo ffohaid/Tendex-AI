@@ -62,6 +62,9 @@ onMounted(async () => {
   const rfpId = route.params.id as string
   if (rfpId) {
     await rfpStore.loadRfp(rfpId)
+    // Always open explicit edit sessions from the first wizard step.
+    // Saved progress remains available through the stepper after load.
+    rfpStore.goToStep(1)
   } else {
     rfpStore.resetForm()
   }
