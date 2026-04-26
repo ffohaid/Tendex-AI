@@ -354,7 +354,7 @@ public sealed class GetPendingTasksQueryHandler
     private static bool IsStepVisibleToUser(
         ApprovalWorkflowStep step,
         HashSet<SystemRole> userSystemRoles,
-        IReadOnlyDictionary<Guid, HashSet<CommitteeRole>> committeeRoleLookup)
+        Dictionary<Guid, HashSet<CommitteeRole>> committeeRoleLookup)
     {
         if (!userSystemRoles.Contains(step.RequiredRole))
         {
