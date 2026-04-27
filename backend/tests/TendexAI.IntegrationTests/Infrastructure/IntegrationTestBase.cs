@@ -98,47 +98,109 @@ public abstract class IntegrationTestBase : IClassFixture<TendexWebApplicationFa
 
     private static async Task SeedTenantDataAsync(TenantDbContext db, IPasswordHasher passwordHasher)
     {
-        // Check if admin user already exists (idempotent seeding)
-        if (await db.Users.AnyAsync(u => u.Id == TestAdminUserId))
-            return;
+        // Ensure baseline roles exist
+        var adminRole = await db.Roles.FirstOrDefaultAsync(r => r.Id == TestAdminRoleId);
+        if (adminRole is null)
+        {
+            adminRole = new Role("مدير النظام", "System Administrator", "SYSTEM ADMINISTRATOR", TestTenantId, true);
+            typeof(Role).GetProperty("Id")!.SetValue(adminRole, TestAdminRoleId);
+            db.Roles.Add(adminRole);
+        }
 
-        // Create roles
-        var adminRole = new Role("مدير النظام", "System Administrator", "SYSTEM ADMINISTRATOR", TestTenantId, true);
-        typeof(Role).GetProperty("Id")!.SetValue(adminRole, TestAdminRoleId);
+        var userRole = await db.Roles.FirstOrDefaultAsync(r => r.Id == TestUserRoleId);
+        if (userRole is null)
+        {
+            userRole = new Role("مستخدم", "Regular User", "REGULAR USER", TestTenantId, false);
+            typeof(Role).GetProperty("Id")!.SetValue(userRole, TestUserRoleId);
+            db.Roles.Add(userRole);
+        }
 
-        var userRole = new Role("مستخدم", "Regular User", "REGULAR USER", TestTenantId, false);
-        typeof(Role).GetProperty("Id")!.SetValue(userRole, TestUserRoleId);
+        // Seed the minimal permission catalog required by protected competition and committee endpoints
+        var permissionDefinitions = new[]
+        {
+            new { Code = "competitions.view", NameAr = "عرض المنافسات", NameEn = "View Competitions", Module = "Competitions" },
+            new { Code = "competitions.create", NameAr = "إنشاء المنافسات", NameEn = "Create Competitions", Module = "Competitions" },
+            new { Code = "competitions.edit", NameAr = "تعديل المنافسات", NameEn = "Edit Competitions", Module = "Competitions" },
+            new { Code = "competitions.delete", NameAr = "حذف المنافسات", NameEn = "Delete Competitions", Module = "Competitions" },
+            new { Code = "committees.view", NameAr = "عرض اللجان", NameEn = "View Committees", Module = "Committees" },
+            new { Code = "committees.create", NameAr = "إنشاء اللجان", NameEn = "Create Committees", Module = "Committees" },
+            new { Code = "committees.edit", NameAr = "تعديل اللجان", NameEn = "Edit Committees", Module = "Committees" },
+            new { Code = "committees.manage_members", NameAr = "إدارة أعضاء اللجان", NameEn = "Manage Committee Members", Module = "Committees" }
+        };
 
-        db.Roles.AddRange(adminRole, userRole);
+        var requiredPermissionCodes = permissionDefinitions.Select(p => p.Code).ToArray();
+        var existingPermissions = await db.Permissions
+            .Where(p => requiredPermissionCodes.Contains(p.Code))
+            .ToDictionaryAsync(p => p.Code, p => p);
 
-        // Create admin user
-        var adminUser = new ApplicationUser(
-            TestAdminEmail,
-            "أحمد",
-            "المدير",
-            "+966500000001",
-            TestTenantId);
-        typeof(ApplicationUser).GetProperty("Id")!.SetValue(adminUser, TestAdminUserId);
-        adminUser.SetPasswordHash(passwordHasher.HashPassword(TestAdminPassword));
-        adminUser.ConfirmEmail();
+        foreach (var definition in permissionDefinitions)
+        {
+            if (existingPermissions.ContainsKey(definition.Code))
+            {
+                continue;
+            }
 
-        // Create regular user
-        var regularUser = new ApplicationUser(
-            TestRegularEmail,
-            "محمد",
-            "المستخدم",
-            "+966500000002",
-            TestTenantId);
-        typeof(ApplicationUser).GetProperty("Id")!.SetValue(regularUser, TestRegularUserId);
-        regularUser.SetPasswordHash(passwordHasher.HashPassword(TestRegularPassword));
-        regularUser.ConfirmEmail();
+            var permission = new Permission(definition.Code, definition.NameAr, definition.NameEn, definition.Module);
+            db.Permissions.Add(permission);
+            existingPermissions[definition.Code] = permission;
+        }
 
-        db.Users.AddRange(adminUser, regularUser);
+        // Create admin user if missing
+        if (!await db.Users.AnyAsync(u => u.Id == TestAdminUserId))
+        {
+            var adminUser = new ApplicationUser(
+                TestAdminEmail,
+                "أحمد",
+                "المدير",
+                "+966500000001",
+                TestTenantId);
+            typeof(ApplicationUser).GetProperty("Id")!.SetValue(adminUser, TestAdminUserId);
+            adminUser.SetPasswordHash(passwordHasher.HashPassword(TestAdminPassword));
+            adminUser.ConfirmEmail();
+            db.Users.Add(adminUser);
+        }
 
-        // Assign roles
-        var adminUserRole = new UserRole(TestAdminUserId, TestAdminRoleId, "System");
-        var regularUserRole = new UserRole(TestRegularUserId, TestUserRoleId, "System");
-        db.UserRoles.AddRange(adminUserRole, regularUserRole);
+        // Create regular user if missing
+        if (!await db.Users.AnyAsync(u => u.Id == TestRegularUserId))
+        {
+            var regularUser = new ApplicationUser(
+                TestRegularEmail,
+                "محمد",
+                "المستخدم",
+                "+966500000002",
+                TestTenantId);
+            typeof(ApplicationUser).GetProperty("Id")!.SetValue(regularUser, TestRegularUserId);
+            regularUser.SetPasswordHash(passwordHasher.HashPassword(TestRegularPassword));
+            regularUser.ConfirmEmail();
+            db.Users.Add(regularUser);
+        }
+
+        // Assign roles if missing
+        if (!await db.UserRoles.AnyAsync(ur => ur.UserId == TestAdminUserId && ur.RoleId == TestAdminRoleId))
+        {
+            db.UserRoles.Add(new UserRole(TestAdminUserId, TestAdminRoleId, "System"));
+        }
+
+        if (!await db.UserRoles.AnyAsync(ur => ur.UserId == TestRegularUserId && ur.RoleId == TestUserRoleId))
+        {
+            db.UserRoles.Add(new UserRole(TestRegularUserId, TestUserRoleId, "System"));
+        }
+
+        // Grant the admin role the protected endpoint permissions required by current integration tests
+        var existingRolePermissionIds = await db.RolePermissions
+            .Where(rp => rp.RoleId == TestAdminRoleId)
+            .Select(rp => rp.PermissionId)
+            .ToListAsync();
+
+        foreach (var permission in existingPermissions.Values)
+        {
+            if (existingRolePermissionIds.Contains(permission.Id))
+            {
+                continue;
+            }
+
+            db.RolePermissions.Add(new RolePermission(TestAdminRoleId, permission.Id));
+        }
 
         await db.SaveChangesAsync();
     }

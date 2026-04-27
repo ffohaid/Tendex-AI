@@ -56,7 +56,17 @@ public sealed class LoginCommandHandler : IRequestHandler<LoginCommand, Result<A
             return Result.Failure<AuthTokenResponse>("Invalid email or password.");
         }
 
-        // 2. Check if account is active
+        // 2. Ensure the authenticated user belongs to the requested tenant
+        if (user.TenantId != request.TenantId)
+        {
+            await LogAuditAsync(user.Id, "FailedLogin", "User", user.Id.ToString(),
+                "{\"reason\":\"TenantMismatch\"}",
+                request.IpAddress, request.UserAgent, request.TenantId, cancellationToken);
+
+            return Result.Failure<AuthTokenResponse>("Invalid email or password.");
+        }
+
+        // 3. Check if account is active
         if (!user.IsActive)
         {
             await LogAuditAsync(user.Id, "FailedLogin", "User", user.Id.ToString(),
@@ -66,7 +76,7 @@ public sealed class LoginCommandHandler : IRequestHandler<LoginCommand, Result<A
             return Result.Failure<AuthTokenResponse>("Account is deactivated. Please contact your administrator.");
         }
 
-        // 3. Check if account is locked out
+        // 4. Check if account is locked out
         if (user.IsLockedOut())
         {
             await LogAuditAsync(user.Id, "FailedLogin", "User", user.Id.ToString(),
@@ -76,7 +86,7 @@ public sealed class LoginCommandHandler : IRequestHandler<LoginCommand, Result<A
             return Result.Failure<AuthTokenResponse>("Account is locked. Please try again later.");
         }
 
-        // 4. Verify password
+        // 5. Verify password
         if (user.PasswordHash is null || !_passwordHasher.VerifyPassword(request.Password, user.PasswordHash))
         {
             var maxAttempts = _configuration.GetValue("Authentication:MaxFailedLoginAttempts", 5);
@@ -91,7 +101,7 @@ public sealed class LoginCommandHandler : IRequestHandler<LoginCommand, Result<A
             return Result.Failure<AuthTokenResponse>("Invalid email or password.");
         }
 
-        // 5. Check if MFA is required
+        // 6. Check if MFA is required
         if (user.MfaEnabled)
         {
             // Create a temporary session for MFA verification
@@ -124,7 +134,7 @@ public sealed class LoginCommandHandler : IRequestHandler<LoginCommand, Result<A
             return Result.Success(mfaResponse);
         }
 
-        // 6. Generate tokens and create session
+        // 7. Generate tokens and create session
         return await GenerateAuthResponseAsync(user, request.TenantId, request.IpAddress, request.UserAgent, cancellationToken);
     }
 

@@ -1046,3 +1046,20 @@ A production-focused QC remediation wave was completed for the issues reported i
 ### Deployment workflow hotfix
 After the QC batch was pushed, the production deployment workflow failed in the GitHub `Test Gate` because `cd-deploy.yml` still referenced `backend/TendexAI.slnx`, which is not present in the repository. The workflow was corrected in place to restore and build the actual API project and to execute the two existing backend test projects directly before re-triggering deployment.
 The deployment workflow needed one additional hotfix after the first retry: the test-gate step was still invoking the two test projects with `--no-build`, which fails in GitHub Actions because only the API project had been built earlier in the job. The flag was removed so each test project can build its own test assembly before execution.
+
+## 2026-04-27: Integration Test Gate stabilization after QC fixes
+
+### Diagnosis
+- The deployment blocker moved from compilation failures to `TendexAI.IntegrationTests` inside GitHub Actions `Test Gate`.
+- `TendexAI.Infrastructure.Tests` passed, but competition and committee integration tests failed mainly with `403 Forbidden`.
+- Root cause: the integration harness seeds users and roles only, while current authorization depends on JWT `permission` claims derived from `RolePermissions`. Because the integration factory uses `EnsureCreated` instead of tenant migrations, the permission catalog and role-permission assignments were missing in the test environment.
+- A separate auth failure showed `Login_WithWrongTenantId_ShouldReturn401` returning `200 OK`. The login handler was accepting a user found in the tenant database without verifying that the requested tenant matched the user’s tenant.
+
+### Fixes Applied
+- Updated `backend/tests/TendexAI.IntegrationTests/Infrastructure/IntegrationTestBase.cs` to seed the exact competition and committee permissions required by the protected endpoints and assign them to the seeded admin role in an idempotent way.
+- Updated `backend/src/TendexAI.Application/Features/Auth/Commands/LoginCommandHandler.cs` to reject login when `user.TenantId` does not match the requested `TenantId`, preserving a safe tenant boundary during authentication.
+
+### Verification
+- `dotnet build backend/src/TendexAI.API/TendexAI.API.csproj`
+- `dotnet build backend/tests/TendexAI.IntegrationTests/TendexAI.IntegrationTests.csproj`
+- Full local execution of `TendexAI.IntegrationTests` was not possible in this sandbox because Docker/Testcontainers is unavailable here. Final integration validation must therefore continue through GitHub Actions `Test Gate`.
