@@ -138,12 +138,22 @@ public static class TenantEndpoints
             .AllowAnonymous()
             .RequireCors("TendexCorsPolicy")
             .Produces<TenantResolveDto>(StatusCodes.Status200OK)
+            .Produces(StatusCodes.Status400BadRequest)
+            .Produces(StatusCodes.Status404NotFound);
+
+        app.MapGet("/api/v1/tenants/logo/{fileId:guid}", GetPublicTenantLogoAsync)
+            .WithTags("Tenants")
+            .WithName("GetPublicTenantLogo")
+            .WithSummary("Serves a tenant logo for public login pages.")
+            .AllowAnonymous()
+            .RequireCors("TendexCorsPolicy")
+            .Produces(StatusCodes.Status200OK)
             .Produces(StatusCodes.Status404NotFound);
 
         return app;
     }
 
-    // ----- Endpoint Handlers -----
+    // ----- Handler Methods -----
 
     /// <summary>
     /// Retrieves a paginated list of tenants.
@@ -456,22 +466,71 @@ public static class TenantEndpoints
                     null,
                     cancellationToken);
 
-                return legacyUrlResult.IsSuccess ? legacyUrlResult.Value : logoUrl;
+                return legacyUrlResult.IsSuccess ? legacyUrlResult.Value : RewriteToPublicTenantLogoProxy(logoUrl);
             }
         }
 
         if (fileAttachment is null)
         {
+            return RewriteToPublicTenantLogoProxy(logoUrl);
+        }
+
+        return $"/api/v1/tenants/logo/{fileAttachment.Id}";
+    }
+
+    private static async Task<IResult> GetPublicTenantLogoAsync(
+        Guid fileId,
+        IMasterPlatformDbContext dbContext,
+        IFileStorageService fileStorageService,
+        CancellationToken cancellationToken)
+    {
+        var fileAttachment = await dbContext.FileAttachments
+            .AsNoTracking()
+            .FirstOrDefaultAsync(f => f.Id == fileId && !f.IsDeleted, cancellationToken);
+
+        if (fileAttachment is null)
+        {
+            return Results.NotFound();
+        }
+
+        var downloadResult = await fileStorageService.DownloadFileAsync(
+            fileAttachment.ObjectKey,
+            fileAttachment.BucketName,
+            cancellationToken);
+
+        if (!downloadResult.IsSuccess || downloadResult.Value is null)
+        {
+            return Results.NotFound();
+        }
+
+        return Results.File(
+            downloadResult.Value,
+            fileAttachment.ContentType,
+            fileAttachment.FileName,
+            enableRangeProcessing: false);
+    }
+
+    private static string? RewriteToPublicTenantLogoProxy(string? logoUrl)
+    {
+        if (string.IsNullOrWhiteSpace(logoUrl))
+        {
             return logoUrl;
         }
 
-        var urlResult = await fileStorageService.GetPresignedDownloadUrlAsync(
-            fileAttachment.ObjectKey,
-            fileAttachment.BucketName,
-            null,
-            cancellationToken);
+        if (!Uri.TryCreate(logoUrl, UriKind.Absolute, out var absoluteUri))
+        {
+            return logoUrl;
+        }
 
-        return urlResult.IsSuccess ? urlResult.Value : logoUrl;
+        var builder = new UriBuilder(absoluteUri)
+        {
+            Scheme = Uri.UriSchemeHttps,
+            Host = "mof.netaq.pro",
+            Port = -1,
+            Path = $"/minio{absoluteUri.AbsolutePath}"
+        };
+
+        return builder.Uri.ToString();
     }
 
     private static string? GetFileName(string objectKey)
