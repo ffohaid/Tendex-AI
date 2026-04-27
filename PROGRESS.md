@@ -1106,3 +1106,5 @@ Live validation after the successful deployment revealed that the tenant login l
   - `dotnet build backend/src/TendexAI.API/TendexAI.API.csproj` ✅
   - `pnpm build` (frontend) ✅
 - This fix keeps the scope narrow and targets the actual public login bootstrap path without refactoring unrelated branding workflows.
+- Follow-up hardening was applied to `backend/src/TendexAI.API/Endpoints/TenantEndpoints.cs` after live validation still showed a raw internal MinIO URL. The public resolve endpoint now also matches legacy logo URLs against `FileAttachments` for the same tenant using exact `(BucketName, ObjectKey)` lookup with a filename-based fallback, then regenerates a fresh download URL from the canonical attachment record instead of trusting the stale stored URL string.
+- Validation after this hardening: `dotnet build backend/src/TendexAI.API/TendexAI.API.csproj` ✅

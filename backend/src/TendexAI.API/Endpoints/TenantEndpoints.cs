@@ -389,6 +389,7 @@ public static class TenantEndpoints
         if (tenant is null)
             return Results.NotFound(new { Error = "No active tenant found for the given hostname." });
         var normalizedLogoUrl = await ResolveLogoUrlAsync(
+            tenant.Id,
             tenant.LogoUrl,
             dbContext,
             fileStorageService,
@@ -405,6 +406,7 @@ public static class TenantEndpoints
     }
 
     private static async Task<string?> ResolveLogoUrlAsync(
+        Guid tenantId,
         string? logoUrl,
         IMasterPlatformDbContext dbContext,
         IFileStorageService fileStorageService,
@@ -415,38 +417,74 @@ public static class TenantEndpoints
             return logoUrl;
         }
 
+        FileAttachment? fileAttachment = null;
+
         if (Guid.TryParse(logoUrl, out var fileId))
         {
-            var fileAttachment = await dbContext.FileAttachments
+            fileAttachment = await dbContext.FileAttachments
                 .AsNoTracking()
                 .FirstOrDefaultAsync(f => f.Id == fileId && !f.IsDeleted, cancellationToken);
+        }
+        else if (TryExtractStorageLocation(logoUrl, out var bucketName, out var objectKey))
+        {
+            fileAttachment = await dbContext.FileAttachments
+                .AsNoTracking()
+                .Where(f => !f.IsDeleted && f.TenantId == tenantId)
+                .OrderByDescending(f => f.CreatedAt)
+                .FirstOrDefaultAsync(
+                    f => f.BucketName == bucketName && f.ObjectKey == objectKey,
+                    cancellationToken);
 
             if (fileAttachment is null)
             {
-                return logoUrl;
+                var fileName = GetFileName(objectKey);
+                if (!string.IsNullOrWhiteSpace(fileName))
+                {
+                    fileAttachment = await dbContext.FileAttachments
+                        .AsNoTracking()
+                        .Where(f => !f.IsDeleted && f.TenantId == tenantId)
+                        .OrderByDescending(f => f.CreatedAt)
+                        .FirstOrDefaultAsync(f => f.FileName == fileName, cancellationToken);
+                }
             }
 
-            var urlResult = await fileStorageService.GetPresignedDownloadUrlAsync(
-                fileAttachment.ObjectKey,
-                fileAttachment.BucketName,
-                null,
-                cancellationToken);
+            if (fileAttachment is null)
+            {
+                var legacyUrlResult = await fileStorageService.GetPresignedDownloadUrlAsync(
+                    objectKey,
+                    bucketName,
+                    null,
+                    cancellationToken);
 
-            return urlResult.IsSuccess ? urlResult.Value : logoUrl;
+                return legacyUrlResult.IsSuccess ? legacyUrlResult.Value : logoUrl;
+            }
         }
 
-        if (!TryExtractStorageLocation(logoUrl, out var bucketName, out var objectKey))
+        if (fileAttachment is null)
         {
             return logoUrl;
         }
 
-        var legacyUrlResult = await fileStorageService.GetPresignedDownloadUrlAsync(
-            objectKey,
-            bucketName,
+        var urlResult = await fileStorageService.GetPresignedDownloadUrlAsync(
+            fileAttachment.ObjectKey,
+            fileAttachment.BucketName,
             null,
             cancellationToken);
 
-        return legacyUrlResult.IsSuccess ? legacyUrlResult.Value : logoUrl;
+        return urlResult.IsSuccess ? urlResult.Value : logoUrl;
+    }
+
+    private static string? GetFileName(string objectKey)
+    {
+        if (string.IsNullOrWhiteSpace(objectKey))
+        {
+            return null;
+        }
+
+        var segments = objectKey
+            .Split('/', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+
+        return segments.Length == 0 ? null : segments[^1];
     }
 
     private static bool TryExtractStorageLocation(string logoUrl, out string bucketName, out string objectKey)
