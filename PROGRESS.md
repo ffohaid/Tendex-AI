@@ -1063,3 +1063,7 @@ The deployment workflow needed one additional hotfix after the first retry: the 
 - `dotnet build backend/src/TendexAI.API/TendexAI.API.csproj`
 - `dotnet build backend/tests/TendexAI.IntegrationTests/TendexAI.IntegrationTests.csproj`
 - Full local execution of `TendexAI.IntegrationTests` was not possible in this sandbox because Docker/Testcontainers is unavailable here. Final integration validation must therefore continue through GitHub Actions `Test Gate`.
+
+### Follow-up
+- Updated `backend/tests/TendexAI.Infrastructure.Tests/Application/Auth/LoginCommandHandlerTests.cs` so the mocked commands use the same `TenantId` as the test user wherever the new tenant-boundary check is expected to succeed.
+- Re-ran `dotnet test backend/tests/TendexAI.Infrastructure.Tests/TendexAI.Infrastructure.Tests.csproj` locally and the suite passed completely: `817 passed, 0 failed`.

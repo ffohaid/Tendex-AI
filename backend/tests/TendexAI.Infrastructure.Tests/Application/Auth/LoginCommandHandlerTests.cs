@@ -65,13 +65,14 @@ public sealed class LoginCommandHandlerTests
     public async Task Handle_Should_Return_Failure_When_Account_Is_Deactivated()
     {
         // Arrange
-        var user = new ApplicationUser("test@example.com", "Test", "User", null, Guid.NewGuid());
+        var tenantId = Guid.NewGuid();
+        var user = new ApplicationUser("test@example.com", "Test", "User", null, tenantId);
         user.Deactivate();
 
         _userRepositoryMock.Setup(x => x.GetByEmailAsync("test@example.com", It.IsAny<CancellationToken>()))
             .ReturnsAsync(user);
 
-        var command = new LoginCommand("test@example.com", "password", "127.0.0.1", null, Guid.NewGuid());
+        var command = new LoginCommand("test@example.com", "password", "127.0.0.1", null, tenantId);
 
         // Act
         var result = await _sut.Handle(command, CancellationToken.None);
@@ -85,7 +86,8 @@ public sealed class LoginCommandHandlerTests
     public async Task Handle_Should_Return_Failure_When_Password_Is_Invalid()
     {
         // Arrange
-        var user = new ApplicationUser("test@example.com", "Test", "User", null, Guid.NewGuid());
+        var tenantId = Guid.NewGuid();
+        var user = new ApplicationUser("test@example.com", "Test", "User", null, tenantId);
         user.SetPasswordHash("hashed_password");
 
         _userRepositoryMock.Setup(x => x.GetByEmailAsync("test@example.com", It.IsAny<CancellationToken>()))
@@ -94,7 +96,7 @@ public sealed class LoginCommandHandlerTests
         _passwordHasherMock.Setup(x => x.VerifyPassword("wrong_password", "hashed_password"))
             .Returns(false);
 
-        var command = new LoginCommand("test@example.com", "wrong_password", "127.0.0.1", null, Guid.NewGuid());
+        var command = new LoginCommand("test@example.com", "wrong_password", "127.0.0.1", null, tenantId);
 
         // Act
         var result = await _sut.Handle(command, CancellationToken.None);
@@ -108,7 +110,8 @@ public sealed class LoginCommandHandlerTests
     public async Task Handle_Should_Return_MfaRequired_When_Mfa_Is_Enabled()
     {
         // Arrange
-        var user = new ApplicationUser("test@example.com", "Test", "User", null, Guid.NewGuid());
+        var tenantId = Guid.NewGuid();
+        var user = new ApplicationUser("test@example.com", "Test", "User", null, tenantId);
         user.SetPasswordHash("hashed_password");
         user.EnableMfa("JBSWY3DPEHPK3PXP");
 
@@ -121,7 +124,7 @@ public sealed class LoginCommandHandlerTests
         _sessionStoreMock.Setup(x => x.CreateSessionAsync(It.IsAny<SessionData>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync("mfa-session-id");
 
-        var command = new LoginCommand("test@example.com", "correct_password", "127.0.0.1", null, Guid.NewGuid());
+        var command = new LoginCommand("test@example.com", "correct_password", "127.0.0.1", null, tenantId);
 
         // Act
         var result = await _sut.Handle(command, CancellationToken.None);
@@ -137,7 +140,8 @@ public sealed class LoginCommandHandlerTests
     public async Task Handle_Should_Return_Tokens_On_Successful_Login()
     {
         // Arrange
-        var user = new ApplicationUser("test@example.com", "Test", "User", null, Guid.NewGuid());
+        var tenantId = Guid.NewGuid();
+        var user = new ApplicationUser("test@example.com", "Test", "User", null, tenantId);
         user.SetPasswordHash("hashed_password");
 
         _userRepositoryMock.Setup(x => x.GetByEmailAsync("test@example.com", It.IsAny<CancellationToken>()))
@@ -146,7 +150,7 @@ public sealed class LoginCommandHandlerTests
         _passwordHasherMock.Setup(x => x.VerifyPassword("correct_password", "hashed_password"))
             .Returns(true);
 
-        _tokenServiceMock.Setup(x => x.GenerateAccessToken(user, It.IsAny<IEnumerable<string>>(), It.IsAny<IEnumerable<string>>(), It.IsAny<Guid>()))
+        _tokenServiceMock.Setup(x => x.GenerateAccessToken(user, It.IsAny<IEnumerable<string>>(), It.IsAny<IEnumerable<string>>(), tenantId))
             .Returns("access-token");
 
         _tokenServiceMock.Setup(x => x.GenerateRefreshToken())
@@ -155,7 +159,7 @@ public sealed class LoginCommandHandlerTests
         _sessionStoreMock.Setup(x => x.CreateSessionAsync(It.IsAny<SessionData>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync("session-id");
 
-        var command = new LoginCommand("test@example.com", "correct_password", "127.0.0.1", null, Guid.NewGuid());
+        var command = new LoginCommand("test@example.com", "correct_password", "127.0.0.1", null, tenantId);
 
         // Act
         var result = await _sut.Handle(command, CancellationToken.None);
