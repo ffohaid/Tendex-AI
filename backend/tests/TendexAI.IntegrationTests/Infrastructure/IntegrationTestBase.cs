@@ -44,6 +44,7 @@ public abstract class IntegrationTestBase : IClassFixture<TendexWebApplicationFa
     {
         Factory = factory;
         Client = factory.CreateClient();
+        Client.DefaultRequestHeaders.Add("X-Tenant-Id", TestTenantId.ToString());
     }
 
     /// <summary>
@@ -231,6 +232,7 @@ public abstract class IntegrationTestBase : IClassFixture<TendexWebApplicationFa
         var authResponse = await response.Content.ReadFromJsonAsync<AuthTokenResponseDto>(JsonOptions);
 
         var authenticatedClient = Factory.CreateClient();
+        authenticatedClient.DefaultRequestHeaders.Add("X-Tenant-Id", TestTenantId.ToString());
         authenticatedClient.DefaultRequestHeaders.Authorization =
             new AuthenticationHeaderValue("Bearer", authResponse!.AccessToken);
 

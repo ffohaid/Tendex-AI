@@ -86,6 +86,7 @@ public sealed class SessionManagementIntegrationTests : IntegrationTestBase
         var loginContent = await loginResponse.Content.ReadFromJsonAsync<AuthTokenResponseDto>(JsonOptions);
 
         var authenticatedClient = Factory.CreateClient();
+        authenticatedClient.DefaultRequestHeaders.Add("X-Tenant-Id", TestTenantId.ToString());
         authenticatedClient.DefaultRequestHeaders.Authorization =
             new AuthenticationHeaderValue("Bearer", loginContent!.AccessToken);
 
@@ -186,9 +187,11 @@ public sealed class SessionManagementIntegrationTests : IntegrationTestBase
 
         // Assert - Both sessions should be valid
         var client1 = Factory.CreateClient();
+        client1.DefaultRequestHeaders.Add("X-Tenant-Id", TestTenantId.ToString());
         client1.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", content1!.AccessToken);
 
         var client2 = Factory.CreateClient();
+        client2.DefaultRequestHeaders.Add("X-Tenant-Id", TestTenantId.ToString());
         client2.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", content2!.AccessToken);
 
         var accessResponse1 = await client1.GetAsync("/api/v1/competitions?page=1&pageSize=10");

@@ -1072,3 +1072,8 @@ The deployment workflow needed one additional hotfix after the first retry: the 
 - While inspecting the live `Test Gate` logs, the remaining integration failure was traced to `ConnectionStringEncryptor` throwing because `Security:EncryptionKey` was absent in the integration-test host configuration.
 - Added a runtime-generated 32-byte Base64 test encryption key inside `backend/tests/TendexAI.IntegrationTests/Infrastructure/TendexWebApplicationFactory.cs` and injected it through in-memory configuration for the `Testing` environment only.
 - Rebuilt `backend/tests/TendexAI.IntegrationTests/TendexAI.IntegrationTests.csproj` successfully after the change.
+
+### Follow-up 3
+- The next live `Test Gate` failure showed that authenticated integration-test clients were reaching protected endpoints without an `X-Tenant-Id` header, which left `TenantDbContextFactory` without a tenant connection string.
+- Added the tenant header in the shared integration-test base client, the authenticated-client helper, and the remaining manual authenticated clients in the auth/session integration tests.
+- Rebuilt `backend/tests/TendexAI.IntegrationTests/TendexAI.IntegrationTests.csproj` successfully after the header alignment change.

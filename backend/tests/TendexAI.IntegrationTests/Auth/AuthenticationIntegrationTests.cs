@@ -195,6 +195,7 @@ public sealed class AuthenticationIntegrationTests : IntegrationTestBase
         var loginContent = await loginResponse.Content.ReadFromJsonAsync<AuthTokenResponseDto>(JsonOptions);
 
         var authenticatedClient = Factory.CreateClient();
+        authenticatedClient.DefaultRequestHeaders.Add("X-Tenant-Id", TestTenantId.ToString());
         authenticatedClient.DefaultRequestHeaders.Authorization =
             new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", loginContent!.AccessToken);
 
