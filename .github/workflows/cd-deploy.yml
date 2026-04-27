@@ -260,6 +260,14 @@ jobs:
             exit 1
           fi
 
+          DOMAIN="${{ vars.DOMAIN || 'tendex.example.com' }}"
+          MINIO_PUBLIC_DOWNLOAD_BASE_URL="https://${DOMAIN}/minio"
+          if grep -q '^MINIO_PUBLIC_DOWNLOAD_BASE_URL=' "${DEPLOY_PATH}/infrastructure/.env.prod"; then
+            sed -i "s|^MINIO_PUBLIC_DOWNLOAD_BASE_URL=.*|MINIO_PUBLIC_DOWNLOAD_BASE_URL=${MINIO_PUBLIC_DOWNLOAD_BASE_URL}|" "${DEPLOY_PATH}/infrastructure/.env.prod"
+          else
+            printf '\nMINIO_PUBLIC_DOWNLOAD_BASE_URL=%s\n' "${MINIO_PUBLIC_DOWNLOAD_BASE_URL}" >> "${DEPLOY_PATH}/infrastructure/.env.prod"
+          fi
+
           # Run database migrations (if applicable)
           echo "[4/6] Running database migrations..."
           cd "${DEPLOY_PATH}/infrastructure"

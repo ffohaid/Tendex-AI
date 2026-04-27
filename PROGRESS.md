@@ -1089,3 +1089,6 @@ After isolating RabbitMQ in the test environment, `Test Gate` narrowed down to o
 
 ### Follow-up 7
 The final remaining integration failure in `AddCommitteeMember_WithValidData_ShouldReturn200` was traced to test seed data rather than production logic: the seeded regular-user role still used the normalized name `REGULAR USER`, while the current committee member compatibility matrix accepts `MEMBER` (and related committee role names). The integration seed was updated accordingly, and the integration test project rebuilt successfully after the change.
+
+### Follow-up 8
+After the deployment workflow succeeded, live production validation still showed tenant branding logos loading from an internal `tendex-minio:9000` URL. Root cause analysis confirmed that the runtime fix depended on `MINIO_PUBLIC_DOWNLOAD_BASE_URL`, but the VPS deployment reuses the existing `.env.prod` file and the current Nginx config had no public proxy path for MinIO downloads. A minimal production-safe follow-up was applied by adding an Nginx `/minio/` reverse-proxy location that preserves the internal MinIO host header for presigned URL validation, and by updating the deployment workflow to upsert `MINIO_PUBLIC_DOWNLOAD_BASE_URL=https://${DOMAIN}/minio` into the server-side `.env.prod` before recreating the containers.
