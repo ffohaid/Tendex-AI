@@ -242,16 +242,9 @@ jobs:
           docker load < /tmp/tendex-backend.tar.gz
           docker load < /tmp/tendex-frontend.tar.gz
 
-          # Tag images as latest
-          BACKEND_IMAGE=$(docker images --format '{{.Repository}}:{{.Tag}}' | grep 'tendex-backend:' | grep -v latest | head -1)
-          FRONTEND_IMAGE=$(docker images --format '{{.Repository}}:{{.Tag}}' | grep 'tendex-frontend:' | grep -v latest | head -1)
-
-          if [ -n "${BACKEND_IMAGE}" ]; then
-            docker tag "${BACKEND_IMAGE}" tendex-backend:latest
-          fi
-          if [ -n "${FRONTEND_IMAGE}" ]; then
-            docker tag "${FRONTEND_IMAGE}" tendex-frontend:latest
-          fi
+          # Tag the exact images loaded for this workflow run as latest
+          docker tag tendex-backend:${{ github.sha }} tendex-backend:latest
+          docker tag tendex-frontend:${{ github.sha }} tendex-frontend:latest
 
           # Verify .env.prod exists
           echo "[3/6] Verifying environment configuration..."
@@ -276,7 +269,6 @@ jobs:
           # Deploy with zero-downtime rolling update
           echo "[5/6] Deploying services..."
           docker compose -f docker-compose.prod.yml --env-file .env.prod up -d \
-            --build \
             --remove-orphans \
             --force-recreate backend frontend
 
