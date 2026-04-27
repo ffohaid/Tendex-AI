@@ -1095,3 +1095,14 @@ After the deployment workflow succeeded, live production validation still showed
 
 ### Follow-up 9
 Live validation after the successful deployment revealed that the tenant login logo was still loaded from an internal MinIO URL. Deeper tracing confirmed a second root cause: public branding reads were already passing through `GetTenantBrandingQueryHandler`, but legacy tenant records that stored a full MinIO URL were returned unchanged because only GUID-based logo values were normalized. In parallel, the operator branding editor (`TenantBrandingView.vue`) was still persisting the temporary download URL returned after upload instead of the uploaded `fileId`. A minimal corrective patch was applied by extending `GetTenantBrandingQueryHandler` to recognize legacy MinIO-style URLs, extract bucket/object-key information, and regenerate a fresh public download URL, while the operator branding view now stores `fileId` for persistence and keeps a separate preview URL for UI display. Targeted verification then passed with `dotnet build backend/src/TendexAI.API/TendexAI.API.csproj` and `pnpm build` in `frontend/`.
+
+## 2026-04-27 - Final login branding source fix
+- Root cause of the remaining production branding defect was narrowed to the public tenant bootstrap endpoint (`GET /api/v1/tenants/resolve?hostname=...`) that feeds the login page. It was still returning `tenant.LogoUrl` directly, so legacy/internal MinIO URLs bypassed the newer branding normalization path.
+- Applied a minimal production fix in `backend/src/TendexAI.API/Endpoints/TenantEndpoints.cs` to normalize the resolved tenant logo before returning `TenantResolveDto`. The endpoint now:
+  - resolves file IDs through `IMasterPlatformDbContext.FileAttachments`,
+  - regenerates presigned/public download URLs through `IFileStorageService`, and
+  - normalizes legacy stored MinIO URLs by extracting bucket/object key and regenerating a browser-safe URL instead of returning the raw internal host.
+- Validation after the code change:
+  - `dotnet build backend/src/TendexAI.API/TendexAI.API.csproj` ✅
+  - `pnpm build` (frontend) ✅
+- This fix keeps the scope narrow and targets the actual public login bootstrap path without refactoring unrelated branding workflows.

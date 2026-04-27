@@ -1,6 +1,9 @@
 using MediatR;
+using System.Net;
 using System.Security.Claims;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+using TendexAI.Application.Common.Interfaces;
 using TendexAI.Application.Features.Tenants.Commands.ChangeTenantStatus;
 using TendexAI.Application.Features.Tenants.Commands.CreateTenant;
 using TendexAI.Application.Features.Tenants.Commands.OperatorResetTenantAdminPassword;
@@ -337,6 +340,8 @@ public static class TenantEndpoints
     /// </summary>
     private static async Task<IResult> ResolveTenantByHostname(
         ITenantRepository tenantRepository,
+        IMasterPlatformDbContext dbContext,
+        IFileStorageService fileStorageService,
         [FromQuery] string? hostname = null)
     {
         if (string.IsNullOrWhiteSpace(hostname))
@@ -383,15 +388,113 @@ public static class TenantEndpoints
 
         if (tenant is null)
             return Results.NotFound(new { Error = "No active tenant found for the given hostname." });
+        var normalizedLogoUrl = await ResolveLogoUrlAsync(
+            tenant.LogoUrl,
+            dbContext,
+            fileStorageService,
+            CancellationToken.None);
 
         return Results.Ok(new TenantResolveDto(
             Id: tenant.Id,
             NameAr: tenant.NameAr,
             NameEn: tenant.NameEn,
             Subdomain: tenant.Subdomain,
-            LogoUrl: tenant.LogoUrl,
+            LogoUrl: normalizedLogoUrl,
             PrimaryColor: tenant.PrimaryColor,
             SecondaryColor: tenant.SecondaryColor));
+    }
+
+    private static async Task<string?> ResolveLogoUrlAsync(
+        string? logoUrl,
+        IMasterPlatformDbContext dbContext,
+        IFileStorageService fileStorageService,
+        CancellationToken cancellationToken)
+    {
+        if (string.IsNullOrWhiteSpace(logoUrl))
+        {
+            return logoUrl;
+        }
+
+        if (Guid.TryParse(logoUrl, out var fileId))
+        {
+            var fileAttachment = await dbContext.FileAttachments
+                .AsNoTracking()
+                .FirstOrDefaultAsync(f => f.Id == fileId && !f.IsDeleted, cancellationToken);
+
+            if (fileAttachment is null)
+            {
+                return logoUrl;
+            }
+
+            var urlResult = await fileStorageService.GetPresignedDownloadUrlAsync(
+                fileAttachment.ObjectKey,
+                fileAttachment.BucketName,
+                null,
+                cancellationToken);
+
+            return urlResult.IsSuccess ? urlResult.Value : logoUrl;
+        }
+
+        if (!TryExtractStorageLocation(logoUrl, out var bucketName, out var objectKey))
+        {
+            return logoUrl;
+        }
+
+        var legacyUrlResult = await fileStorageService.GetPresignedDownloadUrlAsync(
+            objectKey,
+            bucketName,
+            null,
+            cancellationToken);
+
+        return legacyUrlResult.IsSuccess ? legacyUrlResult.Value : logoUrl;
+    }
+
+    private static bool TryExtractStorageLocation(string logoUrl, out string bucketName, out string objectKey)
+    {
+        bucketName = string.Empty;
+        objectKey = string.Empty;
+
+        var path = ExtractPath(logoUrl);
+        if (string.IsNullOrWhiteSpace(path))
+        {
+            return false;
+        }
+
+        var segments = path
+            .Split('/', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+
+        if (segments.Length < 2)
+        {
+            return false;
+        }
+
+        var bucketIndex = string.Equals(segments[0], "minio", StringComparison.OrdinalIgnoreCase)
+            ? 1
+            : 0;
+
+        if (segments.Length <= bucketIndex + 1)
+        {
+            return false;
+        }
+
+        bucketName = segments[bucketIndex];
+        objectKey = WebUtility.UrlDecode(string.Join('/', segments.Skip(bucketIndex + 1)));
+        return !string.IsNullOrWhiteSpace(bucketName) && !string.IsNullOrWhiteSpace(objectKey);
+    }
+
+    private static string? ExtractPath(string value)
+    {
+        if (Uri.TryCreate(value, UriKind.Absolute, out var absoluteUri))
+        {
+            return absoluteUri.AbsolutePath;
+        }
+
+        if (Uri.TryCreate(value, UriKind.Relative, out var relativeUri))
+        {
+            return relativeUri.OriginalString;
+        }
+
+        return null;
     }
 
     /// <summary>
