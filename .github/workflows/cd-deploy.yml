@@ -77,11 +77,9 @@ jobs:
         run: |
           dotnet test backend/tests/TendexAI.Infrastructure.Tests/TendexAI.Infrastructure.Tests.csproj \
             --configuration Release \
-            --no-build \
             --verbosity normal
           dotnet test backend/tests/TendexAI.IntegrationTests/TendexAI.IntegrationTests.csproj \
             --configuration Release \
-            --no-build \
             --verbosity normal
 
   # ====================================================================

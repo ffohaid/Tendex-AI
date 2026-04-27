@@ -1045,3 +1045,4 @@ A production-focused QC remediation wave was completed for the issues reported i
 
 ### Deployment workflow hotfix
 After the QC batch was pushed, the production deployment workflow failed in the GitHub `Test Gate` because `cd-deploy.yml` still referenced `backend/TendexAI.slnx`, which is not present in the repository. The workflow was corrected in place to restore and build the actual API project and to execute the two existing backend test projects directly before re-triggering deployment.
+The deployment workflow needed one additional hotfix after the first retry: the test-gate step was still invoking the two test projects with `--no-build`, which fails in GitHub Actions because only the API project had been built earlier in the job. The flag was removed so each test project can build its own test assembly before execution.
