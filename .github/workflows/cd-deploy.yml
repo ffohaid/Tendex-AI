@@ -65,18 +65,24 @@ jobs:
             nuget-${{ runner.os }}-
 
       - name: Restore dependencies
-        run: dotnet restore backend/TendexAI.slnx
+        run: |
+          dotnet restore backend/src/TendexAI.API/TendexAI.API.csproj
+          dotnet restore backend/tests/TendexAI.Infrastructure.Tests/TendexAI.Infrastructure.Tests.csproj
+          dotnet restore backend/tests/TendexAI.IntegrationTests/TendexAI.IntegrationTests.csproj
 
       - name: Build solution
-        run: dotnet build backend/TendexAI.slnx --configuration Release --no-restore
+        run: dotnet build backend/src/TendexAI.API/TendexAI.API.csproj --configuration Release --no-restore
 
       - name: Run unit tests
         run: |
-          dotnet test backend/TendexAI.slnx \
+          dotnet test backend/tests/TendexAI.Infrastructure.Tests/TendexAI.Infrastructure.Tests.csproj \
             --configuration Release \
             --no-build \
-            --verbosity normal \
-            --filter "FullyQualifiedName!~IntegrationTests"
+            --verbosity normal
+          dotnet test backend/tests/TendexAI.IntegrationTests/TendexAI.IntegrationTests.csproj \
+            --configuration Release \
+            --no-build \
+            --verbosity normal
 
   # ====================================================================
   # Job 2: Build Docker Images

@@ -1042,3 +1042,6 @@ A production-focused QC remediation wave was completed for the issues reported i
 - `frontend/src/views/rfp/BookletEditorView.vue`
 - `frontend/src/views/rfp/TemplateLibraryView.vue`
 - `infrastructure/docker-compose.prod.yml`
+
+### Deployment workflow hotfix
+After the QC batch was pushed, the production deployment workflow failed in the GitHub `Test Gate` because `cd-deploy.yml` still referenced `backend/TendexAI.slnx`, which is not present in the repository. The workflow was corrected in place to restore and build the actual API project and to execute the two existing backend test projects directly before re-triggering deployment.
