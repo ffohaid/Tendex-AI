@@ -1067,3 +1067,8 @@ The deployment workflow needed one additional hotfix after the first retry: the 
 ### Follow-up
 - Updated `backend/tests/TendexAI.Infrastructure.Tests/Application/Auth/LoginCommandHandlerTests.cs` so the mocked commands use the same `TenantId` as the test user wherever the new tenant-boundary check is expected to succeed.
 - Re-ran `dotnet test backend/tests/TendexAI.Infrastructure.Tests/TendexAI.Infrastructure.Tests.csproj` locally and the suite passed completely: `817 passed, 0 failed`.
+
+### Follow-up 2
+- While inspecting the live `Test Gate` logs, the remaining integration failure was traced to `ConnectionStringEncryptor` throwing because `Security:EncryptionKey` was absent in the integration-test host configuration.
+- Added a runtime-generated 32-byte Base64 test encryption key inside `backend/tests/TendexAI.IntegrationTests/Infrastructure/TendexWebApplicationFactory.cs` and injected it through in-memory configuration for the `Testing` environment only.
+- Rebuilt `backend/tests/TendexAI.IntegrationTests/TendexAI.IntegrationTests.csproj` successfully after the change.

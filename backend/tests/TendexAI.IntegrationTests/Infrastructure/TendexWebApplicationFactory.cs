@@ -1,8 +1,10 @@
+using System.Security.Cryptography;
 using DotNet.Testcontainers.Builders;
 using DotNet.Testcontainers.Containers;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Hosting;
@@ -20,6 +22,8 @@ namespace TendexAI.IntegrationTests.Infrastructure;
 /// </summary>
 public sealed class TendexWebApplicationFactory : WebApplicationFactory<Program>, IAsyncLifetime
 {
+    private static readonly string TestEncryptionKey = Convert.ToBase64String(RandomNumberGenerator.GetBytes(32));
+
     private readonly MsSqlContainer _sqlContainer = new MsSqlBuilder()
         .WithImage("mcr.microsoft.com/mssql/server:2022-latest")
         .WithPassword("Integration_Test_P@ss123!")
@@ -80,6 +84,13 @@ public sealed class TendexWebApplicationFactory : WebApplicationFactory<Program>
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
         builder.UseEnvironment("Testing");
+        builder.ConfigureAppConfiguration((_, configurationBuilder) =>
+        {
+            configurationBuilder.AddInMemoryCollection(new Dictionary<string, string?>
+            {
+                ["Security:EncryptionKey"] = TestEncryptionKey
+            });
+        });
 
         builder.ConfigureServices(services =>
         {
