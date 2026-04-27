@@ -68,7 +68,8 @@ public static class CompetitionMapper
             Sections: entity.Sections.Select(ToSectionDto).ToList(),
             BoqItems: entity.BoqItems.Select(ToBoqItemDto).ToList(),
             EvaluationCriteria: entity.EvaluationCriteria.Select(ToCriterionDto).ToList(),
-            Attachments: entity.Attachments.Select(ToAttachmentDto).ToList());
+            Attachments: entity.Attachments.Select(ToAttachmentDto).ToList(),
+            RequiredAttachmentTypes: entity.RequiredAttachmentTypes.ToList());
     }
 
     public static RfpSectionDto ToSectionDto(RfpSection entity)

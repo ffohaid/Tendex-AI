@@ -506,7 +506,7 @@ export const useRfpStore = defineStore('rfp', () => {
   /** Manual save */
   async function saveForm() {
     isDirty.value = true
-    await performAutoSave()
+    await saveCurrentStep()
   }
 
   /**
@@ -632,8 +632,7 @@ export const useRfpStore = defineStore('rfp', () => {
     } else {
       autoSaveStatus.value = 'error'
       console.warn('[SaveStep] Step save failed:', result.message)
-      // Non-blocking: allow user to continue even if save fails
-      return true
+      return false
     }
   }
 

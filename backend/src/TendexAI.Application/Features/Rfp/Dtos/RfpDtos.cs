@@ -62,7 +62,8 @@ public sealed record CompetitionDetailDto(
     IReadOnlyList<RfpSectionDto> Sections,
     IReadOnlyList<BoqItemDto> BoqItems,
     IReadOnlyList<EvaluationCriterionDto> EvaluationCriteria,
-    IReadOnlyList<RfpAttachmentDto> Attachments);
+    IReadOnlyList<RfpAttachmentDto> Attachments,
+    IReadOnlyList<string> RequiredAttachmentTypes);
 
 /// <summary>
 /// DTO for RFP section.

@@ -5,6 +5,7 @@ import { useI18n } from 'vue-i18n'
 import { httpGet, httpPost, httpPut } from '@/services/http'
 import RichTextEditor from '@/components/common/RichTextEditor.vue'
 import OfficialBookletDocument from '@/components/rfp/OfficialBookletDocument.vue'
+import { useBrandingStore } from '@/stores/branding'
 import {
   initiateWorkflow,
   getWorkflowStatus,
@@ -67,6 +68,7 @@ interface BookletEditorData {
 const route = useRoute()
 const router = useRouter()
 const { locale } = useI18n()
+const brandingStore = useBrandingStore()
 
 // ─── State ──────────────────────────────────────────────
 const competitionId = computed(() => route.params.id as string)
@@ -178,7 +180,9 @@ const officialBookletMeta = computed(() => ({
   referenceNumber: referenceNumber.value,
   issueDate: issueDate.value,
   administrationName: departmentName.value,
-  organizationName: 'المملكة العربية السعودية',
+  organizationName: brandingStore.nameAr || 'الجهة الحكومية',
+  organizationNameEn: brandingStore.nameEn || undefined,
+  logoUrl: brandingStore.logoUrl,
   versionLabel: 'الأولى',
 }))
 
@@ -491,13 +495,40 @@ async function loadCompetitionStatus() {
 }
 
 async function loadApprovalStatus() {
+  const workflowCandidates: Array<{ fromStatus: number; toStatus: number }> = route.query.stepId
+    ? [
+        { fromStatus: 2, toStatus: 3 }, // PendingApproval -> Approved (approval tasks)
+        { fromStatus: 1, toStatus: 2 }, // UnderPreparation -> PendingApproval (fallback)
+      ]
+    : competitionStatus.value >= 2
+      ? [{ fromStatus: 2, toStatus: 3 }]
+      : [{ fromStatus: 1, toStatus: 2 }]
+
   try {
-    const result = await getWorkflowStatus(
-      competitionId.value,
-      1, // UnderPreparation
-      2, // PendingApproval
-    )
-    approvalStatus.value = result
+    for (const candidate of workflowCandidates) {
+      const result = await getWorkflowStatus(
+        competitionId.value,
+        candidate.fromStatus,
+        candidate.toStatus,
+      )
+
+      if (!result.hasWorkflow) {
+        continue
+      }
+
+      if (route.query.stepId) {
+        const requestedStepId = String(route.query.stepId)
+        const hasRequestedStep = result.steps.some(step => step.stepId === requestedStepId)
+        if (!hasRequestedStep) {
+          continue
+        }
+      }
+
+      approvalStatus.value = result
+      return
+    }
+
+    approvalStatus.value = null
   } catch {
     approvalStatus.value = null
   }
@@ -589,6 +620,17 @@ function openRejectModal(stepId: string) {
   rejectStepId.value = stepId
   rejectComment.value = ''
   showRejectModal.value = true
+}
+
+function isStepActionable(step: { stepOrder: number; status: ApprovalStepStatus }) {
+  if (!approvalStatus.value || approvalStatus.value.isCompleted || approvalStatus.value.isRejected) {
+    return false
+  }
+
+  const isCurrentStep = step.stepOrder === approvalStatus.value.currentStepOrder
+  const isPendingLike = step.status === ApprovalStepStatus.Pending || step.status === ApprovalStepStatus.InProgress
+
+  return isCurrentStep && isPendingLike
 }
 
 function getStepStatusBadge(status: ApprovalStepStatus) {
@@ -1271,7 +1313,7 @@ onBeforeUnmount(() => {
                       </p>
 
                       <!-- Action Buttons for current step -->
-                      <div v-if="step.status === 1" class="mt-2 flex gap-2">
+                      <div v-if="isStepActionable(step)" class="mt-2 flex gap-2">
                         <button
                           class="rounded-lg bg-green-600 px-3 py-1 text-xs font-medium text-white hover:bg-green-700"
                           @click="openApproveModal(step.stepId)"

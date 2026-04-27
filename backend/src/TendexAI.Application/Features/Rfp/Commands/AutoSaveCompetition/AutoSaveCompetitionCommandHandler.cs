@@ -66,6 +66,16 @@ public sealed class AutoSaveCompetitionCommandHandler
                 return Result.Failure<AutoSaveResultDto>(updateResult.Error!);
         }
 
+        if (request.RequiredAttachmentTypes is not null)
+        {
+            var attachmentTypesResult = competition.UpdateRequiredAttachmentTypes(
+                request.RequiredAttachmentTypes,
+                request.ModifiedByUserId);
+
+            if (attachmentTypesResult.IsFailure)
+                return Result.Failure<AutoSaveResultDto>(attachmentTypesResult.Error!);
+        }
+
         // Record the auto-save with optional wizard step
         competition.RecordAutoSave(request.CurrentWizardStep);
 

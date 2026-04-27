@@ -113,10 +113,11 @@ public sealed partial class MinioFileStorageService : IFileStorageService
                 .WithExpiry(expiry * 60); // Convert minutes to seconds
 
             var url = await _minioClient.PresignedGetObjectAsync(presignedArgs);
+            var publicUrl = NormalizePublicDownloadUrl(url);
 
             LogPresignedDownloadGenerated(_logger, objectKey, bucket, expiry);
 
-            return Result.Success(url);
+            return Result.Success(publicUrl);
         }
         catch (Exception ex)
         {
@@ -125,7 +126,38 @@ public sealed partial class MinioFileStorageService : IFileStorageService
         }
     }
 
-    /// <inheritdoc />
+    /// <summary>
+    /// Rewrites a presigned MinIO URL to a browser-reachable public base URL when configured.
+    /// </summary>
+    private string NormalizePublicDownloadUrl(string url)
+    {
+        if (string.IsNullOrWhiteSpace(_settings.PublicDownloadBaseUrl))
+            return url;
+
+        if (!Uri.TryCreate(url, UriKind.Absolute, out var originalUri))
+            return url;
+
+        if (!Uri.TryCreate(_settings.PublicDownloadBaseUrl, UriKind.Absolute, out var publicBaseUri))
+            return url;
+
+        var builder = new UriBuilder(publicBaseUri)
+        {
+            Path = CombinePaths(publicBaseUri.AbsolutePath, originalUri.AbsolutePath),
+            Query = originalUri.Query.TrimStart('?')
+        };
+
+        return builder.Uri.ToString();
+    }
+
+    private static string CombinePaths(string basePath, string relativePath)
+    {
+        var normalizedBase = string.IsNullOrWhiteSpace(basePath) || basePath == "/"
+            ? string.Empty
+            : basePath.TrimEnd('/');
+        var normalizedRelative = relativePath.StartsWith('/') ? relativePath : $"/{relativePath}";
+        return $"{normalizedBase}{normalizedRelative}";
+    }
+
     public async Task<Result<string>> GetPresignedUploadUrlAsync(
         string objectKey,
         string contentType,

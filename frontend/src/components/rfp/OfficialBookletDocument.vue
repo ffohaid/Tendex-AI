@@ -25,6 +25,8 @@ interface OfficialBookletMeta {
   issueDate?: string
   administrationName?: string
   organizationName?: string
+  organizationNameEn?: string
+  logoUrl?: string | null
   versionLabel?: string
 }
 
@@ -102,7 +104,8 @@ const groupedSections = computed<SectionGroup[]>(() => {
 const printableIssueDate = computed(() => props.meta.issueDate || '-')
 const printableReferenceNumber = computed(() => props.meta.referenceNumber || '-')
 const printableAdministrationName = computed(() => props.meta.administrationName || '-')
-const printableOrganizationName = computed(() => props.meta.organizationName || 'المملكة العربية السعودية')
+const printableOrganizationName = computed(() => props.meta.organizationName || 'الجهة الحكومية')
+const printableOrganizationNameEn = computed(() => props.meta.organizationNameEn || '')
 const printableVersionLabel = computed(() => props.meta.versionLabel || 'الأولى')
 const printableTemplateName = computed(() => props.meta.templateNameAr || 'كراسة الشروط والمواصفات')
 
@@ -133,16 +136,24 @@ function hasRenderableBlocks(section: OfficialBookletSection | null): boolean {
     <section v-if="showCover" class="booklet-page booklet-cover">
       <div class="cover-brand-row">
         <div class="brand-chip brand-chip-start">
-          <div class="brand-chip__title">EXPRO</div>
-          <div class="brand-chip__subtitle">هيئة كفاءة الإنفاق والمشروعات الحكومية</div>
+          <div class="brand-chip__title">{{ printableTemplateName }}</div>
+          <div class="brand-chip__subtitle">كراسة الشروط والمواصفات</div>
         </div>
         <div class="brand-chip brand-chip-end">
-          <div class="brand-chip__title">وزارة المالية</div>
-          <div class="brand-chip__subtitle">Ministry of Finance</div>
+          <div class="brand-chip__title">{{ printableOrganizationName }}</div>
+          <div class="brand-chip__subtitle">{{ printableOrganizationNameEn || printableAdministrationName }}</div>
         </div>
       </div>
 
-      <div class="cover-emblem">Tendex AI</div>
+      <div class="cover-emblem">
+        <img
+          v-if="meta.logoUrl"
+          :src="meta.logoUrl"
+          :alt="printableOrganizationName"
+          class="mx-auto max-h-24 w-auto object-contain"
+        />
+        <span v-else>{{ printableOrganizationName }}</span>
+      </div>
 
       <div class="cover-title-wrap">
         <h1 class="cover-title">نموذج كراسة الشروط والمواصفات</h1>

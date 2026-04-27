@@ -93,6 +93,7 @@ services:
       MinIO__AccessKey: ${MINIO_ACCESS_KEY}
       MinIO__SecretKey: ${MINIO_SECRET_KEY}
       MinIO__UseSSL: ${MINIO_USE_SSL:-false}
+      MinIO__PublicDownloadBaseUrl: ${MINIO_PUBLIC_DOWNLOAD_BASE_URL:-}
       Qdrant__Endpoint: ${QDRANT_ENDPOINT}
       Qdrant__Host: tendex-qdrant
       Qdrant__GrpcPort: "6334"

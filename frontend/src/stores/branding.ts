@@ -11,6 +11,7 @@
 import { ref, computed } from 'vue'
 import { defineStore } from 'pinia'
 import * as brandingService from '@/services/brandingService'
+import * as organizationService from '@/services/organizationService'
 import { DEFAULT_BRANDING, type BrandingState } from '@/types/branding'
 
 const STORAGE_KEY = 'tenant_branding'
@@ -82,7 +83,12 @@ export const useBrandingStore = defineStore('branding', () => {
     }
 
     try {
-      const branding = await brandingService.fetchTenantBranding(resolvedTid)
+      const hasAuthenticatedSession = !!localStorage.getItem('access_token')
+      const branding = hasAuthenticatedSession
+        ? await organizationService.fetchCurrentOrganizationBranding().catch(() =>
+            brandingService.fetchTenantBranding(resolvedTid),
+          )
+        : await brandingService.fetchTenantBranding(resolvedTid)
 
       tenantId.value = branding.tenantId
       nameAr.value = branding.nameAr
@@ -95,7 +101,7 @@ export const useBrandingStore = defineStore('branding', () => {
 
       applyBrandingToDocument()
       persistBranding()
-    } catch (err) {
+    } catch {
       error.value = 'تعذر تحميل إعدادات العلامة التجارية'
       // Apply defaults on error
       resetToDefaults()

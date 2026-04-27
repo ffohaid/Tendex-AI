@@ -146,6 +146,17 @@ public sealed class Competition : AggregateRoot<Guid>
     /// <summary>The status before suspension (used to resume to the correct state).</summary>
     public CompetitionStatus? SuspendedFromStatus { get; private set; }
 
+    /// <summary>Serialized selected required attachment type keys.</summary>
+    public string? RequiredAttachmentTypesSerialized { get; private set; }
+
+    /// <summary>Selected required attachment type keys for the competition.</summary>
+    public IReadOnlyList<string> RequiredAttachmentTypes => string.IsNullOrWhiteSpace(RequiredAttachmentTypesSerialized)
+        ? []
+        : RequiredAttachmentTypesSerialized
+            .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+            .Distinct(StringComparer.Ordinal)
+            .ToList();
+
     /// <summary>Indicates if the competition is soft-deleted.</summary>
     public bool IsDeleted { get; private set; }
 
@@ -363,6 +374,27 @@ public sealed class Competition : AggregateRoot<Guid>
         LastModifiedBy = modifiedBy;
         Version++;
 
+        return Result.Success();
+    }
+
+    /// <summary>
+    /// Updates selected required attachment type keys.
+    /// </summary>
+    public Result UpdateRequiredAttachmentTypes(IEnumerable<string>? requiredAttachmentTypes, string modifiedBy)
+    {
+        if (Status != CompetitionStatus.Draft && Status != CompetitionStatus.UnderPreparation && Status != CompetitionStatus.PendingApproval && Status != CompetitionStatus.Rejected && Status != CompetitionStatus.Approved)
+            return Result.Failure("لا يمكن تحديث أنواع المرفقات الإلزامية: المنافسة ليست في حالة قابلة للتعديل.");
+
+        RequiredAttachmentTypesSerialized = requiredAttachmentTypes is null
+            ? null
+            : string.Join(',', requiredAttachmentTypes
+                .Where(type => !string.IsNullOrWhiteSpace(type))
+                .Select(type => type.Trim())
+                .Distinct(StringComparer.Ordinal));
+
+        LastModifiedAt = DateTime.UtcNow;
+        LastModifiedBy = modifiedBy;
+        Version++;
         return Result.Success();
     }
 

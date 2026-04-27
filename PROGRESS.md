@@ -998,3 +998,47 @@ The remaining issue in batch `26042026` was not a missing source-code fix inside
 
 ### Notes
 - The export button in `RfpExportView.vue` still uses `window.print()` for PDF generation, so browser automation cannot reliably complete the native print dialog. However, the PDF path now inherits the corrected official document DOM because the page itself is rendered through `OfficialBookletDocument.vue`.
+
+## 2026-04-27: QC Batch 27042026 — supplier-offer recovery, booklet-state persistence, dynamic branding, and template upload visibility
+
+### Summary
+A production-focused QC remediation wave was completed for the issues reported in `27042026.docx`. The work was intentionally constrained to the smallest safe changes needed to recover four affected areas: supplier-offer creation after soft deletion, persistence and hydration of wizard data for booklet editing, dynamic branding propagation into the official booklet renderer, and immediate visibility of newly uploaded booklet templates.
+
+### Completed work
+- Reworked supplier-offer creation so a soft-deleted offer for the same supplier and competition is restored in place instead of attempting a new insert that can collide with the existing uniqueness constraints and surface as HTTP 500.
+- Extended the competition autosave contract and domain mapping to persist `requiredAttachmentTypes`, hydrate it back through the competition detail DTO, and keep step-5 attachment-type state aligned when reopening an existing competition in view or edit mode.
+- Added a minimal tenant-safe storage field mapping for `RequiredAttachmentTypes` on `rfp.Competitions` together with a guarded SQL rollout script (`backend/scripts/add_required_attachment_types_column.sql`) for tenant databases.
+- Updated branding loading and official booklet rendering so the current tenant organization identity is preferred and the official booklet document receives dynamic organization name and logo metadata instead of relying on static visual identity text.
+- Added MinIO public-download URL normalization through `MinIO__PublicDownloadBaseUrl` so browser-facing logo URLs can be rewritten away from private/internal object-storage hosts when production is configured with a public file base URL.
+- Adjusted the template-library upload flow so the list refresh no longer leaves the newly uploaded template hidden behind stale paging or active client-side filters.
+- Isolated the final QC change set in a clean clone based on the GitHub remote state to avoid unintentionally including an unrelated local commit that was ahead of `origin/main` in the original working copy.
+
+### Validation
+- Backend build passed locally with .NET SDK `10.0.203` using `dotnet build backend/src/TendexAI.API/TendexAI.API.csproj`.
+- Backend infrastructure tests completed successfully with `dotnet test backend/tests/TendexAI.Infrastructure.Tests/TendexAI.Infrastructure.Tests.csproj --no-restore`.
+- Backend integration-test project completed successfully with `dotnet test backend/tests/TendexAI.IntegrationTests/TendexAI.IntegrationTests.csproj --no-restore`.
+- Frontend production build passed successfully in the clean isolated clone after dependency install with `pnpm install --frozen-lockfile` and `pnpm build`.
+- Direct SSH access to the production VPS was attempted from the sandbox and failed authentication, so the deployment path for this batch is being executed through the repository’s GitHub deployment workflow rather than manual shell access.
+
+### Files modified in this batch
+- `backend/scripts/add_required_attachment_types_column.sql`
+- `backend/src/TendexAI.API/Endpoints/Rfp/CompetitionEndpoints.cs`
+- `backend/src/TendexAI.Application/Features/Rfp/Commands/AutoSaveCompetition/AutoSaveCompetitionCommand.cs`
+- `backend/src/TendexAI.Application/Features/Rfp/Commands/AutoSaveCompetition/AutoSaveCompetitionCommandHandler.cs`
+- `backend/src/TendexAI.Application/Features/Rfp/Dtos/RfpDtos.cs`
+- `backend/src/TendexAI.Application/Features/Rfp/Mappers/CompetitionMapper.cs`
+- `backend/src/TendexAI.Application/Features/SupplierOffers/Commands/CreateSupplierOffer/CreateSupplierOfferCommandHandler.cs`
+- `backend/src/TendexAI.Domain/Entities/Evaluation/ISupplierOfferRepository.cs`
+- `backend/src/TendexAI.Domain/Entities/Evaluation/SupplierOffer.cs`
+- `backend/src/TendexAI.Domain/Entities/Rfp/Competition.cs`
+- `backend/src/TendexAI.Infrastructure/Persistence/Configurations/Rfp/CompetitionConfiguration.cs`
+- `backend/src/TendexAI.Infrastructure/Persistence/Repositories/SupplierOfferRepository.cs`
+- `backend/src/TendexAI.Infrastructure/Storage/MinIO/MinioFileStorageService.cs`
+- `backend/src/TendexAI.Infrastructure/Storage/MinIO/MinioSettings.cs`
+- `frontend/src/components/rfp/OfficialBookletDocument.vue`
+- `frontend/src/services/rfpService.ts`
+- `frontend/src/stores/branding.ts`
+- `frontend/src/stores/rfp.ts`
+- `frontend/src/views/rfp/BookletEditorView.vue`
+- `frontend/src/views/rfp/TemplateLibraryView.vue`
+- `infrastructure/docker-compose.prod.yml`

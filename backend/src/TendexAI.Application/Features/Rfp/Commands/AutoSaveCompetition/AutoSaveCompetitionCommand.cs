@@ -22,5 +22,6 @@ public sealed record AutoSaveCompetitionCommand(
     DateTime? EndDate,
     string? Department,
     string? FiscalYear,
+    IReadOnlyList<string>? RequiredAttachmentTypes,
     int? CurrentWizardStep,
     string ModifiedByUserId) : ICommand<AutoSaveResultDto>;

@@ -37,6 +37,12 @@ public sealed class MinioSettings
     public string DefaultBucket { get; set; } = "tendex-files";
 
     /// <summary>
+    /// Public base URL used for browser-facing presigned download links.
+    /// Example: https://files.example.com or https://app.example.com/minio.
+    /// </summary>
+    public string? PublicDownloadBaseUrl { get; set; }
+
+    /// <summary>
     /// Default expiry time in minutes for presigned download URLs.
     /// </summary>
     public int PresignedUrlExpiryMinutes { get; set; } = 60;

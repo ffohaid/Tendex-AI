@@ -35,6 +35,10 @@ public sealed class CompetitionConfiguration : IEntityTypeConfiguration<Competit
         builder.Property(c => c.Description)
             .HasMaxLength(4000);
 
+        builder.Property(c => c.RequiredAttachmentTypesSerialized)
+            .HasColumnType("nvarchar(max)")
+            .HasColumnName("RequiredAttachmentTypes");
+
         builder.Property(c => c.CompetitionType)
             .IsRequired()
             .HasConversion<int>();
@@ -131,7 +135,8 @@ public sealed class CompetitionConfiguration : IEntityTypeConfiguration<Competit
             .HasForeignKey(a => a.CompetitionId)
             .OnDelete(DeleteBehavior.NoAction);
 
-        // Ignore domain events collection
+        // Ignore computed domain property and domain events collection
+        builder.Ignore(c => c.RequiredAttachmentTypes);
         builder.Ignore(c => c.DomainEvents);
     }
 }

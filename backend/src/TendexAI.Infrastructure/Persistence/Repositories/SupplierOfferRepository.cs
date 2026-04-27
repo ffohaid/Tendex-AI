@@ -70,6 +70,18 @@ public sealed class SupplierOfferRepository : ISupplierOfferRepository, IDisposa
                 cancellationToken);
     }
 
+    public async Task<SupplierOffer?> GetSoftDeletedAsync(
+        Guid competitionId,
+        string supplierIdentifier,
+        CancellationToken cancellationToken = default)
+    {
+        return await _context.SupplierOffers
+            .FirstOrDefaultAsync(o => o.CompetitionId == competitionId &&
+                                      o.SupplierIdentifier == supplierIdentifier &&
+                                      o.IsDeleted,
+                cancellationToken);
+    }
+
     public async Task AddAsync(
         SupplierOffer offer, CancellationToken cancellationToken = default)
     {

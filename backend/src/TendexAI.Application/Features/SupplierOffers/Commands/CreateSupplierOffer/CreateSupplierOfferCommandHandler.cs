@@ -23,6 +23,27 @@ public sealed class CreateSupplierOfferCommandHandler
         CreateSupplierOfferCommand request,
         CancellationToken cancellationToken)
     {
+        var softDeletedOffer = await _repository.GetSoftDeletedAsync(
+            request.CompetitionId,
+            request.SupplierIdentifier,
+            cancellationToken);
+
+        if (softDeletedOffer is not null)
+        {
+            var restoreResult = softDeletedOffer.Restore(
+                request.SupplierName,
+                request.OfferReferenceNumber,
+                request.SubmissionDate,
+                request.CreatedByUserId);
+
+            if (restoreResult.IsFailure)
+                return Result.Failure<SupplierOfferDto>(restoreResult.Error!);
+
+            _repository.Update(softDeletedOffer);
+            await _repository.SaveChangesAsync(cancellationToken);
+            return Result.Success(MapToDto(softDeletedOffer));
+        }
+
         // Check for duplicate supplier identifier
         var exists = await _repository.ExistsAsync(
             request.CompetitionId,

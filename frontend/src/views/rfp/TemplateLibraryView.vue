@@ -353,6 +353,9 @@ async function handleUpload(): Promise<void> {
 
     await httpPost('/v1/booklet-templates/upload', formData)
     showUploadDialog.value = false
+    currentPage.value = 1
+    searchQuery.value = ''
+    selectedCategory.value = 'all'
     uploadSuccess.value = true
     setTimeout(() => { uploadSuccess.value = false }, 5000)
     await loadBookletTemplates()

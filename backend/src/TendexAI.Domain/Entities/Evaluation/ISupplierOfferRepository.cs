@@ -15,6 +15,8 @@ public interface ISupplierOfferRepository
 
     Task<bool> ExistsAsync(Guid competitionId, string supplierIdentifier, CancellationToken cancellationToken = default);
 
+    Task<SupplierOffer?> GetSoftDeletedAsync(Guid competitionId, string supplierIdentifier, CancellationToken cancellationToken = default);
+
     Task AddAsync(SupplierOffer offer, CancellationToken cancellationToken = default);
 
     void Update(SupplierOffer offer);

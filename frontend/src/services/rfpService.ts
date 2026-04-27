@@ -179,11 +179,13 @@ interface AutoSaveCompetitionRequest {
   endDate: string | null
   department: string | null
   fiscalYear: string | null
+  requiredAttachmentTypes: string[] | null
   currentWizardStep: number | null
 }
 
 function mapToAutoSaveRequest(data: Partial<RfpFormData>): AutoSaveCompetitionRequest {
   const basic = data.basicInfo
+  const attachments = data.attachments
   return {
     projectNameAr: basic?.projectName || null,
     projectNameEn: basic?.projectName || null,
@@ -196,6 +198,7 @@ function mapToAutoSaveRequest(data: Partial<RfpFormData>): AutoSaveCompetitionRe
     endDate: basic?.endDate || null,
     department: basic?.department || null,
     fiscalYear: basic?.fiscalYear || null,
+    requiredAttachmentTypes: attachments?.requiredAttachmentTypes || null,
     currentWizardStep: data.currentStep || null,
   }
 }

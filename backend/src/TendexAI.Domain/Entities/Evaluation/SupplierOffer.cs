@@ -132,6 +132,36 @@ public sealed class SupplierOffer : BaseEntity<Guid>
     }
 
     /// <summary>
+    /// Restores a previously soft-deleted offer for the same supplier.
+    /// Reuses the existing row to preserve uniqueness guarantees.
+    /// </summary>
+    public Result Restore(
+        string supplierName,
+        string offerReferenceNumber,
+        DateTime submissionDate,
+        string restoredBy)
+    {
+        if (!IsDeleted)
+            return Result.Failure("لا يمكن استعادة عرض غير محذوف.");
+
+        SupplierName = supplierName;
+        OfferReferenceNumber = offerReferenceNumber;
+        SubmissionDate = submissionDate;
+        BlindCode = GenerateBlindCode();
+        TechnicalResult = OfferTechnicalResult.Pending;
+        TechnicalTotalScore = null;
+        IsFinancialEnvelopeOpen = false;
+        FinancialEnvelopeOpenedAt = null;
+        FinancialEnvelopeOpenedBy = null;
+        IsDeleted = false;
+        DeletedAt = null;
+        DeletedBy = null;
+        LastModifiedAt = DateTime.UtcNow;
+        LastModifiedBy = restoredBy;
+        return Result.Success();
+    }
+
+    /// <summary>
     /// Opens the financial envelope. Only allowed if the offer passed technical evaluation.
     /// Enforces PRD Section 10.1 strict rule.
     /// </summary>

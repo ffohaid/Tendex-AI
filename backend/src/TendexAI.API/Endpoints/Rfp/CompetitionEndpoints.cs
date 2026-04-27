@@ -328,6 +328,7 @@ public static class CompetitionEndpoints
             EndDate: request.EndDate,
             Department: request.Department,
             FiscalYear: request.FiscalYear,
+            RequiredAttachmentTypes: request.RequiredAttachmentTypes,
             CurrentWizardStep: request.CurrentWizardStep,
             ModifiedByUserId: userId.ToString());
 
@@ -630,6 +631,7 @@ public sealed record AutoSaveCompetitionRequest(
     DateTime? EndDate,
     string? Department,
     string? FiscalYear,
+    IReadOnlyList<string>? RequiredAttachmentTypes,
     int? CurrentWizardStep);
 
 public sealed record ChangeCompetitionStatusRequest(
