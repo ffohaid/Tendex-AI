@@ -26,6 +26,11 @@ public class AutoSaveCompetitionCommandValidatorTests
             EstimatedBudget: null,
             SubmissionDeadline: null,
             ProjectDurationDays: null,
+            StartDate: null,
+            EndDate: null,
+            Department: null,
+            FiscalYear: null,
+            RequiredAttachmentTypes: null,
             CurrentWizardStep: 2,
             ModifiedByUserId: Guid.NewGuid().ToString());
 
@@ -101,6 +106,11 @@ public class AutoSaveCompetitionCommandValidatorTests
             EstimatedBudget: null,
             SubmissionDeadline: null,
             ProjectDurationDays: null,
+            StartDate: null,
+            EndDate: null,
+            Department: null,
+            FiscalYear: null,
+            RequiredAttachmentTypes: null,
             CurrentWizardStep: null,
             ModifiedByUserId: Guid.NewGuid().ToString());
 
@@ -135,6 +145,11 @@ public class AutoSaveCompetitionCommandValidatorTests
             EstimatedBudget: null,
             SubmissionDeadline: null,
             ProjectDurationDays: null,
+            StartDate: null,
+            EndDate: null,
+            Department: null,
+            FiscalYear: null,
+            RequiredAttachmentTypes: null,
             CurrentWizardStep: null,
             ModifiedByUserId: Guid.NewGuid().ToString());
     }

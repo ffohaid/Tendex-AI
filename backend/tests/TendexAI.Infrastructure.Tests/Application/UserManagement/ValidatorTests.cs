@@ -125,7 +125,7 @@ public sealed class UpdateUserCommandValidatorTests
     [Fact]
     public void Should_HaveError_WhenFirstNameIsEmpty()
     {
-        var command = new UpdateUserCommand(Guid.NewGuid(), "", "Last", null, Guid.NewGuid());
+        var command = new UpdateUserCommand(Guid.NewGuid(), "", "Last", null, null, null, Guid.NewGuid());
         var result = _validator.TestValidate(command);
         result.ShouldHaveValidationErrorFor(x => x.FirstName);
     }
@@ -133,7 +133,7 @@ public sealed class UpdateUserCommandValidatorTests
     [Fact]
     public void Should_NotHaveErrors_WhenCommandIsValid()
     {
-        var command = new UpdateUserCommand(Guid.NewGuid(), "First", "Last", "+966501234567", Guid.NewGuid());
+        var command = new UpdateUserCommand(Guid.NewGuid(), "First", "Last", "+966501234567", null, null, Guid.NewGuid());
         var result = _validator.TestValidate(command);
         result.ShouldNotHaveAnyValidationErrors();
     }

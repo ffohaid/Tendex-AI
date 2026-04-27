@@ -26,6 +26,10 @@ public class CreateCompetitionCommandValidatorTests
             EstimatedBudget: 1000000m,
             SubmissionDeadline: DateTime.UtcNow.AddDays(30),
             ProjectDurationDays: 365,
+            StartDate: null,
+            EndDate: null,
+            Department: null,
+            FiscalYear: null,
             SourceTemplateId: null,
             SourceCompetitionId: null,
             CreatedByUserId: Guid.NewGuid().ToString());
@@ -187,6 +191,10 @@ public class CreateCompetitionCommandValidatorTests
             EstimatedBudget: null,
             SubmissionDeadline: null,
             ProjectDurationDays: null,
+            StartDate: null,
+            EndDate: null,
+            Department: null,
+            FiscalYear: null,
             SourceTemplateId: null,
             SourceCompetitionId: null,
             CreatedByUserId: Guid.NewGuid().ToString());

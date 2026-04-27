@@ -128,7 +128,7 @@ public sealed class CompetitionTransitionTests
         var result = competition.TransitionTo(CompetitionStatus.Cancelled, "user-1");
 
         result.IsFailure.Should().BeTrue();
-        result.Error.Should().Contain("reason is required");
+        result.Error.Should().Contain("يجب تقديم سبب");
     }
 
     [Fact]
@@ -154,7 +154,7 @@ public sealed class CompetitionTransitionTests
         var result = competition.TransitionTo(CompetitionStatus.Rejected, "user-1");
 
         result.IsFailure.Should().BeTrue();
-        result.Error.Should().Contain("reason is required");
+        result.Error.Should().Contain("يجب تقديم سبب");
     }
 
     [Fact]
@@ -169,7 +169,7 @@ public sealed class CompetitionTransitionTests
         var result = competition.TransitionTo(CompetitionStatus.Suspended, "user-1");
 
         result.IsFailure.Should().BeTrue();
-        result.Error.Should().Contain("reason is required");
+        result.Error.Should().Contain("يجب تقديم سبب");
     }
 
     [Fact]
@@ -218,7 +218,7 @@ public sealed class CompetitionTransitionTests
         var result = competition.Resume("user-1");
 
         result.IsFailure.Should().BeTrue();
-        result.Error.Should().Contain("not suspended");
+        result.Error.Should().Contain("ليست معلّقة");
     }
 
     // ═══════════════════════════════════════════════════════════════
@@ -317,7 +317,7 @@ public sealed class CompetitionTransitionTests
         var result = competition.SubmitForApproval("user-1");
 
         result.IsFailure.Should().BeTrue();
-        result.Error.Should().Contain("at least one section");
+        result.Error.Should().Contain("قسم واحد على الأقل");
     }
 
     [Fact]

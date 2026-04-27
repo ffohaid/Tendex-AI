@@ -20,7 +20,12 @@ public sealed class CreateTenantCommandHandlerTests
     private readonly Mock<ITenantFeatureFlagRepository> _featureFlagRepoMock = new();
     private readonly Mock<IUnitOfWork> _unitOfWorkMock = new();
     private readonly Mock<IConnectionStringEncryptor> _encryptorMock = new();
-    private readonly Mock<IConfiguration> _configMock = new();
+    private readonly IConfiguration _configuration = new ConfigurationBuilder()
+        .AddInMemoryCollection(new Dictionary<string, string?>
+        {
+            ["ConnectionStrings:MasterPlatform"] = "Server=localhost;Database=MasterPlatform;User Id=sa;Password=Pass@word1;TrustServerCertificate=True"
+        })
+        .Build();
     private readonly Mock<ILogger<CreateTenantCommandHandler>> _loggerMock = new();
     private readonly CreateTenantCommandHandler _handler;
 
@@ -41,7 +46,7 @@ public sealed class CreateTenantCommandHandlerTests
             _featureFlagRepoMock.Object,
             _unitOfWorkMock.Object,
             _encryptorMock.Object,
-            _configMock.Object,
+            _configuration,
             _loggerMock.Object);
     }
 

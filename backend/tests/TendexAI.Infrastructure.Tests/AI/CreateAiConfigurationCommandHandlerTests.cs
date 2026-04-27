@@ -38,6 +38,9 @@ public sealed class CreateAiConfigurationCommandHandlerTests
         _encryptionMock
             .Setup(e => e.Encrypt("plain-api-key"))
             .Returns("encrypted-api-key");
+        _encryptionMock
+            .Setup(e => e.Decrypt("encrypted-api-key"))
+            .Returns("plain-api-key");
 
         var command = new CreateAiConfigurationCommand
         {
@@ -96,6 +99,9 @@ public sealed class CreateAiConfigurationCommandHandlerTests
         _encryptionMock
             .Setup(e => e.Encrypt(It.IsAny<string>()))
             .Returns("encrypted");
+        _encryptionMock
+            .Setup(e => e.Decrypt("encrypted"))
+            .Returns("key");
 
         var command = new CreateAiConfigurationCommand
         {

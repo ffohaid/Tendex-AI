@@ -310,7 +310,7 @@ public sealed class PermissionMatrixAndPrerequisiteTests
         var result = step.Reject("owner-1", "");
 
         result.IsFailure.Should().BeTrue();
-        result.Error.Should().Contain("reason is required");
+        result.Error.Should().Contain("يجب تقديم سبب");
     }
 
     [Fact]

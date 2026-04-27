@@ -88,6 +88,10 @@ public class CompetitionTests
             estimatedBudget: 500000m,
             submissionDeadline: DateTime.UtcNow.AddDays(30),
             projectDurationDays: 180,
+            startDate: null,
+            endDate: null,
+            department: null,
+            fiscalYear: null,
             modifiedBy: _userId);
 
         // Assert
@@ -115,11 +119,15 @@ public class CompetitionTests
             estimatedBudget: null,
             submissionDeadline: null,
             projectDurationDays: null,
+            startDate: null,
+            endDate: null,
+            department: null,
+            fiscalYear: null,
             modifiedBy: _userId);
 
         // Assert
         result.IsFailure.Should().BeTrue();
-        result.Error.Should().Contain("Cannot update basic info");
+        result.Error.Should().Contain("لا يمكن تحديث المعلومات الأساسية");
     }
 
     // ===== Status Transition Tests =====
