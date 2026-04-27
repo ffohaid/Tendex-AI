@@ -111,7 +111,7 @@ public abstract class IntegrationTestBase : IClassFixture<TendexWebApplicationFa
         var userRole = await db.Roles.FirstOrDefaultAsync(r => r.Id == TestUserRoleId);
         if (userRole is null)
         {
-            userRole = new Role("مستخدم", "Regular User", "REGULAR USER", TestTenantId, false);
+            userRole = new Role("عضو", "Member", "MEMBER", TestTenantId, false);
             typeof(Role).GetProperty("Id")!.SetValue(userRole, TestUserRoleId);
             db.Roles.Add(userRole);
         }

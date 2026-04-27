@@ -1086,3 +1086,6 @@ The latest `Test Gate` run showed that the remaining failures had shifted from t
 
 ### Follow-up 6
 After isolating RabbitMQ in the test environment, `Test Gate` narrowed down to only two committee integration failures. Both were test-alignment issues: `AddCommitteeMember` was using an admin role name that no longer matches the committee compatibility matrix, so the test now adds the seeded regular user as a compatible `Member`; and `GetCompetitionCommittees` was still calling an obsolete route, so it was updated to use `/api/v1/competitions/{competitionId}/committees`. The integration test project rebuilt successfully after these final adjustments.
+
+### Follow-up 7
+The final remaining integration failure in `AddCommitteeMember_WithValidData_ShouldReturn200` was traced to test seed data rather than production logic: the seeded regular-user role still used the normalized name `REGULAR USER`, while the current committee member compatibility matrix accepts `MEMBER` (and related committee role names). The integration seed was updated accordingly, and the integration test project rebuilt successfully after the change.
