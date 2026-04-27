@@ -150,6 +150,16 @@ public static class TenantEndpoints
             .Produces(StatusCodes.Status200OK)
             .Produces(StatusCodes.Status404NotFound);
 
+        app.MapGet("/api/v1/tenants/logo-legacy", GetLegacyPublicTenantLogoAsync)
+            .WithTags("Tenants")
+            .WithName("GetLegacyPublicTenantLogo")
+            .WithSummary("Serves a legacy tenant logo for public login pages when branding data still stores an old MinIO URL.")
+            .AllowAnonymous()
+            .RequireCors("TendexCorsPolicy")
+            .Produces(StatusCodes.Status200OK)
+            .Produces(StatusCodes.Status400BadRequest)
+            .Produces(StatusCodes.Status404NotFound);
+
         return app;
     }
 
@@ -460,13 +470,7 @@ public static class TenantEndpoints
 
             if (fileAttachment is null)
             {
-                var legacyUrlResult = await fileStorageService.GetPresignedDownloadUrlAsync(
-                    objectKey,
-                    bucketName,
-                    null,
-                    cancellationToken);
-
-                return legacyUrlResult.IsSuccess ? legacyUrlResult.Value : RewriteToPublicTenantLogoProxy(logoUrl);
+                return BuildLegacyPublicTenantLogoUrl(tenantId, bucketName, objectKey);
             }
         }
 
@@ -508,6 +512,60 @@ public static class TenantEndpoints
             fileAttachment.ContentType,
             fileAttachment.FileName,
             enableRangeProcessing: false);
+    }
+
+    private static async Task<IResult> GetLegacyPublicTenantLogoAsync(
+        [FromQuery] Guid tenantId,
+        [FromQuery] string bucketName,
+        [FromQuery] string objectKey,
+        IFileStorageService fileStorageService,
+        CancellationToken cancellationToken)
+    {
+        if (tenantId == Guid.Empty || string.IsNullOrWhiteSpace(bucketName) || string.IsNullOrWhiteSpace(objectKey))
+        {
+            return Results.BadRequest();
+        }
+
+        var normalizedKey = Uri.UnescapeDataString(objectKey).TrimStart('/');
+        var expectedPrefix = $"tenants/{tenantId:D}/branding/";
+
+        if (!normalizedKey.StartsWith(expectedPrefix, StringComparison.OrdinalIgnoreCase))
+        {
+            return Results.NotFound();
+        }
+
+        var downloadResult = await fileStorageService.DownloadFileAsync(
+            normalizedKey,
+            bucketName,
+            cancellationToken);
+
+        if (!downloadResult.IsSuccess || downloadResult.Value is null)
+        {
+            return Results.NotFound();
+        }
+
+        var contentType = GuessContentTypeFromFileName(GetFileName(normalizedKey));
+        return Results.File(downloadResult.Value, contentType, enableRangeProcessing: false);
+    }
+
+    private static string BuildLegacyPublicTenantLogoUrl(Guid tenantId, string bucketName, string objectKey)
+    {
+        var encodedBucket = Uri.EscapeDataString(bucketName);
+        var encodedObjectKey = Uri.EscapeDataString(objectKey.TrimStart('/'));
+        return $"/api/v1/tenants/logo-legacy?tenantId={tenantId:D}&bucketName={encodedBucket}&objectKey={encodedObjectKey}";
+    }
+
+    private static string GuessContentTypeFromFileName(string? fileName)
+    {
+        var extension = Path.GetExtension(fileName ?? string.Empty).ToLowerInvariant();
+        return extension switch
+        {
+            ".svg" => "image/svg+xml",
+            ".jpg" or ".jpeg" => "image/jpeg",
+            ".webp" => "image/webp",
+            ".gif" => "image/gif",
+            _ => "image/png"
+        };
     }
 
     private static string? RewriteToPublicTenantLogoProxy(string? logoUrl)
