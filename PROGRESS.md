@@ -1077,3 +1077,6 @@ The deployment workflow needed one additional hotfix after the first retry: the 
 - The next live `Test Gate` failure showed that authenticated integration-test clients were reaching protected endpoints without an `X-Tenant-Id` header, which left `TenantDbContextFactory` without a tenant connection string.
 - Added the tenant header in the shared integration-test base client, the authenticated-client helper, and the remaining manual authenticated clients in the auth/session integration tests.
 - Rebuilt `backend/tests/TendexAI.IntegrationTests/TendexAI.IntegrationTests.csproj` successfully after the header alignment change.
+
+### Follow-up 4
+The latest `Test Gate` logs confirmed that the remaining integration failures were still rooted in tenant database resolution during protected requests. To isolate the test environment from per-request tenant-header resolution, the integration-test factory now injects a fixed test tenant provider that always returns the seeded tenant and its SQL Server connection string. In the same pass, committee integration tests were aligned with the current API contract by sending a valid `ScopeType` for all create flows and using `CompetitionIds` plus `Phases` for competition-linked committees. After these changes, the integration test project rebuilt successfully again.

@@ -31,6 +31,7 @@ public sealed class CommitteeIntegrationTests : IntegrationTestBase
             NameEn = "Technical Bid Evaluation Committee",
             Type = 1, // TechnicalEvaluation
             IsPermanent = true,
+            ScopeType = 1, // Comprehensive
             Description = "لجنة دائمة لفحص العروض الفنية",
             StartDate = DateTime.UtcNow,
             EndDate = DateTime.UtcNow.AddYears(1)
@@ -71,12 +72,12 @@ public sealed class CommitteeIntegrationTests : IntegrationTestBase
             NameEn = "Booklet Preparation Committee",
             Type = 3, // BookletPreparation
             IsPermanent = false,
+            ScopeType = 3, // SpecificPhasesSpecificCompetitions
             Description = "لجنة مؤقتة لإعداد كراسة الشروط والمواصفات",
             StartDate = DateTime.UtcNow,
             EndDate = DateTime.UtcNow.AddMonths(3),
-            CompetitionId = competitionId,
-            ActiveFromPhase = 0, // BookletPreparation
-            ActiveToPhase = 0    // BookletPreparation
+            CompetitionIds = new[] { competitionId },
+            Phases = new[] { 1 } // BookletPreparation
         };
 
         // Act
@@ -96,6 +97,7 @@ public sealed class CommitteeIntegrationTests : IntegrationTestBase
             NameEn = "Test Committee",
             Type = 1,
             IsPermanent = true,
+            ScopeType = 1, // Comprehensive
             StartDate = DateTime.UtcNow,
             EndDate = DateTime.UtcNow.AddYears(1)
         };
@@ -119,6 +121,7 @@ public sealed class CommitteeIntegrationTests : IntegrationTestBase
             NameEn = "Test Committee",
             Type = 1,
             IsPermanent = true,
+            ScopeType = 1, // Comprehensive
             StartDate = DateTime.UtcNow,
             EndDate = DateTime.UtcNow.AddYears(1)
         };
@@ -185,6 +188,7 @@ public sealed class CommitteeIntegrationTests : IntegrationTestBase
             NameEn = "Retrieval Test Committee",
             Type = 2, // FinancialEvaluation
             IsPermanent = true,
+            ScopeType = 1, // Comprehensive
             StartDate = DateTime.UtcNow,
             EndDate = DateTime.UtcNow.AddYears(1)
         };
@@ -236,6 +240,7 @@ public sealed class CommitteeIntegrationTests : IntegrationTestBase
             NameEn = "Before Update Committee",
             Type = 1,
             IsPermanent = true,
+            ScopeType = 1, // Comprehensive
             StartDate = DateTime.UtcNow,
             EndDate = DateTime.UtcNow.AddYears(1)
         };
@@ -251,7 +256,10 @@ public sealed class CommitteeIntegrationTests : IntegrationTestBase
         {
             NameAr = "لجنة بعد التحديث",
             NameEn = "After Update Committee",
-            Description = "وصف محدث"
+            Description = "وصف محدث",
+            ScopeType = 1, // Comprehensive
+            Phases = Array.Empty<int>(),
+            CompetitionIds = Array.Empty<Guid>()
         };
 
         var response = await client.PutAsJsonAsync($"/api/v1/committees/{committeeId}", updateRequest);
@@ -276,6 +284,7 @@ public sealed class CommitteeIntegrationTests : IntegrationTestBase
             NameEn = "Member Addition Committee",
             Type = 1,
             IsPermanent = true,
+            ScopeType = 1, // Comprehensive
             StartDate = DateTime.UtcNow,
             EndDate = DateTime.UtcNow.AddYears(1)
         };
@@ -334,6 +343,7 @@ public sealed class CommitteeIntegrationTests : IntegrationTestBase
             NameEn = "Suspension Test Committee",
             Type = 1,
             IsPermanent = true,
+            ScopeType = 1, // Comprehensive
             StartDate = DateTime.UtcNow,
             EndDate = DateTime.UtcNow.AddYears(1)
         };
@@ -389,9 +399,11 @@ public sealed class CommitteeIntegrationTests : IntegrationTestBase
             NameEn = "Competition-Linked Committee",
             Type = 3, // BookletPreparation
             IsPermanent = false,
+            ScopeType = 3, // SpecificPhasesSpecificCompetitions
             StartDate = DateTime.UtcNow,
             EndDate = DateTime.UtcNow.AddMonths(3),
-            CompetitionId = competitionId
+            CompetitionIds = new[] { competitionId },
+            Phases = new[] { 1 } // BookletPreparation
         };
 
         await client.PostAsJsonAsync("/api/v1/committees", committeeRequest);

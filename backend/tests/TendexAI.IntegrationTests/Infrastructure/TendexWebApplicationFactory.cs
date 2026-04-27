@@ -8,6 +8,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Hosting;
+using TendexAI.Application.Common.Interfaces;
 using Testcontainers.MsSql;
 using Testcontainers.Redis;
 using Testcontainers.RabbitMq;
@@ -23,6 +24,7 @@ namespace TendexAI.IntegrationTests.Infrastructure;
 public sealed class TendexWebApplicationFactory : WebApplicationFactory<Program>, IAsyncLifetime
 {
     private static readonly string TestEncryptionKey = Convert.ToBase64String(RandomNumberGenerator.GetBytes(32));
+    private static readonly Guid TestTenantId = Guid.Parse("00000000-0000-0000-0000-000000000001");
 
     private readonly MsSqlContainer _sqlContainer = new MsSqlBuilder()
         .WithImage("mcr.microsoft.com/mssql/server:2022-latest")
@@ -120,6 +122,12 @@ public sealed class TendexWebApplicationFactory : WebApplicationFactory<Program>
                     });
             });
 
+            services.RemoveAll<ITenantProvider>();
+            services.AddScoped<ITenantProvider>(_ =>
+                new FixedTestTenantProvider(
+                    TestTenantId,
+                    SqlConnectionString + ";TrustServerCertificate=True;Database=TendexAI_TestTenant"));
+
             // Override Redis connection string
             services.Configure<Microsoft.Extensions.Caching.StackExchangeRedis.RedisCacheOptions>(options =>
             {
@@ -154,4 +162,11 @@ public sealed class TendexWebApplicationFactory : WebApplicationFactory<Program>
     /// Creates a scoped service provider for resolving services in tests.
     /// </summary>
     public IServiceScope CreateTestScope() => Services.CreateScope();
+
+    private sealed class FixedTestTenantProvider(Guid tenantId, string connectionString) : ITenantProvider
+    {
+        public Guid? GetCurrentTenantId() => tenantId;
+
+        public string? GetCurrentTenantConnectionString() => connectionString;
+    }
 }
