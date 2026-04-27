@@ -32,6 +32,7 @@ const tenantId = computed(() => route.params.id as string)
 
 /** Branding form state */
 const logoUrl = ref('')
+const logoStorageValue = ref('')
 const primaryColor = ref(DEFAULT_BRANDING.primaryColor)
 const secondaryColor = ref(DEFAULT_BRANDING.secondaryColor)
 
@@ -58,6 +59,7 @@ function getTenantName(): string {
 function populateForm(): void {
   if (!currentTenant.value) return
   logoUrl.value = currentTenant.value.logoUrl || ''
+  logoStorageValue.value = currentTenant.value.logoUrl || ''
   primaryColor.value = currentTenant.value.primaryColor || DEFAULT_BRANDING.primaryColor
   secondaryColor.value = currentTenant.value.secondaryColor || DEFAULT_BRANDING.secondaryColor
 }
@@ -66,7 +68,7 @@ function populateForm(): void {
 const hasChanges = computed(() => {
   if (!currentTenant.value) return false
   return (
-    logoUrl.value !== (currentTenant.value.logoUrl || '') ||
+    logoStorageValue.value !== (currentTenant.value.logoUrl || '') ||
     primaryColor.value !== (currentTenant.value.primaryColor || DEFAULT_BRANDING.primaryColor) ||
     secondaryColor.value !== (currentTenant.value.secondaryColor || DEFAULT_BRANDING.secondaryColor)
   )
@@ -122,9 +124,8 @@ async function uploadLogo(file: File): Promise<void> {
 
   try {
     const result = await brandingService.uploadTenantLogo(tenantId.value, file)
-    // Get the presigned download URL for the uploaded logo
-    const downloadUrl = await brandingService.getFileDownloadUrl(result.fileId)
-    logoUrl.value = downloadUrl
+    logoStorageValue.value = result.fileId
+    logoUrl.value = await brandingService.getFileDownloadUrl(result.fileId)
   } catch (err) {
     uploadError.value = t('branding.messages.logoUploadError')
   } finally {
@@ -135,6 +136,7 @@ async function uploadLogo(file: File): Promise<void> {
 /** Remove logo */
 function removeLogo(): void {
   logoUrl.value = ''
+  logoStorageValue.value = ''
 }
 
 /** Trigger file input click */
@@ -150,7 +152,7 @@ async function saveBranding(): Promise<void> {
 
   try {
     const request: UpdateTenantBrandingRequest = {
-      logoUrl: logoUrl.value || undefined,
+      logoUrl: logoStorageValue.value || undefined,
       primaryColor: primaryColor.value,
       secondaryColor: secondaryColor.value,
     }
@@ -174,6 +176,7 @@ function resetToDefaults(): void {
   primaryColor.value = DEFAULT_BRANDING.primaryColor
   secondaryColor.value = DEFAULT_BRANDING.secondaryColor
   logoUrl.value = ''
+  logoStorageValue.value = ''
 }
 
 /** Go back to tenant detail */
