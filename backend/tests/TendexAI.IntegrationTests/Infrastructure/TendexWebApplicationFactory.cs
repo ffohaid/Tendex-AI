@@ -8,7 +8,9 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Hosting;
+using System.Linq;
 using TendexAI.Application.Common.Interfaces;
+using TendexAI.Infrastructure.Messaging.RabbitMQ;
 using Testcontainers.MsSql;
 using Testcontainers.Redis;
 using Testcontainers.RabbitMq;
@@ -96,6 +98,27 @@ public sealed class TendexWebApplicationFactory : WebApplicationFactory<Program>
 
         builder.ConfigureServices(services =>
         {
+            services.RemoveAll<RabbitMqConnectionFactory>();
+            services.RemoveAll<RabbitMqTopologyInitializer>();
+            services.RemoveAll<RabbitMqEventBus>();
+            services.RemoveAll<IEventBus>();
+            services.RemoveAll<EventBusSubscriptionManager>();
+
+            var rabbitHostedServices = services
+                .Where(d => d.ServiceType == typeof(IHostedService)
+                            && d.ImplementationType is not null
+                            && (d.ImplementationType == typeof(RabbitMqConsumerBackgroundService)
+                                || d.ImplementationType == typeof(RabbitMqStartupHostedService)
+                                || d.ImplementationType == typeof(RabbitMqSubscriptionHostedService)))
+                .ToList();
+
+            foreach (var descriptor in rabbitHostedServices)
+            {
+                services.Remove(descriptor);
+            }
+
+            services.AddSingleton<IEventBus, NoOpEventBus>();
+
             // Remove existing DbContext registrations
             services.RemoveAll<DbContextOptions<MasterPlatformDbContext>>();
             services.RemoveAll<DbContextOptions<TenantDbContext>>();
@@ -168,5 +191,14 @@ public sealed class TendexWebApplicationFactory : WebApplicationFactory<Program>
         public Guid? GetCurrentTenantId() => tenantId;
 
         public string? GetCurrentTenantConnectionString() => connectionString;
+    }
+
+    private sealed class NoOpEventBus : IEventBus
+    {
+        public Task PublishAsync<TEvent>(TEvent integrationEvent, CancellationToken cancellationToken = default)
+            where TEvent : IntegrationEvent
+        {
+            return Task.CompletedTask;
+        }
     }
 }

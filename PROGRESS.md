@@ -1080,3 +1080,6 @@ The deployment workflow needed one additional hotfix after the first retry: the 
 
 ### Follow-up 4
 The latest `Test Gate` logs confirmed that the remaining integration failures were still rooted in tenant database resolution during protected requests. To isolate the test environment from per-request tenant-header resolution, the integration-test factory now injects a fixed test tenant provider that always returns the seeded tenant and its SQL Server connection string. In the same pass, committee integration tests were aligned with the current API contract by sending a valid `ScopeType` for all create flows and using `CompetitionIds` plus `Phases` for competition-linked committees. After these changes, the integration test project rebuilt successfully again.
+
+### Follow-up 5
+The latest `Test Gate` run showed that the remaining failures had shifted from tenant resolution to RabbitMQ connectivity inside integration tests, specifically during committee flows that publish integration events. To keep the integration environment deterministic and avoid external broker dependency during request-level assertions, the test factory now removes RabbitMQ hosted services and replaces the production event bus with a no-op implementation in the testing environment only. The integration test project rebuilt successfully after this change.
