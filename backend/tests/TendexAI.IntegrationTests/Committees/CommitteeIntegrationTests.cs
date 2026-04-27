@@ -298,9 +298,9 @@ public sealed class CommitteeIntegrationTests : IntegrationTestBase
         // Act - Add a member
         var memberRequest = new
         {
-            UserId = TestAdminUserId,
-            UserFullName = "مدير النظام",
-            Role = 1 // Chair
+            UserId = TestRegularUserId,
+            UserFullName = "المستخدم العادي",
+            Role = 2 // Member
         };
 
         var response = await client.PostAsJsonAsync($"/api/v1/committees/{committeeId}/members", memberRequest);
@@ -409,7 +409,7 @@ public sealed class CommitteeIntegrationTests : IntegrationTestBase
         await client.PostAsJsonAsync("/api/v1/committees", committeeRequest);
 
         // Act - Get committees for this competition
-        var response = await client.GetAsync($"/api/v1/committees/competition/{competitionId}");
+        var response = await client.GetAsync($"/api/v1/competitions/{competitionId}/committees");
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.OK);
