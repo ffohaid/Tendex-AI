@@ -216,6 +216,13 @@ function hasRenderableBlocks(section: OfficialBookletSection | null): boolean {
             <div><strong>رقم الكراسة:</strong> {{ printableReferenceNumber }}</div>
           </div>
           <div class="page-frame-header__identity">
+            <div v-if="meta.logoUrl" class="page-frame-header__logo-wrap">
+              <img
+                :src="meta.logoUrl"
+                :alt="printableOrganizationName"
+                class="page-frame-header__logo"
+              />
+            </div>
             <div class="page-frame-header__country">{{ printableOrganizationName }}</div>
             <div><strong>اسم الإدارة:</strong> {{ printableAdministrationName }}</div>
             <div><strong>اسم النموذج:</strong> {{ printableTemplateName }}</div>
