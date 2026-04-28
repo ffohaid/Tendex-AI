@@ -170,24 +170,29 @@ public sealed class CompetitionRepository : ICompetitionRepository, IDisposable
         }
 
         var competitionId = boqItems[0].CompetitionId;
+        var executionStrategy = _context.Database.CreateExecutionStrategy();
 
-        await using var transaction = await _context.Database.BeginTransactionAsync(cancellationToken);
-
-        if (clearExisting)
+        await executionStrategy.ExecuteAsync(async () =>
         {
-            var existingItems = await _context.BoqItems
-                .Where(b => b.CompetitionId == competitionId)
-                .ToListAsync(cancellationToken);
+            await using var transaction = await _context.Database.BeginTransactionAsync(cancellationToken);
 
-            if (existingItems.Count > 0)
+            if (clearExisting)
             {
-                _context.BoqItems.RemoveRange(existingItems);
-            }
-        }
+                var existingItems = await _context.BoqItems
+                    .Where(b => b.CompetitionId == competitionId)
+                    .ToListAsync(cancellationToken);
 
-        await _context.BoqItems.AddRangeAsync(boqItems, cancellationToken);
-        await _context.SaveChangesAsync(cancellationToken);
-        await transaction.CommitAsync(cancellationToken);
+                if (existingItems.Count > 0)
+                {
+                    _context.BoqItems.RemoveRange(existingItems);
+                }
+            }
+
+            await _context.BoqItems.AddRangeAsync(boqItems, cancellationToken);
+            await _context.SaveChangesAsync(cancellationToken);
+            await transaction.CommitAsync(cancellationToken);
+        });
+
         _context.ChangeTracker.Clear();
     }
 

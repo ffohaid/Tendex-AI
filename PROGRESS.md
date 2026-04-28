@@ -1252,3 +1252,9 @@ Both BOQ command handlers were refactored to follow the same safe direct-insert 
 - `dotnet build backend/TendexAI.slnx` ✅
 - `dotnet test backend/TendexAI.slnx --no-restore --filter "FullyQualifiedName~BoqCommandHandlerTests"` ✅ (`4` tests passed)
 - Direct SSH access attempts from the sandbox to the currently documented production hosts were denied, so live deployment/verification for this BOQ fix must continue through the repository workflow path rather than manual VPS shell access.
+
+## 2026-04-28 - BOQ Draft Save Follow-up Fix
+
+A production re-validation of the BOQ wizard after the previous concurrency fix showed that the original 500 symptom had shifted to a deterministic `400 Bad Request` when saving an AI-generated BOQ draft. Live browser instrumentation captured the exact failing request and confirmed the batch save endpoint `/api/v1/competitions/{id}/boq-items/batch` was rejecting the request with the SQL Server execution-strategy error: `SqlServerRetryingExecutionStrategy does not support user-initiated transactions. Use the execution strategy returned by DbContext.Database.CreateExecutionStrategy() to execute all the operations in the transaction as a retriable unit.`
+
+To resolve this, `CompetitionRepository.AddBoqItemsDirectAsync` was updated so the clear-and-reinsert transaction now runs inside `DbContext.Database.CreateExecutionStrategy().ExecuteAsync(...)`. This preserves the required atomic `clearExisting + insert` behavior while making the transaction compatible with the configured SQL Server retry strategy. The API project was rebuilt locally after the change and completed successfully with zero errors.
