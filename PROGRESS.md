@@ -1111,3 +1111,94 @@ Live validation after the successful deployment revealed that the tenant login l
 A final hardening step was prepared after live validation showed the public resolve endpoint still returning the old internal MinIO URL. `TenantEndpoints` now exposes a public `/api/v1/tenants/logo/{fileId}` route that streams the logo through the API itself, and `ResolveTenantByHostname` returns that stable same-origin route whenever it can map the tenant logo to a stored `FileAttachment`. This avoids exposing internal MinIO hosts to the public login page even when legacy logo data is still stored as a stale presigned URL. Validation: `dotnet build backend/src/TendexAI.API/TendexAI.API.csproj` ✅.
 An additional public-logo hardening was added after confirming that the resolve endpoint still returned an internal MinIO URL whenever legacy logo data could not be matched back to a `FileAttachment` row. `TenantEndpoints` now exposes `/api/v1/tenants/logo-legacy` and `ResolveTenantByHostname` returns this same-origin API route for parsed legacy storage locations instead of returning a presigned MinIO URL. This keeps the public login page on the application domain even for old branding rows. Validation: `dotnet build backend/src/TendexAI.API/TendexAI.API.csproj` ✅.
 A deployment pipeline defect was identified as the root cause behind production still serving older backend/frontend behavior after multiple successful workflow runs. The deploy job was tagging an arbitrary non-`latest` local image using `docker images | grep ... | head -1`, which could select an older image, and it also ran `docker compose up --build` on the VPS instead of relying solely on the prebuilt images from the workflow artifacts. The workflow was corrected to tag `tendex-backend:${{ github.sha }}` and `tendex-frontend:${{ github.sha }}` explicitly as `latest`, and to deploy with `docker compose up -d --remove-orphans --force-recreate backend frontend` without server-side rebuilds.
+
+## 2026-04-28: QC Regression Diagnosis and Production Recovery for RFP List & Supplier Offers
+
+### Problem Summary
+- Reported QC issues were perceived as unresolved after the previous deployment.
+- Two new production regressions appeared immediately after the earlier QC-related change:
+  - The RFP list page (`/rfp`) stopped showing previously created booklets.
+  - The supplier offers page (`/evaluation/offers`) started showing an error instead of loading competitions.
+- The login page still appeared visually incorrect for some government logos because the tenant logo area was too constrained for horizontal brand assets.
+
+### Root Cause
+- A new backend field `RequiredAttachmentTypes` was added to the `Competition` entity and EF configuration, which made competition queries depend on a new SQL column.
+- The production tenant databases did not yet contain that column, so the shared competitions query failed at runtime.
+- Both `/rfp` and `/evaluation/offers` depend on the competitions listing pipeline, so one backend schema mismatch caused both visible regressions.
+- The earlier deployment path also had two workflow gaps:
+  1. The compatibility SQL step originally attempted to run before the SQL container availability was guaranteed.
+  2. The deployment archive did not include `backend/scripts/add_required_attachment_types_column.sql`, so the guarded compatibility step was skipped even after the workflow logic was improved.
+- Separately, the login logo endpoint was already serving the correct file, but the frontend constrained the displayed logo area in a way that made wide government logos look blank or cropped.
+
+### Fixes Applied
+1. **Frontend login branding fix**
+   - Updated `frontend/src/views/auth/LoginView.vue` so the tenant logo is displayed in a layout that supports horizontal government logos using a contained presentation instead of an overly restrictive square treatment.
+
+2. **Deployment workflow reliability fixes**
+   - Updated `.github/workflows/cd-deploy.yml` so the tenant compatibility SQL runs **after** service deployment when the SQL Server container is available.
+   - Changed the SQL execution path to run **inside** the `tendex-sqlserver` container using its own `MSSQL_SA_PASSWORD` environment variable.
+   - Included `backend/scripts/add_required_attachment_types_column.sql` in the deployment archive so the script is actually present on the VPS during deployment.
+
+3. **Production execution and verification**
+   - Pushed the workflow fixes and re-ran the production deployment through GitHub Actions.
+   - Confirmed from the successful deployment log that the guarded SQL compatibility step executed and added `[rfp].[Competitions].[RequiredAttachmentTypes]` across the relevant databases, including:
+     - `master_platform`
+     - `tenant_a86f3588`
+     - `tendex_tenant_gov_mof_001`
+     - `tendex_tenant_gov_edu_002`
+     - `tendex_tenant_gov_moh_003`
+     - `tendex_tenant_momrah_001`
+     - `tendex_tenant_ff001`
+     - `tendex_tenant_ffc_001`
+
+### Verification Results
+- API verification after the final deployment:
+  - Login to MOF tenant succeeded.
+  - `GET /api/v1/competitions?page=1&pageSize=100` returned **200 OK**.
+  - The competitions payload returned valid data with `totalItems = 70` for MOF.
+- Live browser verification after the final deployment:
+  - Login page now loads the MOF logo successfully from the public tenant logo endpoint.
+  - The displayed logo area renders the horizontal logo correctly with `object-fit: contain` and a visible image size of approximately `209x80`.
+  - The RFP list page (`/rfp`) now shows existing records again and reports `70` total entries.
+  - The supplier offers page (`/evaluation/offers`) now loads competition cards normally instead of showing the previous error state.
+
+### Files Modified
+- `.github/workflows/cd-deploy.yml`
+- `frontend/src/views/auth/LoginView.vue`
+
+### Relevant Commits
+- `6131434` - `fix(deploy): run tenant sql compat after compose up`
+- `a1aef52` - `fix(deploy): include tenant compat sql script in artifact`
+- Earlier login branding adjustment committed during the same recovery task before final redeployment.
+
+### Final Outcome
+- The new production regressions were caused by an incomplete production rollout of a schema-dependent competition change, not by random frontend failure.
+- The RFP list and supplier offers pages are now loading again in production.
+- The tenant login logo presentation is materially improved and the logo is now visibly rendered for MOF on the live login page.
+
+## 2026-04-28: QC Round 2 Stabilization for Branding, Booklets, Templates, and Supplier Offers
+
+### Root Cause Summary
+- Tenant-facing RFP and template flows were still vulnerable to tenant-database schema drift. Production requests could fail when newer application fields existed in code but the matching tenant SQL columns had not yet been applied on all tenant databases.
+- The branding system loaded tenant data centrally, but booklet preview entry points did not reliably hydrate branding before rendering, and the generated palette coverage was incomplete for broader UI consumption.
+- Booklet step navigation could advance even when the current step failed to persist, which created the user perception that data had been saved while later reopen/edit sessions showed missing content.
+- The template-library upload experience depended too heavily on a subsequent reload, so the user could complete an upload flow without seeing the newly uploaded template reflected immediately in the current view.
+
+### Fixes Applied
+- Added `backend/scripts/apply_tenant_schema_compatibility.sql` to apply tenant schema compatibility updates safely, covering the required attachment types compatibility and supplier-offer soft-delete related columns.
+- Updated `.github/workflows/cd-deploy.yml` so the production deployment package includes the compatibility SQL script and executes the unified tenant schema compatibility step during deployment.
+- Strengthened `frontend/src/stores/branding.ts` to generate and apply a fuller dynamic palette from the central branding source of truth instead of falling back to incomplete static tokens.
+- Updated `frontend/src/views/rfp/BookletEditorView.vue` so booklet editing and preview entry points hydrate tenant branding when opened directly.
+- Updated `frontend/src/components/rfp/OfficialBookletDocument.vue` so the tenant logo is rendered inside the booklet header region instead of being limited to earlier cover-only behavior.
+- Updated `frontend/src/stores/rfp.ts` and `frontend/src/views/rfp/RfpCreateView.vue` so step navigation is blocked when persistence fails and the user sees the real save error instead of silent progression.
+- Updated `frontend/src/views/rfp/TemplateLibraryView.vue` so successful booklet-template uploads are reflected immediately in the library view, preserving UI consistency even if a later reload is delayed.
+
+### Validation Summary
+- Frontend production build completed successfully in the sandbox after the Vue and TypeScript fixes.
+- The local sandbox does not contain the `dotnet` CLI, so backend compilation could not be repeated locally; however, GitHub Actions CI for both backend and frontend completed successfully for commit `e5f340b`.
+- GitHub Actions deployment run `25040870828` completed successfully through test gate, image build, VPS deployment, and post-deployment health check.
+- Post-deployment API verification against the Ministry of Finance tenant returned `200` for login, competitions list, booklet templates, competition detail, and competition offers.
+- Live browser verification confirmed that `/rfp` renders booklet rows, `/evaluation/offers` renders supplier-offer competition cards, `/evaluation/offers/{competitionId}` renders the detail screen, the add-offer form opens without immediate server failure, and `/rfp/template-library` renders visible booklet template cards in production.
+
+### Commit
+- `e5f340b` — `fix: stabilize qc regressions across branding and booklet flows`
