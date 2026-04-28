@@ -9,6 +9,8 @@ namespace TendexAI.Application.Features.Rfp.Commands.AddEvaluationCriterion;
 
 /// <summary>
 /// Handles adding a new evaluation criterion to a competition.
+/// Uses direct DB insertion to bypass the Competition aggregate's concurrency token (Version).
+/// This prevents DbUpdateConcurrencyException when step 2 saves multiple AI-suggested criteria sequentially.
 /// </summary>
 public sealed class AddEvaluationCriterionCommandHandler
     : ICommandHandler<AddEvaluationCriterionCommand, EvaluationCriterionDto>
@@ -28,11 +30,23 @@ public sealed class AddEvaluationCriterionCommandHandler
         AddEvaluationCriterionCommand request,
         CancellationToken cancellationToken)
     {
-        var competition = await _repository.GetByIdWithDetailsForUpdateAsync(request.CompetitionId, cancellationToken);
-        if (competition is null)
-            return Result.Failure<EvaluationCriterionDto>("Competition not found.");
+        var isModifiable = await _repository.IsCompetitionModifiableAsync(
+            request.CompetitionId,
+            cancellationToken);
 
-        var sortOrder = competition.EvaluationCriteria.Count + 1;
+        if (!isModifiable)
+        {
+            var competition = await _repository.GetByIdAsync(request.CompetitionId, cancellationToken);
+            if (competition is null)
+                return Result.Failure<EvaluationCriterionDto>("Competition not found.");
+
+            return Result.Failure<EvaluationCriterionDto>(
+                "لا يمكن إضافة معايير التقييم: المنافسة ليست في حالة قابلة للتعديل.");
+        }
+
+        var currentCriteriaCount = await _repository.GetEvaluationCriteriaCountAsync(
+            request.CompetitionId,
+            cancellationToken);
 
         var criterion = EvaluationCriterion.Create(
             competitionId: request.CompetitionId,
@@ -42,16 +56,17 @@ public sealed class AddEvaluationCriterionCommandHandler
             descriptionEn: request.DescriptionEn,
             weightPercentage: request.WeightPercentage,
             minimumPassingScore: request.MinimumPassingScore,
-            sortOrder: sortOrder,
+            sortOrder: currentCriteriaCount + 1,
             createdBy: request.CreatedByUserId,
             parentCriterionId: request.ParentCriterionId);
 
-        var result = competition.AddEvaluationCriterion(criterion);
-        if (result.IsFailure)
-            return Result.Failure<EvaluationCriterionDto>(result.Error!);
+        await _repository.AddEvaluationCriterionDirectAsync(criterion, cancellationToken);
 
-        // Entity is already tracked — no need to call Update()
-        await _repository.SaveChangesAsync(cancellationToken);
+        _logger.LogInformation(
+            "Successfully added evaluation criterion {CriterionId} to competition {CompetitionId} via direct insertion (SortOrder={SortOrder})",
+            criterion.Id,
+            request.CompetitionId,
+            criterion.SortOrder);
 
         _logger.LogEvaluationCriterionAdded(criterion.Id, request.CompetitionId);
 

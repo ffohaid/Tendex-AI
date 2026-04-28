@@ -65,6 +65,17 @@ public interface ICompetitionRepository
     Task<int> GetSectionCountAsync(Guid competitionId, CancellationToken cancellationToken = default);
 
     /// <summary>
+    /// Adds a single evaluation criterion directly to the database without loading the Competition aggregate.
+    /// This bypasses the Competition concurrency token check.
+    /// </summary>
+    Task AddEvaluationCriterionDirectAsync(EvaluationCriterion criterion, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Gets the current count of evaluation criteria for a competition.
+    /// </summary>
+    Task<int> GetEvaluationCriteriaCountAsync(Guid competitionId, CancellationToken cancellationToken = default);
+
+    /// <summary>
     /// Checks if a competition exists and is in a modifiable state (Draft or UnderPreparation).
     /// </summary>
     Task<bool> IsCompetitionModifiableAsync(Guid competitionId, CancellationToken cancellationToken = default);

@@ -154,6 +154,19 @@ public sealed class CompetitionRepository : ICompetitionRepository, IDisposable
             .CountAsync(s => s.CompetitionId == competitionId, cancellationToken);
     }
 
+    public async Task AddEvaluationCriterionDirectAsync(EvaluationCriterion criterion, CancellationToken cancellationToken = default)
+    {
+        await _context.EvaluationCriteria.AddAsync(criterion, cancellationToken);
+        await _context.SaveChangesAsync(cancellationToken);
+        _context.ChangeTracker.Clear();
+    }
+
+    public async Task<int> GetEvaluationCriteriaCountAsync(Guid competitionId, CancellationToken cancellationToken = default)
+    {
+        return await _context.EvaluationCriteria
+            .CountAsync(c => c.CompetitionId == competitionId, cancellationToken);
+    }
+
     public async Task<bool> IsCompetitionModifiableAsync(Guid competitionId, CancellationToken cancellationToken = default)
     {
         return await _context.Competitions
