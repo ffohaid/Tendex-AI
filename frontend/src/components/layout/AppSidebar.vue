@@ -39,8 +39,10 @@ const { filteredNavigation, toggleExpand, isExpanded } = useSidebarNavigation(si
   <aside
     class="fixed bottom-0 top-16 z-40 flex flex-col transition-all duration-300"
     :class="[effectiveCollapsed ? 'w-16' : 'w-80']"
-    :style="{ insetInlineStart: '0' }"
-    style="background: linear-gradient(180deg, #0F172A 0%, #1E293B 100%);"
+    :style="{
+      insetInlineStart: '0',
+      background: 'linear-gradient(180deg, var(--color-secondary-900) 0%, var(--color-secondary-800) 100%)'
+    }"
     @mouseenter="handleMouseEnter"
     @mouseleave="handleMouseLeave"
   >

@@ -17,16 +17,13 @@ public sealed class GetTenantBrandingQueryHandler
 {
     private readonly ITenantRepository _tenantRepository;
     private readonly IMasterPlatformDbContext _dbContext;
-    private readonly IFileStorageService _fileStorageService;
 
     public GetTenantBrandingQueryHandler(
         ITenantRepository tenantRepository,
-        IMasterPlatformDbContext dbContext,
-        IFileStorageService fileStorageService)
+        IMasterPlatformDbContext dbContext)
     {
         _tenantRepository = tenantRepository;
         _dbContext = dbContext;
-        _fileStorageService = fileStorageService;
     }
 
     public async Task<Result<TenantBrandingDto>> Handle(
@@ -40,7 +37,7 @@ public sealed class GetTenantBrandingQueryHandler
                 $"Tenant with ID '{request.TenantId}' was not found.");
         }
 
-        var resolvedLogoUrl = await ResolveLogoUrlAsync(tenant.LogoUrl, cancellationToken);
+        var resolvedLogoUrl = await ResolveLogoUrlAsync(request.TenantId, tenant.LogoUrl, cancellationToken);
 
         var dto = new TenantBrandingDto(
             TenantId: tenant.Id,
@@ -53,45 +50,59 @@ public sealed class GetTenantBrandingQueryHandler
         return Result.Success(dto);
     }
 
-    private async Task<string?> ResolveLogoUrlAsync(string? logoUrl, CancellationToken cancellationToken)
+    private async Task<string?> ResolveLogoUrlAsync(
+        Guid tenantId,
+        string? logoUrl,
+        CancellationToken cancellationToken)
     {
         if (string.IsNullOrWhiteSpace(logoUrl))
         {
             return logoUrl;
         }
 
+        FileAttachment? fileAttachment = null;
+
         if (Guid.TryParse(logoUrl, out var fileId))
         {
-            var fileAttachment = await _dbContext.FileAttachments
+            fileAttachment = await _dbContext.FileAttachments
                 .AsNoTracking()
                 .FirstOrDefaultAsync(f => f.Id == fileId && !f.IsDeleted, cancellationToken);
+        }
+        else if (TryExtractStorageLocation(logoUrl, out var bucketName, out var objectKey))
+        {
+            fileAttachment = await _dbContext.FileAttachments
+                .AsNoTracking()
+                .Where(f => !f.IsDeleted && f.TenantId == tenantId)
+                .OrderByDescending(f => f.CreatedAt)
+                .FirstOrDefaultAsync(
+                    f => f.BucketName == bucketName && f.ObjectKey == objectKey,
+                    cancellationToken);
 
             if (fileAttachment is null)
             {
-                return logoUrl;
+                var fileName = GetFileName(objectKey);
+                if (!string.IsNullOrWhiteSpace(fileName))
+                {
+                    fileAttachment = await _dbContext.FileAttachments
+                        .AsNoTracking()
+                        .Where(f => !f.IsDeleted && f.TenantId == tenantId)
+                        .OrderByDescending(f => f.CreatedAt)
+                        .FirstOrDefaultAsync(f => f.FileName == fileName, cancellationToken);
+                }
             }
 
-            var urlResult = await _fileStorageService.GetPresignedDownloadUrlAsync(
-                fileAttachment.ObjectKey,
-                fileAttachment.BucketName,
-                null,
-                cancellationToken);
-
-            return urlResult.IsSuccess ? urlResult.Value : logoUrl;
+            if (fileAttachment is null)
+            {
+                return BuildLegacyPublicTenantLogoUrl(tenantId, bucketName, objectKey);
+            }
         }
 
-        if (!TryExtractStorageLocation(logoUrl, out var bucketName, out var objectKey))
+        if (fileAttachment is null)
         {
-            return logoUrl;
+            return RewriteToPublicTenantLogoProxy(logoUrl);
         }
 
-        var legacyUrlResult = await _fileStorageService.GetPresignedDownloadUrlAsync(
-            objectKey,
-            bucketName,
-            null,
-            cancellationToken);
-
-        return legacyUrlResult.IsSuccess ? legacyUrlResult.Value : logoUrl;
+        return $"/api/v1/tenants/logo/{fileAttachment.Id}";
     }
 
     private static bool TryExtractStorageLocation(string logoUrl, out string bucketName, out string objectKey)
@@ -125,6 +136,49 @@ public sealed class GetTenantBrandingQueryHandler
         bucketName = segments[bucketIndex];
         objectKey = WebUtility.UrlDecode(string.Join('/', segments.Skip(bucketIndex + 1)));
         return !string.IsNullOrWhiteSpace(bucketName) && !string.IsNullOrWhiteSpace(objectKey);
+    }
+
+    private static string BuildLegacyPublicTenantLogoUrl(Guid tenantId, string bucketName, string objectKey)
+    {
+        var encodedBucket = Uri.EscapeDataString(bucketName);
+        var encodedObjectKey = Uri.EscapeDataString(objectKey.TrimStart('/'));
+        return $"/api/v1/tenants/logo-legacy?tenantId={tenantId:D}&bucketName={encodedBucket}&objectKey={encodedObjectKey}";
+    }
+
+    private static string? RewriteToPublicTenantLogoProxy(string? logoUrl)
+    {
+        if (string.IsNullOrWhiteSpace(logoUrl))
+        {
+            return logoUrl;
+        }
+
+        if (!Uri.TryCreate(logoUrl, UriKind.Absolute, out var absoluteUri))
+        {
+            return logoUrl;
+        }
+
+        var builder = new UriBuilder(absoluteUri)
+        {
+            Scheme = Uri.UriSchemeHttps,
+            Host = "mof.netaq.pro",
+            Port = -1,
+            Path = $"/minio{absoluteUri.AbsolutePath}"
+        };
+
+        return builder.Uri.ToString();
+    }
+
+    private static string? GetFileName(string objectKey)
+    {
+        if (string.IsNullOrWhiteSpace(objectKey))
+        {
+            return null;
+        }
+
+        var segments = objectKey
+            .Split('/', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+
+        return segments.Length == 0 ? null : segments[^1];
     }
 
     private static string? ExtractPath(string value)

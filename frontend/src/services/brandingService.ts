@@ -64,12 +64,11 @@ export async function uploadTenantLogo(
 }
 
 /**
- * Gets a presigned download URL for a file.
- * Used to display uploaded logos.
+ * Builds a same-origin public URL for a tenant logo file.
+ * This avoids leaking internal MinIO hosts into runtime UI image sources.
  */
 export async function getFileDownloadUrl(
   fileId: string,
 ): Promise<string> {
-  const response = await httpClient.get(`/v1/files/${fileId}/download-url`)
-  return response.data.url
+  return Promise.resolve(`/api/v1/tenants/logo/${fileId}`)
 }
