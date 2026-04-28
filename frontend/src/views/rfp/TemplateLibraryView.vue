@@ -68,6 +68,12 @@ interface CompetitionListItem {
   status: number
 }
 
+interface UploadBookletTemplateResponse {
+  id: string
+  sectionCount: number
+  totalBlocks: number
+}
+
 // ═══════════════════════════════════════════════════════════════
 //  State
 // ═══════════════════════════════════════════════════════════════
@@ -230,7 +236,6 @@ function formatDate(dateStr: string): string {
     return dateStr
   }
 }
-
 // ═══════════════════════════════════════════════════════════════
 //  Data Loading
 // ═══════════════════════════════════════════════════════════════
@@ -338,7 +343,6 @@ function handleFileSelect(event: Event): void {
 
 async function handleUpload(): Promise<void> {
   if (!uploadFile.value || !uploadForm.value.nameAr.trim()) return
-
   isUploading.value = true
   uploadError.value = ''
   try {
@@ -351,14 +355,37 @@ async function handleUpload(): Promise<void> {
     formData.append('category', uploadForm.value.category)
     if (uploadForm.value.sourceReference) formData.append('sourceReference', uploadForm.value.sourceReference)
 
-    await httpPost('/v1/booklet-templates/upload', formData)
-    showUploadDialog.value = false
+    const uploaded = await httpPost<UploadBookletTemplateResponse>('/v1/booklet-templates/upload', formData)
+
     currentPage.value = 1
     searchQuery.value = ''
     selectedCategory.value = 'all'
+    await loadBookletTemplates()
+
+    if (!bookletTemplates.value.some(template => template.id === uploaded.id)) {
+      bookletTemplates.value = [
+        {
+          id: uploaded.id,
+          nameAr: uploadForm.value.nameAr,
+          nameEn: uploadForm.value.nameEn || uploadForm.value.nameAr,
+          descriptionAr: uploadForm.value.descriptionAr || null,
+          descriptionEn: uploadForm.value.descriptionEn || null,
+          category: uploadForm.value.category,
+          sourceReference: uploadForm.value.sourceReference || null,
+          originalFileName: uploadFile.value.name,
+          sectionCount: uploaded.sectionCount,
+          usageCount: 0,
+          isActive: true,
+          createdAt: new Date().toISOString(),
+        },
+        ...bookletTemplates.value,
+      ]
+      bookletTotalCount.value += 1
+    }
+
+    showUploadDialog.value = false
     uploadSuccess.value = true
     setTimeout(() => { uploadSuccess.value = false }, 5000)
-    await loadBookletTemplates()
   } catch (err: unknown) {
     uploadError.value = err instanceof Error ? err.message : (locale.value === 'ar' ? 'حدث خطأ أثناء رفع القالب' : 'Error uploading template')
   } finally {

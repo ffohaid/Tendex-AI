@@ -179,6 +179,13 @@ function hasRenderableBlocks(section: OfficialBookletSection | null): boolean {
           <div><strong>رقم الكراسة:</strong> {{ printableReferenceNumber }}</div>
         </div>
         <div class="page-frame-header__identity">
+          <div v-if="meta.logoUrl" class="page-frame-header__logo-wrap">
+            <img
+              :src="meta.logoUrl"
+              :alt="printableOrganizationName"
+              class="page-frame-header__logo"
+            />
+          </div>
           <div class="page-frame-header__country">{{ printableOrganizationName }}</div>
           <div><strong>اسم الإدارة:</strong> {{ printableAdministrationName }}</div>
           <div><strong>اسم النموذج:</strong> {{ printableTemplateName }}</div>
@@ -378,6 +385,20 @@ function hasRenderableBlocks(section: OfficialBookletSection | null): boolean {
 
 .page-frame-header__identity {
   text-align: end;
+}
+
+.page-frame-header__logo-wrap {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 0.75rem;
+}
+
+.page-frame-header__logo {
+  max-width: 160px;
+  max-height: 56px;
+  width: auto;
+  height: auto;
+  object-fit: contain;
 }
 
 .toc-heading {

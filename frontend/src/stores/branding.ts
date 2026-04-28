@@ -176,31 +176,39 @@ export const useBrandingStore = defineStore('branding', () => {
    */
   function applyBrandingToDocument(): void {
     const root = document.documentElement
+    const resolvedPrimary = normalizeHex(primaryColor.value, DEFAULT_BRANDING.primaryColor)
+    const resolvedSecondary = normalizeHex(secondaryColor.value, DEFAULT_BRANDING.secondaryColor)
 
-    // Primary color and computed variants
-    root.style.setProperty('--color-primary', primaryColor.value)
-    root.style.setProperty(
-      '--color-primary-light',
-      lightenColor(primaryColor.value, 15),
-    )
-    root.style.setProperty(
-      '--color-primary-dark',
-      darkenColor(primaryColor.value, 15),
-    )
+    setPaletteProperties(root, 'primary', resolvedPrimary, {
+      50: 92,
+      100: 82,
+      200: 64,
+      300: 46,
+      400: 24,
+      500: 0,
+      600: -10,
+      700: -22,
+      800: -34,
+      900: -46,
+    })
 
-    // Secondary color and computed variants
-    root.style.setProperty('--color-secondary', secondaryColor.value)
-    root.style.setProperty(
-      '--color-secondary-light',
-      lightenColor(secondaryColor.value, 15),
-    )
-    root.style.setProperty(
-      '--color-secondary-dark',
-      darkenColor(secondaryColor.value, 15),
-    )
+    setPaletteProperties(root, 'secondary', resolvedSecondary, {
+      50: 92,
+      100: 84,
+      200: 70,
+      300: 52,
+      400: 28,
+      500: 0,
+      600: -10,
+      700: -22,
+      800: -34,
+      900: -46,
+    })
 
-    // Success color matches primary for brand consistency
-    root.style.setProperty('--color-success', primaryColor.value)
+    root.style.setProperty('--color-success', resolvedPrimary)
+    root.style.setProperty('--color-success-light', lightenColor(resolvedPrimary, 18))
+    root.style.setProperty('--color-success-dark', darkenColor(resolvedPrimary, 18))
+    root.style.setProperty('--color-success-50', lightenColor(resolvedPrimary, 90))
   }
 
   /**
@@ -219,37 +227,75 @@ export const useBrandingStore = defineStore('branding', () => {
     sessionStorage.setItem(STORAGE_KEY, JSON.stringify(state))
   }
 
+  function setPaletteProperties(
+    root: HTMLElement,
+    token: 'primary' | 'secondary',
+    baseColor: string,
+    shadeMap: Record<number, number>,
+  ): void {
+    root.style.setProperty(`--color-${token}`, baseColor)
+    root.style.setProperty(`--color-${token}-light`, lightenColor(baseColor, 18))
+    root.style.setProperty(`--color-${token}-dark`, darkenColor(baseColor, 18))
+
+    Object.entries(shadeMap).forEach(([shade, amount]) => {
+      const value = amount >= 0
+        ? lightenColor(baseColor, amount)
+        : darkenColor(baseColor, Math.abs(amount))
+      root.style.setProperty(`--color-${token}-${shade}`, value)
+    })
+  }
+
+  function normalizeHex(input: string | null | undefined, fallback: string): string {
+    const candidate = (input || '').trim()
+    return /^#?[0-9A-Fa-f]{6}$/.test(candidate)
+      ? `#${candidate.replace('#', '').toUpperCase()}`
+      : fallback
+  }
+
   /**
    * Lightens a hex color by a given percentage.
    */
   function lightenColor(hex: string, percent: number): string {
-    return adjustColor(hex, percent)
+    return mixColor(hex, '#FFFFFF', percent)
   }
 
   /**
    * Darkens a hex color by a given percentage.
    */
   function darkenColor(hex: string, percent: number): string {
-    return adjustColor(hex, -percent)
+    return mixColor(hex, '#000000', percent)
   }
 
-  /**
-   * Adjusts a hex color brightness by a percentage.
-   * Positive values lighten, negative values darken.
-   */
-  function adjustColor(hex: string, percent: number): string {
-    const cleanHex = hex.replace('#', '')
-    const num = parseInt(cleanHex, 16)
+  function mixColor(baseHex: string, targetHex: string, percent: number): string {
+    const base = normalizeHex(baseHex, DEFAULT_BRANDING.primaryColor)
+    const target = normalizeHex(targetHex, '#FFFFFF')
+    const ratio = Math.min(100, Math.max(0, percent)) / 100
 
-    let r = (num >> 16) & 0xff
-    let g = (num >> 8) & 0xff
-    let b = num & 0xff
+    const [r, g, b] = hexToRgb(base)
+    const [tr, tg, tb] = hexToRgb(target)
 
-    r = Math.min(255, Math.max(0, Math.round(r + (r * percent) / 100)))
-    g = Math.min(255, Math.max(0, Math.round(g + (g * percent) / 100)))
-    b = Math.min(255, Math.max(0, Math.round(b + (b * percent) / 100)))
+    return rgbToHex(
+      Math.round(r + (tr - r) * ratio),
+      Math.round(g + (tg - g) * ratio),
+      Math.round(b + (tb - b) * ratio),
+    )
+  }
 
-    return `#${((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1).toUpperCase()}`
+  function hexToRgb(hex: string): [number, number, number] {
+    const cleanHex = normalizeHex(hex, '#000000').replace('#', '')
+    const value = parseInt(cleanHex, 16)
+    return [
+      (value >> 16) & 0xff,
+      (value >> 8) & 0xff,
+      value & 0xff,
+    ]
+  }
+
+  function rgbToHex(r: number, g: number, b: number): string {
+    return `#${[r, g, b]
+      .map(channel => Math.min(255, Math.max(0, channel)).toString(16).padStart(2, '0'))
+      .join('')
+      .toUpperCase()}`
   }
 
   return {

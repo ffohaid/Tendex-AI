@@ -668,6 +668,7 @@ watch(
 )
 
 onMounted(async () => {
+  await brandingStore.loadAndApplyBranding()
   await loadBookletData()
   await loadCompetitionStatus()
   await nextTick()

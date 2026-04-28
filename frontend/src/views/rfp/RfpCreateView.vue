@@ -96,12 +96,17 @@ async function validateCurrentStep(): Promise<boolean> {
 /** Handle next step */
 async function handleNext() {
   const isValid = await validateCurrentStep()
-  if (isValid) {
-    // Save current step data to backend before advancing
-    await rfpStore.saveCurrentStep()
-    rfpStore.nextStep()
-    window.scrollTo({ top: 0, behavior: 'smooth' })
+  if (!isValid) return
+
+  const saveSucceeded = await rfpStore.saveCurrentStep()
+  if (!saveSucceeded) {
+    submitError.value = rfpStore.errors[0] || t('rfp.errors.saveFirst')
+    return
   }
+
+  submitError.value = ''
+  rfpStore.nextStep()
+  window.scrollTo({ top: 0, behavior: 'smooth' })
 }
 
 /** Handle previous step */

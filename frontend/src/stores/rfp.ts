@@ -594,6 +594,7 @@ export const useRfpStore = defineStore('rfp', () => {
     // Ensure the competition is created first
     if (!formData.value.id) {
       if (!hasMinimumRequiredFields()) {
+        errors.value = ['يرجى استكمال بيانات الخطوة الحالية قبل المتابعة.']
         console.warn('[SaveStep] Not enough data to create competition')
         return false
       }
@@ -606,8 +607,12 @@ export const useRfpStore = defineStore('rfp', () => {
         formData.value.lastAutoSavedAt = new Date().toISOString()
         autoSaveStatus.value = 'saved'
         isDirty.value = false
+        errors.value = []
       } else {
         autoSaveStatus.value = 'error'
+        errors.value = createResponse.errors.length
+          ? createResponse.errors
+          : [createResponse.message || 'تعذر إنشاء الكراسة.']
         console.warn('[SaveStep] Create failed:', createResponse.message)
         return false
       }
@@ -628,9 +633,13 @@ export const useRfpStore = defineStore('rfp', () => {
       formData.value.updatedAt = new Date().toISOString()
       autoSaveStatus.value = 'saved'
       isDirty.value = false
+      errors.value = []
       return true
     } else {
       autoSaveStatus.value = 'error'
+      errors.value = result.errors.length
+        ? result.errors
+        : [result.message || 'تعذر حفظ بيانات الخطوة الحالية.']
       console.warn('[SaveStep] Step save failed:', result.message)
       return false
     }
