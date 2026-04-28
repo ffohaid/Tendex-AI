@@ -142,8 +142,8 @@ onMounted(async () => {
     </div>
 
     <!-- Center section: Search bar -->
-    <div class="mx-6 hidden flex-1 md:flex">
-      <form class="relative w-full max-w-md" @submit.prevent="submitHeaderSearch">
+    <div class="mx-4 hidden min-w-0 flex-1 md:flex lg:mx-6">
+      <form class="relative w-full" @submit.prevent="submitHeaderSearch">
         <i
           class="pi pi-search absolute start-3 top-1/2 -translate-y-1/2 text-sm text-surface-dim"
         ></i>
@@ -157,7 +157,7 @@ onMounted(async () => {
     </div>
 
     <!-- End section: Actions -->
-    <div class="flex items-center gap-2 pe-4">
+    <div class="flex shrink-0 items-center gap-2 pe-4">
       <!-- AI Powered Badge -->
       <div
         class="hidden items-center gap-1.5 rounded-full bg-gradient-to-r from-ai-50 to-ai-100 px-3 py-1.5 lg:flex"

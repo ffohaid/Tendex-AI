@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, onMounted, onBeforeUnmount, nextTick, watch } from 'vue'
+import { ref, computed, onMounted, nextTick, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { httpGet, httpPost, httpPut } from '@/services/http'
@@ -45,6 +45,9 @@ interface BookletEditorData {
   projectNameAr: string
   projectNameEn: string
   description: string | null
+  referenceNumber?: string | null
+  department?: string | null
+  issueDate?: string | null
   sections: {
     id: string
     competitionSectionId: string | null
@@ -89,7 +92,6 @@ const showMetadataDialog = ref(false)
 const isSavingMetadata = ref(false)
 const metadataError = ref('')
 const validationError = ref('')
-let sectionObserver: IntersectionObserver | null = null
 let autoSaveTimer: ReturnType<typeof setTimeout> | null = null
 const hasPendingAutoSave = ref(false)
 
@@ -186,6 +188,86 @@ const officialBookletMeta = computed(() => ({
   versionLabel: 'الأولى',
 }))
 
+type ReferenceBlockGroup = {
+  key: string
+  colorType: 'fixed' | 'guidance'
+  blocks: BookletBlock[]
+}
+
+const activeSection = computed(() => {
+  return sections.value.find(section => section.id === activeSectionId.value) ?? sections.value[0] ?? null
+})
+
+const activeSectionIndex = computed(() => {
+  if (!activeSection.value) return -1
+  return sections.value.findIndex(section => section.id === activeSection.value?.id)
+})
+
+const activeSectionEditableBlocks = computed(() => {
+  return activeSection.value?.blocks.filter(block => block.colorType === 'editable' || block.colorType === 'example') ?? []
+})
+
+const activeSectionReferenceGroups = computed<ReferenceBlockGroup[]>(() => {
+  const groups: ReferenceBlockGroup[] = []
+
+  for (const block of activeSection.value?.blocks ?? []) {
+    if (block.colorType === 'fixed') {
+      groups.push({
+        key: `fixed-${block.id}`,
+        colorType: 'fixed',
+        blocks: [block],
+      })
+      continue
+    }
+
+    if (block.colorType === 'guidance' && showGuidance.value) {
+      const lastGroup = groups[groups.length - 1]
+      if (lastGroup?.colorType === 'guidance') {
+        lastGroup.blocks.push(block)
+      } else {
+        groups.push({
+          key: `guidance-${block.id}`,
+          colorType: 'guidance',
+          blocks: [block],
+        })
+      }
+    }
+  }
+
+  return groups
+})
+
+function formatCoverDate(dateValue?: string | null): string {
+  if (!dateValue) return ''
+
+  const trimmedValue = dateValue.trim()
+  if (!trimmedValue) return ''
+
+  const directIsoMatch = trimmedValue.match(/^(\d{4}-\d{2}-\d{2})/)
+  if (directIsoMatch) {
+    return directIsoMatch[1]
+  }
+
+  const parsedDate = new Date(trimmedValue)
+  if (Number.isNaN(parsedDate.getTime())) {
+    return trimmedValue.replace(/\/{2,}/g, '/').replace(/^\/|\/$/g, '')
+  }
+
+  const year = parsedDate.getUTCFullYear()
+  const month = String(parsedDate.getUTCMonth() + 1).padStart(2, '0')
+  const day = String(parsedDate.getUTCDate()).padStart(2, '0')
+  return `${year}-${month}-${day}`
+}
+
+function goToSectionOffset(offset: number): void {
+  if (!sections.value.length || activeSectionIndex.value === -1) return
+
+  const targetIndex = activeSectionIndex.value + offset
+  if (targetIndex < 0 || targetIndex >= sections.value.length) return
+
+  activeSectionId.value = sections.value[targetIndex].id
+}
+
 // ─── Methods ────────────────────────────────────────────
 async function loadBookletData() {
   isLoading.value = true
@@ -198,6 +280,9 @@ async function loadBookletData() {
     projectNameEn.value = data.projectNameEn
     templateNameAr.value = data.templateNameAr
     description.value = data.description ?? ''
+    referenceNumber.value = data.referenceNumber?.trim() || ''
+    departmentName.value = data.department?.trim() || ''
+    issueDate.value = formatCoverDate(data.issueDate)
 
     sections.value = data.sections.map(s => ({
       id: s.id,
@@ -231,41 +316,10 @@ async function loadBookletData() {
   }
 }
 
-function getBlocksForSection(sectionId: string): BookletBlock[] {
-  const section = sections.value.find(s => s.id === sectionId)
-  return section?.blocks ?? []
-}
-
 function scrollToSection(sectionId: string) {
   activeSectionId.value = sectionId
-  const el = document.getElementById(`section-${sectionId}`)
-  if (el) {
-    el.scrollIntoView({ behavior: 'smooth', block: 'start' })
-  }
 }
 
-function initializeSectionObserver() {
-  sectionObserver?.disconnect()
-  sectionObserver = new IntersectionObserver((entries) => {
-    const visibleSections = entries
-      .filter(entry => entry.isIntersecting)
-      .sort((a, b) => b.intersectionRatio - a.intersectionRatio)
-    if (visibleSections.length > 0) {
-      activeSectionId.value = visibleSections[0].target.id.replace('section-', '')
-    }
-  }, {
-    root: null,
-    rootMargin: '-20% 0px -55% 0px',
-    threshold: [0.2, 0.35, 0.5, 0.75]
-  })
-
-  sections.value.forEach((section) => {
-    const el = document.getElementById(`section-${section.id}`)
-    if (el) {
-      sectionObserver?.observe(el)
-    }
-  })
-}
 
 function updateBlockContent(blockId: string, newContent: string) {
   validationError.value = ''
@@ -488,7 +542,7 @@ async function loadCompetitionStatus() {
     description.value = data.description || description.value
     referenceNumber.value = data.referenceNumber || referenceNumber.value
     departmentName.value = data.department || departmentName.value
-    issueDate.value = data.submissionDeadline || data.startDate || issueDate.value
+    issueDate.value = formatCoverDate(data.startDate || issueDate.value)
   } catch {
     competitionStatus.value = 1
   }
@@ -672,7 +726,6 @@ onMounted(async () => {
   await loadBookletData()
   await loadCompetitionStatus()
   await nextTick()
-  initializeSectionObserver()
 
   if (competitionStatus.value >= 2 || route.query.stepId) {
     await loadApprovalStatus()
@@ -683,10 +736,7 @@ onMounted(async () => {
   }
 })
 
-onBeforeUnmount(() => {
-  sectionObserver?.disconnect()
-  if (autoSaveTimer) clearTimeout(autoSaveTimer)
-})
+
 </script>
 
 <template>
@@ -939,25 +989,49 @@ onBeforeUnmount(() => {
           </div>
 
           <!-- Sections -->
-          <div v-for="section in sections" :key="section.id" :id="`section-${section.id}`" class="mb-10">
-            <!-- Section Header -->
-            <div class="mb-4 border-b-2 border-primary/20 pb-3">
-              <h2 class="text-xl font-bold text-secondary-800">{{ section.titleAr }}</h2>
-              <div class="mt-1 flex gap-2 text-xs text-secondary-400">
-                <span>{{ section.blocks.length }} {{ locale === 'ar' ? 'كتلة' : 'blocks' }}</span>
-                <span v-if="section.blocks.filter(b => b.colorType === 'editable').length > 0" class="text-green-500">
-                  {{ section.blocks.filter(b => b.colorType === 'editable').length }} {{ locale === 'ar' ? 'قابلة للتعديل' : 'editable' }}
-                </span>
-                <span v-if="section.blocks.filter(b => b.colorType === 'example').length > 0" class="text-red-500">
-                  {{ section.blocks.filter(b => b.colorType === 'example').length }} {{ locale === 'ar' ? 'تتطلب تحديثاً' : 'requires update' }}
-                </span>
+          <div v-if="activeSection" :id="`section-${activeSection.id}`" class="space-y-6">
+            <div class="flex flex-col gap-3 rounded-xl border border-secondary-200 bg-secondary-50/70 p-4 lg:flex-row lg:items-center lg:justify-between">
+              <div>
+                <p class="text-xs font-semibold uppercase tracking-wide text-primary/80">
+                  {{ locale === 'ar' ? 'القسم النشط' : 'Active section' }}
+                </p>
+                <h2 class="mt-1 text-xl font-bold text-secondary-800">{{ activeSection.titleAr }}</h2>
+                <div class="mt-2 flex flex-wrap gap-2 text-xs text-secondary-500">
+                  <span>{{ activeSection.blocks.length }} {{ locale === 'ar' ? 'كتلة' : 'blocks' }}</span>
+                  <span v-if="activeSection.blocks.filter(b => b.colorType === 'editable').length > 0" class="text-green-600">
+                    {{ activeSection.blocks.filter(b => b.colorType === 'editable').length }} {{ locale === 'ar' ? 'قابلة للتعديل' : 'editable' }}
+                  </span>
+                  <span v-if="activeSection.blocks.filter(b => b.colorType === 'example').length > 0" class="text-red-600">
+                    {{ activeSection.blocks.filter(b => b.colorType === 'example').length }} {{ locale === 'ar' ? 'تتطلب تحديثاً' : 'requires update' }}
+                  </span>
+                </div>
+              </div>
+
+              <div class="flex items-center gap-2 self-start lg:self-auto">
+                <button
+                  type="button"
+                  class="inline-flex items-center gap-2 rounded-lg border border-secondary-200 bg-white px-3 py-2 text-xs font-medium text-secondary-600 transition hover:border-primary/40 hover:text-primary disabled:cursor-not-allowed disabled:opacity-50"
+                  :disabled="activeSectionIndex <= 0"
+                  @click="goToSectionOffset(-1)"
+                >
+                  <i class="pi pi-arrow-right text-[10px]"></i>
+                  {{ locale === 'ar' ? 'السابق' : 'Previous' }}
+                </button>
+                <button
+                  type="button"
+                  class="inline-flex items-center gap-2 rounded-lg border border-secondary-200 bg-white px-3 py-2 text-xs font-medium text-secondary-600 transition hover:border-primary/40 hover:text-primary disabled:cursor-not-allowed disabled:opacity-50"
+                  :disabled="activeSectionIndex === -1 || activeSectionIndex >= sections.length - 1"
+                  @click="goToSectionOffset(1)"
+                >
+                  {{ locale === 'ar' ? 'التالي' : 'Next' }}
+                  <i class="pi pi-arrow-left text-[10px]"></i>
+                </button>
               </div>
             </div>
 
-            <!-- Content Blocks -->
             <div class="space-y-3">
               <details
-                v-if="getBlocksForSection(section.id).some(b => b.colorType === 'fixed' || (b.colorType === 'guidance' && showGuidance))"
+                v-if="activeSectionReferenceGroups.length > 0"
                 class="overflow-hidden rounded-xl border border-secondary-200 bg-secondary-50/70"
                 open
               >
@@ -966,35 +1040,39 @@ onBeforeUnmount(() => {
                 </summary>
                 <div class="space-y-3 border-t border-secondary-200 p-4">
                   <div
-                    v-for="block in getBlocksForSection(section.id).filter(b => b.colorType === 'fixed' || (b.colorType === 'guidance' && showGuidance))"
-                    :key="`reference-${block.id}`"
+                    v-for="group in activeSectionReferenceGroups"
+                    :key="group.key"
                     class="rounded-lg p-4"
-                    :class="getBlockBorderClass(block.colorType)"
+                    :class="getBlockBorderClass(group.colorType)"
                   >
-                    <div class="mb-2 flex items-center justify-between">
+                    <div class="mb-3 flex items-center justify-between">
                       <span
                         class="inline-flex items-center gap-1 rounded-md border px-2 py-0.5 text-xs font-medium"
-                        :class="getColorBadge(block.colorType).class"
+                        :class="getColorBadge(group.colorType).class"
                       >
-                        <i :class="`pi ${getColorBadge(block.colorType).icon}`" class="text-[10px]"></i>
-                        {{ getColorBadge(block.colorType).label }}
+                        <i :class="`pi ${getColorBadge(group.colorType).icon}`" class="text-[10px]"></i>
+                        {{ getColorBadge(group.colorType).label }}
                       </span>
                     </div>
-                    <RichTextEditor
-                      :model-value="block.editedContent || block.contentHtml || block.originalContent"
-                      :editable="false"
-                      dir="rtl"
-                      min-height="80px"
-                      max-height="400px"
-                      compact
-                    />
+
+                    <div class="space-y-3">
+                      <RichTextEditor
+                        v-for="block in group.blocks"
+                        :key="`reference-${block.id}`"
+                        :model-value="block.editedContent || block.contentHtml || block.originalContent"
+                        :editable="false"
+                        dir="rtl"
+                        min-height="80px"
+                        max-height="400px"
+                        compact
+                      />
+                    </div>
                   </div>
                 </div>
               </details>
 
-              <template v-for="block in getBlocksForSection(section.id)" :key="block.id">
+              <template v-for="block in activeSectionEditableBlocks" :key="block.id">
                 <div
-                  v-if="block.colorType === 'editable' || block.colorType === 'example'"
                   class="group relative rounded-lg p-4 transition-all"
                   :class="getBlockBorderClass(block.colorType)"
                 >
@@ -1057,7 +1135,10 @@ onBeforeUnmount(() => {
                 </div>
               </template>
 
-              <div v-if="getBlocksForSection(section.id).length === 0" class="rounded-lg border-2 border-dashed border-secondary-200 p-8 text-center">
+              <div
+                v-if="activeSectionReferenceGroups.length === 0 && activeSectionEditableBlocks.length === 0"
+                class="rounded-lg border-2 border-dashed border-secondary-200 p-8 text-center"
+              >
                 <i class="pi pi-file-edit text-3xl text-secondary-300"></i>
                 <p class="mt-2 text-sm text-secondary-400">
                   {{ locale === 'ar' ? 'لا يوجد محتوى في هذا القسم' : 'No content in this section' }}

@@ -355,31 +355,35 @@ async function handleUpload(): Promise<void> {
     formData.append('category', uploadForm.value.category)
     if (uploadForm.value.sourceReference) formData.append('sourceReference', uploadForm.value.sourceReference)
 
-    const uploaded = await httpPost<UploadBookletTemplateResponse>('/v1/booklet-templates/upload', formData)
+      const uploaded = await httpPost<UploadBookletTemplateResponse>('/v1/booklet-templates/upload', formData)
+    const optimisticTemplate = {
+      id: uploaded.id,
+      nameAr: uploadForm.value.nameAr,
+      nameEn: uploadForm.value.nameEn || uploadForm.value.nameAr,
+      descriptionAr: uploadForm.value.descriptionAr || null,
+      descriptionEn: uploadForm.value.descriptionEn || null,
+      category: uploadForm.value.category,
+      sourceReference: uploadForm.value.sourceReference || null,
+      originalFileName: uploadFile.value.name,
+      sectionCount: uploaded.sectionCount,
+      usageCount: 0,
+      isActive: true,
+      createdAt: new Date().toISOString(),
+    }
 
     currentPage.value = 1
     searchQuery.value = ''
     selectedCategory.value = 'all'
+
+    if (!bookletTemplates.value.some(template => template.id === uploaded.id)) {
+      bookletTemplates.value = [optimisticTemplate, ...bookletTemplates.value]
+      bookletTotalCount.value += 1
+    }
+
     await loadBookletTemplates()
 
     if (!bookletTemplates.value.some(template => template.id === uploaded.id)) {
-      bookletTemplates.value = [
-        {
-          id: uploaded.id,
-          nameAr: uploadForm.value.nameAr,
-          nameEn: uploadForm.value.nameEn || uploadForm.value.nameAr,
-          descriptionAr: uploadForm.value.descriptionAr || null,
-          descriptionEn: uploadForm.value.descriptionEn || null,
-          category: uploadForm.value.category,
-          sourceReference: uploadForm.value.sourceReference || null,
-          originalFileName: uploadFile.value.name,
-          sectionCount: uploaded.sectionCount,
-          usageCount: 0,
-          isActive: true,
-          createdAt: new Date().toISOString(),
-        },
-        ...bookletTemplates.value,
-      ]
+      bookletTemplates.value = [optimisticTemplate, ...bookletTemplates.value]
       bookletTotalCount.value += 1
     }
 

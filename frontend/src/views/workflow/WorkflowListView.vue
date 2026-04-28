@@ -42,10 +42,12 @@ const canManageWorkflow = computed(() =>
 const isLoading = ref(false)
 const workflows = ref<WorkflowDefinitionDto[]>([])
 const searchQuery = ref('')
-const statusFilter = ref<string>('all')
+const statusFilter = ref<string>('active')
 const isSeeding = ref(false)
 const seedError = ref('')
 const seedSuccess = ref('')
+const deleteSuccess = ref('')
+const deleteError = ref('')
 const showDeleteConfirm = ref(false)
 const deleteTargetId = ref('')
 
@@ -248,10 +250,27 @@ function confirmDelete(id: string, event: Event): void {
 
 async function handleDelete(): Promise<void> {
   if (!deleteTargetId.value) return
+
+  deleteSuccess.value = ''
+  deleteError.value = ''
+
+  const deletedWorkflow = workflows.value.find(w => w.id === deleteTargetId.value)
+
   try {
     await deleteWorkflowDefinition(deleteTargetId.value)
+    statusFilter.value = 'active'
+    deleteSuccess.value = locale.value === 'ar'
+      ? `تم حذف مسار الاعتماد "${deletedWorkflow?.nameAr ?? ''}" بنجاح.`
+      : `Workflow "${deletedWorkflow?.nameEn ?? deletedWorkflow?.nameAr ?? ''}" deleted successfully.`
     await loadWorkflows()
-  } catch (err) {
+    setTimeout(() => {
+      deleteSuccess.value = ''
+    }, 5000)
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : String(err)
+    deleteError.value = locale.value === 'ar'
+      ? `تعذر حذف مسار الاعتماد: ${message}`
+      : `Failed to delete workflow: ${message}`
     console.error('Failed to delete workflow:', err)
   } finally {
     showDeleteConfirm.value = false
@@ -336,6 +355,28 @@ onMounted(() => {
       <i class="pi pi-exclamation-triangle text-lg text-red-600"></i>
       <p class="flex-1 text-sm text-red-700">{{ seedError }}</p>
       <button class="text-xs font-medium text-red-600 hover:underline" @click="seedError = ''">
+        {{ locale === 'ar' ? 'إغلاق' : 'Close' }}
+      </button>
+    </div>
+
+    <div
+      v-if="deleteSuccess"
+      class="flex items-center gap-3 rounded-lg border border-green-200 bg-green-50 p-4"
+    >
+      <i class="pi pi-check-circle text-lg text-green-600"></i>
+      <p class="flex-1 text-sm text-green-700">{{ deleteSuccess }}</p>
+      <button class="text-xs font-medium text-green-600 hover:underline" @click="deleteSuccess = ''">
+        {{ locale === 'ar' ? 'إغلاق' : 'Close' }}
+      </button>
+    </div>
+
+    <div
+      v-if="deleteError"
+      class="flex items-center gap-3 rounded-lg border border-red-200 bg-red-50 p-4"
+    >
+      <i class="pi pi-exclamation-triangle text-lg text-red-600"></i>
+      <p class="flex-1 text-sm text-red-700">{{ deleteError }}</p>
+      <button class="text-xs font-medium text-red-600 hover:underline" @click="deleteError = ''">
         {{ locale === 'ar' ? 'إغلاق' : 'Close' }}
       </button>
     </div>

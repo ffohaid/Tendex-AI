@@ -1258,3 +1258,31 @@ Both BOQ command handlers were refactored to follow the same safe direct-insert 
 A production re-validation of the BOQ wizard after the previous concurrency fix showed that the original 500 symptom had shifted to a deterministic `400 Bad Request` when saving an AI-generated BOQ draft. Live browser instrumentation captured the exact failing request and confirmed the batch save endpoint `/api/v1/competitions/{id}/boq-items/batch` was rejecting the request with the SQL Server execution-strategy error: `SqlServerRetryingExecutionStrategy does not support user-initiated transactions. Use the execution strategy returned by DbContext.Database.CreateExecutionStrategy() to execute all the operations in the transaction as a retriable unit.`
 
 To resolve this, `CompetitionRepository.AddBoqItemsDirectAsync` was updated so the clear-and-reinsert transaction now runs inside `DbContext.Database.CreateExecutionStrategy().ExecuteAsync(...)`. This preserves the required atomic `clearExisting + insert` behavior while making the transaction compatible with the configured SQL Server retry strategy. The API project was rebuilt locally after the change and completed successfully with zero errors.
+
+## 2026-04-28: Booklet Editor, Cover Metadata, Template Library, Header, and Workflow UX Fixes
+
+### Scope
+- Analyzed the issues listed in `28042026.docx` and implemented a coordinated fix set across the booklet editor, official booklet rendering, template library, workflow list UX, top header layout, and booklet editor API contract.
+
+### Fixes Applied
+- **Booklet editor section rendering**: Refactored `frontend/src/views/rfp/BookletEditorView.vue` to render only the active section in edit mode instead of stacking the entire booklet in a long page. Added explicit previous/next section navigation while preserving the existing sidebar as the single navigation source of truth.
+- **Guidance block grouping**: Updated the booklet editor to merge consecutive guidance blocks into a single guidance container while keeping fixed reference blocks isolated. This preserves authoring context and removes noisy fragmentation in the editor.
+- **Cover metadata binding**: Fixed booklet cover metadata loading so `referenceNumber`, `department`, and `issueDate` are populated from the backend booklet-editor response and normalized consistently in the client. Removed the incorrect fallback that used submission deadline as the cover issue date.
+- **Official booklet rendering**: Updated `frontend/src/components/rfp/OfficialBookletDocument.vue` to exclude cover-like sections from the body, keep the user guide as a standalone rendered section, and align the table of contents with the new grouping logic.
+- **Template library visibility after upload**: Strengthened `frontend/src/views/rfp/TemplateLibraryView.vue` with optimistic insertion before refresh plus post-refresh fallback insertion so newly uploaded booklet templates remain visible immediately even when list refresh is delayed or stale.
+- **Workflow delete UX**: Updated `frontend/src/views/workflow/WorkflowListView.vue` so the default filter is `active`, successful deletes produce an explicit success banner, and failures produce a visible error banner instead of failing silently from the administrator’s perspective.
+- **Header search width**: Updated `frontend/src/components/layout/AppHeader.vue` so the center search area can expand naturally and no longer wastes horizontal space on wide layouts.
+- **Backend API contract for booklet editor**: Extended `backend/src/TendexAI.API/Endpoints/Rfp/BookletTemplateEndpoints.cs` to return `ReferenceNumber`, `Department`, and normalized `IssueDate` in the booklet editor response for both template-backed and fallback competition flows.
+
+### Validation
+- Frontend build passed successfully with `pnpm build`.
+- Backend API build passed successfully with `dotnet build TendexAI.API.csproj`.
+- `git diff --check` completed without formatting or whitespace issues.
+
+### Files Modified
+- `frontend/src/views/rfp/BookletEditorView.vue`
+- `frontend/src/components/rfp/OfficialBookletDocument.vue`
+- `frontend/src/views/rfp/TemplateLibraryView.vue`
+- `frontend/src/views/workflow/WorkflowListView.vue`
+- `frontend/src/components/layout/AppHeader.vue`
+- `backend/src/TendexAI.API/Endpoints/Rfp/BookletTemplateEndpoints.cs`

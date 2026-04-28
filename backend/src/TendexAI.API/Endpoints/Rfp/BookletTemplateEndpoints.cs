@@ -472,6 +472,9 @@ public static class BookletTemplateEndpoints
                 ProjectNameAr = competition.ProjectNameAr,
                 ProjectNameEn = competition.ProjectNameEn,
                 Description = competition.Description,
+                ReferenceNumber = competition.ReferenceNumber,
+                Department = competition.Department,
+                IssueDate = competition.StartDate?.ToString("yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture),
                 Sections = competitionSections
                     .Select(section => new BookletEditorSectionDto
                     {
@@ -521,6 +524,9 @@ public static class BookletTemplateEndpoints
             ProjectNameAr = competition.ProjectNameAr,
             ProjectNameEn = competition.ProjectNameEn,
             Description = competition.Description,
+            ReferenceNumber = competition.ReferenceNumber,
+            Department = competition.Department,
+            IssueDate = competition.StartDate?.ToString("yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture),
             Sections = template.Sections
                 .OrderBy(s => s.SortOrder)
                 .Select((ts, idx) => {
@@ -898,6 +904,9 @@ public sealed record BookletEditorDataDto
     public string ProjectNameAr { get; init; } = "";
     public string ProjectNameEn { get; init; } = "";
     public string? Description { get; init; }
+    public string ReferenceNumber { get; init; } = "";
+    public string? Department { get; init; }
+    public string? IssueDate { get; init; }
     public List<BookletEditorSectionDto> Sections { get; init; } = [];
 }
 

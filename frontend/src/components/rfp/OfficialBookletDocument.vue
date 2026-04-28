@@ -67,12 +67,33 @@ const filteredSections = computed<OfficialBookletSection[]>(() => {
     }))
 })
 
+function normalizeSectionTitle(title: string): string {
+  return stripLeadingSectionNumber(title)
+    .replace(/\s+/g, ' ')
+    .trim()
+    .toLowerCase()
+}
+
+function isCoverSection(section: OfficialBookletSection): boolean {
+  const normalizedTitle = normalizeSectionTitle(section.titleAr)
+  return normalizedTitle.includes('غلاف') || normalizedTitle.includes('cover')
+}
+
+function isStandaloneUserGuideSection(section: OfficialBookletSection): boolean {
+  const normalizedTitle = normalizeSectionTitle(section.titleAr)
+  return normalizedTitle.includes('دليل المستخدم') || normalizedTitle.includes('دليل الاستخدام') || normalizedTitle.includes('user guide')
+}
+
+const bodySections = computed<OfficialBookletSection[]>(() => {
+  return filteredSections.value.filter(section => !isCoverSection(section))
+})
+
 const groupedSections = computed<SectionGroup[]>(() => {
   const groups: SectionGroup[] = []
   let currentGroup: SectionGroup | null = null
 
-  for (const section of filteredSections.value) {
-    if (section.isMainSection) {
+  for (const section of bodySections.value) {
+    if (section.isMainSection || isStandaloneUserGuideSection(section)) {
       currentGroup = {
         id: section.id,
         titleAr: section.titleAr,
@@ -87,7 +108,7 @@ const groupedSections = computed<SectionGroup[]>(() => {
     if (!currentGroup) {
       currentGroup = {
         id: `group-${section.id}`,
-        titleAr: 'الأقسام',
+        titleAr: section.titleAr,
         sortOrder: section.sortOrder,
         mainSection: null,
         items: [],
@@ -99,6 +120,35 @@ const groupedSections = computed<SectionGroup[]>(() => {
   }
 
   return groups
+})
+
+const tableOfContentsGroups = computed(() => {
+  return groupedSections.value
+    .map(group => {
+      const entries = [
+        ...(group.mainSection && hasRenderableBlocks(group.mainSection)
+          ? [{
+              id: group.mainSection.id,
+              sortOrder: group.mainSection.sortOrder,
+              titleAr: stripLeadingSectionNumber(group.mainSection.titleAr),
+            }]
+          : []),
+        ...group.items
+          .filter(section => hasRenderableBlocks(section))
+          .map(section => ({
+            id: section.id,
+            sortOrder: section.sortOrder,
+            titleAr: stripLeadingSectionNumber(section.titleAr),
+          })),
+      ]
+
+      return {
+        id: group.id,
+        titleAr: group.titleAr,
+        entries,
+      }
+    })
+    .filter(group => group.entries.length > 0)
 })
 
 const printableIssueDate = computed(() => props.meta.issueDate || '-')
@@ -195,12 +245,12 @@ function hasRenderableBlocks(section: OfficialBookletSection | null): boolean {
       <div class="toc-heading">الفهرس</div>
 
       <div class="toc-groups">
-        <section v-for="group in groupedSections" :key="group.id" class="toc-group">
+        <section v-for="group in tableOfContentsGroups" :key="group.id" class="toc-group">
           <h3 class="toc-group__title">{{ group.titleAr }}</h3>
           <ul class="toc-group__items">
-            <li v-for="section in group.items" :key="section.id" class="toc-group__item">
+            <li v-for="section in group.entries" :key="section.id" class="toc-group__item">
               <span class="toc-group__item-order">{{ section.sortOrder }}</span>
-              <span>{{ stripLeadingSectionNumber(section.titleAr) }}</span>
+              <span>{{ section.titleAr }}</span>
             </li>
           </ul>
         </section>
