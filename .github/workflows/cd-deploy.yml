@@ -261,9 +261,7 @@ jobs:
             printf '\nMINIO_PUBLIC_DOWNLOAD_BASE_URL=%s\n' "${MINIO_PUBLIC_DOWNLOAD_BASE_URL}" >> "${DEPLOY_PATH}/infrastructure/.env.prod"
           fi
 
-          set -a
-          . "${DEPLOY_PATH}/infrastructure/.env.prod"
-          set +a
+          MSSQL_SA_PASSWORD=$(grep '^MSSQL_SA_PASSWORD=' "${DEPLOY_PATH}/infrastructure/.env.prod" | head -n 1 | cut -d '=' -f2-)
 
           # Run database migrations (if applicable)
           echo "[4/6] Running database migrations..."
@@ -271,14 +269,14 @@ jobs:
           # Backend will auto-apply migrations on startup via EF Core
 
           SQL_COMPAT_SCRIPT="${DEPLOY_PATH}/backend/scripts/add_required_attachment_types_column.sql"
-          if [ -f "${SQL_COMPAT_SCRIPT}" ] && docker ps --format '{{.Names}}' | grep -qx 'tendex-sqlserver'; then
+          if [ -n "${MSSQL_SA_PASSWORD}" ] && [ -f "${SQL_COMPAT_SCRIPT}" ] && docker ps --format '{{.Names}}' | grep -qx 'tendex-sqlserver'; then
             echo "Applying guarded tenant compatibility script for RequiredAttachmentTypes..."
             docker exec -i tendex-sqlserver /opt/mssql-tools18/bin/sqlcmd \
               -S localhost -U sa -P "${MSSQL_SA_PASSWORD}" -C \
               -d master \
               -i /dev/stdin < "${SQL_COMPAT_SCRIPT}"
           else
-            echo "Skipping tenant compatibility script: SQL container or script not available."
+            echo "Skipping tenant compatibility script: SQL password, SQL container, or script not available."
           fi
 
           # Deploy with zero-downtime rolling update
