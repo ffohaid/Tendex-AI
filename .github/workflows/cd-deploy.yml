@@ -203,6 +203,7 @@ jobs:
             infrastructure/rabbitmq/ \
             infrastructure/scripts/ \
             backend/Dockerfile \
+            backend/scripts/add_required_attachment_types_column.sql \
             frontend/Dockerfile \
             frontend/nginx.conf
 
