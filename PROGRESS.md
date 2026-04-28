@@ -1202,3 +1202,32 @@ A deployment pipeline defect was identified as the root cause behind production 
 
 ### Commit
 - `e5f340b` — `fix: stabilize qc regressions across branding and booklet flows`
+
+## 2026-04-28: Tenant Branding Consistency Fix (Header, Settings, Sidebar, Booklet)
+
+### Problem
+- Tenant branding was only partially applied across the platform.
+- The login page could display the tenant logo, but other system surfaces still relied on non-public image URLs or static theme values.
+- The booklet document showed the tenant logo on the cover and table of contents path only, while body page headers omitted the logo entirely.
+
+### Root Cause
+- The central tenant-branding query returned a logo path that was not consistently consumable across all authenticated screens.
+- Frontend branding consumption was split between a same-origin path and direct/non-unified logo handling.
+- The sidebar still used a static gradient instead of the tenant branding CSS variables.
+- `OfficialBookletDocument.vue` rendered the logo in the framed table-of-contents header, but not in the framed body-page header component.
+
+### Fix Applied
+- Unified tenant logo consumption around the public same-origin tenant logo endpoint.
+- Updated frontend branding service to consume the same public logo path used successfully by login and organization branding screens.
+- Bound sidebar background styling to dynamic branding variables instead of a fixed gradient.
+- Added tenant logo rendering to body-page framed headers in `frontend/src/components/rfp/OfficialBookletDocument.vue`.
+
+### Verification
+- Live verification on Ministry of Finance production confirmed visible tenant logo images rendered from `/api/v1/tenants/logo/{tenantId}`.
+- Branding CSS variables were active with live computed values and the sidebar background resolved from the dynamic palette.
+- Frontend production build passed after the booklet-header logo fix.
+- Final deployment for commit `0527e5c` completed successfully through the production workflow.
+
+### Commits
+- `fix(branding): unify tenant logo urls and sidebar theme`
+- `fix: render tenant logo in booklet page headers`
