@@ -154,6 +154,49 @@ public sealed class CompetitionRepository : ICompetitionRepository, IDisposable
             .CountAsync(s => s.CompetitionId == competitionId, cancellationToken);
     }
 
+    public async Task AddBoqItemDirectAsync(BoqItem item, CancellationToken cancellationToken = default)
+    {
+        await _context.BoqItems.AddAsync(item, cancellationToken);
+        await _context.SaveChangesAsync(cancellationToken);
+        _context.ChangeTracker.Clear();
+    }
+
+    public async Task AddBoqItemsDirectAsync(IEnumerable<BoqItem> items, bool clearExisting = false, CancellationToken cancellationToken = default)
+    {
+        var boqItems = items.ToList();
+        if (boqItems.Count == 0)
+        {
+            return;
+        }
+
+        var competitionId = boqItems[0].CompetitionId;
+
+        await using var transaction = await _context.Database.BeginTransactionAsync(cancellationToken);
+
+        if (clearExisting)
+        {
+            var existingItems = await _context.BoqItems
+                .Where(b => b.CompetitionId == competitionId)
+                .ToListAsync(cancellationToken);
+
+            if (existingItems.Count > 0)
+            {
+                _context.BoqItems.RemoveRange(existingItems);
+            }
+        }
+
+        await _context.BoqItems.AddRangeAsync(boqItems, cancellationToken);
+        await _context.SaveChangesAsync(cancellationToken);
+        await transaction.CommitAsync(cancellationToken);
+        _context.ChangeTracker.Clear();
+    }
+
+    public async Task<int> GetBoqItemCountAsync(Guid competitionId, CancellationToken cancellationToken = default)
+    {
+        return await _context.BoqItems
+            .CountAsync(b => b.CompetitionId == competitionId, cancellationToken);
+    }
+
     public async Task AddEvaluationCriterionDirectAsync(EvaluationCriterion criterion, CancellationToken cancellationToken = default)
     {
         await _context.EvaluationCriteria.AddAsync(criterion, cancellationToken);

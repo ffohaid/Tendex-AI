@@ -28,11 +28,23 @@ public sealed class AddBoqItemCommandHandler
         AddBoqItemCommand request,
         CancellationToken cancellationToken)
     {
-        var competition = await _repository.GetByIdWithDetailsForUpdateAsync(request.CompetitionId, cancellationToken);
-        if (competition is null)
-            return Result.Failure<BoqItemDto>("Competition not found.");
+        var isModifiable = await _repository.IsCompetitionModifiableAsync(
+            request.CompetitionId,
+            cancellationToken);
 
-        var sortOrder = competition.BoqItems.Count + 1;
+        if (!isModifiable)
+        {
+            var competition = await _repository.GetByIdAsync(request.CompetitionId, cancellationToken);
+            if (competition is null)
+                return Result.Failure<BoqItemDto>("Competition not found.");
+
+            return Result.Failure<BoqItemDto>(
+                "لا يمكن إضافة بند جدول كميات: المنافسة ليست في حالة قابلة للتعديل.");
+        }
+
+        var currentBoqCount = await _repository.GetBoqItemCountAsync(
+            request.CompetitionId,
+            cancellationToken);
 
         var item = BoqItem.Create(
             competitionId: request.CompetitionId,
@@ -44,14 +56,15 @@ public sealed class AddBoqItemCommandHandler
             estimatedUnitPrice: request.EstimatedUnitPrice,
             category: request.Category,
             createdBy: request.CreatedByUserId,
-            sortOrder: sortOrder);
+            sortOrder: currentBoqCount + 1);
 
-        var result = competition.AddBoqItem(item);
-        if (result.IsFailure)
-            return Result.Failure<BoqItemDto>(result.Error!);
+        await _repository.AddBoqItemDirectAsync(item, cancellationToken);
 
-        // Entity is already tracked — no need to call Update()
-        await _repository.SaveChangesAsync(cancellationToken);
+        _logger.LogInformation(
+            "Successfully added BOQ item {BoqItemId} to competition {CompetitionId} via direct insertion (SortOrder={SortOrder})",
+            item.Id,
+            request.CompetitionId,
+            item.SortOrder);
 
         _logger.LogBoqItemAdded(item.Id, request.CompetitionId);
 

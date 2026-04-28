@@ -65,6 +65,24 @@ public interface ICompetitionRepository
     Task<int> GetSectionCountAsync(Guid competitionId, CancellationToken cancellationToken = default);
 
     /// <summary>
+    /// Adds a single BOQ item directly to the database without loading the Competition aggregate.
+    /// This bypasses the Competition concurrency token check.
+    /// </summary>
+    Task AddBoqItemDirectAsync(BoqItem item, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Adds multiple BOQ items directly to the database without loading the Competition aggregate.
+    /// When clearExisting is true, the existing BOQ items are deleted and replaced atomically.
+    /// This bypasses the Competition concurrency token check.
+    /// </summary>
+    Task AddBoqItemsDirectAsync(IEnumerable<BoqItem> items, bool clearExisting = false, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Gets the current count of BOQ items for a competition.
+    /// </summary>
+    Task<int> GetBoqItemCountAsync(Guid competitionId, CancellationToken cancellationToken = default);
+
+    /// <summary>
     /// Adds a single evaluation criterion directly to the database without loading the Competition aggregate.
     /// This bypasses the Competition concurrency token check.
     /// </summary>

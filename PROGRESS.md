@@ -1231,3 +1231,24 @@ A deployment pipeline defect was identified as the root cause behind production 
 ### Commits
 - `fix(branding): unify tenant logo urls and sidebar theme`
 - `fix: render tenant logo in booklet page headers`
+
+## 2026-04-28 — Fix AI evaluation-criteria draft-save 500
+
+A production issue was diagnosed where saving a draft booklet after applying AI-suggested evaluation criteria triggered HTTP 500. Live production evidence and backend logs tied the failure to a `DbUpdateConcurrencyException` in the evaluation-criteria insertion path. The previous implementation added each criterion by reloading and mutating the `Competition` aggregate, which caused optimistic concurrency conflicts when multiple AI-generated criteria were inserted sequentially.
+
+The fix changed the evaluation-criteria persistence path to use direct repository insertion with repository-side sort-order calculation, following the same safe pattern already used to avoid aggregate concurrency conflicts in other RFP child entities. This keeps the source of truth in the backend repository layer and avoids repeated aggregate rehydration during batch-like criterion creation.
+
+Production validation was completed on the Ministry of Finance tenant by creating a new booklet, generating AI evaluation criteria, applying them, and executing **Save Draft**. The scenario completed without a visible 500 error. A direct authenticated read of the saved booklet returned `200 OK`, confirmed `currentWizardStep: 3`, and showed four persisted evaluation criteria along with a fresh `lastAutoSavedAt` timestamp, which verifies that the draft-save path now works correctly after the fix.
+
+## 2026-04-28 — BOQ AI draft-save concurrency fix
+
+A new QC regression was isolated in the BOQ step: after AI-generated BOQ items were applied in step 4, **Save Draft** could fail with HTTP 500 on the backend path used by `saveAllBoqItems()` and `POST /api/v1/competitions/{competitionId}/boq-items/batch`. Code-path review confirmed that both `AddBoqItemCommandHandler` and `BatchAddBoqItemsCommandHandler` were still mutating the tracked `Competition` aggregate, which left the BOQ flow exposed to the same optimistic concurrency pattern already fixed earlier for AI evaluation criteria.
+
+The backend fix was implemented by extending `ICompetitionRepository` and `CompetitionRepository` with direct BOQ persistence methods (`AddBoqItemDirectAsync`, `AddBoqItemsDirectAsync`, and `GetBoqItemCountAsync`) so BOQ rows can be inserted without reloading and updating the parent aggregate concurrency token. The batch repository path now also supports atomic replace behavior when `clearExisting=true`, deleting and inserting within a single database transaction to avoid partial BOQ state.
+
+Both BOQ command handlers were refactored to follow the same safe direct-insert pattern already adopted for sections and evaluation criteria. They now validate modifiability without loading the full aggregate, calculate BOQ sort order through repository counts, persist BOQ items directly, and return explicit failure messages if the competition is missing or not modifiable. To reduce regression risk, a new unit-test file `backend/tests/TendexAI.Infrastructure.Tests/Application/Rfp/BoqCommandHandlerTests.cs` was added to verify the direct-insert contract, sort-order behavior, and error handling for both single and batch BOQ paths.
+
+### Validation
+- `dotnet build backend/TendexAI.slnx` ✅
+- `dotnet test backend/TendexAI.slnx --no-restore --filter "FullyQualifiedName~BoqCommandHandlerTests"` ✅ (`4` tests passed)
+- Direct SSH access attempts from the sandbox to the currently documented production hosts were denied, so live deployment/verification for this BOQ fix must continue through the repository workflow path rather than manual VPS shell access.

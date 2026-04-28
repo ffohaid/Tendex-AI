@@ -30,34 +30,37 @@ public sealed class BatchAddBoqItemsCommandHandler
         BatchAddBoqItemsCommand request,
         CancellationToken cancellationToken)
     {
-        var competition = await _repository.GetByIdWithDetailsForUpdateAsync(
-            request.CompetitionId, cancellationToken);
+        var isModifiable = await _repository.IsCompetitionModifiableAsync(
+            request.CompetitionId,
+            cancellationToken);
 
-        if (competition is null)
-            return Result.Failure<IReadOnlyList<BoqItemDto>>("Competition not found.");
-
-        // If ClearExisting is true, remove all existing BOQ items first
-        if (request.ClearExisting)
+        if (!isModifiable)
         {
-            var existingIds = competition.BoqItems.Select(b => b.Id).ToList();
-            foreach (var existingId in existingIds)
-            {
-                var removeResult = competition.RemoveBoqItem(existingId);
-                if (removeResult.IsFailure)
-                {
-                    _logger.LogWarning(
-                        "Failed to remove existing BOQ item {ItemId}: {Error}",
-                        existingId, removeResult.Error);
-                }
-            }
+            var competition = await _repository.GetByIdAsync(request.CompetitionId, cancellationToken);
+            if (competition is null)
+                return Result.Failure<IReadOnlyList<BoqItemDto>>("Competition not found.");
+
+            return Result.Failure<IReadOnlyList<BoqItemDto>>(
+                "لا يمكن حفظ جدول الكميات: المنافسة ليست في حالة قابلة للتعديل.");
         }
 
+        var currentBoqCount = request.ClearExisting
+            ? 0
+            : await _repository.GetBoqItemCountAsync(request.CompetitionId, cancellationToken);
+
+        _logger.LogInformation(
+            "Adding {Count} BOQ items to competition {CompetitionId} via direct insertion (ClearExisting={ClearExisting}, CurrentCount={CurrentCount})",
+            request.Items.Count,
+            request.CompetitionId,
+            request.ClearExisting,
+            currentBoqCount);
+
         var addedItems = new List<BoqItem>();
-        var currentSortOrder = competition.BoqItems.Count;
+        var sortOrder = currentBoqCount;
 
         foreach (var input in request.Items)
         {
-            currentSortOrder++;
+            sortOrder++;
 
             var item = BoqItem.Create(
                 competitionId: request.CompetitionId,
@@ -69,26 +72,35 @@ public sealed class BatchAddBoqItemsCommandHandler
                 estimatedUnitPrice: input.EstimatedUnitPrice,
                 category: input.Category,
                 createdBy: request.CreatedByUserId,
-                sortOrder: currentSortOrder);
-
-            var addResult = competition.AddBoqItem(item);
-            if (addResult.IsFailure)
-            {
-                _logger.LogWarning(
-                    "Failed to add BOQ item {ItemNumber}: {Error}",
-                    input.ItemNumber, addResult.Error);
-                return Result.Failure<IReadOnlyList<BoqItemDto>>(addResult.Error!);
-            }
+                sortOrder: sortOrder);
 
             addedItems.Add(item);
         }
 
-        // Single SaveChanges call for all items — avoids concurrency conflicts
-        await _repository.SaveChangesAsync(cancellationToken);
+        try
+        {
+            await _repository.AddBoqItemsDirectAsync(addedItems, request.ClearExisting, cancellationToken);
 
-        _logger.LogInformation(
-            "Successfully added {Count} BOQ items to competition {CompetitionId}",
-            addedItems.Count, request.CompetitionId);
+            var verifiedCount = await _repository.GetBoqItemCountAsync(
+                request.CompetitionId,
+                cancellationToken);
+
+            _logger.LogInformation(
+                "Successfully added {Count} BOQ items to competition {CompetitionId} via direct insertion. Verified BOQ count: {VerifiedCount}",
+                addedItems.Count,
+                request.CompetitionId,
+                verifiedCount);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(
+                ex,
+                "Failed to add BOQ items to competition {CompetitionId}: {ErrorMessage}",
+                request.CompetitionId,
+                ex.Message);
+            return Result.Failure<IReadOnlyList<BoqItemDto>>(
+                $"فشل في حفظ جدول الكميات: {ex.Message}");
+        }
 
         var dtos = addedItems
             .Select(CompetitionMapper.ToBoqItemDto)
