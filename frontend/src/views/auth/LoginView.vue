@@ -183,12 +183,12 @@ const onSubmit = handleSubmit(async (values) => {
         <!-- Tenant Logo (if available) -->
         <div
           v-if="hasLogo"
-          class="mx-auto mb-4 flex h-20 w-20 items-center justify-center rounded-2xl bg-white p-2 shadow-md"
+          class="mx-auto mb-4 flex min-h-20 max-w-xs items-center justify-center rounded-2xl bg-white px-4 py-3 shadow-md"
         >
           <img
             :src="activeLogoUrl ?? undefined"
             :alt="tenantDisplayName"
-            class="h-full w-full object-contain"
+            class="max-h-20 w-auto max-w-full object-contain"
           />
         </div>
         <!-- Default: Tendex AI Logo (vertical version for dark background) -->
