@@ -331,7 +331,7 @@ public sealed class GetPendingTasksQueryHandler
                     DescriptionEn: $"{step.StepNameEn} required for {competition.ProjectNameEn}",
                     CompetitionTitleAr: competition.ProjectNameAr,
                     CompetitionTitleEn: competition.ProjectNameEn,
-                    CompetitionReferenceNumber: competition.ReferenceNumber,
+                    CompetitionReferenceNumber: competition.ReferenceNumber ?? string.Empty,
                     AssignedAt: step.CreatedAt.ToString("o"),
                     SlaDeadline: slaDeadline.ToString("o"),
                     SlaStatus: slaStatus,
