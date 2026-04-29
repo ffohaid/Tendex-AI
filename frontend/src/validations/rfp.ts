@@ -9,14 +9,28 @@ import { z } from 'zod'
 /* ------------------------------------------------------------------ */
 /*  Step 1: Basic Information                                         */
 /* ------------------------------------------------------------------ */
+const isoDateRegex = /^\d{4}-\d{2}-\d{2}$/
+
+function parseIsoDate(value: string): Date | null {
+  if (!value || !isoDateRegex.test(value)) return null
+  const parsed = new Date(`${value}T00:00:00`)
+  return Number.isNaN(parsed.getTime()) ? null : parsed
+}
+
+function isWithinFiscalYear(value: string, fiscalYear: string): boolean {
+  return value.startsWith(`${fiscalYear}-`)
+}
+
 export const basicInfoSchema = z.object({
   projectName: z
     .string({ required_error: 'اسم المشروع مطلوب' })
+    .trim()
     .min(5, 'يجب أن يكون اسم المشروع 5 أحرف على الأقل')
     .max(200, 'يجب ألا يتجاوز اسم المشروع 200 حرف'),
 
   projectDescription: z
     .string({ required_error: 'وصف المشروع مطلوب' })
+    .trim()
     .min(20, 'يجب أن يكون وصف المشروع 20 حرفاً على الأقل')
     .max(2000, 'يجب ألا يتجاوز وصف المشروع 2000 حرف'),
 
@@ -32,42 +46,105 @@ export const basicInfoSchema = z.object({
 
   currency: z.string().default('SAR'),
 
-  startDate: z
-    .string({ required_error: 'تاريخ البداية مطلوب' })
-    .min(1, 'يرجى تحديد تاريخ البداية'),
-
-  endDate: z
-    .string({ required_error: 'تاريخ الانتهاء مطلوب' })
-    .min(1, 'يرجى تحديد تاريخ الانتهاء'),
-
-  submissionDeadline: z
-    .string({ required_error: 'آخر موعد لتقديم العروض مطلوب' })
-    .min(1, 'يرجى تحديد آخر موعد لتقديم العروض'),
-
-  referenceNumber: z
-    .string({ required_error: 'الرقم المرجعي مطلوب' })
-    .min(1, 'الرقم المرجعي مطلوب')
-    .max(50, 'يجب ألا يتجاوز الرقم المرجعي 50 حرفاً'),
+  bookletNumber: z
+    .string()
+    .trim()
+    .max(50, 'يجب ألا يتجاوز رقم الكراسة 50 حرفاً')
+    .regex(/^[A-Za-z0-9\-/]*$/, 'يسمح فقط بالأحرف الإنجليزية والأرقام والشرطة')
+    .default(''),
 
   department: z
     .string({ required_error: 'الإدارة المسؤولة مطلوبة' })
-    .min(1, 'يرجى تحديد الإدارة المسؤولة'),
+    .trim()
+    .min(1, 'يرجى تحديد الإدارة المسؤولة')
+    .max(200, 'يجب ألا يتجاوز اسم الإدارة 200 حرف'),
 
   fiscalYear: z
     .string({ required_error: 'السنة المالية مطلوبة' })
-    .min(1, 'يرجى تحديد السنة المالية'),
-}).refine(
-  (data) => {
-    if (data.startDate && data.endDate) {
-      return new Date(data.endDate) > new Date(data.startDate)
+    .regex(/^\d{4}$/, 'يرجى اختيار سنة مالية صحيحة'),
+
+  bookletIssueDate: z.string().default(''),
+  inquiriesStartDate: z.string().default(''),
+  inquiryPeriodDays: z
+    .number({ invalid_type_error: 'يرجى إدخال مدة صحيحة للاستفسارات' })
+    .int('يجب إدخال عدد صحيح من الأيام')
+    .min(1, 'يجب أن تكون مدة الاستفسارات يوماً واحداً على الأقل')
+    .max(365, 'يجب ألا تتجاوز مدة الاستفسارات 365 يوماً')
+    .nullable(),
+  offersStartDate: z.string().default(''),
+  submissionDeadline: z.string().default(''),
+  expectedAwardDate: z.string().default(''),
+  workStartDate: z.string().default(''),
+}).superRefine((data, ctx) => {
+  const orderedDates = [
+    { key: 'bookletIssueDate', label: 'تاريخ طرح الكراسة', strictAfterPrevious: false },
+    { key: 'inquiriesStartDate', label: 'تاريخ إرسال الاستفسارات', strictAfterPrevious: false },
+    { key: 'offersStartDate', label: 'تاريخ تقديم العروض', strictAfterPrevious: false },
+    { key: 'submissionDeadline', label: 'آخر موعد لتقديم العروض', strictAfterPrevious: true },
+    { key: 'expectedAwardDate', label: 'التاريخ المتوقع للترسية', strictAfterPrevious: true },
+    { key: 'workStartDate', label: 'تاريخ بدء الأعمال', strictAfterPrevious: true },
+  ] as const
+
+  const parsedDates = new Map<string, Date>()
+
+  for (const dateField of orderedDates) {
+    const value = data[dateField.key]
+    if (!value) continue
+
+    const parsed = parseIsoDate(value)
+    if (!parsed) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: `يرجى إدخال ${dateField.label} بصيغة تاريخ صحيحة`,
+        path: [dateField.key],
+      })
+      continue
     }
-    return true
-  },
-  {
-    message: 'يجب أن يكون تاريخ الانتهاء بعد تاريخ البداية',
-    path: ['endDate'],
-  },
-)
+
+    if (!isWithinFiscalYear(value, data.fiscalYear)) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: `${dateField.label} يجب أن يكون ضمن السنة المالية المحددة`,
+        path: [dateField.key],
+      })
+    }
+
+    parsedDates.set(dateField.key, parsed)
+  }
+
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
+
+  const bookletIssueDate = parsedDates.get('bookletIssueDate')
+  if (bookletIssueDate && bookletIssueDate < today) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: 'تاريخ طرح الكراسة يجب أن يكون اليوم أو بعده',
+      path: ['bookletIssueDate'],
+    })
+  }
+
+  for (let index = 1; index < orderedDates.length; index += 1) {
+    const current = orderedDates[index]
+    const previous = orderedDates[index - 1]
+    const currentDate = parsedDates.get(current.key)
+    const previousDate = parsedDates.get(previous.key)
+
+    if (!currentDate || !previousDate) continue
+
+    const isValid = current.strictAfterPrevious
+      ? currentDate > previousDate
+      : currentDate >= previousDate
+
+    if (!isValid) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: `${current.label} يجب أن يكون ${current.strictAfterPrevious ? 'بعد' : 'في نفس يوم أو بعد'} ${previous.label}`,
+        path: [current.key],
+      })
+    }
+  }
+})
 
 /* ------------------------------------------------------------------ */
 /*  Step 2: Competition Settings                                      */
@@ -114,11 +191,6 @@ export const settingsSchema = z.object({
     .min(0, 'يجب ألا تقل نسبة الضمان عن 0%')
     .max(100, 'يجب ألا تتجاوز نسبة الضمان 100%')
     .default(5),
-
-  inquiryPeriodDays: z
-    .number({ required_error: 'مدة فترة الاستفسارات مطلوبة' })
-    .min(1, 'يجب أن تكون فترة الاستفسارات يوماً واحداً على الأقل')
-    .max(90, 'يجب ألا تتجاوز فترة الاستفسارات 90 يوماً'),
 
   evaluationCriteria: z
     .array(evaluationCriterionSchema)

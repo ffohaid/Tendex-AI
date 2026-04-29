@@ -474,7 +474,13 @@
       "colorCode": "Text Classification",
       "assignedTo": "Assigned To",
       "sectionContent": "Section Content",
-      "includesVat": "Includes VAT"
+      "includesVat": "Includes VAT",
+      "bookletNumber": "Booklet Number",
+      "bookletIssueDate": "Booklet Issue Date",
+      "inquiriesStartDate": "Inquiries Start Date",
+      "offersStartDate": "Offers Submission Date",
+      "expectedAwardDate": "Expected Award Date",
+      "workStartDate": "Work Start Date"
     },
     "placeholders": {
       "projectName": "Enter project name",
@@ -493,7 +499,9 @@
       "assignedTo": "Responsible member name",
       "boqCategory": "Category",
       "boqDescription": "Item description",
-      "search": "Search specifications booklets..."
+      "search": "Search specifications booklets...",
+      "bookletNumber": "Enter booklet number",
+      "inquiryPeriodDays": "Enter inquiry period in days"
     },
     "competitionTypes": {
       "publicTender": "Public Tender",
@@ -610,7 +618,9 @@
       "error": "Auto-save failed"
     },
     "hints": {
-      "weightSum": "Financial weight is auto-calculated to total 100%"
+      "weightSum": "Financial weight is auto-calculated to total 100%",
+      "optionalBookletNumber": "Optional, but it must be unique when provided.",
+      "checkingBookletNumber": "Checking booklet number availability..."
     },
     "review": {
       "completenessCheck": "Completeness Check",
@@ -693,6 +703,10 @@
       "browseFiles": "Browse Files",
       "extracting": "Extracting content with AI...",
       "extractingDesc": "Analyzing document and extracting data automatically"
+    },
+    "validation": {
+      "bookletNumberAlreadyExists": "The entered booklet number already exists. Please use a different number.",
+      "bookletNumberCheckFailed": "Unable to verify the booklet number right now. Please try again."
     }
   },
   "evaluation": {

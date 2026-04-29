@@ -85,6 +85,13 @@ public static class CompetitionEndpoints
             .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
             .RequireAuthorization(PermissionPolicies.CompetitionsEdit);
 
+        group.MapGet("/booklet-number-availability", CheckBookletNumberAvailabilityAsync)
+            .WithName("CheckBookletNumberAvailability")
+            .WithSummary("Check whether a booklet number is available")
+            .Produces(StatusCodes.Status200OK)
+            .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+            .RequireAuthorization(PermissionPolicies.CompetitionsView);
+
         // ----- Status Management -----
 
         group.MapPost("/{competitionId:guid}/status", ChangeCompetitionStatusAsync)
@@ -244,11 +251,15 @@ public static class CompetitionEndpoints
             Description: request.Description,
             CompetitionType: request.CompetitionType,
             CreationMethod: request.CreationMethod,
+            BookletNumber: request.BookletNumber,
             EstimatedBudget: request.EstimatedBudget,
+            BookletIssueDate: request.BookletIssueDate,
+            InquiriesStartDate: request.InquiriesStartDate,
+            InquiryPeriodDays: request.InquiryPeriodDays,
+            OffersStartDate: request.OffersStartDate,
             SubmissionDeadline: request.SubmissionDeadline,
-            ProjectDurationDays: request.ProjectDurationDays,
-            StartDate: request.StartDate,
-            EndDate: request.EndDate,
+            ExpectedAwardDate: request.ExpectedAwardDate,
+            WorkStartDate: request.WorkStartDate,
             Department: request.Department,
             FiscalYear: request.FiscalYear,
             SourceTemplateId: request.SourceTemplateId,
@@ -276,11 +287,15 @@ public static class CompetitionEndpoints
             ProjectNameEn: request.ProjectNameEn,
             Description: request.Description,
             CompetitionType: request.CompetitionType,
+            BookletNumber: request.BookletNumber,
             EstimatedBudget: request.EstimatedBudget,
+            BookletIssueDate: request.BookletIssueDate,
+            InquiriesStartDate: request.InquiriesStartDate,
+            InquiryPeriodDays: request.InquiryPeriodDays,
+            OffersStartDate: request.OffersStartDate,
             SubmissionDeadline: request.SubmissionDeadline,
-            ProjectDurationDays: request.ProjectDurationDays,
-            StartDate: request.StartDate,
-            EndDate: request.EndDate,
+            ExpectedAwardDate: request.ExpectedAwardDate,
+            WorkStartDate: request.WorkStartDate,
             Department: request.Department,
             FiscalYear: request.FiscalYear,
             ModifiedByUserId: userId.ToString());
@@ -321,11 +336,15 @@ public static class CompetitionEndpoints
             ProjectNameEn: request.ProjectNameEn,
             Description: request.Description,
             CompetitionType: request.CompetitionType,
+            BookletNumber: request.BookletNumber,
             EstimatedBudget: request.EstimatedBudget,
+            BookletIssueDate: request.BookletIssueDate,
+            InquiriesStartDate: request.InquiriesStartDate,
+            InquiryPeriodDays: request.InquiryPeriodDays,
+            OffersStartDate: request.OffersStartDate,
             SubmissionDeadline: request.SubmissionDeadline,
-            ProjectDurationDays: request.ProjectDurationDays,
-            StartDate: request.StartDate,
-            EndDate: request.EndDate,
+            ExpectedAwardDate: request.ExpectedAwardDate,
+            WorkStartDate: request.WorkStartDate,
             Department: request.Department,
             FiscalYear: request.FiscalYear,
             RequiredAttachmentTypes: request.RequiredAttachmentTypes,
@@ -337,6 +356,24 @@ public static class CompetitionEndpoints
         return result.IsSuccess
             ? Results.Ok(result.Value)
             : Results.Problem(result.Error, statusCode: 400);
+    }
+
+    private static async Task<IResult> CheckBookletNumberAvailabilityAsync(
+        [FromQuery] string bookletNumber,
+        [FromQuery] Guid? competitionId,
+        ICompetitionRepository repository)
+    {
+        if (string.IsNullOrWhiteSpace(bookletNumber))
+        {
+            return Results.Problem("Booklet number is required.", statusCode: 400);
+        }
+
+        var isInUse = await repository.IsReferenceNumberInUseAsync(bookletNumber, competitionId);
+        return Results.Ok(new
+        {
+            isAvailable = !isInUse,
+            message = isInUse ? "Booklet number already exists." : "Booklet number is available."
+        });
     }
 
     private static async Task<IResult> ChangeCompetitionStatusAsync(
@@ -596,11 +633,15 @@ public sealed record CreateCompetitionRequest(
     string? Description,
     CompetitionType CompetitionType,
     RfpCreationMethod CreationMethod,
+    string? BookletNumber,
     decimal? EstimatedBudget,
+    DateTime? BookletIssueDate,
+    DateTime? InquiriesStartDate,
+    int? InquiryPeriodDays,
+    DateTime? OffersStartDate,
     DateTime? SubmissionDeadline,
-    int? ProjectDurationDays,
-    DateTime? StartDate,
-    DateTime? EndDate,
+    DateTime? ExpectedAwardDate,
+    DateTime? WorkStartDate,
     string? Department,
     string? FiscalYear,
     Guid? SourceTemplateId,
@@ -611,11 +652,15 @@ public sealed record UpdateCompetitionRequest(
     string ProjectNameEn,
     string? Description,
     CompetitionType CompetitionType,
+    string? BookletNumber,
     decimal? EstimatedBudget,
+    DateTime? BookletIssueDate,
+    DateTime? InquiriesStartDate,
+    int? InquiryPeriodDays,
+    DateTime? OffersStartDate,
     DateTime? SubmissionDeadline,
-    int? ProjectDurationDays,
-    DateTime? StartDate,
-    DateTime? EndDate,
+    DateTime? ExpectedAwardDate,
+    DateTime? WorkStartDate,
     string? Department,
     string? FiscalYear);
 
@@ -624,11 +669,15 @@ public sealed record AutoSaveCompetitionRequest(
     string? ProjectNameEn,
     string? Description,
     CompetitionType? CompetitionType,
+    string? BookletNumber,
     decimal? EstimatedBudget,
+    DateTime? BookletIssueDate,
+    DateTime? InquiriesStartDate,
+    int? InquiryPeriodDays,
+    DateTime? OffersStartDate,
     DateTime? SubmissionDeadline,
-    int? ProjectDurationDays,
-    DateTime? StartDate,
-    DateTime? EndDate,
+    DateTime? ExpectedAwardDate,
+    DateTime? WorkStartDate,
     string? Department,
     string? FiscalYear,
     IReadOnlyList<string>? RequiredAttachmentTypes,

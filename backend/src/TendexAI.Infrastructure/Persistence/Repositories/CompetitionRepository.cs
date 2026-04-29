@@ -69,6 +69,23 @@ public sealed class CompetitionRepository : ICompetitionRepository, IDisposable
             .FirstOrDefaultAsync(c => c.ReferenceNumber == referenceNumber && !c.IsDeleted, cancellationToken);
     }
 
+    public async Task<bool> IsReferenceNumberInUseAsync(
+        string referenceNumber,
+        Guid? excludeCompetitionId = null,
+        CancellationToken cancellationToken = default)
+    {
+        var normalizedReferenceNumber = referenceNumber.Trim();
+
+        return await _context.Competitions
+            .AsNoTracking()
+            .AnyAsync(c =>
+                !c.IsDeleted &&
+                c.ReferenceNumber != null &&
+                c.ReferenceNumber == normalizedReferenceNumber &&
+                (!excludeCompetitionId.HasValue || c.Id != excludeCompetitionId.Value),
+                cancellationToken);
+    }
+
     public async Task<(IReadOnlyList<Competition> Items, int TotalCount)> GetPagedAsync(
         Guid tenantId,
         int pageNumber,

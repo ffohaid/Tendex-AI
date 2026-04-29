@@ -158,11 +158,11 @@ const useBookletForm = ref({
   descriptionAr: '',
   competitionType: 0,
   estimatedBudget: null as number | null,
-  referenceNumber: '',
+  bookletNumber: '',
   department: '',
   fiscalYear: '',
-  startDate: '',
-  endDate: '',
+  bookletIssueDate: '',
+  expectedAwardDate: '',
   submissionDeadline: ''
 })
 
@@ -457,11 +457,11 @@ function openUseBookletDialog(tmpl: BookletTemplate): void {
     descriptionAr: '',
     competitionType: 0,
     estimatedBudget: null,
-    referenceNumber: '',
+    bookletNumber: '',
     department: '',
     fiscalYear: new Date().getFullYear().toString(),
-    startDate: '',
-    endDate: '',
+    bookletIssueDate: '',
+    expectedAwardDate: '',
     submissionDeadline: ''
   }
   createBookletError.value = ''
@@ -491,12 +491,12 @@ async function handleCreateBooklet(): Promise<void> {
     descriptionAr: useBookletForm.value.descriptionAr.trim(),
     competitionType: useBookletForm.value.competitionType,
     estimatedBudget: useBookletForm.value.estimatedBudget,
-    referenceNumber: useBookletForm.value.referenceNumber.trim(),
+    bookletNumber: useBookletForm.value.bookletNumber.trim() || null,
     department: useBookletForm.value.department.trim(),
     fiscalYear: useBookletForm.value.fiscalYear.trim(),
-    startDate: useBookletForm.value.startDate || null,
-    endDate: useBookletForm.value.endDate || null,
-    submissionDeadline: useBookletForm.value.submissionDeadline || null
+    bookletIssueDate: useBookletForm.value.bookletIssueDate || null,
+    submissionDeadline: useBookletForm.value.submissionDeadline || null,
+    expectedAwardDate: useBookletForm.value.expectedAwardDate || null
   }
 
   if (
@@ -504,12 +504,8 @@ async function handleCreateBooklet(): Promise<void> {
     !payload.descriptionAr ||
     payload.estimatedBudget === null ||
     payload.estimatedBudget <= 0 ||
-    !payload.referenceNumber ||
     !payload.department ||
-    !payload.fiscalYear ||
-    !payload.startDate ||
-    !payload.endDate ||
-    !payload.submissionDeadline
+    !payload.fiscalYear
   ) {
     createBookletError.value = locale.value === 'ar'
       ? 'يرجى استكمال جميع الحقول الأساسية المطلوبة قبل إنشاء الكراسة.'
@@ -517,10 +513,16 @@ async function handleCreateBooklet(): Promise<void> {
     return
   }
 
-  if (payload.endDate <= payload.startDate) {
+  if (payload.submissionDeadline && payload.bookletIssueDate && payload.submissionDeadline < payload.bookletIssueDate) {
     createBookletError.value = locale.value === 'ar'
-      ? 'يجب أن يكون تاريخ الانتهاء بعد تاريخ البداية.'
-      : 'End date must be after start date.'
+      ? 'يجب أن يكون آخر موعد لتقديم العروض بعد تاريخ طرح الكراسة.'
+      : 'Submission deadline must be after booklet issue date.'
+    return
+  }
+  if (payload.expectedAwardDate && payload.submissionDeadline && payload.expectedAwardDate <= payload.submissionDeadline) {
+    createBookletError.value = locale.value === 'ar'
+      ? 'يجب أن يكون التاريخ المتوقع للترسية بعد آخر موعد لتقديم العروض.'
+      : 'Expected award date must be after submission deadline.'
     return
   }
 
@@ -1394,10 +1396,10 @@ onMounted(() => {
 
                 <div>
                   <label class="mb-1 block text-sm font-medium text-secondary-700">
-                    {{ locale === 'ar' ? 'الرقم المرجعي' : 'Reference Number' }} *
+                    {{ locale === 'ar' ? 'رقم الكراسة' : 'Booklet Number' }} *
                   </label>
                   <input
-                    v-model="useBookletForm.referenceNumber"
+                    v-model="useBookletForm.bookletNumber"
                     type="text"
                     class="w-full rounded-xl border border-secondary-200 bg-secondary-50 px-4 py-2.5 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
                   />
@@ -1429,10 +1431,10 @@ onMounted(() => {
 
                 <div>
                   <label class="mb-1 block text-sm font-medium text-secondary-700">
-                    {{ locale === 'ar' ? 'تاريخ البداية' : 'Start Date' }} *
+                    {{ locale === 'ar' ? 'تاريخ طرح الكراسة' : 'Booklet Issue Date' }} *
                   </label>
                   <input
-                    v-model="useBookletForm.startDate"
+                    v-model="useBookletForm.bookletIssueDate"
                     type="date"
                     class="w-full rounded-xl border border-secondary-200 bg-secondary-50 px-4 py-2.5 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
                   />
@@ -1440,12 +1442,12 @@ onMounted(() => {
 
                 <div>
                   <label class="mb-1 block text-sm font-medium text-secondary-700">
-                    {{ locale === 'ar' ? 'تاريخ الانتهاء' : 'End Date' }} *
+                    {{ locale === 'ar' ? 'التاريخ المتوقع للترسية' : 'Expected Award Date' }} *
                   </label>
                   <input
-                    v-model="useBookletForm.endDate"
+                    v-model="useBookletForm.expectedAwardDate"
                     type="date"
-                    :min="useBookletForm.startDate || undefined"
+                    :min="useBookletForm.bookletIssueDate || undefined"
                     class="w-full rounded-xl border border-secondary-200 bg-secondary-50 px-4 py-2.5 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
                   />
                 </div>

@@ -32,16 +32,26 @@ public sealed class UpdateCompetitionCommandHandler
         if (competition is null)
             return Result.Failure<CompetitionDetailDto>("Competition not found.");
 
+        if (!string.IsNullOrWhiteSpace(request.BookletNumber) &&
+            await _repository.IsReferenceNumberInUseAsync(request.BookletNumber, request.CompetitionId, cancellationToken))
+        {
+            return Result.Failure<CompetitionDetailDto>("رقم الكراسة المدخل مستخدم مسبقاً.");
+        }
+
         var result = competition.UpdateBasicInfo(
             projectNameAr: request.ProjectNameAr,
             projectNameEn: request.ProjectNameEn,
             description: request.Description,
             competitionType: request.CompetitionType,
+            referenceNumber: request.BookletNumber,
             estimatedBudget: request.EstimatedBudget,
+            bookletIssueDate: request.BookletIssueDate,
+            inquiriesStartDate: request.InquiriesStartDate,
+            inquiryPeriodDays: request.InquiryPeriodDays,
+            offersStartDate: request.OffersStartDate,
             submissionDeadline: request.SubmissionDeadline,
-            projectDurationDays: request.ProjectDurationDays,
-            startDate: request.StartDate,
-            endDate: request.EndDate,
+            expectedAwardDate: request.ExpectedAwardDate,
+            workStartDate: request.WorkStartDate,
             department: request.Department,
             fiscalYear: request.FiscalYear,
             modifiedBy: request.ModifiedByUserId);

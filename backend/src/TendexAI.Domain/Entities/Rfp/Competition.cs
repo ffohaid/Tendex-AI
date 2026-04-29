@@ -34,6 +34,16 @@ public sealed class Competition : AggregateRoot<Guid>
         string createdByUserId,
         string? referenceNumber = null,
         string? description = null,
+        decimal? estimatedBudget = null,
+        DateTime? bookletIssueDate = null,
+        DateTime? inquiriesStartDate = null,
+        int? inquiryPeriodDays = null,
+        DateTime? offersStartDate = null,
+        DateTime? submissionDeadline = null,
+        DateTime? expectedAwardDate = null,
+        DateTime? workStartDate = null,
+        string? department = null,
+        string? fiscalYear = null,
         Guid? sourceTemplateId = null,
         Guid? sourceCompetitionId = null)
     {
@@ -41,12 +51,22 @@ public sealed class Competition : AggregateRoot<Guid>
         {
             Id = Guid.NewGuid(),
             TenantId = tenantId,
-            ReferenceNumber = referenceNumber ?? GenerateReferenceNumber(),
+            ReferenceNumber = string.IsNullOrWhiteSpace(referenceNumber) ? null : referenceNumber.Trim(),
             ProjectNameAr = projectNameAr,
             ProjectNameEn = projectNameEn,
             Description = description,
             CompetitionType = competitionType,
             CreationMethod = creationMethod,
+            EstimatedBudget = estimatedBudget,
+            StartDate = bookletIssueDate,
+            InquiriesStartDate = inquiriesStartDate,
+            InquiryPeriodDays = inquiryPeriodDays,
+            OffersStartDate = offersStartDate,
+            SubmissionDeadline = submissionDeadline,
+            ExpectedAwardDate = expectedAwardDate,
+            WorkStartDate = workStartDate,
+            Department = department,
+            FiscalYear = fiscalYear,
             Status = CompetitionStatus.Draft,
             CurrentPhase = CompetitionPhase.BookletPreparation,
             SourceTemplateId = sourceTemplateId,
@@ -58,7 +78,7 @@ public sealed class Competition : AggregateRoot<Guid>
         };
 
         competition.RaiseDomainEvent(new CompetitionCreatedEvent(
-            competition.Id, tenantId, competition.ReferenceNumber));
+            competition.Id, tenantId, competition.ReferenceNumber ?? string.Empty));
 
         return competition;
     }
@@ -69,7 +89,7 @@ public sealed class Competition : AggregateRoot<Guid>
 
     public Guid TenantId { get; private set; }
 
-    public string ReferenceNumber { get; private set; } = default!;
+    public string? ReferenceNumber { get; private set; }
 
     public string ProjectNameAr { get; private set; } = default!;
 
@@ -98,11 +118,26 @@ public sealed class Competition : AggregateRoot<Guid>
     /// <summary>Duration of the project in days.</summary>
     public int? ProjectDurationDays { get; private set; }
 
-    /// <summary>Project start date.</summary>
+    /// <summary>Booklet issue date.</summary>
     public DateTime? StartDate { get; private set; }
 
-    /// <summary>Project end date.</summary>
+    /// <summary>Inquiries start date.</summary>
+    public DateTime? InquiriesStartDate { get; private set; }
+
+    /// <summary>Inquiry period in days.</summary>
+    public int? InquiryPeriodDays { get; private set; }
+
+    /// <summary>Offers submission start date.</summary>
+    public DateTime? OffersStartDate { get; private set; }
+
+    /// <summary>Legacy end date retained for backward compatibility.</summary>
     public DateTime? EndDate { get; private set; }
+
+    /// <summary>Expected award date.</summary>
+    public DateTime? ExpectedAwardDate { get; private set; }
+
+    /// <summary>Work start date.</summary>
+    public DateTime? WorkStartDate { get; private set; }
 
     /// <summary>Department / management name responsible for this competition.</summary>
     public string? Department { get; private set; }
@@ -321,11 +356,15 @@ public sealed class Competition : AggregateRoot<Guid>
         string projectNameEn,
         string? description,
         CompetitionType competitionType,
+        string? referenceNumber,
         decimal? estimatedBudget,
+        DateTime? bookletIssueDate,
+        DateTime? inquiriesStartDate,
+        int? inquiryPeriodDays,
+        DateTime? offersStartDate,
         DateTime? submissionDeadline,
-        int? projectDurationDays,
-        DateTime? startDate,
-        DateTime? endDate,
+        DateTime? expectedAwardDate,
+        DateTime? workStartDate,
         string? department,
         string? fiscalYear,
         string modifiedBy)
@@ -337,11 +376,15 @@ public sealed class Competition : AggregateRoot<Guid>
         ProjectNameEn = projectNameEn;
         Description = description;
         CompetitionType = competitionType;
+        ReferenceNumber = string.IsNullOrWhiteSpace(referenceNumber) ? null : referenceNumber.Trim();
         EstimatedBudget = estimatedBudget;
+        StartDate = bookletIssueDate;
+        InquiriesStartDate = inquiriesStartDate;
+        InquiryPeriodDays = inquiryPeriodDays;
+        OffersStartDate = offersStartDate;
         SubmissionDeadline = submissionDeadline;
-        ProjectDurationDays = projectDurationDays;
-        StartDate = startDate;
-        EndDate = endDate;
+        ExpectedAwardDate = expectedAwardDate;
+        WorkStartDate = workStartDate;
         Department = department;
         FiscalYear = fiscalYear;
         LastModifiedAt = DateTime.UtcNow;
@@ -574,10 +617,4 @@ public sealed class Competition : AggregateRoot<Guid>
         }
     }
 
-    private static string GenerateReferenceNumber()
-    {
-        var timestamp = DateTime.UtcNow.ToString("yyyyMMdd", System.Globalization.CultureInfo.InvariantCulture);
-        var random = Random.Shared.Next(1000, 9999);
-        return $"RFP-{timestamp}-{random}";
-    }
 }

@@ -28,6 +28,12 @@ public sealed class CreateCompetitionCommandHandler
         CreateCompetitionCommand request,
         CancellationToken cancellationToken)
     {
+        if (!string.IsNullOrWhiteSpace(request.BookletNumber) &&
+            await _repository.IsReferenceNumberInUseAsync(request.BookletNumber, cancellationToken: cancellationToken))
+        {
+            return Result.Failure<CompetitionDetailDto>("رقم الكراسة المدخل مستخدم مسبقاً.");
+        }
+
         var competition = Competition.Create(
             tenantId: request.TenantId,
             projectNameAr: request.ProjectNameAr,
@@ -35,33 +41,25 @@ public sealed class CreateCompetitionCommandHandler
             competitionType: request.CompetitionType,
             creationMethod: request.CreationMethod,
             createdByUserId: request.CreatedByUserId,
+            referenceNumber: request.BookletNumber,
             description: request.Description,
+            estimatedBudget: request.EstimatedBudget,
+            bookletIssueDate: request.BookletIssueDate,
+            inquiriesStartDate: request.InquiriesStartDate,
+            inquiryPeriodDays: request.InquiryPeriodDays,
+            offersStartDate: request.OffersStartDate,
+            submissionDeadline: request.SubmissionDeadline,
+            expectedAwardDate: request.ExpectedAwardDate,
+            workStartDate: request.WorkStartDate,
+            department: request.Department,
+            fiscalYear: request.FiscalYear,
             sourceTemplateId: request.SourceTemplateId,
             sourceCompetitionId: request.SourceCompetitionId);
-
-        // Set optional fields
-        if (request.EstimatedBudget.HasValue || request.SubmissionDeadline.HasValue || request.ProjectDurationDays.HasValue
-            || request.StartDate.HasValue || request.EndDate.HasValue || request.Department is not null || request.FiscalYear is not null)
-        {
-            competition.UpdateBasicInfo(
-                projectNameAr: request.ProjectNameAr,
-                projectNameEn: request.ProjectNameEn,
-                description: request.Description,
-                competitionType: request.CompetitionType,
-                estimatedBudget: request.EstimatedBudget,
-                submissionDeadline: request.SubmissionDeadline,
-                projectDurationDays: request.ProjectDurationDays,
-                startDate: request.StartDate,
-                endDate: request.EndDate,
-                department: request.Department,
-                fiscalYear: request.FiscalYear,
-                modifiedBy: request.CreatedByUserId);
-        }
 
         await _repository.AddAsync(competition, cancellationToken);
         await _repository.SaveChangesAsync(cancellationToken);
 
-        _logger.LogCompetitionCreated(competition.Id, competition.ReferenceNumber, request.TenantId);
+        _logger.LogCompetitionCreated(competition.Id, competition.ReferenceNumber ?? string.Empty, request.TenantId);
 
         // Re-fetch with details to return full DTO
         var created = await _repository.GetByIdWithDetailsAsync(competition.Id, cancellationToken);

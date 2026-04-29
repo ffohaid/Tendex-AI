@@ -112,12 +112,16 @@ export interface RfpBasicInfo {
   competitionType: CompetitionType | ''
   estimatedValue: number | null
   currency: string
-  startDate: string
-  endDate: string
-  submissionDeadline: string
-  referenceNumber: string
+  bookletNumber: string
   department: string
   fiscalYear: string
+  bookletIssueDate: string
+  inquiriesStartDate: string
+  inquiryPeriodDays: number | null
+  offersStartDate: string
+  submissionDeadline: string
+  expectedAwardDate: string
+  workStartDate: string
 }
 
 /** Step 2: Competition settings */
@@ -129,7 +133,6 @@ export interface RfpSettings {
   allowPartialOffers: boolean
   requireBankGuarantee: boolean
   guaranteePercentage: number
-  inquiryPeriodDays: number
   evaluationCriteria: EvaluationCriterion[]
 }
 

@@ -45,19 +45,43 @@ public sealed class AutoSaveCompetitionCommandHandler
             return Result.Failure<AutoSaveResultDto>(
                 $"Auto-save is only available for Draft, UnderPreparation, PendingApproval, or Approved competitions. Current status: {competition.Status}.");
 
+        if (!string.IsNullOrWhiteSpace(request.BookletNumber) &&
+            await _repository.IsReferenceNumberInUseAsync(request.BookletNumber, request.CompetitionId, cancellationToken))
+        {
+            return Result.Failure<AutoSaveResultDto>("رقم الكراسة المدخل مستخدم مسبقاً.");
+        }
+
         // Apply partial updates only for provided fields
-        if (request.ProjectNameAr is not null || request.ProjectNameEn is not null)
+        if (request.ProjectNameAr is not null
+            || request.ProjectNameEn is not null
+            || request.Description is not null
+            || request.CompetitionType.HasValue
+            || request.BookletNumber is not null
+            || request.EstimatedBudget.HasValue
+            || request.BookletIssueDate.HasValue
+            || request.InquiriesStartDate.HasValue
+            || request.InquiryPeriodDays.HasValue
+            || request.OffersStartDate.HasValue
+            || request.SubmissionDeadline.HasValue
+            || request.ExpectedAwardDate.HasValue
+            || request.WorkStartDate.HasValue
+            || request.Department is not null
+            || request.FiscalYear is not null)
         {
             var updateResult = competition.UpdateBasicInfo(
                 projectNameAr: request.ProjectNameAr ?? competition.ProjectNameAr,
                 projectNameEn: request.ProjectNameEn ?? competition.ProjectNameEn,
                 description: request.Description ?? competition.Description,
                 competitionType: request.CompetitionType ?? competition.CompetitionType,
+                referenceNumber: request.BookletNumber ?? competition.ReferenceNumber,
                 estimatedBudget: request.EstimatedBudget ?? competition.EstimatedBudget,
+                bookletIssueDate: request.BookletIssueDate ?? competition.StartDate,
+                inquiriesStartDate: request.InquiriesStartDate ?? competition.InquiriesStartDate,
+                inquiryPeriodDays: request.InquiryPeriodDays ?? competition.InquiryPeriodDays,
+                offersStartDate: request.OffersStartDate ?? competition.OffersStartDate,
                 submissionDeadline: request.SubmissionDeadline ?? competition.SubmissionDeadline,
-                projectDurationDays: request.ProjectDurationDays ?? competition.ProjectDurationDays,
-                startDate: request.StartDate ?? competition.StartDate,
-                endDate: request.EndDate ?? competition.EndDate,
+                expectedAwardDate: request.ExpectedAwardDate ?? competition.ExpectedAwardDate,
+                workStartDate: request.WorkStartDate ?? competition.WorkStartDate,
                 department: request.Department ?? competition.Department,
                 fiscalYear: request.FiscalYear ?? competition.FiscalYear,
                 modifiedBy: request.ModifiedByUserId);

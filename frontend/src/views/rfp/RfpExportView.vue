@@ -70,8 +70,8 @@ const officialBookletMeta = computed(() => ({
   projectNameAr: templateBooklet.value?.projectNameAr || rfpData.value?.basicInfo.projectName || '',
   projectNameEn: templateBooklet.value?.projectNameEn || '',
   templateNameAr: templateBooklet.value?.templateNameAr || t('rfp.export.bookletTitle', 'كراسة الشروط والمواصفات'),
-  referenceNumber: rfpData.value?.basicInfo.referenceNumber || '',
-  issueDate: formatDate(rfpData.value?.basicInfo.submissionDeadline || rfpData.value?.basicInfo.startDate || ''),
+  referenceNumber: rfpData.value?.basicInfo.bookletNumber || '',
+  issueDate: formatDate(rfpData.value?.basicInfo.bookletIssueDate || rfpData.value?.basicInfo.submissionDeadline || ''),
   administrationName: rfpData.value?.basicInfo.department || '',
   organizationName: 'المملكة العربية السعودية',
   versionLabel: 'الأولى',
@@ -195,8 +195,8 @@ onMounted(() => {
           <h2 class="mt-6 text-xl font-bold text-primary">
             {{ rfpData.basicInfo.projectName }}
           </h2>
-          <p v-if="rfpData.basicInfo.referenceNumber" class="mt-2 text-sm text-tertiary">
-            {{ $t('rfp.fields.referenceNumber', 'الرقم المرجعي') }}: {{ rfpData.basicInfo.referenceNumber }}
+          <p v-if="rfpData.basicInfo.bookletNumber" class="mt-2 text-sm text-tertiary">
+            {{ $t('rfp.fields.bookletNumber', 'رقم الكراسة') }}: {{ rfpData.basicInfo.bookletNumber }}
           </p>
         </div>
 
@@ -238,21 +238,51 @@ onMounted(() => {
               </tr>
               <tr class="border-b border-surface-dim">
                 <td class="bg-surface-muted px-4 py-3 font-medium text-secondary">
-                  {{ t('rfp.fields.startDate') }}
+                  {{ t('rfp.fields.bookletNumber') }}
                 </td>
-                <td class="px-4 py-3 text-secondary">{{ formatDate(rfpData.basicInfo.startDate) }}</td>
+                <td class="px-4 py-3 text-secondary">{{ rfpData.basicInfo.bookletNumber || '-' }}</td>
               </tr>
               <tr class="border-b border-surface-dim">
                 <td class="bg-surface-muted px-4 py-3 font-medium text-secondary">
-                  {{ t('rfp.fields.endDate') }}
+                  {{ t('rfp.fields.bookletIssueDate') }}
                 </td>
-                <td class="px-4 py-3 text-secondary">{{ formatDate(rfpData.basicInfo.endDate) }}</td>
+                <td class="px-4 py-3 text-secondary">{{ formatDate(rfpData.basicInfo.bookletIssueDate) }}</td>
+              </tr>
+              <tr class="border-b border-surface-dim">
+                <td class="bg-surface-muted px-4 py-3 font-medium text-secondary">
+                  {{ t('rfp.fields.inquiriesStartDate') }}
+                </td>
+                <td class="px-4 py-3 text-secondary">{{ formatDate(rfpData.basicInfo.inquiriesStartDate) }}</td>
+              </tr>
+              <tr class="border-b border-surface-dim">
+                <td class="bg-surface-muted px-4 py-3 font-medium text-secondary">
+                  {{ t('rfp.fields.inquiryPeriodDays') }}
+                </td>
+                <td class="px-4 py-3 text-secondary">{{ rfpData.basicInfo.inquiryPeriodDays || '-' }}</td>
+              </tr>
+              <tr class="border-b border-surface-dim">
+                <td class="bg-surface-muted px-4 py-3 font-medium text-secondary">
+                  {{ t('rfp.fields.offersStartDate') }}
+                </td>
+                <td class="px-4 py-3 text-secondary">{{ formatDate(rfpData.basicInfo.offersStartDate) }}</td>
               </tr>
               <tr class="border-b border-surface-dim">
                 <td class="bg-surface-muted px-4 py-3 font-medium text-secondary">
                   {{ t('rfp.fields.submissionDeadline') }}
                 </td>
                 <td class="px-4 py-3 text-secondary">{{ formatDate(rfpData.basicInfo.submissionDeadline) }}</td>
+              </tr>
+              <tr class="border-b border-surface-dim">
+                <td class="bg-surface-muted px-4 py-3 font-medium text-secondary">
+                  {{ t('rfp.fields.expectedAwardDate') }}
+                </td>
+                <td class="px-4 py-3 text-secondary">{{ formatDate(rfpData.basicInfo.expectedAwardDate) }}</td>
+              </tr>
+              <tr class="border-b border-surface-dim">
+                <td class="bg-surface-muted px-4 py-3 font-medium text-secondary">
+                  {{ t('rfp.fields.workStartDate') }}
+                </td>
+                <td class="px-4 py-3 text-secondary">{{ formatDate(rfpData.basicInfo.workStartDate) }}</td>
               </tr>
             </tbody>
           </table>

@@ -1,4 +1,4 @@
-using FluentValidation;
+using TendexAI.Application.Features.Rfp.Validation;
 
 namespace TendexAI.Application.Features.Rfp.Commands.CreateCompetition;
 
@@ -38,22 +38,29 @@ public sealed class CreateCompetitionCommandValidator : AbstractValidator<Create
             .IsInEnum()
             .WithMessage("Invalid creation method.");
 
+        RuleFor(x => x.BookletNumber)
+            .MaximumLength(50)
+            .WithMessage("Booklet number must not exceed 50 characters.")
+            .Matches("^[A-Za-z0-9\\-/]*$")
+            .WithMessage("Booklet number may contain only English letters, numbers, hyphens, and slashes.")
+            .When(x => !string.IsNullOrWhiteSpace(x.BookletNumber));
+
         RuleFor(x => x.EstimatedBudget)
             .GreaterThan(0)
             .WithMessage("Estimated budget must be greater than zero.")
             .When(x => x.EstimatedBudget.HasValue);
 
-        RuleFor(x => x.SubmissionDeadline)
-            .GreaterThan(DateTime.UtcNow)
-            .WithMessage("Submission deadline must be in the future.")
-            .When(x => x.SubmissionDeadline.HasValue);
-
-        RuleFor(x => x.ProjectDurationDays)
+        RuleFor(x => x.InquiryPeriodDays)
             .GreaterThan(0)
-            .WithMessage("Project duration must be greater than zero days.")
-            .LessThanOrEqualTo(3650)
-            .WithMessage("Project duration must not exceed 3650 days (10 years).")
-            .When(x => x.ProjectDurationDays.HasValue);
+            .WithMessage("Inquiry period must be greater than zero days.")
+            .LessThanOrEqualTo(365)
+            .WithMessage("Inquiry period must not exceed 365 days.")
+            .When(x => x.InquiryPeriodDays.HasValue);
+
+        RuleFor(x => x.FiscalYear)
+            .Matches("^\\d{4}$")
+            .WithMessage("Fiscal year must be a four-digit year.")
+            .When(x => !string.IsNullOrWhiteSpace(x.FiscalYear));
 
         RuleFor(x => x.CreatedByUserId)
             .NotEmpty()
@@ -68,5 +75,24 @@ public sealed class CreateCompetitionCommandValidator : AbstractValidator<Create
             .NotEmpty()
             .WithMessage("Source competition ID must be valid when provided.")
             .When(x => x.SourceCompetitionId.HasValue);
+
+        RuleFor(x => x)
+            .Custom((command, context) =>
+            {
+                var failures = CompetitionBasicInfoValidation.ValidateBasicInfoDates(
+                    command.BookletIssueDate,
+                    command.InquiriesStartDate,
+                    command.OffersStartDate,
+                    command.SubmissionDeadline,
+                    command.ExpectedAwardDate,
+                    command.WorkStartDate,
+                    command.FiscalYear,
+                    enforceBookletIssueDateInFuture: true);
+
+                foreach (var failure in failures)
+                {
+                    context.AddFailure(failure.PropertyName, failure.ErrorMessage);
+                }
+            });
     }
 }

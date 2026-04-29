@@ -13,7 +13,7 @@ public static class CompetitionMapper
     {
         return new CompetitionListItemDto(
             Id: entity.Id,
-            ReferenceNumber: entity.ReferenceNumber,
+            ReferenceNumber: entity.ReferenceNumber ?? string.Empty,
             ProjectNameAr: entity.ProjectNameAr,
             ProjectNameEn: entity.ProjectNameEn,
             CompetitionType: entity.CompetitionType,
@@ -47,7 +47,12 @@ public static class CompetitionMapper
             SubmissionDeadline: entity.SubmissionDeadline,
             ProjectDurationDays: entity.ProjectDurationDays,
             StartDate: entity.StartDate,
+            InquiriesStartDate: entity.InquiriesStartDate,
+            InquiryPeriodDays: entity.InquiryPeriodDays,
+            OffersStartDate: entity.OffersStartDate,
             EndDate: entity.EndDate,
+            ExpectedAwardDate: entity.ExpectedAwardDate,
+            WorkStartDate: entity.WorkStartDate,
             Department: entity.Department,
             FiscalYear: entity.FiscalYear,
             TechnicalPassingScore: entity.TechnicalPassingScore,

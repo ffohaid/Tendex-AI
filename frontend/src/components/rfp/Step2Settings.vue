@@ -39,7 +39,6 @@ const { value: minimumTechnicalScore } = useField<number>('minimumTechnicalScore
 const { value: allowPartialOffers } = useField<boolean>('allowPartialOffers')
 const { value: requireBankGuarantee } = useField<boolean>('requireBankGuarantee')
 const { value: guaranteePercentage } = useField<number>('guaranteePercentage')
-const { value: inquiryPeriodDays } = useField<number>('inquiryPeriodDays')
 
 const evaluationMethods = computed(() => [
   { value: 'lowest_price', label: t('rfp.evaluationMethods.lowestPrice') },
@@ -59,7 +58,7 @@ watch(
   [
     evaluationMethod, technicalWeight, financialWeight,
     minimumTechnicalScore, allowPartialOffers, requireBankGuarantee,
-    guaranteePercentage, inquiryPeriodDays,
+    guaranteePercentage,
   ],
   () => {
     rfpStore.updateSettings({
@@ -70,7 +69,6 @@ watch(
       allowPartialOffers: allowPartialOffers.value,
       requireBankGuarantee: requireBankGuarantee.value,
       guaranteePercentage: guaranteePercentage.value,
-      inquiryPeriodDays: inquiryPeriodDays.value,
     })
   },
   { deep: true },
@@ -223,24 +221,6 @@ defineExpose({
           max="100"
           class="w-full rounded-lg border px-4 py-2.5 text-sm transition-colors focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
           :class="errors.minimumTechnicalScore ? 'border-danger' : 'border-surface-dim'"
-        />
-      </FormField>
-
-      <!-- Inquiry Period Days -->
-      <FormField
-        :label="t('rfp.fields.inquiryPeriodDays')"
-        field-id="inquiryPeriodDays"
-        :error="errors.inquiryPeriodDays"
-        :required="true"
-      >
-        <input
-          id="inquiryPeriodDays"
-          v-model.number="inquiryPeriodDays"
-          type="number"
-          min="1"
-          max="90"
-          class="w-full rounded-lg border px-4 py-2.5 text-sm transition-colors focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
-          :class="errors.inquiryPeriodDays ? 'border-danger' : 'border-surface-dim'"
         />
       </FormField>
 

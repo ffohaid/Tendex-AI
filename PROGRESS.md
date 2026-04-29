@@ -1306,3 +1306,96 @@ To resolve this, `CompetitionRepository.AddBoqItemsDirectAsync` was updated so t
 ### Files Modified
 - `frontend/src/components/common/RichTextEditor.vue`
 - `frontend/src/views/rfp/BookletEditorView.vue`
+
+## 2026-04-29: Final Production Validation for Consecutive Guidance Grouping
+
+### Scope
+This validation round was restricted to the remaining open item from `29042026_1.docx`, namely the visual grouping of consecutive guidance blocks inside the booklet editor. No previously closed issue was reopened during this round.
+
+### Validation Outcome
+The initially opened production booklet `ebc4c336-7374-40f8-999f-ac4e33e5b94a` was confirmed to contain only editable blocks, so it could not provide conclusive visual evidence for the guidance-grouping fix. An authenticated production scan was therefore used to locate a booklet that actually contains guidance content, and the record `1b8d0624-b7da-4b42-9e6f-a8562a0cb35f` (`مشروع لتجربة الإصلاحات العامة في شكل العرض`) was selected for the final live check.
+
+Inside the production editor, in edit mode, the active section `غلاف الكراسة` exposed a populated non-editable reference panel with guidance content visible. Live DOM inspection confirmed that the section renders a single blue guidance container holding nine child text blocks, which verifies that consecutive guidance items are grouped into one visual unit instead of appearing as multiple separate bordered cards. The nested guidance renderers also appeared in the borderless presentation variant, matching the intended UI fix.
+
+### Evidence
+
+| Item | Result |
+|---|---|
+| Production validation record | `1b8d0624-b7da-4b42-9e6f-a8562a0cb35f` |
+| Verified section | `غلاف الكراسة` |
+| Blue guidance groups rendered | `1` |
+| Guidance child text boxes inside the group | `9` |
+| Visual capture | `screenshots/mof_netaq_pro_2026-04-29_06-38-50_8449.webp` |
+| Working notes | `live_validation_notes_20260429.md` |
+
+### Status
+The final remaining item from `29042026_1.docx` is now considered **live-validated on production**.
+
+## 2026-04-29: Header Layout Width Rebalancing Fix
+
+### Problem
+- The authenticated application header was not using horizontal space efficiently.
+- The center search area was visually compressed while the trailing action area consumed excessive width.
+- The issue remained visible in the live UI even after the previous validation cycle.
+
+### Root Cause
+- The trailing header actions were too wide at medium and large breakpoints.
+- The AI badge, language switcher label, and full user identity block were competing with the center search area.
+- The branding block also needed stronger `min-w-0` and truncation behavior to avoid unnecessary expansion.
+
+### Fix Applied
+- Updated `frontend/src/components/layout/AppHeader.vue` to rebalance horizontal allocation.
+- Added responsive shrinking and truncation behavior to the branding area.
+- Added responsive minimum widths to the search container so the center area remains usable.
+- Converted the AI badge to a compact icon treatment on smaller large breakpoints and kept the full badge for `2xl` only.
+- Reduced the language switcher to icon-first behavior except on very wide screens.
+- Updated `frontend/src/components/layout/UserMenu.vue` to defer full user text to larger breakpoints and truncate long identity text.
+
+### Verification
+- `pnpm build` completed successfully after the UI changes.
+- Local visual verification was performed on the authenticated layout using a seeded preview session.
+- Measured improvement after the fix:
+
+| Area | Before | After |
+| --- | ---: | ---: |
+| Search area width | 199 px | 352 px |
+| Action area width | 532 px | 311 px |
+
+### Files Modified
+- `frontend/src/components/layout/AppHeader.vue`
+- `frontend/src/components/layout/UserMenu.vue`
+- `header_fix_validation_20260429.md`
+
+## 2026-04-29: Basic Information Screen Redesign and Validation Upgrade
+
+### Scope
+The basic information step in the RFP creation wizard was redesigned to align with the new business fields and chronological validation rules. The implementation was handled as a source-of-truth refactor across frontend models, validation, service mapping, backend contracts, domain behavior, and related downstream views.
+
+### What was changed
+A new Step 1 layout was implemented using the requested two-column structure while keeping large text fields full width. The frontend source of truth was updated to use the new business fields, including booklet number, booklet issue date, inquiries start date, inquiry period days, offers submission date, submission deadline, expected award date, and work start date. Legacy Step 1 field dependencies were removed or realigned in the validation layer, review step, export view, AI compliance checker, and template-based booklet creation flows.
+
+On the backend side, the competition contracts, handlers, validation, mapping, repository checks, and entity behavior were updated to support the new field set. Booklet number handling was changed from implicit generation to optional user-provided input with uniqueness enforcement when present. Shared date-sequence validation was introduced to centralize chronology and fiscal-year rules.
+
+### Validation status
+The frontend production build passed successfully after the redesign and downstream flow alignment. Local preview confirmed that the rebuilt application loads successfully, but direct browser walkthrough of `/rfp/create` in the preview host was blocked by an access-denied route under the current local session permissions. Backend compilation could not be executed in the sandbox because the .NET SDK is unavailable in this environment, so backend verification was completed through targeted source inspection and contract consistency review.
+
+### Key artifacts
+- `frontend/src/components/rfp/Step1BasicInfo.vue`
+- `frontend/src/validations/rfp.ts`
+- `frontend/src/types/rfp.ts`
+- `frontend/src/stores/rfp.ts`
+- `frontend/src/services/rfpService.ts`
+- `frontend/src/components/rfp/Step6Review.vue`
+- `frontend/src/components/rfp/AiComplianceChecker.vue`
+- `frontend/src/views/rfp/RfpExportView.vue`
+- `frontend/src/views/rfp/TemplateLibraryView.vue`
+- `frontend/src/views/rfp/BookletTemplatesView.vue`
+- `backend/src/TendexAI.Domain/Entities/Rfp/Competition.cs`
+- `backend/src/TendexAI.Application/Features/Rfp/**/*`
+- `backend/src/TendexAI.API/Endpoints/Rfp/CompetitionEndpoints.cs`
+- `backend/src/TendexAI.API/Endpoints/Rfp/BookletTemplateEndpoints.cs`
+- `backend/src/TendexAI.Infrastructure/Persistence/Repositories/CompetitionRepository.cs`
+- `backend/src/TendexAI.Infrastructure/Persistence/Configurations/Rfp/CompetitionConfiguration.cs`
+
+### Supporting note
+Detailed validation notes were saved in `basic_info_redesign_validation_20260429.md`.

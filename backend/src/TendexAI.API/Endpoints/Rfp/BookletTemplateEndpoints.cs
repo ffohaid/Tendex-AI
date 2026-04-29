@@ -321,19 +321,27 @@ public static class BookletTemplateEndpoints
 
         if (string.IsNullOrWhiteSpace(request.ProjectNameAr)
             || string.IsNullOrWhiteSpace(request.DescriptionAr)
-            || string.IsNullOrWhiteSpace(request.ReferenceNumber)
             || string.IsNullOrWhiteSpace(request.Department)
             || string.IsNullOrWhiteSpace(request.FiscalYear)
-            || request.EstimatedBudget is null or <= 0
-            || request.StartDate is null
-            || request.EndDate is null
-            || request.SubmissionDeadline is null)
+            || request.EstimatedBudget is null or <= 0)
         {
-            return Results.BadRequest(new { error = "جميع الحقول الأساسية مطلوبة لإنشاء الكراسة من القالب." });
+            return Results.BadRequest(new { error = "الحقول الأساسية المطلوبة غير مكتملة لإنشاء الكراسة من القالب." });
         }
 
-        if (request.EndDate <= request.StartDate)
-            return Results.BadRequest(new { error = "يجب أن يكون تاريخ الانتهاء بعد تاريخ البداية." });
+        var dateFailures = TendexAI.Application.Features.Rfp.Validation.CompetitionBasicInfoValidation.ValidateBasicInfoDates(
+            request.BookletIssueDate,
+            request.InquiriesStartDate,
+            request.OffersStartDate,
+            request.SubmissionDeadline,
+            request.ExpectedAwardDate,
+            request.WorkStartDate,
+            request.FiscalYear,
+            enforceBookletIssueDateInFuture: true);
+
+        if (dateFailures.Count > 0)
+        {
+            return Results.BadRequest(new { error = dateFailures[0].ErrorMessage });
+        }
 
         var userId = GetCurrentUserId(httpContext);
         var projectNameAr = request.ProjectNameAr.Trim();
@@ -341,9 +349,6 @@ public static class BookletTemplateEndpoints
             ? projectNameAr
             : request.ProjectNameEn.Trim();
         var descriptionAr = request.DescriptionAr.Trim();
-        int? projectDurationDays = request.StartDate.HasValue && request.EndDate.HasValue
-            ? Math.Max(1, (request.EndDate.Value.Date - request.StartDate.Value.Date).Days)
-            : null;
 
         // Create a new competition from the template
         var competition = Competition.Create(
@@ -353,26 +358,19 @@ public static class BookletTemplateEndpoints
             competitionType: request.CompetitionType,
             creationMethod: TendexAI.Domain.Enums.RfpCreationMethod.FromTemplate,
             createdByUserId: userId,
-            referenceNumber: request.ReferenceNumber.Trim(),
+            referenceNumber: string.IsNullOrWhiteSpace(request.BookletNumber) ? null : request.BookletNumber.Trim(),
             description: descriptionAr,
-            sourceTemplateId: template.Id);
-
-        var basicInfoResult = competition.UpdateBasicInfo(
-            projectNameAr: projectNameAr,
-            projectNameEn: projectNameEn,
-            description: descriptionAr,
-            competitionType: request.CompetitionType,
             estimatedBudget: request.EstimatedBudget,
+            bookletIssueDate: request.BookletIssueDate,
+            inquiriesStartDate: request.InquiriesStartDate,
+            inquiryPeriodDays: request.InquiryPeriodDays,
+            offersStartDate: request.OffersStartDate,
             submissionDeadline: request.SubmissionDeadline,
-            projectDurationDays: projectDurationDays,
-            startDate: request.StartDate,
-            endDate: request.EndDate,
+            expectedAwardDate: request.ExpectedAwardDate,
+            workStartDate: request.WorkStartDate,
             department: request.Department.Trim(),
             fiscalYear: request.FiscalYear.Trim(),
-            modifiedBy: userId);
-
-        if (basicInfoResult.IsFailure)
-            return Results.BadRequest(new { error = basicInfoResult.Error });
+            sourceTemplateId: template.Id);
 
         // Copy sections from template as RFP sections
         foreach (var templateSection in template.Sections.OrderBy(s => s.SortOrder))
@@ -879,18 +877,22 @@ public sealed record BookletTemplateBlockDto
     public bool IsEditable { get; init; }
 }
 
-public sealed record CreateBookletFromTemplateRequest(
+public sealed record CreateCompetitionFromTemplateRequest(
     string ProjectNameAr,
     string? ProjectNameEn,
     string DescriptionAr,
     TendexAI.Domain.Enums.CompetitionType CompetitionType,
     decimal? EstimatedBudget,
-    string ReferenceNumber,
+    string? BookletNumber,
     string Department,
     string FiscalYear,
-    DateTime? StartDate,
-    DateTime? EndDate,
-    DateTime? SubmissionDeadline);
+    DateTime? BookletIssueDate,
+    DateTime? InquiriesStartDate,
+    int? InquiryPeriodDays,
+    DateTime? OffersStartDate,
+    DateTime? SubmissionDeadline,
+    DateTime? ExpectedAwardDate,
+    DateTime? WorkStartDate);
 
 // ═══════════════════════════════════════════════════════════
 //  Booklet Editor DTOs

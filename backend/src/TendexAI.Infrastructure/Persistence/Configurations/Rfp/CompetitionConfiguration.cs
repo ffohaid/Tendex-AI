@@ -21,7 +21,6 @@ public sealed class CompetitionConfiguration : IEntityTypeConfiguration<Competit
             .IsRequired();
 
         builder.Property(c => c.ReferenceNumber)
-            .IsRequired()
             .HasMaxLength(50);
 
         builder.Property(c => c.ProjectNameAr)
@@ -53,6 +52,8 @@ public sealed class CompetitionConfiguration : IEntityTypeConfiguration<Competit
 
         builder.Property(c => c.EstimatedBudget)
             .HasPrecision(18, 2);
+
+        builder.Property(c => c.InquiryPeriodDays);
 
         builder.Property(c => c.Currency)
             .IsRequired()
@@ -90,6 +91,7 @@ public sealed class CompetitionConfiguration : IEntityTypeConfiguration<Competit
 
         builder.HasIndex(c => c.ReferenceNumber)
             .IsUnique()
+            .HasFilter("[ReferenceNumber] IS NOT NULL AND [IsDeleted] = 0")
             .HasDatabaseName("IX_Competitions_ReferenceNumber");
 
         builder.HasIndex(c => c.TenantId)

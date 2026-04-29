@@ -2,14 +2,14 @@
 /**
  * Step 1: Basic Information.
  *
- * Collects project name, description, competition type,
- * estimated value, dates, reference number, and department.
- * Uses VeeValidate + Zod for real-time validation.
+ * Collects the core booklet metadata using the redesigned two-column layout.
+ * Project name and description remain full width, while the rest of the fields
+ * are arranged in paired rows to reduce visual complexity.
  *
- * Issue 26 Fix: Date pickers now enforce min date = today to prevent past dates.
- * Issue 28 Fix: Date picker year range is synced with fiscal year selection.
+ * Validations are powered by VeeValidate + Zod, with an additional asynchronous
+ * uniqueness check for the booklet number when the user provides a value.
  */
-import { watch, computed } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useForm, useField } from 'vee-validate'
 import { toTypedSchema } from '@vee-validate/zod'
@@ -18,6 +18,7 @@ import { useRfpStore } from '@/stores/rfp'
 import FormField from './FormField.vue'
 import AiTextHelper from '@/components/ai/AiTextHelper.vue'
 import { formatCurrency } from '@/utils/numbers'
+import { checkBookletNumberAvailability } from '@/services/rfpService'
 
 const { t, locale } = useI18n()
 const rfpStore = useRfpStore()
@@ -30,19 +31,24 @@ const { errors, validate } = useForm({
   validateOnMount: false,
 })
 
-/* Individual fields with real-time validation */
 const { value: projectName } = useField<string>('projectName')
 const { value: projectDescription } = useField<string>('projectDescription')
 const { value: competitionType } = useField<string>('competitionType')
 const { value: estimatedValue } = useField<number | null>('estimatedValue')
-const { value: startDate } = useField<string>('startDate')
-const { value: endDate } = useField<string>('endDate')
-const { value: submissionDeadline } = useField<string>('submissionDeadline')
-const { value: referenceNumber } = useField<string>('referenceNumber')
+const { value: bookletNumber } = useField<string>('bookletNumber')
 const { value: department } = useField<string>('department')
 const { value: fiscalYear } = useField<string>('fiscalYear')
+const { value: bookletIssueDate } = useField<string>('bookletIssueDate')
+const { value: inquiriesStartDate } = useField<string>('inquiriesStartDate')
+const { value: inquiryPeriodDays } = useField<number | null>('inquiryPeriodDays')
+const { value: offersStartDate } = useField<string>('offersStartDate')
+const { value: submissionDeadline } = useField<string>('submissionDeadline')
+const { value: expectedAwardDate } = useField<string>('expectedAwardDate')
+const { value: workStartDate } = useField<string>('workStartDate')
 
-/** Competition type options */
+const bookletNumberError = ref('')
+const isCheckingBookletNumber = ref(false)
+
 const competitionTypes = computed(() => [
   { value: 'public_tender', label: t('rfp.competitionTypes.publicTender') },
   { value: 'limited_tender', label: t('rfp.competitionTypes.limitedTender') },
@@ -51,7 +57,6 @@ const competitionTypes = computed(() => [
   { value: 'reverse_auction', label: t('rfp.competitionTypes.reverseAuction') },
 ])
 
-/** Fiscal year options - expanded range to cover 5 years */
 const fiscalYears = computed(() => {
   const currentYear = new Date().getFullYear()
   return [
@@ -63,43 +68,68 @@ const fiscalYears = computed(() => {
   ]
 })
 
-/**
- * Issue 26 Fix: Compute minimum date as today's date in YYYY-MM-DD format.
- * This prevents users from selecting past dates for start date, end date,
- * and submission deadline.
- */
 const todayStr = computed(() => {
   const now = new Date()
   return now.toISOString().split('T')[0]
 })
 
-/**
- * Issue 28 Fix: Compute min/max dates for date pickers based on fiscal year.
- * When a fiscal year is selected, date pickers are constrained to that year's range.
- * If no fiscal year is selected, only the minimum (today) constraint applies.
- */
-const dateMinForPicker = computed(() => {
-  if (fiscalYear.value) {
-    const yearStart = `${fiscalYear.value}-01-01`
-    // Use the later of today or fiscal year start
-    return yearStart > todayStr.value ? yearStart : todayStr.value
-  }
-  return todayStr.value
+const dateMinForFiscalYear = computed(() => {
+  if (!fiscalYear.value) return todayStr.value
+  const yearStart = `${fiscalYear.value}-01-01`
+  return yearStart > todayStr.value ? yearStart : todayStr.value
 })
 
-const dateMaxForPicker = computed(() => {
-  if (fiscalYear.value) {
-    return `${fiscalYear.value}-12-31`
-  }
-  return '' // No max constraint if no fiscal year selected
+const dateMaxForFiscalYear = computed(() => {
+  if (!fiscalYear.value) return ''
+  return `${fiscalYear.value}-12-31`
 })
 
-/** Sync field changes back to store */
+const inquiriesStartMinDate = computed(() => bookletIssueDate.value || dateMinForFiscalYear.value)
+const offersStartMinDate = computed(() => inquiriesStartDate.value || bookletIssueDate.value || dateMinForFiscalYear.value)
+const submissionDeadlineMinDate = computed(() => offersStartDate.value || inquiriesStartDate.value || bookletIssueDate.value || dateMinForFiscalYear.value)
+const expectedAwardMinDate = computed(() => submissionDeadline.value || offersStartDate.value || inquiriesStartDate.value || bookletIssueDate.value || dateMinForFiscalYear.value)
+const workStartMinDate = computed(() => expectedAwardDate.value || submissionDeadline.value || offersStartDate.value || inquiriesStartDate.value || bookletIssueDate.value || dateMinForFiscalYear.value)
+
+async function validateBookletNumberUniqueness(): Promise<boolean> {
+  bookletNumberError.value = ''
+  const normalized = (bookletNumber.value || '').trim()
+
+  if (!normalized) return true
+
+  isCheckingBookletNumber.value = true
+  const result = await checkBookletNumberAvailability(normalized, rfpStore.formData.id)
+  isCheckingBookletNumber.value = false
+
+  if (!result.success || !result.data?.isAvailable) {
+    bookletNumberError.value = result.success
+      ? (result.data?.message || t('rfp.validation.bookletNumberAlreadyExists'))
+      : (result.message || t('rfp.validation.bookletNumberCheckFailed'))
+    return false
+  }
+
+  return true
+}
+
+watch(bookletNumber, () => {
+  bookletNumberError.value = ''
+})
+
 watch(
   [
-    projectName, projectDescription, competitionType, estimatedValue,
-    startDate, endDate, submissionDeadline, referenceNumber,
-    department, fiscalYear,
+    projectName,
+    projectDescription,
+    competitionType,
+    estimatedValue,
+    bookletNumber,
+    department,
+    fiscalYear,
+    bookletIssueDate,
+    inquiriesStartDate,
+    inquiryPeriodDays,
+    offersStartDate,
+    submissionDeadline,
+    expectedAwardDate,
+    workStartDate,
   ],
   () => {
     rfpStore.updateBasicInfo({
@@ -107,42 +137,51 @@ watch(
       projectDescription: projectDescription.value,
       competitionType: competitionType.value as any,
       estimatedValue: estimatedValue.value,
-      startDate: startDate.value,
-      endDate: endDate.value,
-      submissionDeadline: submissionDeadline.value,
-      referenceNumber: referenceNumber.value,
+      bookletNumber: bookletNumber.value,
       department: department.value,
       fiscalYear: fiscalYear.value,
+      bookletIssueDate: bookletIssueDate.value,
+      inquiriesStartDate: inquiriesStartDate.value,
+      inquiryPeriodDays: inquiryPeriodDays.value,
+      offersStartDate: offersStartDate.value,
+      submissionDeadline: submissionDeadline.value,
+      expectedAwardDate: expectedAwardDate.value,
+      workStartDate: workStartDate.value,
     })
   },
   { deep: true },
 )
 
-/**
- * Issue 28 Fix: When fiscal year changes, clear dates that fall outside
- * the new fiscal year range to maintain consistency.
- */
 watch(fiscalYear, (newYear) => {
   if (!newYear) return
+
   const yearStart = `${newYear}-01-01`
   const yearEnd = `${newYear}-12-31`
+  const dateFields = [
+    bookletIssueDate,
+    inquiriesStartDate,
+    offersStartDate,
+    submissionDeadline,
+    expectedAwardDate,
+    workStartDate,
+  ]
 
-  if (startDate.value && (startDate.value < yearStart || startDate.value > yearEnd)) {
-    startDate.value = ''
-  }
-  if (endDate.value && (endDate.value < yearStart || endDate.value > yearEnd)) {
-    endDate.value = ''
-  }
-  if (submissionDeadline.value && (submissionDeadline.value < yearStart || submissionDeadline.value > yearEnd)) {
-    submissionDeadline.value = ''
-  }
+  dateFields.forEach((field) => {
+    if (field.value && (field.value < yearStart || field.value > yearEnd)) {
+      field.value = ''
+    }
+  })
 })
 
-/** Expose validate for parent wizard */
+function applyProjectDescription(text: string) {
+  projectDescription.value = text
+}
+
 defineExpose({
   validate: async () => {
     const result = await validate()
-    return result.valid
+    const bookletNumberValid = await validateBookletNumberUniqueness()
+    return result.valid && bookletNumberValid
   },
 })
 </script>
@@ -159,7 +198,6 @@ defineExpose({
     </div>
 
     <div class="grid grid-cols-1 gap-6 lg:grid-cols-2">
-      <!-- Project Name -->
       <div class="lg:col-span-2">
         <FormField
           :label="t('rfp.fields.projectName')"
@@ -174,13 +212,10 @@ defineExpose({
             class="w-full rounded-lg border px-4 py-2.5 text-sm transition-colors focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
             :class="errors.projectName ? 'border-danger' : 'border-surface-dim'"
             :placeholder="t('rfp.placeholders.projectName')"
-            :aria-invalid="!!errors.projectName"
-            :aria-describedby="errors.projectName ? 'projectName-error' : undefined"
           />
         </FormField>
       </div>
 
-      <!-- Project Description -->
       <div class="lg:col-span-2">
         <FormField
           :label="t('rfp.fields.projectDescription')"
@@ -195,7 +230,6 @@ defineExpose({
             class="w-full rounded-lg border px-4 py-2.5 text-sm transition-colors focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
             :class="errors.projectDescription ? 'border-danger' : 'border-surface-dim'"
             :placeholder="t('rfp.placeholders.projectDescription')"
-            :aria-invalid="!!errors.projectDescription"
           ></textarea>
           <div class="mt-2">
             <AiTextHelper
@@ -207,13 +241,12 @@ defineExpose({
               }"
               :current-text="projectDescription || ''"
               :max-characters="2000"
-              @text-generated="(text) => { projectDescription = text }"
+              @text-generated="applyProjectDescription"
             />
           </div>
         </FormField>
       </div>
 
-      <!-- Competition Type -->
       <FormField
         :label="t('rfp.fields.competitionType')"
         field-id="competitionType"
@@ -237,7 +270,6 @@ defineExpose({
         </select>
       </FormField>
 
-      <!-- Estimated Value -->
       <FormField
         :label="t('rfp.fields.estimatedValue')"
         field-id="estimatedValue"
@@ -262,24 +294,23 @@ defineExpose({
         </div>
       </FormField>
 
-      <!-- Reference Number -->
       <FormField
-        :label="t('rfp.fields.referenceNumber')"
-        field-id="referenceNumber"
-        :error="errors.referenceNumber"
-        :required="true"
+        :label="t('rfp.fields.bookletNumber')"
+        field-id="bookletNumber"
+        :error="bookletNumberError || errors.bookletNumber"
+        :help-text="isCheckingBookletNumber ? t('rfp.hints.checkingBookletNumber') : t('rfp.hints.optionalBookletNumber')"
       >
         <input
-          id="referenceNumber"
-          v-model="referenceNumber"
+          id="bookletNumber"
+          v-model="bookletNumber"
           type="text"
           class="w-full rounded-lg border px-4 py-2.5 text-sm transition-colors focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
-          :class="errors.referenceNumber ? 'border-danger' : 'border-surface-dim'"
-          :placeholder="t('rfp.placeholders.referenceNumber')"
+          :class="(bookletNumberError || errors.bookletNumber) ? 'border-danger' : 'border-surface-dim'"
+          :placeholder="t('rfp.placeholders.bookletNumber')"
+          @blur="validateBookletNumberUniqueness"
         />
       </FormField>
 
-      <!-- Department -->
       <FormField
         :label="t('rfp.fields.department')"
         field-id="department"
@@ -296,7 +327,6 @@ defineExpose({
         />
       </FormField>
 
-      <!-- Fiscal Year -->
       <FormField
         :label="t('rfp.fields.fiscalYear')"
         field-id="fiscalYear"
@@ -320,57 +350,116 @@ defineExpose({
         </select>
       </FormField>
 
-      <!-- Start Date -->
       <FormField
-        :label="t('rfp.fields.startDate')"
-        field-id="startDate"
-        :error="errors.startDate"
-        :required="true"
+        :label="t('rfp.fields.bookletIssueDate')"
+        field-id="bookletIssueDate"
+        :error="errors.bookletIssueDate"
       >
         <input
-          id="startDate"
-          v-model="startDate"
+          id="bookletIssueDate"
+          v-model="bookletIssueDate"
           type="date"
-          :min="dateMinForPicker"
-          :max="dateMaxForPicker"
+          :min="dateMinForFiscalYear"
+          :max="dateMaxForFiscalYear"
           class="w-full rounded-lg border px-4 py-2.5 text-sm transition-colors focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
-          :class="errors.startDate ? 'border-danger' : 'border-surface-dim'"
+          :class="errors.bookletIssueDate ? 'border-danger' : 'border-surface-dim'"
         />
       </FormField>
 
-      <!-- End Date -->
       <FormField
-        :label="t('rfp.fields.endDate')"
-        field-id="endDate"
-        :error="errors.endDate"
-        :required="true"
+        :label="t('rfp.fields.inquiriesStartDate')"
+        field-id="inquiriesStartDate"
+        :error="errors.inquiriesStartDate"
       >
         <input
-          id="endDate"
-          v-model="endDate"
+          id="inquiriesStartDate"
+          v-model="inquiriesStartDate"
           type="date"
-          :min="startDate || dateMinForPicker"
-          :max="dateMaxForPicker"
+          :min="inquiriesStartMinDate"
+          :max="dateMaxForFiscalYear"
           class="w-full rounded-lg border px-4 py-2.5 text-sm transition-colors focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
-          :class="errors.endDate ? 'border-danger' : 'border-surface-dim'"
+          :class="errors.inquiriesStartDate ? 'border-danger' : 'border-surface-dim'"
         />
       </FormField>
 
-      <!-- Submission Deadline -->
+      <FormField
+        :label="t('rfp.fields.inquiryPeriodDays')"
+        field-id="inquiryPeriodDays"
+        :error="errors.inquiryPeriodDays"
+      >
+        <input
+          id="inquiryPeriodDays"
+          v-model.number="inquiryPeriodDays"
+          type="number"
+          min="1"
+          max="365"
+          class="w-full rounded-lg border px-4 py-2.5 text-sm transition-colors focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
+          :class="errors.inquiryPeriodDays ? 'border-danger' : 'border-surface-dim'"
+          :placeholder="t('rfp.placeholders.inquiryPeriodDays')"
+        />
+      </FormField>
+
+      <FormField
+        :label="t('rfp.fields.offersStartDate')"
+        field-id="offersStartDate"
+        :error="errors.offersStartDate"
+      >
+        <input
+          id="offersStartDate"
+          v-model="offersStartDate"
+          type="date"
+          :min="offersStartMinDate"
+          :max="dateMaxForFiscalYear"
+          class="w-full rounded-lg border px-4 py-2.5 text-sm transition-colors focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
+          :class="errors.offersStartDate ? 'border-danger' : 'border-surface-dim'"
+        />
+      </FormField>
+
       <FormField
         :label="t('rfp.fields.submissionDeadline')"
         field-id="submissionDeadline"
         :error="errors.submissionDeadline"
-        :required="true"
       >
         <input
           id="submissionDeadline"
           v-model="submissionDeadline"
           type="date"
-          :min="dateMinForPicker"
-          :max="dateMaxForPicker"
+          :min="submissionDeadlineMinDate"
+          :max="dateMaxForFiscalYear"
           class="w-full rounded-lg border px-4 py-2.5 text-sm transition-colors focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
           :class="errors.submissionDeadline ? 'border-danger' : 'border-surface-dim'"
+        />
+      </FormField>
+
+      <FormField
+        :label="t('rfp.fields.expectedAwardDate')"
+        field-id="expectedAwardDate"
+        :error="errors.expectedAwardDate"
+      >
+        <input
+          id="expectedAwardDate"
+          v-model="expectedAwardDate"
+          type="date"
+          :min="expectedAwardMinDate"
+          :max="dateMaxForFiscalYear"
+          class="w-full rounded-lg border px-4 py-2.5 text-sm transition-colors focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
+          :class="errors.expectedAwardDate ? 'border-danger' : 'border-surface-dim'"
+        />
+      </FormField>
+
+      <FormField
+        :label="t('rfp.fields.workStartDate')"
+        field-id="workStartDate"
+        :error="errors.workStartDate"
+      >
+        <input
+          id="workStartDate"
+          v-model="workStartDate"
+          type="date"
+          :min="workStartMinDate"
+          :max="dateMaxForFiscalYear"
+          class="w-full rounded-lg border px-4 py-2.5 text-sm transition-colors focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
+          :class="errors.workStartDate ? 'border-danger' : 'border-surface-dim'"
         />
       </FormField>
     </div>

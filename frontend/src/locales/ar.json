@@ -474,7 +474,13 @@
       "colorCode": "تصنيف النص",
       "assignedTo": "مسند إلى",
       "sectionContent": "محتوى القسم",
-      "includesVat": "شامل ضريبة القيمة المضافة"
+      "includesVat": "شامل ضريبة القيمة المضافة",
+      "bookletNumber": "رقم الكراسة",
+      "bookletIssueDate": "تاريخ طرح الكراسة",
+      "inquiriesStartDate": "تاريخ إرسال الاستفسارات",
+      "offersStartDate": "تاريخ تقديم العروض",
+      "expectedAwardDate": "التاريخ المتوقع للترسية",
+      "workStartDate": "تاريخ بدء الأعمال"
     },
     "placeholders": {
       "projectName": "أدخل اسم المشروع",
@@ -493,7 +499,9 @@
       "assignedTo": "اسم العضو المسؤول",
       "boqCategory": "التصنيف",
       "boqDescription": "وصف البند",
-      "search": "البحث في كراسات الشروط..."
+      "search": "البحث في كراسات الشروط...",
+      "bookletNumber": "أدخل رقم الكراسة",
+      "inquiryPeriodDays": "أدخل مدة الاستفسارات (مثال 10)"
     },
     "competitionTypes": {
       "publicTender": "منافسة عامة",
@@ -610,7 +618,9 @@
       "error": "فشل الحفظ التلقائي"
     },
     "hints": {
-      "weightSum": "يتم حساب الوزن المالي تلقائياً ليكون المجموع 100%"
+      "weightSum": "يتم حساب الوزن المالي تلقائياً ليكون المجموع 100%",
+      "optionalBookletNumber": "اختياري، ولكن يجب أن يكون غير مكرر عند إدخاله.",
+      "checkingBookletNumber": "جارٍ التحقق من عدم تكرار رقم الكراسة..."
     },
     "review": {
       "completenessCheck": "فحص اكتمال البيانات",
@@ -693,6 +703,10 @@
       "browseFiles": "تصفح الملفات",
       "extracting": "جاري استخراج المحتوى بالذكاء الاصطناعي...",
       "extractingDesc": "يتم تحليل المستند واستخراج البيانات تلقائياً"
+    },
+    "validation": {
+      "bookletNumberAlreadyExists": "رقم الكراسة المدخل مستخدم مسبقاً. يرجى إدخال رقم مختلف.",
+      "bookletNumberCheckFailed": "تعذر التحقق من رقم الكراسة حالياً. حاول مرة أخرى."
     }
   },
   "evaluation": {

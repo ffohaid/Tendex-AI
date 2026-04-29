@@ -133,10 +133,14 @@ interface CreateCompetitionRequest {
   competitionType: number
   creationMethod: number
   estimatedBudget: number | null
+  bookletNumber: string | null
+  bookletIssueDate: string | null
+  inquiriesStartDate: string | null
+  inquiryPeriodDays: number | null
+  offersStartDate: string | null
   submissionDeadline: string | null
-  projectDurationDays: number | null
-  startDate: string | null
-  endDate: string | null
+  expectedAwardDate: string | null
+  workStartDate: string | null
   department: string | null
   fiscalYear: string | null
   sourceTemplateId: string | null
@@ -152,10 +156,14 @@ function mapToCreateRequest(data: Partial<RfpFormData>): CreateCompetitionReques
     competitionType: mapCompetitionType(basic?.competitionType),
     creationMethod: 0, // ManualWizard = 0
     estimatedBudget: basic?.estimatedValue || null,
+    bookletNumber: basic?.bookletNumber?.trim() || null,
+    bookletIssueDate: basic?.bookletIssueDate || null,
+    inquiriesStartDate: basic?.inquiriesStartDate || null,
+    inquiryPeriodDays: basic?.inquiryPeriodDays ?? null,
+    offersStartDate: basic?.offersStartDate || null,
     submissionDeadline: basic?.submissionDeadline || null,
-    projectDurationDays: calculateDurationDays(basic?.startDate, basic?.endDate),
-    startDate: basic?.startDate || null,
-    endDate: basic?.endDate || null,
+    expectedAwardDate: basic?.expectedAwardDate || null,
+    workStartDate: basic?.workStartDate || null,
     department: basic?.department || null,
     fiscalYear: basic?.fiscalYear || null,
     sourceTemplateId: null,
@@ -173,10 +181,14 @@ interface AutoSaveCompetitionRequest {
   description: string | null
   competitionType: number | null
   estimatedBudget: number | null
+  bookletNumber: string | null
+  bookletIssueDate: string | null
+  inquiriesStartDate: string | null
+  inquiryPeriodDays: number | null
+  offersStartDate: string | null
   submissionDeadline: string | null
-  projectDurationDays: number | null
-  startDate: string | null
-  endDate: string | null
+  expectedAwardDate: string | null
+  workStartDate: string | null
   department: string | null
   fiscalYear: string | null
   requiredAttachmentTypes: string[] | null
@@ -192,10 +204,14 @@ function mapToAutoSaveRequest(data: Partial<RfpFormData>): AutoSaveCompetitionRe
     description: basic?.projectDescription || null,
     competitionType: basic?.competitionType ? mapCompetitionType(basic.competitionType) : null,
     estimatedBudget: basic?.estimatedValue || null,
+    bookletNumber: basic?.bookletNumber?.trim() || null,
+    bookletIssueDate: basic?.bookletIssueDate || null,
+    inquiriesStartDate: basic?.inquiriesStartDate || null,
+    inquiryPeriodDays: basic?.inquiryPeriodDays ?? null,
+    offersStartDate: basic?.offersStartDate || null,
     submissionDeadline: basic?.submissionDeadline || null,
-    projectDurationDays: calculateDurationDays(basic?.startDate, basic?.endDate),
-    startDate: basic?.startDate || null,
-    endDate: basic?.endDate || null,
+    expectedAwardDate: basic?.expectedAwardDate || null,
+    workStartDate: basic?.workStartDate || null,
     department: basic?.department || null,
     fiscalYear: basic?.fiscalYear || null,
     requiredAttachmentTypes: attachments?.requiredAttachmentTypes || null,
@@ -408,9 +424,11 @@ function mapFromBackendResponse(dto: Record<string, unknown>): RfpFormData {
   const completionPercentage = Math.round((completedSteps / 5) * 100)
 
   // Read dates and additional fields from backend
-  const submissionDeadline = (dto.submissionDeadline as string) || ''
-  const startDate = dto.startDate ? (dto.startDate as string).split('T')[0] : ''
-  const endDate = dto.endDate ? (dto.endDate as string).split('T')[0] : ''
+  const toDateInput = (value: unknown) => {
+    if (!value || typeof value !== 'string') return ''
+    return value.split('T')[0]
+  }
+
   const department = (dto.department as string) || ''
   const fiscalYear = (dto.fiscalYear as string) || ''
 
@@ -422,12 +440,16 @@ function mapFromBackendResponse(dto: Record<string, unknown>): RfpFormData {
       competitionType: reverseCompetitionTypeMap[dto.competitionType as number] || 'public_tender',
       estimatedValue: (dto.estimatedBudget as number) || null,
       currency: (dto.currency as string) || 'SAR',
-      startDate,
-      endDate,
-      submissionDeadline: submissionDeadline ? submissionDeadline.split('T')[0] : '',
-      referenceNumber: (dto.referenceNumber as string) || '',
+      bookletNumber: (dto.referenceNumber as string) || '',
       department,
       fiscalYear,
+      bookletIssueDate: toDateInput(dto.bookletIssueDate ?? dto.startDate),
+      inquiriesStartDate: toDateInput(dto.inquiriesStartDate),
+      inquiryPeriodDays: (dto.inquiryPeriodDays as number) || null,
+      offersStartDate: toDateInput(dto.offersStartDate),
+      submissionDeadline: toDateInput(dto.submissionDeadline),
+      expectedAwardDate: toDateInput(dto.expectedAwardDate),
+      workStartDate: toDateInput(dto.workStartDate),
     },
     settings: {
       evaluationMethod: evaluationMethod as RfpFormData['settings']['evaluationMethod'],
@@ -437,7 +459,6 @@ function mapFromBackendResponse(dto: Record<string, unknown>): RfpFormData {
       allowPartialOffers: false,
       requireBankGuarantee: true,
       guaranteePercentage: 5,
-      inquiryPeriodDays: 14,
       evaluationCriteria,
     },
     content: {
@@ -469,12 +490,9 @@ function mapFromBackendResponse(dto: Record<string, unknown>): RfpFormData {
 /*  Utility                                                            */
 /* ------------------------------------------------------------------ */
 
-function calculateDurationDays(startDate?: string, endDate?: string): number | null {
-  if (!startDate || !endDate) return null
-  const start = new Date(startDate)
-  const end = new Date(endDate)
-  const diffMs = end.getTime() - start.getTime()
-  return diffMs > 0 ? Math.ceil(diffMs / (1000 * 60 * 60 * 24)) : null
+interface BookletNumberAvailabilityDto {
+  isAvailable: boolean
+  message?: string
 }
 
 /* ------------------------------------------------------------------ */
@@ -505,6 +523,24 @@ async function apiCall<T>(fn: () => Promise<T>): Promise<ApiResponse<T>> {
 /* ------------------------------------------------------------------ */
 /*  Competition CRUD Operations                                       */
 /* ------------------------------------------------------------------ */
+
+export async function checkBookletNumberAvailability(
+  bookletNumber: string,
+  competitionId?: string | null,
+): Promise<ApiResponse<BookletNumberAvailabilityDto>> {
+  const query = new URLSearchParams({ bookletNumber })
+  if (competitionId) {
+    query.set('competitionId', competitionId)
+  }
+
+  return apiCall(async () => {
+    const dto = await httpGet<Record<string, unknown>>(`${BASE_URL}/booklet-number-availability?${query.toString()}`)
+    return {
+      isAvailable: Boolean(dto.isAvailable),
+      message: (dto.message as string) || undefined,
+    }
+  })
+}
 
 /** Fetch paginated list of competitions (RFPs) */
 export async function fetchRfpList(params: {
@@ -955,7 +991,7 @@ export async function fetchTemplates(): Promise<
 export async function createRfpFromExtraction(
   data: {
     projectNameAr: string
-    projectNameEn: string
+    projectNameEn?: string
     description: string | null
     competitionType: number
     estimatedBudget: number | null
@@ -969,15 +1005,20 @@ export async function createRfpFromExtraction(
     competitionType: data.competitionType,
     creationMethod: 4, // UploadExtract = 4
     estimatedBudget: data.estimatedBudget,
+    bookletNumber: null,
+    bookletIssueDate: null,
+    inquiriesStartDate: null,
+    inquiryPeriodDays: null,
+    offersStartDate: null,
     submissionDeadline: null,
-    projectDurationDays: data.projectDurationDays,
-    startDate: null,
-    endDate: null,
+    expectedAwardDate: null,
+    workStartDate: null,
     department: null,
     fiscalYear: null,
     sourceTemplateId: null,
     sourceCompetitionId: null,
   }
+
   return apiCall(async () => {
     const dto = await httpPost<Record<string, unknown>>(BASE_URL, request)
     return mapFromBackendResponse(dto)

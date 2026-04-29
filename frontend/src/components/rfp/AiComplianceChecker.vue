@@ -60,19 +60,17 @@ function buildComplianceResults(): ComplianceCheckItem[] {
   const hasProjectName = hasMeaningfulContent(basicInfo.projectName)
   const hasCompetitionType = hasMeaningfulContent(basicInfo.competitionType)
   const hasDescription = hasMeaningfulContent(basicInfo.projectDescription)
-  const hasReferenceNumber = hasMeaningfulContent(basicInfo.referenceNumber)
-  const hasStartDate = hasMeaningfulContent(basicInfo.startDate)
-  const hasEndDate = hasMeaningfulContent(basicInfo.endDate)
+  const hasDepartment = hasMeaningfulContent(basicInfo.department)
+  const hasFiscalYear = hasMeaningfulContent(basicInfo.fiscalYear)
+  const hasBookletNumber = hasMeaningfulContent(basicInfo.bookletNumber)
   const hasSubmissionDeadline = hasMeaningfulContent(basicInfo.submissionDeadline)
 
   const basicInfoMissing = [
     !hasProjectName ? 'اسم المشروع' : null,
     !hasCompetitionType ? 'نوع المنافسة' : null,
     !hasDescription ? 'وصف المشروع' : null,
-    !hasReferenceNumber ? 'الرقم المرجعي' : null,
-    !hasStartDate ? 'تاريخ البداية' : null,
-    !hasEndDate ? 'تاريخ النهاية' : null,
-    !hasSubmissionDeadline ? 'آخر موعد للتقديم' : null,
+    !hasDepartment ? 'الإدارة المسؤولة' : null,
+    !hasFiscalYear ? 'السنة المالية' : null,
   ].filter(Boolean)
 
   if (basicInfoMissing.length === 0) {
@@ -243,7 +241,7 @@ function buildComplianceResults(): ComplianceCheckItem[] {
     ))
   }
 
-  const inquiryPeriodDays = Number(settings.inquiryPeriodDays || 0)
+  const inquiryPeriodDays = Number(basicInfo.inquiryPeriodDays || 0)
   results.push(createItem(
     'فترة الاستفسارات',
     inquiryPeriodDays >= 5 ? 'pass' : inquiryPeriodDays > 0 ? 'warning' : 'fail',
@@ -257,40 +255,48 @@ function buildComplianceResults(): ComplianceCheckItem[] {
       : 'اضبط فترة استفسارات كافية وواضحة قبل نشر المنافسة أو اعتمادها.',
   ))
 
-  const parsedStartDate = hasStartDate ? new Date(basicInfo.startDate) : null
-  const parsedEndDate = hasEndDate ? new Date(basicInfo.endDate) : null
+  const parsedBookletIssueDate = basicInfo.bookletIssueDate ? new Date(basicInfo.bookletIssueDate) : null
+  const parsedInquiriesStartDate = basicInfo.inquiriesStartDate ? new Date(basicInfo.inquiriesStartDate) : null
+  const parsedOffersStartDate = basicInfo.offersStartDate ? new Date(basicInfo.offersStartDate) : null
   const parsedSubmissionDeadline = hasSubmissionDeadline ? new Date(basicInfo.submissionDeadline) : null
+  const parsedExpectedAwardDate = basicInfo.expectedAwardDate ? new Date(basicInfo.expectedAwardDate) : null
+  const parsedWorkStartDate = basicInfo.workStartDate ? new Date(basicInfo.workStartDate) : null
   const dateIssues: string[] = []
 
-  if (parsedStartDate && parsedEndDate && parsedStartDate > parsedEndDate) {
-    dateIssues.push('تاريخ البداية بعد تاريخ النهاية')
+  if (parsedBookletIssueDate && parsedInquiriesStartDate && parsedInquiriesStartDate < parsedBookletIssueDate) {
+    dateIssues.push('تاريخ إرسال الاستفسارات يسبق تاريخ طرح الكراسة')
   }
-  if (parsedStartDate && parsedSubmissionDeadline && parsedSubmissionDeadline < parsedStartDate) {
-    dateIssues.push('آخر موعد للتقديم يسبق تاريخ البداية')
+  if (parsedInquiriesStartDate && parsedOffersStartDate && parsedOffersStartDate < parsedInquiriesStartDate) {
+    dateIssues.push('تاريخ تقديم العروض يسبق تاريخ إرسال الاستفسارات')
   }
-  if (parsedEndDate && parsedSubmissionDeadline && parsedSubmissionDeadline > parsedEndDate) {
-    dateIssues.push('آخر موعد للتقديم يتجاوز تاريخ النهاية')
+  if (parsedOffersStartDate && parsedSubmissionDeadline && parsedSubmissionDeadline <= parsedOffersStartDate) {
+    dateIssues.push('آخر موعد لتقديم العروض يجب أن يكون بعد تاريخ تقديم العروض')
+  }
+  if (parsedSubmissionDeadline && parsedExpectedAwardDate && parsedExpectedAwardDate <= parsedSubmissionDeadline) {
+    dateIssues.push('التاريخ المتوقع للترسية يجب أن يكون بعد آخر موعد لتقديم العروض')
+  }
+  if (parsedExpectedAwardDate && parsedWorkStartDate && parsedWorkStartDate <= parsedExpectedAwardDate) {
+    dateIssues.push('تاريخ بدء الأعمال يجب أن يكون بعد التاريخ المتوقع للترسية')
   }
 
-  if (!hasStartDate || !hasEndDate || !hasSubmissionDeadline) {
-    results.push(createItem(
-      'التواريخ',
-      'fail',
-      'التسلسل الزمني غير مكتمل بسبب نقص واحد أو أكثر من التواريخ الأساسية.',
-      'حدد تاريخ البداية وتاريخ النهاية وآخر موعد للتقديم قبل الاعتماد.',
-    ))
-  } else if (dateIssues.length > 0) {
+
+  if (dateIssues.length > 0) {
     results.push(createItem(
       'التواريخ',
       'fail',
       dateIssues.join('، '),
-      'راجع تسلسل التواريخ بحيث يكون البدء ثم فترة التنفيذ ثم موعد التقديم منطقياً ومتسقاً.',
+      'راجع تسلسل التواريخ بحيث يحترم تسلسل طرح الكراسة ثم الاستفسارات ثم تقديم العروض ثم آخر موعد للتقديم ثم الترسية ثم بدء الأعمال.',
     ))
   } else {
     results.push(createItem(
       'التواريخ',
-      'pass',
-      'التواريخ الأساسية موجودة وتسلسلها الزمني منطقي.',
+      hasSubmissionDeadline || hasBookletNumber ? 'pass' : 'warning',
+      hasSubmissionDeadline || hasBookletNumber
+        ? 'الحقول الزمنية المُدخلة متسقة مع التسلسل الزمني المطلوب.'
+        : 'لم يتم إدخال أي تواريخ بعد، وهذا مسموح في المسودة الحالية.',
+      hasSubmissionDeadline || hasBookletNumber
+        ? undefined
+        : 'أدخل التواريخ الأساسية تدريجيًا عند اكتمال الجدول الزمني للمنافسة.',
     ))
   }
 

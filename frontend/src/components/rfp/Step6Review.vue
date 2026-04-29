@@ -62,8 +62,7 @@ const checks = computed(() => [
       rfpStore.formData.basicInfo.projectName &&
       rfpStore.formData.basicInfo.competitionType &&
       rfpStore.formData.basicInfo.estimatedValue &&
-      rfpStore.formData.basicInfo.startDate &&
-      rfpStore.formData.basicInfo.endDate
+      rfpStore.formData.basicInfo.fiscalYear
     ),
     step: 1,
   },
@@ -163,6 +162,10 @@ function handleSubmit() {
           <span class="text-xs text-tertiary">{{ t('rfp.fields.competitionType') }}</span>
           <p class="text-sm font-medium text-secondary">{{ competitionTypeLabel }}</p>
         </div>
+        <div class="sm:col-span-2">
+          <span class="text-xs text-tertiary">{{ t('rfp.fields.projectDescription') }}</span>
+          <p class="text-sm font-medium text-secondary">{{ rfpStore.formData.basicInfo.projectDescription || '-' }}</p>
+        </div>
         <div>
           <span class="text-xs text-tertiary">{{ t('rfp.fields.estimatedValue') }}</span>
           <p class="text-sm font-medium text-secondary">
@@ -170,16 +173,46 @@ function handleSubmit() {
           </p>
         </div>
         <div>
-          <span class="text-xs text-tertiary">{{ t('rfp.fields.referenceNumber') }}</span>
-          <p class="text-sm font-medium text-secondary">{{ rfpStore.formData.basicInfo.referenceNumber || '-' }}</p>
+          <span class="text-xs text-tertiary">{{ t('rfp.fields.bookletNumber') }}</span>
+          <p class="text-sm font-medium text-secondary">{{ rfpStore.formData.basicInfo.bookletNumber || '-' }}</p>
         </div>
         <div>
-          <span class="text-xs text-tertiary">{{ t('rfp.fields.startDate') }}</span>
-          <p class="text-sm font-medium text-secondary">{{ rfpStore.formData.basicInfo.startDate || '-' }}</p>
+          <span class="text-xs text-tertiary">{{ t('rfp.fields.department') }}</span>
+          <p class="text-sm font-medium text-secondary">{{ rfpStore.formData.basicInfo.department || '-' }}</p>
         </div>
         <div>
-          <span class="text-xs text-tertiary">{{ t('rfp.fields.endDate') }}</span>
-          <p class="text-sm font-medium text-secondary">{{ rfpStore.formData.basicInfo.endDate || '-' }}</p>
+          <span class="text-xs text-tertiary">{{ t('rfp.fields.fiscalYear') }}</span>
+          <p class="text-sm font-medium text-secondary">{{ rfpStore.formData.basicInfo.fiscalYear || '-' }}</p>
+        </div>
+        <div>
+          <span class="text-xs text-tertiary">{{ t('rfp.fields.bookletIssueDate') }}</span>
+          <p class="text-sm font-medium text-secondary">{{ rfpStore.formData.basicInfo.bookletIssueDate || '-' }}</p>
+        </div>
+        <div>
+          <span class="text-xs text-tertiary">{{ t('rfp.fields.inquiriesStartDate') }}</span>
+          <p class="text-sm font-medium text-secondary">{{ rfpStore.formData.basicInfo.inquiriesStartDate || '-' }}</p>
+        </div>
+        <div>
+          <span class="text-xs text-tertiary">{{ t('rfp.fields.inquiryPeriodDays') }}</span>
+          <p class="text-sm font-medium text-secondary">
+            {{ rfpStore.formData.basicInfo.inquiryPeriodDays ? `${rfpStore.formData.basicInfo.inquiryPeriodDays} ${t('rfp.labels.days')}` : '-' }}
+          </p>
+        </div>
+        <div>
+          <span class="text-xs text-tertiary">{{ t('rfp.fields.offersStartDate') }}</span>
+          <p class="text-sm font-medium text-secondary">{{ rfpStore.formData.basicInfo.offersStartDate || '-' }}</p>
+        </div>
+        <div>
+          <span class="text-xs text-tertiary">{{ t('rfp.fields.submissionDeadline') }}</span>
+          <p class="text-sm font-medium text-secondary">{{ rfpStore.formData.basicInfo.submissionDeadline || '-' }}</p>
+        </div>
+        <div>
+          <span class="text-xs text-tertiary">{{ t('rfp.fields.expectedAwardDate') }}</span>
+          <p class="text-sm font-medium text-secondary">{{ rfpStore.formData.basicInfo.expectedAwardDate || '-' }}</p>
+        </div>
+        <div>
+          <span class="text-xs text-tertiary">{{ t('rfp.fields.workStartDate') }}</span>
+          <p class="text-sm font-medium text-secondary">{{ rfpStore.formData.basicInfo.workStartDate || '-' }}</p>
         </div>
       </div>
     </div>
@@ -211,12 +244,6 @@ function handleSubmit() {
           <span class="text-xs text-tertiary">{{ t('rfp.fields.evaluationCriteria') }}</span>
           <p class="text-sm font-medium text-secondary">
             {{ rfpStore.formData.settings.evaluationCriteria.length }} {{ t('rfp.labels.criteria') }}
-          </p>
-        </div>
-        <div>
-          <span class="text-xs text-tertiary">{{ t('rfp.fields.inquiryPeriodDays') }}</span>
-          <p class="text-sm font-medium text-secondary">
-            {{ rfpStore.formData.settings.inquiryPeriodDays }} {{ t('rfp.labels.days') }}
           </p>
         </div>
       </div>

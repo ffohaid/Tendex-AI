@@ -24,6 +24,11 @@ public interface ICompetitionRepository
 
     Task<Competition?> GetByReferenceNumberAsync(string referenceNumber, CancellationToken cancellationToken = default);
 
+    Task<bool> IsReferenceNumberInUseAsync(
+        string referenceNumber,
+        Guid? excludeCompetitionId = null,
+        CancellationToken cancellationToken = default);
+
     Task<(IReadOnlyList<Competition> Items, int TotalCount)> GetPagedAsync(
         Guid tenantId,
         int pageNumber,
