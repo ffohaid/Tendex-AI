@@ -1,3 +1,4 @@
+using System.Globalization;
 using FluentValidation.TestHelper;
 using TendexAI.Application.Features.Rfp.Commands.AutoSaveCompetition;
 using TendexAI.Domain.Enums;
@@ -168,7 +169,7 @@ public class AutoSaveCompetitionCommandValidatorTests
             ExpectedAwardDate: bookletIssueDate.AddDays(15),
             WorkStartDate: bookletIssueDate.AddDays(20),
             Department: "Procurement",
-            FiscalYear: bookletIssueDate.Year.ToString(),
+            FiscalYear: bookletIssueDate.Year.ToString(CultureInfo.InvariantCulture),
             RequiredAttachmentTypes: null,
             CurrentWizardStep: 2,
             ModifiedByUserId: Guid.NewGuid().ToString());

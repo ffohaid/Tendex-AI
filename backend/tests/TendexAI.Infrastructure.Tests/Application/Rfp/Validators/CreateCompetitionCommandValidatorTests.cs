@@ -1,3 +1,4 @@
+using System.Globalization;
 using FluentValidation.TestHelper;
 using TendexAI.Application.Features.Rfp.Commands.CreateCompetition;
 using TendexAI.Domain.Enums;
@@ -204,7 +205,7 @@ public class CreateCompetitionCommandValidatorTests
             ExpectedAwardDate: bookletIssueDate.AddDays(20),
             WorkStartDate: bookletIssueDate.AddDays(25),
             Department: "Digital Transformation",
-            FiscalYear: bookletIssueDate.Year.ToString(),
+            FiscalYear: bookletIssueDate.Year.ToString(CultureInfo.InvariantCulture),
             SourceTemplateId: null,
             SourceCompetitionId: null,
             CreatedByUserId: Guid.NewGuid().ToString());

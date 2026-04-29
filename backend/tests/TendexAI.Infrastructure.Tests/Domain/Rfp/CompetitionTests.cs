@@ -1,4 +1,5 @@
 using FluentAssertions;
+using System.Globalization;
 using TendexAI.Domain.Entities.Rfp;
 using TendexAI.Domain.Enums;
 
@@ -95,7 +96,7 @@ public class CompetitionTests
             expectedAwardDate: DateTime.UtcNow.AddDays(40),
             workStartDate: DateTime.UtcNow.AddDays(50),
             department: "IT",
-            fiscalYear: DateTime.UtcNow.AddDays(10).Year.ToString(),
+            fiscalYear: DateTime.UtcNow.AddDays(10).Year.ToString(CultureInfo.InvariantCulture),
             modifiedBy: _userId);
 
         // Assert
