@@ -42,6 +42,7 @@ const props = withDefaults(defineProps<{
   maxHeight?: string
   dir?: 'rtl' | 'ltr' | 'auto'
   compact?: boolean
+  borderless?: boolean
 }>(), {
   placeholder: '',
   editable: true,
@@ -49,6 +50,7 @@ const props = withDefaults(defineProps<{
   maxHeight: '500px',
   dir: 'auto',
   compact: false,
+  borderless: false,
 })
 
 const emit = defineEmits<{
@@ -58,6 +60,13 @@ const emit = defineEmits<{
 
 const { locale } = useI18n()
 const isRtl = computed(() => props.dir === 'rtl' || (props.dir === 'auto' && locale.value === 'ar'))
+const editorContainerClass = computed(() => {
+  if (props.borderless && !props.editable) {
+    return 'rich-text-editor overflow-hidden bg-transparent transition-all'
+  }
+
+  return 'rich-text-editor overflow-hidden rounded-lg border border-surface-dim bg-white transition-all focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/20'
+})
 
 const editor = useEditor({
   content: props.modelValue || '',
@@ -181,7 +190,7 @@ const isInTable = computed(() => editor.value?.isActive('table') ?? false)
 
 <template>
   <div
-    class="rich-text-editor overflow-hidden rounded-lg border border-surface-dim bg-white transition-all focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/20"
+    :class="editorContainerClass"
     :dir="isRtl ? 'rtl' : 'ltr'"
   >
     <!-- Toolbar -->

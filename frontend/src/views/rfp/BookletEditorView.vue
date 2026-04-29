@@ -1061,6 +1061,7 @@ onMounted(async () => {
                         :key="`reference-${block.id}`"
                         :model-value="block.editedContent || block.contentHtml || block.originalContent"
                         :editable="false"
+                        :borderless="true"
                         dir="rtl"
                         min-height="80px"
                         max-height="400px"

@@ -51,6 +51,10 @@ export const useTenantStore = defineStore('tenant', () => {
     localStorage.getItem('super_admin_tenant_id') || '',
   )
 
+  function getBaseTenantId(): string {
+    return localStorage.getItem('base_tenant_id') || ''
+  }
+
   /** UI state */
   const isLoading = ref(false)
   const isSubmitting = ref(false)
@@ -301,6 +305,13 @@ export const useTenantStore = defineStore('tenant', () => {
   function clearTenantSelection(): void {
     selectedTenantId.value = ''
     localStorage.removeItem('super_admin_tenant_id')
+
+    const baseTenantId = getBaseTenantId()
+    if (baseTenantId) {
+      localStorage.setItem('tenant_id', baseTenantId)
+    } else {
+      localStorage.removeItem('tenant_id')
+    }
   }
 
   /** Reset pagination and reload. */
