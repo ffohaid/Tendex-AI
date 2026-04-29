@@ -61,7 +61,7 @@ internal static class CompetitionBasicInfoValidation
         DateTime? current,
         string propertyName,
         string errorMessage,
-        ICollection<(string PropertyName, string ErrorMessage)> failures,
+        List<(string PropertyName, string ErrorMessage)> failures,
         bool strict)
     {
         if (!previous.HasValue || !current.HasValue)
