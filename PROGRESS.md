@@ -1399,3 +1399,75 @@ The frontend production build passed successfully after the redesign and downstr
 
 ### Supporting note
 Detailed validation notes were saved in `basic_info_redesign_validation_20260429.md`.
+
+## 2026-04-29: Basic Info Screen Redesign Deployed to Production
+
+### Scope
+- Reworked the RFP basic information screen to use the new field set and two-column layout.
+- Unified frontend and backend contracts around the new basic-info source of truth.
+- Added chronological date validation, fiscal-year validation, and booklet-number availability handling.
+- Aligned template-creation flows, validators, DTOs, endpoints, repository checks, and dependent review/export screens.
+
+### Deployment Outcome
+- Resolved a sequence of CI/CD blockers triggered by the new model, including API endpoint type mismatches, visibility issues in shared validation helpers, nullable-reference issues, and outdated unit tests still using legacy fields.
+- Updated affected tests and supporting code until the production pipeline passed fully.
+- Confirmed successful GitHub Actions deployment for the latest main commit, with **Test Gate**, **Build Docker Images**, and **Deploy to Production** all completed successfully.
+- Performed a post-deployment reachability check on production and confirmed the platform responds normally at the login entry point.
+
+### Key Files Touched During Final Deployment Fixes
+- `backend/src/TendexAI.API/Endpoints/Rfp/BookletTemplateEndpoints.cs`
+- `backend/src/TendexAI.API/Endpoints/Rfp/CompetitionEndpoints.cs`
+- `backend/src/TendexAI.Application/Features/Rfp/Validation/CompetitionBasicInfoValidation.cs`
+- `backend/tests/TendexAI.Infrastructure.Tests/Application/Rfp/Validators/CreateCompetitionCommandValidatorTests.cs`
+- `backend/tests/TendexAI.Infrastructure.Tests/Application/Rfp/Validators/AutoSaveCompetitionCommandValidatorTests.cs`
+- `backend/tests/TendexAI.Infrastructure.Tests/Domain/Rfp/CompetitionTests.cs`
+
+### Status
+- **Production deployment succeeded** for the new basic-information fields update.
+
+## 2026-04-29: Competitions List Production Outage Recovery
+
+### Overview
+The production outage that caused the booklets and competitions list to disappear was traced to a **tenant database schema drift** after deployment. The backend `GET /api/v1/competitions` endpoint was deployed successfully, but several tenant databases in production were missing newer `rfp.Competitions` columns expected by the current EF model and query path. This mismatch caused the endpoint to fail with HTTP 500, which made the UI render an empty state instead of the expected list.
+
+### Root Cause
+The deployment workflow did not automatically apply tenant database migrations. Recovery depended on the guarded tenant compatibility SQL script that is copied and executed on the VPS during deployment. Earlier versions of that script contained T-SQL syntax issues, so the required compatibility changes were not applied on production tenant databases.
+
+### Fix Applied
+- Reviewed the endpoint, query handler, repository, migrations, and deployment workflow.
+- Confirmed that production schema compatibility, not application code logic, was the underlying failure.
+- Simplified `backend/scripts/apply_tenant_schema_compatibility.sql` so it safely iterates over tenant databases and applies only the required compatibility updates for `rfp.Competitions` and `evaluation.SupplierOffers`.
+- Repeated deployment until the compatibility script executed cleanly in production.
+
+### Fields Restored Through Compatibility Script
+The recovery script now adds the missing `rfp.Competitions` columns when absent:
+- `RequiredAttachmentTypes`
+- `Department`
+- `FiscalYear`
+- `InquiryPeriodDays`
+- `InquiriesStartDate`
+- `OffersStartDate`
+- `ExpectedAwardDate`
+- `WorkStartDate`
+
+It also relaxes old non-null constraints where needed on:
+- `ReferenceNumber`
+- `StartDate`
+- `EndDate`
+
+### Deployment Notes
+- Several redeploy attempts were required because early compatibility-script revisions still had SQL syntax errors.
+- One deployment attempt also failed because of a transient SSH artifact-transfer timeout.
+- The final working fix was published under commit: `fix(deploy): restore competitions schema compatibility`
+
+### Production Verification
+Production verification was completed after the final deployment by calling the authenticated competitions endpoint directly.
+
+**Verified result:**
+- Endpoint: `GET /api/v1/competitions?page=1&pageSize=10`
+- Status: **200 OK**
+- First page items: **10**
+- Total records: **90**
+- Sample returned record: `projectNameAr = test`
+
+This confirms that the missing booklets were restored successfully in production.
