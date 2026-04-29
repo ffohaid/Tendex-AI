@@ -1,6 +1,8 @@
+using FluentValidation;
 using TendexAI.Application.Features.Rfp.Validation;
 
 namespace TendexAI.Application.Features.Rfp.Commands.CreateCompetition;
+
 
 /// <summary>
 /// Validates the CreateCompetitionCommand before processing.
