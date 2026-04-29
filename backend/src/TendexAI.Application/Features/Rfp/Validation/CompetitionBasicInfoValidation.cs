@@ -43,7 +43,7 @@ internal static class CompetitionBasicInfoValidation
         string fiscalYear,
         string propertyName,
         string label,
-        ICollection<(string PropertyName, string ErrorMessage)> failures)
+        List<(string PropertyName, string ErrorMessage)> failures)
     {
         if (!value.HasValue)
         {
