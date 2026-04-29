@@ -16,6 +16,7 @@ using TendexAI.Application.Features.Rfp.Commands.UpdateRfpSection;
 using TendexAI.Application.Features.Rfp.Dtos;
 using TendexAI.Application.Features.Rfp.Queries.GetCompetitionById;
 using TendexAI.Application.Features.Rfp.Queries.GetCompetitionsList;
+using TendexAI.Domain.Entities.Rfp;
 using TendexAI.Domain.Enums;
 using TendexAI.Infrastructure.Authorization;
 

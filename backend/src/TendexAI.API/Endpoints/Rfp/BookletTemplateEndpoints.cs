@@ -877,7 +877,7 @@ public sealed record BookletTemplateBlockDto
     public bool IsEditable { get; init; }
 }
 
-public sealed record CreateCompetitionFromTemplateRequest(
+public sealed record CreateBookletFromTemplateRequest(
     string ProjectNameAr,
     string? ProjectNameEn,
     string DescriptionAr,
