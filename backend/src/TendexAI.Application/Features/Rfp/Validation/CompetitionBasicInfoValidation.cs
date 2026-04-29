@@ -1,6 +1,6 @@
 namespace TendexAI.Application.Features.Rfp.Validation;
 
-internal static class CompetitionBasicInfoValidation
+public static class CompetitionBasicInfoValidation
 {
     public static IReadOnlyList<(string PropertyName, string ErrorMessage)> ValidateBasicInfoDates(
         DateTime? bookletIssueDate,

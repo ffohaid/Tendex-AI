@@ -470,7 +470,7 @@ public static class BookletTemplateEndpoints
                 ProjectNameAr = competition.ProjectNameAr,
                 ProjectNameEn = competition.ProjectNameEn,
                 Description = competition.Description,
-                ReferenceNumber = competition.ReferenceNumber,
+                ReferenceNumber = competition.ReferenceNumber ?? string.Empty,
                 Department = competition.Department,
                 IssueDate = competition.StartDate?.ToString("yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture),
                 Sections = competitionSections
@@ -522,7 +522,7 @@ public static class BookletTemplateEndpoints
             ProjectNameAr = competition.ProjectNameAr,
             ProjectNameEn = competition.ProjectNameEn,
             Description = competition.Description,
-            ReferenceNumber = competition.ReferenceNumber,
+            ReferenceNumber = competition.ReferenceNumber ?? string.Empty,
             Department = competition.Department,
             IssueDate = competition.StartDate?.ToString("yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture),
             Sections = template.Sections
@@ -661,8 +661,8 @@ public static class BookletTemplateEndpoints
             ["{{project_description}}"] = competition.Description ?? string.Empty,
             ["{{description}}"] = competition.Description ?? string.Empty,
             ["[وصف المشروع]"] = competition.Description ?? string.Empty,
-            ["{{reference_number}}"] = competition.ReferenceNumber,
-            ["[الرقم المرجعي]"] = competition.ReferenceNumber,
+            ["{{reference_number}}"] = competition.ReferenceNumber ?? string.Empty,
+            ["[الرقم المرجعي]"] = competition.ReferenceNumber ?? string.Empty,
             ["{{department}}"] = competition.Department ?? string.Empty,
             ["[الإدارة]"] = competition.Department ?? string.Empty,
             ["{{fiscal_year}}"] = competition.FiscalYear ?? string.Empty,
