@@ -263,10 +263,11 @@ jobs:
             printf '\nMINIO_PUBLIC_DOWNLOAD_BASE_URL=%s\n' "${MINIO_PUBLIC_DOWNLOAD_BASE_URL}" >> "${DEPLOY_PATH}/infrastructure/.env.prod"
           fi
 
-          # Run database migrations (if applicable)
-          echo "[4/6] Running database migrations..."
+          # Prepare database compatibility updates for tenant databases
+          echo "[4/6] Preparing tenant schema compatibility updates..."
           cd "${DEPLOY_PATH}/infrastructure"
-          # Backend will auto-apply migrations on startup via EF Core
+          # Tenant DB compatibility is enforced by the guarded SQL script executed below.
+          # Do not rely on backend startup to apply tenant migrations automatically.
 
           # Deploy with zero-downtime rolling update
           echo "[5/6] Deploying services..."
