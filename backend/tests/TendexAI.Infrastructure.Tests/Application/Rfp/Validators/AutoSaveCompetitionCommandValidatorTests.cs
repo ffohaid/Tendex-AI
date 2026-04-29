@@ -1,4 +1,3 @@
-using FluentAssertions;
 using FluentValidation.TestHelper;
 using TendexAI.Application.Features.Rfp.Commands.AutoSaveCompetition;
 using TendexAI.Domain.Enums;
@@ -17,22 +16,7 @@ public class AutoSaveCompetitionCommandValidatorTests
     public void Validate_ValidAutoSaveCommand_ShouldHaveNoErrors()
     {
         // Arrange
-        var command = new AutoSaveCompetitionCommand(
-            CompetitionId: Guid.NewGuid(),
-            ProjectNameAr: "مشروع",
-            ProjectNameEn: "Project",
-            Description: null,
-            CompetitionType: null,
-            EstimatedBudget: null,
-            SubmissionDeadline: null,
-            ProjectDurationDays: null,
-            StartDate: null,
-            EndDate: null,
-            Department: null,
-            FiscalYear: null,
-            RequiredAttachmentTypes: null,
-            CurrentWizardStep: 2,
-            ModifiedByUserId: Guid.NewGuid().ToString());
+        var command = CreateValidCommand();
 
         // Act
         var result = _validator.TestValidate(command);
@@ -103,11 +87,15 @@ public class AutoSaveCompetitionCommandValidatorTests
             ProjectNameEn: null,
             Description: null,
             CompetitionType: null,
+            BookletNumber: null,
             EstimatedBudget: null,
+            BookletIssueDate: null,
+            InquiriesStartDate: null,
+            InquiryPeriodDays: null,
+            OffersStartDate: null,
             SubmissionDeadline: null,
-            ProjectDurationDays: null,
-            StartDate: null,
-            EndDate: null,
+            ExpectedAwardDate: null,
+            WorkStartDate: null,
             Department: null,
             FiscalYear: null,
             RequiredAttachmentTypes: null,
@@ -134,23 +122,55 @@ public class AutoSaveCompetitionCommandValidatorTests
         result.ShouldHaveValidationErrorFor(x => x.ProjectNameAr);
     }
 
+    [Fact]
+    public void Validate_InvalidBookletNumber_ShouldHaveError()
+    {
+        // Arrange
+        var command = CreateValidCommand() with { BookletNumber = "BK#001" };
+
+        // Act
+        var result = _validator.TestValidate(command);
+
+        // Assert
+        result.ShouldHaveValidationErrorFor(x => x.BookletNumber);
+    }
+
+    [Fact]
+    public void Validate_ZeroInquiryPeriod_ShouldHaveError()
+    {
+        // Arrange
+        var command = CreateValidCommand() with { InquiryPeriodDays = 0 };
+
+        // Act
+        var result = _validator.TestValidate(command);
+
+        // Assert
+        result.ShouldHaveValidationErrorFor(x => x.InquiryPeriodDays);
+    }
+
     private static AutoSaveCompetitionCommand CreateValidCommand()
     {
+        var bookletIssueDate = DateTime.UtcNow.Date.AddDays(10);
+
         return new AutoSaveCompetitionCommand(
             CompetitionId: Guid.NewGuid(),
-            ProjectNameAr: null,
-            ProjectNameEn: null,
-            Description: null,
-            CompetitionType: null,
-            EstimatedBudget: null,
-            SubmissionDeadline: null,
-            ProjectDurationDays: null,
-            StartDate: null,
-            EndDate: null,
-            Department: null,
-            FiscalYear: null,
+            ProjectNameAr: "مشروع",
+            ProjectNameEn: "Project",
+            Description: "وصف مختصر",
+            CompetitionType: CompetitionType.PublicTender,
+            BookletNumber: "BK-2026-002",
+            EstimatedBudget: 500000m,
+            BookletIssueDate: bookletIssueDate,
+            InquiriesStartDate: bookletIssueDate.AddDays(1),
+            InquiryPeriodDays: 7,
+            OffersStartDate: bookletIssueDate.AddDays(4),
+            SubmissionDeadline: bookletIssueDate.AddDays(8),
+            ExpectedAwardDate: bookletIssueDate.AddDays(15),
+            WorkStartDate: bookletIssueDate.AddDays(20),
+            Department: "Procurement",
+            FiscalYear: bookletIssueDate.Year.ToString(),
             RequiredAttachmentTypes: null,
-            CurrentWizardStep: null,
+            CurrentWizardStep: 2,
             ModifiedByUserId: Guid.NewGuid().ToString());
     }
 }

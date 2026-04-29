@@ -1,4 +1,3 @@
-using FluentAssertions;
 using FluentValidation.TestHelper;
 using TendexAI.Application.Features.Rfp.Commands.CreateCompetition;
 using TendexAI.Domain.Enums;
@@ -16,23 +15,7 @@ public class CreateCompetitionCommandValidatorTests
     public void Validate_ValidCommand_ShouldHaveNoErrors()
     {
         // Arrange
-        var command = new CreateCompetitionCommand(
-            TenantId: Guid.NewGuid(),
-            ProjectNameAr: "مشروع تطوير النظام",
-            ProjectNameEn: "System Development Project",
-            Description: "وصف المشروع",
-            CompetitionType: CompetitionType.PublicTender,
-            CreationMethod: RfpCreationMethod.ManualWizard,
-            EstimatedBudget: 1000000m,
-            SubmissionDeadline: DateTime.UtcNow.AddDays(30),
-            ProjectDurationDays: 365,
-            StartDate: null,
-            EndDate: null,
-            Department: null,
-            FiscalYear: null,
-            SourceTemplateId: null,
-            SourceCompetitionId: null,
-            CreatedByUserId: Guid.NewGuid().ToString());
+        var command = CreateValidCommand();
 
         // Act
         var result = _validator.TestValidate(command);
@@ -107,42 +90,55 @@ public class CreateCompetitionCommandValidatorTests
     }
 
     [Fact]
-    public void Validate_PastSubmissionDeadline_ShouldHaveError()
+    public void Validate_PastBookletIssueDate_ShouldHaveError()
     {
         // Arrange
-        var command = CreateValidCommand() with { SubmissionDeadline = DateTime.UtcNow.AddDays(-1) };
+        var command = CreateValidCommand() with { BookletIssueDate = DateTime.UtcNow.AddDays(-1) };
 
         // Act
         var result = _validator.TestValidate(command);
 
         // Assert
-        result.ShouldHaveValidationErrorFor(x => x.SubmissionDeadline);
+        result.ShouldHaveValidationErrorFor("bookletIssueDate");
     }
 
     [Fact]
-    public void Validate_ZeroProjectDuration_ShouldHaveError()
+    public void Validate_ZeroInquiryPeriod_ShouldHaveError()
     {
         // Arrange
-        var command = CreateValidCommand() with { ProjectDurationDays = 0 };
+        var command = CreateValidCommand() with { InquiryPeriodDays = 0 };
 
         // Act
         var result = _validator.TestValidate(command);
 
         // Assert
-        result.ShouldHaveValidationErrorFor(x => x.ProjectDurationDays);
+        result.ShouldHaveValidationErrorFor(x => x.InquiryPeriodDays);
     }
 
     [Fact]
-    public void Validate_ExcessiveProjectDuration_ShouldHaveError()
+    public void Validate_ExcessiveInquiryPeriod_ShouldHaveError()
     {
         // Arrange
-        var command = CreateValidCommand() with { ProjectDurationDays = 5000 };
+        var command = CreateValidCommand() with { InquiryPeriodDays = 366 };
 
         // Act
         var result = _validator.TestValidate(command);
 
         // Assert
-        result.ShouldHaveValidationErrorFor(x => x.ProjectDurationDays);
+        result.ShouldHaveValidationErrorFor(x => x.InquiryPeriodDays);
+    }
+
+    [Fact]
+    public void Validate_InvalidBookletNumber_ShouldHaveError()
+    {
+        // Arrange
+        var command = CreateValidCommand() with { BookletNumber = "BK#001" };
+
+        // Act
+        var result = _validator.TestValidate(command);
+
+        // Assert
+        result.ShouldHaveValidationErrorFor(x => x.BookletNumber);
     }
 
     [Fact]
@@ -165,9 +161,17 @@ public class CreateCompetitionCommandValidatorTests
         var command = CreateValidCommand() with
         {
             Description = null,
+            BookletNumber = null,
             EstimatedBudget = null,
+            BookletIssueDate = null,
+            InquiriesStartDate = null,
+            InquiryPeriodDays = null,
+            OffersStartDate = null,
             SubmissionDeadline = null,
-            ProjectDurationDays = null,
+            ExpectedAwardDate = null,
+            WorkStartDate = null,
+            Department = null,
+            FiscalYear = null,
             SourceTemplateId = null,
             SourceCompetitionId = null
         };
@@ -181,20 +185,26 @@ public class CreateCompetitionCommandValidatorTests
 
     private static CreateCompetitionCommand CreateValidCommand()
     {
+        var bookletIssueDate = DateTime.UtcNow.Date.AddDays(10);
+
         return new CreateCompetitionCommand(
             TenantId: Guid.NewGuid(),
             ProjectNameAr: "مشروع اختبار",
             ProjectNameEn: "Test Project",
-            Description: null,
+            Description: "وصف المشروع",
             CompetitionType: CompetitionType.PublicTender,
             CreationMethod: RfpCreationMethod.ManualWizard,
-            EstimatedBudget: null,
-            SubmissionDeadline: null,
-            ProjectDurationDays: null,
-            StartDate: null,
-            EndDate: null,
-            Department: null,
-            FiscalYear: null,
+            BookletNumber: "BK-2026-001",
+            EstimatedBudget: 1000000m,
+            BookletIssueDate: bookletIssueDate,
+            InquiriesStartDate: bookletIssueDate.AddDays(1),
+            InquiryPeriodDays: 10,
+            OffersStartDate: bookletIssueDate.AddDays(5),
+            SubmissionDeadline: bookletIssueDate.AddDays(10),
+            ExpectedAwardDate: bookletIssueDate.AddDays(20),
+            WorkStartDate: bookletIssueDate.AddDays(25),
+            Department: "Digital Transformation",
+            FiscalYear: bookletIssueDate.Year.ToString(),
             SourceTemplateId: null,
             SourceCompetitionId: null,
             CreatedByUserId: Guid.NewGuid().ToString());

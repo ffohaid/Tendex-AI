@@ -42,7 +42,7 @@ public class CompetitionTests
         competition.CompetitionType.Should().Be(CompetitionType.PublicTender);
         competition.CreationMethod.Should().Be(RfpCreationMethod.ManualWizard);
         competition.Status.Should().Be(CompetitionStatus.Draft);
-        competition.ReferenceNumber.Should().StartWith("RFP-");
+        competition.ReferenceNumber.Should().BeNull();
         competition.Currency.Should().Be("SAR");
         competition.Version.Should().Be(1);
         competition.CurrentWizardStep.Should().Be(1);
@@ -85,21 +85,26 @@ public class CompetitionTests
             projectNameEn: "Updated Name",
             description: "وصف جديد",
             competitionType: CompetitionType.LimitedTender,
+            referenceNumber: "BK-2026-100",
             estimatedBudget: 500000m,
+            bookletIssueDate: DateTime.UtcNow.AddDays(10),
+            inquiriesStartDate: DateTime.UtcNow.AddDays(12),
+            inquiryPeriodDays: 10,
+            offersStartDate: DateTime.UtcNow.AddDays(15),
             submissionDeadline: DateTime.UtcNow.AddDays(30),
-            projectDurationDays: 180,
-            startDate: null,
-            endDate: null,
-            department: null,
-            fiscalYear: null,
+            expectedAwardDate: DateTime.UtcNow.AddDays(40),
+            workStartDate: DateTime.UtcNow.AddDays(50),
+            department: "IT",
+            fiscalYear: DateTime.UtcNow.AddDays(10).Year.ToString(),
             modifiedBy: _userId);
 
         // Assert
         result.IsSuccess.Should().BeTrue();
         competition.ProjectNameAr.Should().Be("اسم محدث");
         competition.ProjectNameEn.Should().Be("Updated Name");
+        competition.ReferenceNumber.Should().Be("BK-2026-100");
         competition.EstimatedBudget.Should().Be(500000m);
-        competition.ProjectDurationDays.Should().Be(180);
+        competition.InquiryPeriodDays.Should().Be(10);
         competition.Version.Should().Be(2);
     }
 
@@ -116,11 +121,15 @@ public class CompetitionTests
             projectNameEn: "Updated Name",
             description: null,
             competitionType: CompetitionType.PublicTender,
+            referenceNumber: null,
             estimatedBudget: null,
+            bookletIssueDate: null,
+            inquiriesStartDate: null,
+            inquiryPeriodDays: null,
+            offersStartDate: null,
             submissionDeadline: null,
-            projectDurationDays: null,
-            startDate: null,
-            endDate: null,
+            expectedAwardDate: null,
+            workStartDate: null,
             department: null,
             fiscalYear: null,
             modifiedBy: _userId);
