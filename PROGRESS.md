@@ -1287,60 +1287,22 @@ To resolve this, `CompetitionRepository.AddBoqItemsDirectAsync` was updated so t
 - `frontend/src/components/layout/AppHeader.vue`
 - `backend/src/TendexAI.API/Endpoints/Rfp/BookletTemplateEndpoints.cs`
 
-## 2026-04-29: Remaining QA Fixes for Template-Based Booklet Flow
+## 2026-04-29: Remaining QA Fix - Guidance Group Rendering
 
 ### Problem Scope
-- The remaining QA notes in `29042026_1.docx` confirmed two issues that still needed an effective production-grade fix in the active code path.
-- First, consecutive guidance blocks in the booklet editor were still perceived visually as separate boxes even after logical grouping, because each block was rendered through the shared rich text viewer with its own bordered container.
-- Second, the template library inconsistency across entities pointed to stale tenant context persistence: after a Super Admin switched entity context, the selected `tenant_id` could remain stuck in local storage and continue to scope subsequent template list/upload requests to the wrong tenant.
+- The last QA attachment still reported that consecutive guidance blocks inside the booklet content were displayed as visually separate boxes, even when they were already grouped logically.
 
 ### Root Cause Analysis
-- `BookletEditorView.vue` already grouped consecutive guidance blocks into a single group, but `RichTextEditor.vue` always rendered a rounded bordered shell in read-only mode. This preserved an inner “multiple boxes” appearance and caused QA to continue flagging the issue.
-- `tenant.ts` wrote both `super_admin_tenant_id` and `tenant_id` on selection, but `clearTenantSelection()` removed only `super_admin_tenant_id`. In addition, the authentication/session flow had no dedicated storage for the authenticated tenant baseline, so token refresh and later requests could keep using a stale switched tenant context.
+- The booklet editor grouped consecutive guidance blocks correctly, but the shared read-only rich text component still rendered its own bordered shell for each block. This created the impression of multiple boxes inside the same grouped container.
 
 ### Fix Applied
-- Added a new `borderless` capability to the shared `RichTextEditor.vue` component for read-only display scenarios.
-- Updated booklet guidance rendering in `BookletEditorView.vue` to use the new borderless read-only mode inside grouped reference content, so consecutive guidance blocks now appear as one coherent visual group instead of multiple nested framed boxes.
-- Introduced a dedicated `base_tenant_id` session key in `frontend/src/stores/auth.ts`, persisted from the authenticated user tenant during login and MFA flows.
-- Updated `frontend/src/stores/tenant.ts` so clearing Super Admin entity selection restores `tenant_id` from `base_tenant_id` instead of leaving the last selected tenant context behind.
-- Updated `frontend/src/services/http.ts` so refresh-token requests use the authenticated base tenant context, while regular scoped requests continue using the active `tenant_id` header.
+- Added a `borderless` read-only display option to the shared `RichTextEditor.vue` component.
+- Updated grouped guidance rendering in `BookletEditorView.vue` to use the borderless mode, so sequential guidance blocks now appear as a single coherent visual group.
 
 ### Verification
-- Frontend production build completed successfully after the changes using `pnpm build`.
-- The build succeeded without TypeScript or bundling errors, confirming the new shared editor prop and session-context changes are integrated cleanly into the active frontend application.
+- Frontend production build completed successfully after the change using `pnpm build`.
+- The build passed without TypeScript or bundling errors.
 
 ### Files Modified
 - `frontend/src/components/common/RichTextEditor.vue`
 - `frontend/src/views/rfp/BookletEditorView.vue`
-- `frontend/src/stores/auth.ts`
-- `frontend/src/stores/tenant.ts`
-- `frontend/src/services/http.ts`
-
-## 2026-04-29: Remaining QA Fixes for Template-Based Booklet Flow
-
-### Problem Scope
-- The remaining QA notes in `29042026_1.docx` confirmed two issues that still needed an effective production-grade fix in the active code path.
-- First, consecutive guidance blocks in the booklet editor were still perceived visually as separate boxes even after logical grouping, because each block was rendered through the shared rich text viewer with its own bordered container.
-- Second, the template library inconsistency across entities pointed to stale tenant context persistence: after a Super Admin switched entity context, the selected `tenant_id` could remain stuck in local storage and continue to scope subsequent template list/upload requests to the wrong tenant.
-
-### Root Cause Analysis
-- `BookletEditorView.vue` already grouped consecutive guidance blocks into a single group, but `RichTextEditor.vue` always rendered a rounded bordered shell in read-only mode. This preserved an inner “multiple boxes” appearance and caused QA to continue flagging the issue.
-- `tenant.ts` wrote both `super_admin_tenant_id` and `tenant_id` on selection, but `clearTenantSelection()` removed only `super_admin_tenant_id`. In addition, the authentication/session flow had no dedicated storage for the authenticated tenant baseline, so token refresh and later requests could keep using a stale switched tenant context.
-
-### Fix Applied
-- Added a new `borderless` capability to the shared `RichTextEditor.vue` component for read-only display scenarios.
-- Updated booklet guidance rendering in `BookletEditorView.vue` to use the new borderless read-only mode inside grouped reference content, so consecutive guidance blocks now appear as one coherent visual group instead of multiple nested framed boxes.
-- Introduced a dedicated `base_tenant_id` session key in `frontend/src/stores/auth.ts`, persisted from the authenticated user tenant during login and MFA flows.
-- Updated `frontend/src/stores/tenant.ts` so clearing Super Admin entity selection restores `tenant_id` from `base_tenant_id` instead of leaving the last selected tenant context behind.
-- Updated `frontend/src/services/http.ts` so refresh-token requests use the authenticated base tenant context, while regular scoped requests continue using the active `tenant_id` header.
-
-### Verification
-- Frontend production build completed successfully after the changes using `pnpm build`.
-- The build succeeded without TypeScript or bundling errors, confirming the new shared editor prop and session-context changes are integrated cleanly into the active frontend application.
-
-### Files Modified
-- `frontend/src/components/common/RichTextEditor.vue`
-- `frontend/src/views/rfp/BookletEditorView.vue`
-- `frontend/src/stores/auth.ts`
-- `frontend/src/stores/tenant.ts`
-- `frontend/src/services/http.ts`

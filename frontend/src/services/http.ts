@@ -77,7 +77,6 @@ function redirectToLogin(): void {
   localStorage.removeItem('access_token')
   localStorage.removeItem('refresh_token')
   localStorage.removeItem('tenant_id')
-  localStorage.removeItem('base_tenant_id')
   localStorage.removeItem('user')
 
   /* Use soft navigation to avoid full page reload */
@@ -129,9 +128,8 @@ httpClient.interceptors.response.use(
     /* Check if we have a refresh token before attempting refresh */
     const refreshToken = localStorage.getItem('refresh_token')
     const tenantId = localStorage.getItem('tenant_id')
-    const baseTenantId = localStorage.getItem('base_tenant_id') || tenantId
 
-    if (!refreshToken || !baseTenantId) {
+    if (!refreshToken || !tenantId) {
       /* No refresh token available — redirect to login */
       redirectToLogin()
       return Promise.reject(error)
@@ -149,11 +147,11 @@ httpClient.interceptors.response.use(
     try {
       const { data } = await axios.post(
         `${API_BASE_URL}/v1/auth/refresh-token`,
-        { refreshToken, tenantId: baseTenantId },
+        { refreshToken, tenantId },
         {
           headers: {
             'Content-Type': 'application/json',
-            'X-Tenant-Id': baseTenantId,
+            'X-Tenant-Id': tenantId,
           },
         },
       )

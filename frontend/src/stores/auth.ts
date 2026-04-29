@@ -26,7 +26,6 @@ const STORAGE_KEYS = {
   ACCESS_TOKEN: 'access_token',
   REFRESH_TOKEN: 'refresh_token',
   TENANT_ID: 'tenant_id',
-  BASE_TENANT_ID: 'base_tenant_id',
   USER: 'user',
   SESSION_ID: 'session_id',
 } as const
@@ -83,7 +82,6 @@ export const useAuthStore = defineStore('auth', () => {
     localStorage.setItem(STORAGE_KEYS.ACCESS_TOKEN, response.accessToken)
     localStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN, response.refreshToken)
     localStorage.setItem(STORAGE_KEYS.TENANT_ID, response.user.tenantId)
-    localStorage.setItem(STORAGE_KEYS.BASE_TENANT_ID, response.user.tenantId)
     localStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(response.user))
   }
 
@@ -136,7 +134,6 @@ export const useAuthStore = defineStore('auth', () => {
         mfaSessionId.value = response.sessionId
         tenantId.value = payload.tenantId
         localStorage.setItem(STORAGE_KEYS.TENANT_ID, payload.tenantId)
-        localStorage.setItem(STORAGE_KEYS.BASE_TENANT_ID, payload.tenantId)
         localStorage.setItem(STORAGE_KEYS.SESSION_ID, response.sessionId)
         return true
       }
