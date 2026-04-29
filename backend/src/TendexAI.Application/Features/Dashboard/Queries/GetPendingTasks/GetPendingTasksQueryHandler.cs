@@ -160,7 +160,7 @@ public sealed class GetPendingTasksQueryHandler
                         DescriptionEn: GetCompetitionTaskDescriptionEn(competition.Status, competition.ProjectNameEn),
                         CompetitionTitleAr: competition.ProjectNameAr,
                         CompetitionTitleEn: competition.ProjectNameEn,
-                        CompetitionReferenceNumber: competition.ReferenceNumber,
+                        CompetitionReferenceNumber: competition.ReferenceNumber ?? string.Empty,
                         AssignedAt: competition.LastModifiedAt?.ToString("o") ?? competition.CreatedAt.ToString("o"),
                         SlaDeadline: slaDeadline.ToString("o"),
                         SlaStatus: slaStatus,
