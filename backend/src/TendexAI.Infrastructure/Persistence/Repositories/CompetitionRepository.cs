@@ -110,7 +110,7 @@ public sealed class CompetitionRepository : ICompetitionRepository, IDisposable
             query = query.Where(c =>
                 c.ProjectNameAr.Contains(term) ||
                 c.ProjectNameEn.Contains(term) ||
-                c.ReferenceNumber.Contains(term));
+                (c.ReferenceNumber != null && c.ReferenceNumber.Contains(term)));
         }
 
         var totalCount = await query.CountAsync(cancellationToken);
