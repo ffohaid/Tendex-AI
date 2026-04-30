@@ -1578,3 +1578,13 @@ Static diff hygiene check passed via `git diff --check` for the modified handler
   - keep sanitizing extracted `projectName*` and `description`,
   - automatically assign a safe fallback `BookletIssueDate = UtcToday + 1 day` only when the extracted flow provides no issue date.
 - Rationale: this protects UploadExtract against tenant databases or legacy schema states that still fail when `StartDate` arrives null, without changing behavior for template/manual creation paths.
+
+### 2026-04-30 — UploadExtract production follow-up (round 3)
+- Reproduced the production failure again on the **final create step** after extraction succeeded and the **Create Booklet** action became available.
+- The UI displayed the controlled backend failure message, confirming that the remaining defect is downstream of extraction itself.
+- The latest narrow hypothesis is legacy tenant schema compatibility around `rfp.Competitions.ReferenceNumber`: the UploadExtract request still reaches the backend with `bookletNumber = null`, while some tenant databases may still reject null reference numbers.
+- Added another **UploadExtract-only** safeguard in `CreateCompetitionCommandHandler`:
+  - keep the existing extracted text sanitization,
+  - keep the fallback booklet issue date,
+  - generate a short unique fallback reference number (`UE-...`) only when `request.BookletNumber` is empty for `RfpCreationMethod.UploadExtract`.
+- This change is intentionally isolated to the UploadExtract creation path and does not modify manual or template-based creation behavior.

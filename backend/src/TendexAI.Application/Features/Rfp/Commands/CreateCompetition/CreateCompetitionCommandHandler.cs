@@ -45,6 +45,7 @@ public sealed class CreateCompetitionCommandHandler
         var projectNameEn = request.ProjectNameEn;
         var description = request.Description;
         var bookletIssueDate = request.BookletIssueDate;
+        var bookletNumber = request.BookletNumber;
 
         if (request.CreationMethod == RfpCreationMethod.UploadExtract)
         {
@@ -63,6 +64,10 @@ public sealed class CreateCompetitionCommandHandler
                 DescriptionMaxLength,
                 fallbackValue: null);
 
+            bookletNumber = string.IsNullOrWhiteSpace(request.BookletNumber)
+                ? GenerateUploadExtractReferenceNumber()
+                : request.BookletNumber.Trim();
+
             bookletIssueDate ??= DateTime.UtcNow.Date.AddDays(1);
         }
 
@@ -73,7 +78,7 @@ public sealed class CreateCompetitionCommandHandler
             competitionType: request.CompetitionType,
             creationMethod: request.CreationMethod,
             createdByUserId: request.CreatedByUserId,
-            referenceNumber: request.BookletNumber,
+            referenceNumber: bookletNumber,
             description: description,
             estimatedBudget: request.EstimatedBudget,
             bookletIssueDate: bookletIssueDate,
@@ -116,6 +121,11 @@ public sealed class CreateCompetitionCommandHandler
         }
 
         return Result.Success(CompetitionMapper.ToDetailDto(created));
+    }
+
+    private static string GenerateUploadExtractReferenceNumber()
+    {
+        return $"UE-{DateTime.UtcNow:yyyyMMddHHmmss}-{Guid.NewGuid():N}"[..29];
     }
 
     private static string? SanitizeUploadExtractText(
