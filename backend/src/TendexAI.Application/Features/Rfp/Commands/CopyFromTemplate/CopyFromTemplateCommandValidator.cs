@@ -48,7 +48,7 @@ public sealed class CopyFromTemplateCommandValidator : AbstractValidator<CopyFro
         RuleFor(x => x.BookletNumber)
             .MaximumLength(50)
             .WithMessage("Booklet number must not exceed 50 characters.")
-            .Matches("^[A-Za-z0-9\-/]*$")
+            .Matches(@"^[A-Za-z0-9\-/]*$")
             .WithMessage("Booklet number may contain only English letters, numbers, hyphens, and slashes.")
             .When(x => !string.IsNullOrWhiteSpace(x.BookletNumber));
 
