@@ -1,4 +1,5 @@
 using FluentValidation;
+using System.Globalization;
 
 namespace TendexAI.Application.Features.Rfp.Commands.CopyFromTemplate;
 
@@ -103,7 +104,7 @@ public sealed class CopyFromTemplateCommandValidator : AbstractValidator<CopyFro
                 continue;
             }
 
-            if (item.Value.Value.Year.ToString() != fiscalYear)
+            if (item.Value.Value.Year.ToString(CultureInfo.InvariantCulture) != fiscalYear)
             {
                 context.AddFailure(item.PropertyName, $"{item.DisplayName} must be within the selected fiscal year.");
                 return;
