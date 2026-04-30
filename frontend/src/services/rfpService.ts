@@ -174,7 +174,6 @@ function mapToCreateRequest(data: Partial<RfpFormData>): CreateCompetitionReques
 /* ------------------------------------------------------------------ */
 /*  Mapping: Frontend RfpFormData → Backend AutoSaveCompetitionRequest  */
 /* ------------------------------------------------------------------ */
-
 interface AutoSaveCompetitionRequest {
   projectNameAr: string | null
   projectNameEn: string | null
@@ -193,6 +192,63 @@ interface AutoSaveCompetitionRequest {
   fiscalYear: string | null
   requiredAttachmentTypes: string[] | null
   currentWizardStep: number | null
+}
+
+const EXTRACTION_PROJECT_NAME_MAX_LENGTH = 500
+const EXTRACTION_DESCRIPTION_MAX_LENGTH = 4000
+
+function normalizeExtractionText(value: string | null | undefined, maxLength: number): string {
+  if (!value) {
+    return ''
+  }
+
+  return value
+    .replace(/\s+/g, ' ')
+    .trim()
+    .slice(0, maxLength)
+}
+
+function buildCreateRequestFromExtraction(data: {
+  projectNameAr: string
+  projectNameEn?: string
+  description: string | null
+  competitionType: number
+  estimatedBudget: number | null
+  projectDurationDays: number | null
+}): CreateCompetitionRequest {
+  const projectNameAr = normalizeExtractionText(data.projectNameAr, EXTRACTION_PROJECT_NAME_MAX_LENGTH)
+  const projectNameEn = normalizeExtractionText(
+    data.projectNameEn || projectNameAr,
+    EXTRACTION_PROJECT_NAME_MAX_LENGTH,
+  ) || projectNameAr
+  const description = normalizeExtractionText(
+    data.description,
+    EXTRACTION_DESCRIPTION_MAX_LENGTH,
+  ) || null
+  const estimatedBudget = typeof data.estimatedBudget === 'number' && data.estimatedBudget > 0
+    ? data.estimatedBudget
+    : null
+
+  return {
+    projectNameAr,
+    projectNameEn,
+    description,
+    competitionType: data.competitionType,
+    creationMethod: 4, // UploadExtract = 4
+    estimatedBudget,
+    bookletNumber: null,
+    bookletIssueDate: null,
+    inquiriesStartDate: null,
+    inquiryPeriodDays: null,
+    offersStartDate: null,
+    submissionDeadline: null,
+    expectedAwardDate: null,
+    workStartDate: null,
+    department: null,
+    fiscalYear: null,
+    sourceTemplateId: null,
+    sourceCompetitionId: null,
+  }
 }
 
 function mapToAutoSaveRequest(data: Partial<RfpFormData>): AutoSaveCompetitionRequest {
@@ -998,26 +1054,7 @@ export async function createRfpFromExtraction(
     projectDurationDays: number | null
   },
 ): Promise<ApiResponse<RfpFormData>> {
-  const request: CreateCompetitionRequest = {
-    projectNameAr: data.projectNameAr,
-    projectNameEn: data.projectNameEn || data.projectNameAr,
-    description: data.description,
-    competitionType: data.competitionType,
-    creationMethod: 4, // UploadExtract = 4
-    estimatedBudget: data.estimatedBudget,
-    bookletNumber: null,
-    bookletIssueDate: null,
-    inquiriesStartDate: null,
-    inquiryPeriodDays: null,
-    offersStartDate: null,
-    submissionDeadline: null,
-    expectedAwardDate: null,
-    workStartDate: null,
-    department: null,
-    fiscalYear: null,
-    sourceTemplateId: null,
-    sourceCompetitionId: null,
-  }
+  const request = buildCreateRequestFromExtraction(data)
 
   return apiCall(async () => {
     const dto = await httpPost<Record<string, unknown>>(BASE_URL, request)

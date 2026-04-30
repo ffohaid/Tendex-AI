@@ -706,7 +706,8 @@
     },
     "validation": {
       "bookletNumberAlreadyExists": "The entered booklet number already exists. Please use a different number.",
-      "bookletNumberCheckFailed": "Unable to verify the booklet number right now. Please try again."
+      "bookletNumberCheckFailed": "Unable to verify the booklet number right now. Please try again.",
+      "criteriaWeightTotalExceeded": "Total criteria weight cannot exceed 100%. You can allocate up to {maxAllowed}% for this criterion."
     }
   },
   "evaluation": {

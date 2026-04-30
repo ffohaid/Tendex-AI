@@ -24,9 +24,12 @@ const rfpStore = useRfpStore()
 
 const schema = toTypedSchema(attachmentsSchema)
 
-const { validate, setFieldValue } = useForm({
+const { errors, validate, setFieldValue } = useForm({
   validationSchema: schema,
-  initialValues: { ...rfpStore.formData.attachments },
+  initialValues: {
+    ...rfpStore.formData.attachments,
+    requiredAttachmentTypes: rfpStore.formData.attachments.requiredAttachmentTypes || [],
+  },
   validateOnMount: false,
 })
 
@@ -56,6 +59,7 @@ function isRequiredAttachmentSelected(key: string): boolean {
 /** Toggle a required attachment type selection */
 function toggleRequiredType(key: string) {
   rfpStore.toggleRequiredAttachmentType(key)
+  setFieldValue('requiredAttachmentTypes', rfpStore.formData.attachments.requiredAttachmentTypes)
 }
 
 /** Allowed file types */
@@ -159,6 +163,7 @@ function handleAiAttachments(keys: string[]) {
   const merged = Array.from(new Set([...existing, ...uniqueKeys]))
 
   rfpStore.updateAttachments({ requiredAttachmentTypes: merged })
+  setFieldValue('requiredAttachmentTypes', merged)
 }
 
 /** Count selected required attachments */
@@ -174,6 +179,7 @@ defineExpose({
      * store, so VeeValidate's internal state becomes stale.
      */
     setFieldValue('files', rfpStore.formData.attachments.files)
+    setFieldValue('requiredAttachmentTypes', rfpStore.formData.attachments.requiredAttachmentTypes)
 
     const result = await validate()
     return result.valid
@@ -207,6 +213,10 @@ defineExpose({
       </div>
       <p class="mb-4 text-xs text-tertiary">
         {{ $t('rfp.messages.selectRequiredAttachments', 'حدد المستندات الإلزامية التي يجب على المتنافسين تقديمها مع عروضهم') }}
+      </p>
+      <p v-if="errors.requiredAttachmentTypes" class="mb-4 text-sm text-danger">
+        <i class="pi pi-exclamation-circle me-1"></i>
+        {{ errors.requiredAttachmentTypes }}
       </p>
       <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
         <label

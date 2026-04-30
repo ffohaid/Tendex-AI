@@ -201,6 +201,12 @@ export const settingsSchema = z.object({
     message: 'يجب أن يكون مجموع أوزان التقييم الفني والمالي 100%',
     path: ['financialWeight'],
   },
+).refine(
+  (data) => data.evaluationCriteria.reduce((sum, criterion) => sum + criterion.weight, 0) <= 100,
+  {
+    message: 'لا يمكن أن يتجاوز مجموع أوزان معايير التقييم 100%',
+    path: ['evaluationCriteria'],
+  },
 )
 
 /* ------------------------------------------------------------------ */
@@ -282,6 +288,9 @@ export const attachmentSchema = z.object({
 
 export const attachmentsSchema = z.object({
   files: z.array(attachmentSchema),
+  requiredAttachmentTypes: z
+    .array(z.string())
+    .min(1, 'يرجى اختيار مرفق أساسي واحد على الأقل قبل المتابعة'),
 })
 
 /* ------------------------------------------------------------------ */

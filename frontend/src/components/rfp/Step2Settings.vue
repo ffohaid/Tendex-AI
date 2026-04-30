@@ -9,7 +9,7 @@
  * before running validation, ensuring criteria added/edited via
  * the store are properly validated.
  */
-import { watch, computed } from 'vue'
+import { watch, computed, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useForm, useField } from 'vee-validate'
 import { toTypedSchema } from '@vee-validate/zod'
@@ -46,6 +46,17 @@ const evaluationMethods = computed(() => [
   { value: 'quality_cost_based', label: t('rfp.evaluationMethods.qualityCostBased') },
 ])
 
+const criteriaWeightError = ref('')
+
+function getMaxAllowedCriterionWeight(criterionId: string): number {
+  const criteria = rfpStore.formData.settings.evaluationCriteria
+  const totalWithoutCurrent = criteria.reduce((sum, criterion) => {
+    return criterion.id === criterionId ? sum : sum + criterion.weight
+  }, 0)
+
+  return Math.max(0, 100 - totalWithoutCurrent)
+}
+
 /** Auto-adjust financial weight when technical weight changes */
 watch(technicalWeight, (val) => {
   if (val !== undefined && val >= 0 && val <= 100) {
@@ -81,20 +92,33 @@ function addCriterion() {
 
 function removeCriterion(id: string) {
   rfpStore.removeCriterion(id)
+  if (rfpStore.criteriaWeightTotal <= 100) {
+    criteriaWeightError.value = ''
+  }
 }
 
 function updateCriterionField(id: string, field: string, value: string | number) {
-  // Issue 27 Fix: Enforce max 100 for weight field
   if (field === 'weight') {
     const numVal = Number(value)
-    if (numVal > 100) value = 100
-    if (numVal < 0) value = 0
+    const normalizedValue = Number.isFinite(numVal) ? Math.max(0, numVal) : 0
+    const maxAllowed = getMaxAllowedCriterionWeight(id)
+
+    if (normalizedValue > maxAllowed) {
+      criteriaWeightError.value = t('rfp.validation.criteriaWeightTotalExceeded', { maxAllowed })
+      value = maxAllowed
+    } else {
+      criteriaWeightError.value = ''
+      value = normalizedValue
+    }
   }
+
   rfpStore.updateCriterion(id, { [field]: value })
 }
 
 /** Handle AI-suggested criteria */
 function handleAiCriteria(criteria: Array<{ name: string; weight: number; description: string }>) {
+  criteriaWeightError.value = ''
+
   // Clear existing criteria and add AI-suggested ones
   rfpStore.formData.settings.evaluationCriteria.forEach(c => rfpStore.removeCriterion(c.id))
   criteria.forEach(c => {
@@ -315,7 +339,7 @@ defineExpose({
               :value="criterion.weight"
               type="number"
               min="0"
-              max="100"
+              :max="getMaxAllowedCriterionWeight(criterion.id)"
               :placeholder="t('rfp.placeholders.criterionWeight')"
               class="rounded-lg border border-surface-dim px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
               @input="updateCriterionField(criterion.id, 'weight', Number(($event.target as HTMLInputElement).value))"
@@ -324,6 +348,7 @@ defineExpose({
               :value="criterion.description"
               type="text"
               :placeholder="t('rfp.placeholders.criterionDescription')"
+              :title="criterion.description"
               class="rounded-lg border border-surface-dim px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
               @input="updateCriterionField(criterion.id, 'description', ($event.target as HTMLInputElement).value)"
             />
@@ -347,6 +372,14 @@ defineExpose({
           <span>
             {{ t('rfp.messages.criteriaWeightTotal') }}: {{ rfpStore.criteriaWeightTotal }}%
           </span>
+        </div>
+
+        <div
+          v-if="criteriaWeightError"
+          class="rounded-lg border border-danger/20 bg-danger/5 p-3 text-sm text-danger"
+        >
+          <i class="pi pi-exclamation-circle me-1"></i>
+          {{ criteriaWeightError }}
         </div>
       </div>
     </div>

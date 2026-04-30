@@ -294,8 +294,8 @@ async function createFromExtraction(): Promise<void> {
     // 1. Create the competition
     const createResult = await createRfpFromExtraction({
       projectNameAr: ext.projectNameAr,
-      projectNameEn: ext.projectNameEn || ext.projectNameAr,
-      description: ext.projectDescription || null,
+      projectNameEn: ext.projectNameAr,
+      description: ext.projectDescription?.trim() || ext.extractionSummaryAr?.trim() || null,
       competitionType: competitionTypeMap[ext.detectedCompetitionType || ''] ?? 0,
       estimatedBudget: ext.estimatedBudget || null,
       projectDurationDays: ext.projectDurationDays || null,
@@ -370,14 +370,7 @@ async function createFromExtraction(): Promise<void> {
 <template>
   <div class="min-h-[80vh] flex flex-col items-center px-4 py-8">
     <!-- Header -->
-    <div class="mb-8 flex w-full max-w-5xl items-center justify-between">
-      <router-link
-        :to="{ name: 'rfp-list' }"
-        class="flex items-center gap-2 text-sm text-tertiary transition-colors hover:text-secondary"
-      >
-        <i class="pi pi-arrow-right text-xs ltr:rotate-180"></i>
-        {{ t('rfp.methodSelection.backToList') }}
-      </router-link>
+    <div class="mb-8 flex w-full max-w-5xl items-center justify-center">
       <div class="flex items-center gap-2">
         <div class="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-primary to-primary-dark text-white shadow-sm">
           <i class="pi pi-bolt text-sm"></i>
@@ -767,12 +760,16 @@ async function createFromExtraction(): Promise<void> {
 
           <div v-if="extractionResult.projectDescription" class="mt-4 rounded-xl bg-gray-50 p-4">
             <label class="text-[10px] font-medium uppercase tracking-wider text-tertiary">وصف المشروع</label>
-            <p class="mt-1 text-sm leading-relaxed text-secondary">{{ extractionResult.projectDescription }}</p>
+            <p dir="rtl" class="mt-1 text-sm leading-relaxed text-secondary text-right [unicode-bidi:plaintext]">
+              {{ extractionResult.projectDescription }}
+            </p>
           </div>
 
           <div class="mt-4 rounded-xl bg-blue-50 p-4">
             <label class="text-[10px] font-medium uppercase tracking-wider text-blue-600">ملخص الاستخراج</label>
-            <p class="mt-1 text-sm leading-relaxed text-blue-800">{{ extractionResult.extractionSummaryAr }}</p>
+            <p dir="rtl" class="mt-1 text-sm leading-relaxed text-blue-800 text-right [unicode-bidi:plaintext]">
+              {{ extractionResult.extractionSummaryAr }}
+            </p>
           </div>
         </div>
 
@@ -815,7 +812,8 @@ async function createFromExtraction(): Promise<void> {
             <!-- Content preview -->
             <div
               v-if="section.contentHtml"
-              class="mt-3 max-h-32 overflow-hidden rounded-lg bg-gray-50 p-3 text-xs leading-relaxed text-secondary"
+              dir="rtl"
+              class="mt-3 max-h-32 overflow-hidden rounded-lg bg-gray-50 p-3 text-xs leading-relaxed text-secondary text-right [unicode-bidi:plaintext]"
               v-html="section.contentHtml"
             ></div>
           </div>
@@ -902,15 +900,5 @@ async function createFromExtraction(): Promise<void> {
       </div>
     </Transition>
 
-    <!-- Back to list link -->
-    <div class="mt-8">
-      <router-link
-        :to="{ name: 'rfp-list' }"
-        class="flex items-center gap-1 text-sm text-tertiary transition-colors hover:text-interactive"
-      >
-        <i class="pi pi-arrow-right text-xs ltr:rotate-180"></i>
-        {{ t('rfp.methodSelection.backToList') }}
-      </router-link>
-    </div>
   </div>
 </template>

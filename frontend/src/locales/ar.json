@@ -706,7 +706,8 @@
     },
     "validation": {
       "bookletNumberAlreadyExists": "رقم الكراسة المدخل مستخدم مسبقاً. يرجى إدخال رقم مختلف.",
-      "bookletNumberCheckFailed": "تعذر التحقق من رقم الكراسة حالياً. حاول مرة أخرى."
+      "bookletNumberCheckFailed": "تعذر التحقق من رقم الكراسة حالياً. حاول مرة أخرى.",
+      "criteriaWeightTotalExceeded": "لا يمكن أن يتجاوز مجموع أوزان المعايير 100%. الحد الأقصى المتاح لهذا المعيار هو {maxAllowed}%."
     }
   },
   "evaluation": {

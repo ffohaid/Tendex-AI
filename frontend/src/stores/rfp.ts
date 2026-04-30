@@ -37,6 +37,14 @@ function generateId(): string {
   return `${Date.now()}-${Math.random().toString(36).substring(2, 9)}`
 }
 
+function normalizePercentage(value: number | null | undefined): number {
+  if (typeof value !== 'number' || Number.isNaN(value) || !Number.isFinite(value)) {
+    return 0
+  }
+
+  return Math.min(100, Math.max(0, value))
+}
+
 /** Default empty form data */
 function createEmptyFormData(): RfpFormData {
   return {
@@ -344,7 +352,7 @@ export const useRfpStore = defineStore('rfp', () => {
     const newCriterion: EvaluationCriterion = {
       id: generateId(),
       name: criterion?.name || '',
-      weight: criterion?.weight || 0,
+      weight: normalizePercentage(criterion?.weight),
       description: criterion?.description || '',
       order: formData.value.settings.evaluationCriteria.length,
     }
@@ -368,9 +376,23 @@ export const useRfpStore = defineStore('rfp', () => {
       (c) => c.id === criterionId,
     )
     if (index !== -1) {
+      const currentCriterion = formData.value.settings.evaluationCriteria[index]
+      const nextData: Partial<EvaluationCriterion> = { ...data }
+
+      if (Object.prototype.hasOwnProperty.call(data, 'weight')) {
+        const requestedWeight = normalizePercentage(data.weight)
+        const totalWithoutCurrent = formData.value.settings.evaluationCriteria.reduce(
+          (sum, criterion, criterionIndex) => {
+            return criterionIndex === index ? sum : sum + criterion.weight
+          },
+          0,
+        )
+        nextData.weight = Math.max(0, Math.min(requestedWeight, 100 - totalWithoutCurrent))
+      }
+
       formData.value.settings.evaluationCriteria[index] = {
-        ...formData.value.settings.evaluationCriteria[index],
-        ...data,
+        ...currentCriterion,
+        ...nextData,
       }
       isDirty.value = true
     }
