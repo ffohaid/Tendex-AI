@@ -1554,3 +1554,19 @@ Operational note: these changes are currently prepared locally and verified at c
 
 ### Notes
 - Local uncommitted work for template-creation field unification remains intact and can be shipped together after final verification.
+
+### 2026-04-30 - Upload & Extract 500 revisit (production)
+
+#### Diagnosis refinement
+The latest production report that appeared as an "upload/extract" failure was narrowed down further by matching the exact Arabic UI text (`خطأ في الاتصال بالخادم (500)`) to `frontend/src/services/rfpService.ts`, which is used by `createRfpFromExtraction()` rather than the raw document upload call. Live checks also showed that a 3.4 MB DOCX could pass **upload**, **text extraction**, and **AI analysis** successfully, which weakened the earlier hypothesis of a generic Nginx upload-size failure.
+
+#### Implemented fix
+A narrowly scoped backend hardening change was added in `backend/src/TendexAI.Application/Features/Rfp/Commands/CreateCompetition/CreateCompetitionCommandHandler.cs` for `RfpCreationMethod.UploadExtract` only:
+
+- sanitize extracted `ProjectNameAr`, `ProjectNameEn`, and `Description` before persistence by removing control characters and collapsing whitespace,
+- apply a deterministic fallback project name when the extracted Arabic title becomes empty after sanitization,
+- catch `DbUpdateException` for the upload-extract creation path and return a controlled failure instead of letting an unhandled 500 bubble up,
+- fall back to the just-created aggregate if the post-save detail reload unexpectedly returns null.
+
+#### Verification status
+Static diff hygiene check passed via `git diff --check` for the modified handler. Local backend compilation is still not available in this sandbox because `dotnet` is not installed here, so the next step remains selective commit, deployment, and live verification on production.
