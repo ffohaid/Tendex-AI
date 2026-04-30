@@ -84,7 +84,7 @@ onMounted(async () => {
 
 <template>
   <header
-    class="fixed inset-inline-0 top-0 z-50 flex h-16 items-center border-b border-secondary-200/60 bg-white/95 backdrop-blur-sm"
+    class="fixed inset-inline-0 w-full top-0 z-50 flex h-16 items-center border-b border-secondary-200/60 bg-white/95 backdrop-blur-sm"
   >
     <!-- Start section: Sidebar toggle + Logo -->
     <div class="flex items-center gap-3 ps-4">
