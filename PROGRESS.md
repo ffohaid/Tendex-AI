@@ -1570,3 +1570,11 @@ A narrowly scoped backend hardening change was added in `backend/src/TendexAI.Ap
 
 #### Verification status
 Static diff hygiene check passed via `git diff --check` for the modified handler. Local backend compilation is still not available in this sandbox because `dotnet` is not installed here, so the next step remains selective commit, deployment, and live verification on production.
+
+### 2026-04-30 — UploadExtract production follow-up
+- Reproduced the post-extraction failure after clicking **Create Booklet** on production. The frontend no longer surfaces a raw 500 at this point; it now shows the controlled backend message: `تعذر إنشاء المنافسة من البيانات المستخرجة...`.
+- Narrowed the failure to the **competition creation** step after successful extraction, not to the raw file-upload request itself.
+- Added a second limited-scope safeguard in `CreateCompetitionCommandHandler` for `RfpCreationMethod.UploadExtract` only:
+  - keep sanitizing extracted `projectName*` and `description`,
+  - automatically assign a safe fallback `BookletIssueDate = UtcToday + 1 day` only when the extracted flow provides no issue date.
+- Rationale: this protects UploadExtract against tenant databases or legacy schema states that still fail when `StartDate` arrives null, without changing behavior for template/manual creation paths.

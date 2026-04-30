@@ -44,6 +44,7 @@ public sealed class CreateCompetitionCommandHandler
         var projectNameAr = request.ProjectNameAr;
         var projectNameEn = request.ProjectNameEn;
         var description = request.Description;
+        var bookletIssueDate = request.BookletIssueDate;
 
         if (request.CreationMethod == RfpCreationMethod.UploadExtract)
         {
@@ -61,6 +62,8 @@ public sealed class CreateCompetitionCommandHandler
                 request.Description,
                 DescriptionMaxLength,
                 fallbackValue: null);
+
+            bookletIssueDate ??= DateTime.UtcNow.Date.AddDays(1);
         }
 
         var competition = Competition.Create(
@@ -73,7 +76,7 @@ public sealed class CreateCompetitionCommandHandler
             referenceNumber: request.BookletNumber,
             description: description,
             estimatedBudget: request.EstimatedBudget,
-            bookletIssueDate: request.BookletIssueDate,
+            bookletIssueDate: bookletIssueDate,
             inquiriesStartDate: request.InquiriesStartDate,
             inquiryPeriodDays: request.InquiryPeriodDays,
             offersStartDate: request.OffersStartDate,
