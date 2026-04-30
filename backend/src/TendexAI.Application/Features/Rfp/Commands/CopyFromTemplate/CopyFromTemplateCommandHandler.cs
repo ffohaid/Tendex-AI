@@ -37,18 +37,39 @@ public sealed class CopyFromTemplateCommandHandler
         if (template is null)
             return Result.Failure("القالب غير موجود أو غير نشط.");
 
-        // Create competition from template
+        var projectNameAr = request.ProjectNameAr.Trim();
+        var projectNameEn = string.IsNullOrWhiteSpace(request.ProjectNameEn)
+            ? projectNameAr
+            : request.ProjectNameEn.Trim();
+        var descriptionAr = request.DescriptionAr.Trim();
+        var bookletNumber = string.IsNullOrWhiteSpace(request.BookletNumber)
+            ? null
+            : request.BookletNumber.Trim();
+        var department = request.Department.Trim();
+        var fiscalYear = request.FiscalYear.Trim();
+
+        // Create competition from template using the same basic info contract as the manual creation flow.
         var competition = Competition.Create(
             request.TenantId,
-            request.ProjectNameAr,
-            request.ProjectNameEn,
-            template.CompetitionType,
+            projectNameAr,
+            projectNameEn,
+            request.CompetitionType,
             RfpCreationMethod.FromTemplate,
             request.UserId,
-            description: request.Description,
+            referenceNumber: bookletNumber,
+            description: descriptionAr,
+            estimatedBudget: request.EstimatedBudget,
+            bookletIssueDate: request.BookletIssueDate,
+            inquiriesStartDate: request.InquiriesStartDate,
+            inquiryPeriodDays: request.InquiryPeriodDays,
+            offersStartDate: request.OffersStartDate,
+            submissionDeadline: request.SubmissionDeadline,
+            expectedAwardDate: request.ExpectedAwardDate,
+            workStartDate: request.WorkStartDate,
+            department: department,
+            fiscalYear: fiscalYear,
             sourceTemplateId: template.Id);
 
-        // Copy sections
         foreach (var templateSection in template.Sections)
         {
             var section = RfpSection.Create(
@@ -65,7 +86,6 @@ public sealed class CopyFromTemplateCommandHandler
             competition.AddSection(section);
         }
 
-        // Copy BOQ items
         foreach (var templateBoq in template.BoqItems)
         {
             var boqItem = BoqItem.Create(
@@ -82,7 +102,6 @@ public sealed class CopyFromTemplateCommandHandler
             competition.AddBoqItem(boqItem);
         }
 
-        // Copy evaluation criteria
         foreach (var templateCriterion in template.EvaluationCriteria)
         {
             var criterion = EvaluationCriterion.Create(
@@ -99,7 +118,6 @@ public sealed class CopyFromTemplateCommandHandler
             competition.AddEvaluationCriterion(criterion);
         }
 
-        // Increment template usage count
         template.IncrementUsageCount();
 
         db.GetDbSet<Competition>().Add(competition);

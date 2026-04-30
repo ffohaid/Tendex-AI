@@ -41,25 +41,25 @@ public sealed class BookletExtractionService : IBookletExtractionService
     };
 
     /// <summary>Maximum characters to send to the AI in the first extraction attempt.</summary>
-    private const int MaxDocumentCharsFirstAttempt = 90000;
+    private const int MaxDocumentCharsFirstAttempt = 45000;
 
     /// <summary>Maximum characters for retry attempts when the initial parse fails.</summary>
-    private const int MaxDocumentCharsRetry = 60000;
+    private const int MaxDocumentCharsRetry = 25000;
+
+    /// <summary>Upper bound for completion tokens to keep extraction within request time budgets.</summary>
+    private const int MaxCompletionTokens = 6000;
 
     /// <summary>Maximum number of extraction attempts.</summary>
     private const int MaxAttempts = 2;
 
     private readonly IAiGateway _aiGateway;
-    private readonly IContextRetrievalService _contextRetrievalService;
     private readonly ILogger<BookletExtractionService> _logger;
 
     public BookletExtractionService(
         IAiGateway aiGateway,
-        IContextRetrievalService contextRetrievalService,
         ILogger<BookletExtractionService> logger)
     {
         _aiGateway = aiGateway;
-        _contextRetrievalService = contextRetrievalService;
         _logger = logger;
     }
 
@@ -78,34 +78,10 @@ public sealed class BookletExtractionService : IBookletExtractionService
                 "Starting booklet extraction from document '{FileName}' ({ContentType}, {Size} bytes, {TextLength} chars)",
                 request.FileName, request.ContentType, request.FileSizeBytes, request.DocumentText?.Length ?? 0);
 
-            // 1. Optionally retrieve RAG context for better extraction quality
+            // 1. Extraction must prioritize the uploaded document itself.
+            // Retrieving RAG context here increases latency and token size while the task is
+            // already anchored to the source document, so this path stays document-only.
             ContextRetrievalResult? ragResult = null;
-            try
-            {
-                var ragQuery = "كراسة شروط ومواصفات هيكل أقسام جدول كميات";
-                var retrievalRequest = new ContextRetrievalRequest
-                {
-                    Query = ragQuery,
-                    TenantId = request.TenantId,
-                    CollectionName = request.CollectionName,
-                    TopK = 3,
-                    InitialCandidates = 10,
-                    ScoreThreshold = 0.5f
-                };
-
-                ragResult = await _contextRetrievalService.RetrieveContextAsync(
-                    retrievalRequest, cancellationToken);
-
-                if (ragResult is not null && !ragResult.IsSuccess)
-                {
-                    _logger.LogWarning("RAG retrieval failed, proceeding without context");
-                    ragResult = null;
-                }
-            }
-            catch (Exception ex)
-            {
-                _logger.LogWarning(ex, "RAG retrieval threw exception, proceeding without context");
-            }
 
             // 2. Attempt extraction with retry logic
             Result<BookletExtractionResult>? lastResult = null;
@@ -131,8 +107,8 @@ public sealed class BookletExtractionService : IBookletExtractionService
                     TenantId = request.TenantId,
                     SystemPrompt = systemPrompt,
                     UserPrompt = userPrompt,
-                    RagContext = ragResult?.FormattedContext,
-                    MaxTokensOverride = 16000,
+                    RagContext = null,
+                    MaxTokensOverride = MaxCompletionTokens,
                     TemperatureOverride = 0.1 // Very low temperature for structured extraction
                 };
 

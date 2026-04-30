@@ -1,7 +1,7 @@
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
-using TendexAI.Application.Features.Rfp.Commands.CreateCompetitionTemplate;
 using TendexAI.Application.Features.Rfp.Commands.CopyFromTemplate;
+using TendexAI.Application.Features.Rfp.Commands.CreateCompetitionTemplate;
 using TendexAI.Application.Features.Rfp.Queries.GetCompetitionTemplates;
 using TendexAI.Domain.Common;
 using TendexAI.Domain.Enums;
@@ -24,19 +24,20 @@ public static class CompetitionTemplateEndpoints
             .WithName("GetCompetitionTemplates")
             .WithSummary("Get list of competition templates")
             .Produces<CompetitionTemplateListDto>(StatusCodes.Status200OK)
-        .RequireAuthorization(PermissionPolicies.TemplatesView);
+            .RequireAuthorization(PermissionPolicies.TemplatesView);
 
         group.MapPost("/", CreateTemplateAsync)
             .WithName("CreateCompetitionTemplate")
             .WithSummary("Create a new competition template")
             .Produces<object>(StatusCodes.Status201Created)
             .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
-        .RequireAuthorization(PermissionPolicies.TemplatesCreate);
+            .RequireAuthorization(PermissionPolicies.TemplatesCreate);
 
         group.MapPost("/{templateId:guid}/copy", CopyFromTemplateAsync)
             .WithName("CopyFromTemplate")
             .WithSummary("Create a new competition from a template")
             .Produces<object>(StatusCodes.Status201Created)
+            .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
             .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
             .RequireAuthorization(PermissionPolicies.CompetitionsCreate);
 
@@ -95,7 +96,6 @@ public static class CompetitionTemplateEndpoints
 
         if (result.IsSuccess)
         {
-            // The handler returns Result<Guid> via Result.Success<Guid>(id)
             var id = result is Result<Guid> guidResult ? guidResult.Value : Guid.Empty;
             return Results.Created($"/api/v1/rfp/templates/{id}", new { id });
         }
@@ -116,7 +116,19 @@ public static class CompetitionTemplateEndpoints
             TemplateId: templateId,
             ProjectNameAr: request.ProjectNameAr,
             ProjectNameEn: request.ProjectNameEn,
-            Description: request.Description,
+            DescriptionAr: request.DescriptionAr,
+            CompetitionType: request.CompetitionType,
+            EstimatedBudget: request.EstimatedBudget,
+            BookletNumber: request.BookletNumber,
+            Department: request.Department,
+            FiscalYear: request.FiscalYear,
+            BookletIssueDate: request.BookletIssueDate,
+            InquiriesStartDate: request.InquiriesStartDate,
+            InquiryPeriodDays: request.InquiryPeriodDays,
+            OffersStartDate: request.OffersStartDate,
+            SubmissionDeadline: request.SubmissionDeadline,
+            ExpectedAwardDate: request.ExpectedAwardDate,
+            WorkStartDate: request.WorkStartDate,
             UserId: userId,
             TenantId: tenantId);
 
@@ -128,7 +140,9 @@ public static class CompetitionTemplateEndpoints
             return Results.Created($"/api/v1/competitions/{rfpId}", new { rfpId });
         }
 
-        return Results.NotFound(new ProblemDetails { Detail = result.Error });
+        return result.Error == "القالب غير موجود أو غير نشط."
+            ? Results.NotFound(new ProblemDetails { Detail = result.Error })
+            : Results.BadRequest(new ProblemDetails { Detail = result.Error });
     }
 
     private static Guid GetTenantId(HttpContext httpContext)
@@ -136,7 +150,7 @@ public static class CompetitionTemplateEndpoints
         var tenantClaim = httpContext.User.FindFirst("tenant_id")?.Value;
         return Guid.TryParse(tenantClaim, out var tenantId)
             ? tenantId
-            : Guid.Parse("a1b2c3d4-e5f6-7890-abcd-ef1234567890"); // fallback for development
+            : Guid.Parse("a1b2c3d4-e5f6-7890-abcd-ef1234567890");
     }
 
     private static string GetCurrentUserId(HttpContext httpContext)
@@ -146,8 +160,6 @@ public static class CompetitionTemplateEndpoints
             ?? "system";
     }
 }
-
-// ----- Request DTOs -----
 
 public sealed record CreateTemplateRequest(
     string NameAr,
@@ -162,5 +174,17 @@ public sealed record CreateTemplateRequest(
 
 public sealed record CopyFromTemplateRequest(
     string ProjectNameAr,
-    string ProjectNameEn,
-    string? Description);
+    string? ProjectNameEn,
+    string DescriptionAr,
+    CompetitionType CompetitionType,
+    decimal? EstimatedBudget,
+    string? BookletNumber,
+    string Department,
+    string FiscalYear,
+    DateTime? BookletIssueDate,
+    DateTime? InquiriesStartDate,
+    int? InquiryPeriodDays,
+    DateTime? OffersStartDate,
+    DateTime? SubmissionDeadline,
+    DateTime? ExpectedAwardDate,
+    DateTime? WorkStartDate);

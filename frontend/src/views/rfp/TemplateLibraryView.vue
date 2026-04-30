@@ -18,6 +18,7 @@ import { ref, onMounted, watch, computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
 import { httpGet, httpPost } from '@/services/http'
+import { basicInfoSchema } from '@/validations/rfp'
 
 const { locale } = useI18n()
 const router = useRouter()
@@ -143,6 +144,24 @@ interface BookletTemplateDetail extends BookletTemplate {
   }[]
 }
 
+const createTemplateCompetitionForm = () => ({
+  projectNameAr: '',
+  projectNameEn: '',
+  descriptionAr: '',
+  competitionType: 0,
+  estimatedBudget: null as number | null,
+  bookletNumber: '',
+  department: '',
+  fiscalYear: new Date().getFullYear().toString(),
+  bookletIssueDate: '',
+  inquiriesStartDate: '',
+  inquiryPeriodDays: null as number | null,
+  offersStartDate: '',
+  submissionDeadline: '',
+  expectedAwardDate: '',
+  workStartDate: ''
+})
+
 const showUseBookletDialog = ref(false)
 const showTemplatePreviewDialog = ref(false)
 const isLoadingTemplatePreview = ref(false)
@@ -152,31 +171,15 @@ const createBookletError = ref('')
 const createBookletSuccess = ref(false)
 const selectedBookletTemplate = ref<BookletTemplate | null>(null)
 const selectedBookletTemplateDetail = ref<BookletTemplateDetail | null>(null)
-const useBookletForm = ref({
-  projectNameAr: '',
-  projectNameEn: '',
-  descriptionAr: '',
-  competitionType: 0,
-  estimatedBudget: null as number | null,
-  bookletNumber: '',
-  department: '',
-  fiscalYear: '',
-  bookletIssueDate: '',
-  expectedAwardDate: '',
-  submissionDeadline: ''
-})
-
+const useBookletForm = ref(createTemplateCompetitionForm())
 // Use template dialog (create competition from competition template)
 const showUseCompDialog = ref(false)
 const isCopyingComp = ref(false)
 const copyCompError = ref('')
 const copyCompSuccess = ref(false)
 const selectedCompTemplate = ref<CompetitionTemplate | null>(null)
-const useCompForm = ref({
-  projectNameAr: '',
-  projectNameEn: '',
-  description: ''
-})
+const useCompForm = ref(createTemplateCompetitionForm())
+
 
 // ═══════════════════════════════════════════════════════════════
 //  Constants
@@ -197,9 +200,10 @@ const competitionTypes = [
   { value: 1, labelAr: 'منافسة محدودة', labelEn: 'Limited Competition' },
   { value: 2, labelAr: 'شراء مباشر', labelEn: 'Direct Purchase' },
   { value: 3, labelAr: 'اتفاقية إطارية', labelEn: 'Framework Agreement' },
-  { value: 4, labelAr: 'مسابقة', labelEn: 'Contest' },
-  { value: 5, labelAr: 'مزايدة', labelEn: 'Auction' },
+  { value: 4, labelAr: 'منافسة على مرحلتين', labelEn: 'Two-Stage Tender' },
+  { value: 5, labelAr: 'مزاد عكسي', labelEn: 'Reverse Auction' },
 ]
+
 
 // ═══════════════════════════════════════════════════════════════
 //  Computed
@@ -235,6 +239,59 @@ function formatDate(dateStr: string): string {
   } catch {
     return dateStr
   }
+}
+
+function trimOrNull(value: string): string | null {
+  const trimmed = value.trim()
+  return trimmed ? trimmed : null
+}
+
+function buildTemplateCompetitionPayload(form: ReturnType<typeof createTemplateCompetitionForm>) {
+  return {
+    projectNameAr: form.projectNameAr.trim(),
+    projectNameEn: trimOrNull(form.projectNameEn) ?? form.projectNameAr.trim(),
+    descriptionAr: form.descriptionAr.trim(),
+    competitionType: form.competitionType,
+    estimatedBudget: form.estimatedBudget,
+    bookletNumber: trimOrNull(form.bookletNumber),
+    department: form.department.trim(),
+    fiscalYear: form.fiscalYear.trim(),
+    bookletIssueDate: form.bookletIssueDate || null,
+    inquiriesStartDate: form.inquiriesStartDate || null,
+    inquiryPeriodDays: form.inquiryPeriodDays,
+    offersStartDate: form.offersStartDate || null,
+    submissionDeadline: form.submissionDeadline || null,
+    expectedAwardDate: form.expectedAwardDate || null,
+    workStartDate: form.workStartDate || null,
+  }
+}
+
+function validateTemplateCompetitionPayload(payload: ReturnType<typeof buildTemplateCompetitionPayload>): string | null {
+  const result = basicInfoSchema.safeParse({
+    projectName: payload.projectNameAr,
+    projectDescription: payload.descriptionAr,
+    competitionType: String(payload.competitionType),
+    estimatedValue: payload.estimatedBudget,
+    currency: 'SAR',
+    bookletNumber: payload.bookletNumber ?? '',
+    department: payload.department,
+    fiscalYear: payload.fiscalYear,
+    bookletIssueDate: payload.bookletIssueDate ?? '',
+    inquiriesStartDate: payload.inquiriesStartDate ?? '',
+    inquiryPeriodDays: payload.inquiryPeriodDays,
+    offersStartDate: payload.offersStartDate ?? '',
+    submissionDeadline: payload.submissionDeadline ?? '',
+    expectedAwardDate: payload.expectedAwardDate ?? '',
+    workStartDate: payload.workStartDate ?? '',
+  })
+
+  if (result.success) {
+    return null
+  }
+
+  return result.error.issues[0]?.message ?? (locale.value === 'ar'
+    ? 'تعذر التحقق من بيانات المنافسة.'
+    : 'Competition data validation failed.')
 }
 // ═══════════════════════════════════════════════════════════════
 //  Data Loading
@@ -451,23 +508,12 @@ async function handleCreateCompTemplate(): Promise<void> {
 
 function openUseBookletDialog(tmpl: BookletTemplate): void {
   selectedBookletTemplate.value = tmpl
-  useBookletForm.value = {
-    projectNameAr: '',
-    projectNameEn: '',
-    descriptionAr: '',
-    competitionType: 0,
-    estimatedBudget: null,
-    bookletNumber: '',
-    department: '',
-    fiscalYear: new Date().getFullYear().toString(),
-    bookletIssueDate: '',
-    expectedAwardDate: '',
-    submissionDeadline: ''
-  }
+  useBookletForm.value = createTemplateCompetitionForm()
   createBookletError.value = ''
   createBookletSuccess.value = false
   showUseBookletDialog.value = true
 }
+
 async function openTemplatePreviewDialog(tmpl: BookletTemplate): Promise<void> {
   showTemplatePreviewDialog.value = true
   isLoadingTemplatePreview.value = true
@@ -485,44 +531,10 @@ async function openTemplatePreviewDialog(tmpl: BookletTemplate): Promise<void> {
 async function handleCreateBooklet(): Promise<void> {
   if (!selectedBookletTemplate.value) return
 
-  const payload = {
-    projectNameAr: useBookletForm.value.projectNameAr.trim(),
-    projectNameEn: (useBookletForm.value.projectNameEn || useBookletForm.value.projectNameAr).trim(),
-    descriptionAr: useBookletForm.value.descriptionAr.trim(),
-    competitionType: useBookletForm.value.competitionType,
-    estimatedBudget: useBookletForm.value.estimatedBudget,
-    bookletNumber: useBookletForm.value.bookletNumber.trim() || null,
-    department: useBookletForm.value.department.trim(),
-    fiscalYear: useBookletForm.value.fiscalYear.trim(),
-    bookletIssueDate: useBookletForm.value.bookletIssueDate || null,
-    submissionDeadline: useBookletForm.value.submissionDeadline || null,
-    expectedAwardDate: useBookletForm.value.expectedAwardDate || null
-  }
-
-  if (
-    !payload.projectNameAr ||
-    !payload.descriptionAr ||
-    payload.estimatedBudget === null ||
-    payload.estimatedBudget <= 0 ||
-    !payload.department ||
-    !payload.fiscalYear
-  ) {
-    createBookletError.value = locale.value === 'ar'
-      ? 'يرجى استكمال جميع الحقول الأساسية المطلوبة قبل إنشاء الكراسة.'
-      : 'Please complete all required business fields before creating the booklet.'
-    return
-  }
-
-  if (payload.submissionDeadline && payload.bookletIssueDate && payload.submissionDeadline < payload.bookletIssueDate) {
-    createBookletError.value = locale.value === 'ar'
-      ? 'يجب أن يكون آخر موعد لتقديم العروض بعد تاريخ طرح الكراسة.'
-      : 'Submission deadline must be after booklet issue date.'
-    return
-  }
-  if (payload.expectedAwardDate && payload.submissionDeadline && payload.expectedAwardDate <= payload.submissionDeadline) {
-    createBookletError.value = locale.value === 'ar'
-      ? 'يجب أن يكون التاريخ المتوقع للترسية بعد آخر موعد لتقديم العروض.'
-      : 'Expected award date must be after submission deadline.'
+  const payload = buildTemplateCompetitionPayload(useBookletForm.value)
+  const validationError = validateTemplateCompetitionPayload(payload)
+  if (validationError) {
+    createBookletError.value = validationError
     return
   }
 
@@ -543,31 +555,38 @@ async function handleCreateBooklet(): Promise<void> {
   }
 }
 
+
 // ═══════════════════════════════════════════════════════════════
 //  Use Competition Template → Create Competition
 // ═══════════════════════════════════════════════════════════════
 
 function openUseCompDialog(tmpl: CompetitionTemplate): void {
   selectedCompTemplate.value = tmpl
-  useCompForm.value = { projectNameAr: '', projectNameEn: '', description: '' }
+  useCompForm.value = {
+    ...createTemplateCompetitionForm(),
+    competitionType: tmpl.competitionType,
+  }
   copyCompError.value = ''
   copyCompSuccess.value = false
   showUseCompDialog.value = true
 }
 
 async function handleCopyFromCompTemplate(): Promise<void> {
-  if (!selectedCompTemplate.value || !useCompForm.value.projectNameAr.trim()) return
+  if (!selectedCompTemplate.value) return
+
+  const payload = buildTemplateCompetitionPayload(useCompForm.value)
+  const validationError = validateTemplateCompetitionPayload(payload)
+  if (validationError) {
+    copyCompError.value = validationError
+    return
+  }
 
   isCopyingComp.value = true
   copyCompError.value = ''
   try {
     const result = await httpPost<{ rfpId: string }>(
       `/v1/rfp/templates/${selectedCompTemplate.value.id}/copy`,
-      {
-        projectNameAr: useCompForm.value.projectNameAr,
-        projectNameEn: useCompForm.value.projectNameEn || useCompForm.value.projectNameAr,
-        description: useCompForm.value.description || null
-      }
+      payload
     )
     showUseCompDialog.value = false
     copyCompSuccess.value = true
@@ -581,6 +600,7 @@ async function handleCopyFromCompTemplate(): Promise<void> {
     isCopyingComp.value = false
   }
 }
+
 
 // ═══════════════════════════════════════════════════════════════
 //  Watchers
@@ -1341,7 +1361,6 @@ onMounted(() => {
                     class="w-full rounded-xl border border-secondary-200 bg-secondary-50 px-4 py-2.5 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
                   />
                 </div>
-
                 <div class="md:col-span-2">
                   <label class="mb-1 block text-sm font-medium text-secondary-700">
                     {{ locale === 'ar' ? 'اسم المشروع (إنجليزي)' : 'Project Name (English)' }}
@@ -1354,7 +1373,6 @@ onMounted(() => {
                     class="w-full rounded-xl border border-secondary-200 bg-secondary-50 px-4 py-2.5 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
                   />
                 </div>
-
                 <div class="md:col-span-2">
                   <label class="mb-1 block text-sm font-medium text-secondary-700">
                     {{ locale === 'ar' ? 'وصف المشروع' : 'Project Description' }} *
@@ -1366,7 +1384,6 @@ onMounted(() => {
                     class="w-full rounded-xl border border-secondary-200 bg-secondary-50 px-4 py-2.5 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
                   ></textarea>
                 </div>
-
                 <div>
                   <label class="mb-1 block text-sm font-medium text-secondary-700">
                     {{ locale === 'ar' ? 'نوع المنافسة' : 'Competition Type' }} *
@@ -1380,7 +1397,6 @@ onMounted(() => {
                     </option>
                   </select>
                 </div>
-
                 <div>
                   <label class="mb-1 block text-sm font-medium text-secondary-700">
                     {{ locale === 'ar' ? 'القيمة التقديرية' : 'Estimated Value' }} *
@@ -1393,10 +1409,9 @@ onMounted(() => {
                     class="w-full rounded-xl border border-secondary-200 bg-secondary-50 px-4 py-2.5 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
                   />
                 </div>
-
                 <div>
                   <label class="mb-1 block text-sm font-medium text-secondary-700">
-                    {{ locale === 'ar' ? 'رقم الكراسة' : 'Booklet Number' }} *
+                    {{ locale === 'ar' ? 'رقم الكراسة' : 'Booklet Number' }}
                   </label>
                   <input
                     v-model="useBookletForm.bookletNumber"
@@ -1404,7 +1419,6 @@ onMounted(() => {
                     class="w-full rounded-xl border border-secondary-200 bg-secondary-50 px-4 py-2.5 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
                   />
                 </div>
-
                 <div>
                   <label class="mb-1 block text-sm font-medium text-secondary-700">
                     {{ locale === 'ar' ? 'الإدارة' : 'Department' }} *
@@ -1415,7 +1429,6 @@ onMounted(() => {
                     class="w-full rounded-xl border border-secondary-200 bg-secondary-50 px-4 py-2.5 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
                   />
                 </div>
-
                 <div>
                   <label class="mb-1 block text-sm font-medium text-secondary-700">
                     {{ locale === 'ar' ? 'السنة المالية' : 'Fiscal Year' }} *
@@ -1428,10 +1441,9 @@ onMounted(() => {
                     class="w-full rounded-xl border border-secondary-200 bg-secondary-50 px-4 py-2.5 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
                   />
                 </div>
-
                 <div>
                   <label class="mb-1 block text-sm font-medium text-secondary-700">
-                    {{ locale === 'ar' ? 'تاريخ طرح الكراسة' : 'Booklet Issue Date' }} *
+                    {{ locale === 'ar' ? 'تاريخ طرح الكراسة' : 'Booklet Issue Date' }}
                   </label>
                   <input
                     v-model="useBookletForm.bookletIssueDate"
@@ -1439,22 +1451,42 @@ onMounted(() => {
                     class="w-full rounded-xl border border-secondary-200 bg-secondary-50 px-4 py-2.5 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
                   />
                 </div>
-
                 <div>
                   <label class="mb-1 block text-sm font-medium text-secondary-700">
-                    {{ locale === 'ar' ? 'التاريخ المتوقع للترسية' : 'Expected Award Date' }} *
+                    {{ locale === 'ar' ? 'تاريخ إرسال الاستفسارات' : 'Inquiries Start Date' }}
                   </label>
                   <input
-                    v-model="useBookletForm.expectedAwardDate"
+                    v-model="useBookletForm.inquiriesStartDate"
                     type="date"
-                    :min="useBookletForm.bookletIssueDate || undefined"
                     class="w-full rounded-xl border border-secondary-200 bg-secondary-50 px-4 py-2.5 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
                   />
                 </div>
-
                 <div>
                   <label class="mb-1 block text-sm font-medium text-secondary-700">
-                    {{ locale === 'ar' ? 'آخر موعد لتقديم العروض' : 'Submission Deadline' }} *
+                    {{ locale === 'ar' ? 'مدة الاستفسارات (أيام)' : 'Inquiry Period (Days)' }}
+                  </label>
+                  <input
+                    v-model.number="useBookletForm.inquiryPeriodDays"
+                    type="number"
+                    min="1"
+                    max="365"
+                    step="1"
+                    class="w-full rounded-xl border border-secondary-200 bg-secondary-50 px-4 py-2.5 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
+                  />
+                </div>
+                <div>
+                  <label class="mb-1 block text-sm font-medium text-secondary-700">
+                    {{ locale === 'ar' ? 'تاريخ تقديم العروض' : 'Offers Start Date' }}
+                  </label>
+                  <input
+                    v-model="useBookletForm.offersStartDate"
+                    type="date"
+                    class="w-full rounded-xl border border-secondary-200 bg-secondary-50 px-4 py-2.5 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
+                  />
+                </div>
+                <div>
+                  <label class="mb-1 block text-sm font-medium text-secondary-700">
+                    {{ locale === 'ar' ? 'آخر موعد لتقديم العروض' : 'Submission Deadline' }}
                   </label>
                   <input
                     v-model="useBookletForm.submissionDeadline"
@@ -1462,9 +1494,29 @@ onMounted(() => {
                     class="w-full rounded-xl border border-secondary-200 bg-secondary-50 px-4 py-2.5 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
                   />
                 </div>
+                <div>
+                  <label class="mb-1 block text-sm font-medium text-secondary-700">
+                    {{ locale === 'ar' ? 'التاريخ المتوقع للترسية' : 'Expected Award Date' }}
+                  </label>
+                  <input
+                    v-model="useBookletForm.expectedAwardDate"
+                    type="date"
+                    class="w-full rounded-xl border border-secondary-200 bg-secondary-50 px-4 py-2.5 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
+                  />
+                </div>
+                <div>
+                  <label class="mb-1 block text-sm font-medium text-secondary-700">
+                    {{ locale === 'ar' ? 'تاريخ بدء الأعمال' : 'Work Start Date' }}
+                  </label>
+                  <input
+                    v-model="useBookletForm.workStartDate"
+                    type="date"
+                    class="w-full rounded-xl border border-secondary-200 bg-secondary-50 px-4 py-2.5 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
+                  />
+                </div>
               </div>
-
               <div v-if="createBookletError" class="rounded-lg bg-red-50 p-3 text-sm text-red-600">
+
                 <i class="pi pi-exclamation-triangle me-1"></i>{{ createBookletError }}
               </div>
             </div>
@@ -1497,7 +1549,7 @@ onMounted(() => {
     <Teleport to="body">
       <Transition name="fade">
         <div v-if="showUseCompDialog" class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" @click.self="showUseCompDialog = false">
-          <div class="w-full max-w-lg rounded-2xl bg-white shadow-2xl">
+          <div class="w-full max-w-3xl rounded-2xl bg-white shadow-2xl">
             <div class="flex items-center justify-between border-b border-secondary-100 p-5">
               <h2 class="text-lg font-bold text-secondary-800">
                 {{ locale === 'ar' ? 'إنشاء منافسة من القالب' : 'Create Competition from Template' }}
@@ -1506,7 +1558,7 @@ onMounted(() => {
                 <i class="pi pi-times"></i>
               </button>
             </div>
-            <div class="space-y-4 p-5">
+            <div class="max-h-[70vh] space-y-4 overflow-y-auto p-5">
               <div v-if="selectedCompTemplate" class="rounded-lg bg-purple-50 p-3">
                 <p class="text-sm font-semibold text-purple-700">
                   {{ locale === 'ar' ? selectedCompTemplate.nameAr : selectedCompTemplate.nameEn }}
@@ -1517,44 +1569,172 @@ onMounted(() => {
                   {{ selectedCompTemplate.evaluationCriteriaCount }} {{ locale === 'ar' ? 'معيار' : 'criteria' }}
                 </p>
               </div>
-
-              <div>
-                <label class="mb-1 block text-sm font-medium text-secondary-700">
-                  {{ locale === 'ar' ? 'اسم المشروع (عربي)' : 'Project Name (Arabic)' }} *
-                </label>
-                <input
-                  v-model="useCompForm.projectNameAr"
-                  type="text"
-                  :placeholder="locale === 'ar' ? 'أدخل اسم المشروع بالعربية' : 'Enter project name in Arabic'"
-                  class="w-full rounded-xl border border-secondary-200 bg-secondary-50 px-4 py-2.5 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
-                />
+              <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
+                <div class="md:col-span-2">
+                  <label class="mb-1 block text-sm font-medium text-secondary-700">
+                    {{ locale === 'ar' ? 'اسم المشروع (عربي)' : 'Project Name (Arabic)' }} *
+                  </label>
+                  <input
+                    v-model="useCompForm.projectNameAr"
+                    type="text"
+                    :placeholder="locale === 'ar' ? 'أدخل اسم المشروع' : 'Enter project name'"
+                    class="w-full rounded-xl border border-secondary-200 bg-secondary-50 px-4 py-2.5 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
+                  />
+                </div>
+                <div class="md:col-span-2">
+                  <label class="mb-1 block text-sm font-medium text-secondary-700">
+                    {{ locale === 'ar' ? 'اسم المشروع (إنجليزي)' : 'Project Name (English)' }}
+                  </label>
+                  <input
+                    v-model="useCompForm.projectNameEn"
+                    type="text"
+                    dir="ltr"
+                    placeholder="Enter project name in English"
+                    class="w-full rounded-xl border border-secondary-200 bg-secondary-50 px-4 py-2.5 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
+                  />
+                </div>
+                <div class="md:col-span-2">
+                  <label class="mb-1 block text-sm font-medium text-secondary-700">
+                    {{ locale === 'ar' ? 'وصف المشروع' : 'Project Description' }} *
+                  </label>
+                  <textarea
+                    v-model="useCompForm.descriptionAr"
+                    rows="3"
+                    :placeholder="locale === 'ar' ? 'وصف مختصر للمشروع' : 'Brief project description'"
+                    class="w-full rounded-xl border border-secondary-200 bg-secondary-50 px-4 py-2.5 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
+                  ></textarea>
+                </div>
+                <div>
+                  <label class="mb-1 block text-sm font-medium text-secondary-700">
+                    {{ locale === 'ar' ? 'نوع المنافسة' : 'Competition Type' }} *
+                  </label>
+                  <select
+                    v-model="useCompForm.competitionType"
+                    class="w-full rounded-xl border border-secondary-200 bg-secondary-50 px-4 py-2.5 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
+                  >
+                    <option v-for="ct in competitionTypes" :key="ct.value" :value="ct.value">
+                      {{ locale === 'ar' ? ct.labelAr : ct.labelEn }}
+                    </option>
+                  </select>
+                </div>
+                <div>
+                  <label class="mb-1 block text-sm font-medium text-secondary-700">
+                    {{ locale === 'ar' ? 'القيمة التقديرية' : 'Estimated Value' }} *
+                  </label>
+                  <input
+                    v-model.number="useCompForm.estimatedBudget"
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    class="w-full rounded-xl border border-secondary-200 bg-secondary-50 px-4 py-2.5 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
+                  />
+                </div>
+                <div>
+                  <label class="mb-1 block text-sm font-medium text-secondary-700">
+                    {{ locale === 'ar' ? 'رقم الكراسة' : 'Booklet Number' }}
+                  </label>
+                  <input
+                    v-model="useCompForm.bookletNumber"
+                    type="text"
+                    class="w-full rounded-xl border border-secondary-200 bg-secondary-50 px-4 py-2.5 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
+                  />
+                </div>
+                <div>
+                  <label class="mb-1 block text-sm font-medium text-secondary-700">
+                    {{ locale === 'ar' ? 'الإدارة' : 'Department' }} *
+                  </label>
+                  <input
+                    v-model="useCompForm.department"
+                    type="text"
+                    class="w-full rounded-xl border border-secondary-200 bg-secondary-50 px-4 py-2.5 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
+                  />
+                </div>
+                <div>
+                  <label class="mb-1 block text-sm font-medium text-secondary-700">
+                    {{ locale === 'ar' ? 'السنة المالية' : 'Fiscal Year' }} *
+                  </label>
+                  <input
+                    v-model="useCompForm.fiscalYear"
+                    type="text"
+                    inputmode="numeric"
+                    placeholder="2026"
+                    class="w-full rounded-xl border border-secondary-200 bg-secondary-50 px-4 py-2.5 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
+                  />
+                </div>
+                <div>
+                  <label class="mb-1 block text-sm font-medium text-secondary-700">
+                    {{ locale === 'ar' ? 'تاريخ طرح الكراسة' : 'Booklet Issue Date' }}
+                  </label>
+                  <input
+                    v-model="useCompForm.bookletIssueDate"
+                    type="date"
+                    class="w-full rounded-xl border border-secondary-200 bg-secondary-50 px-4 py-2.5 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
+                  />
+                </div>
+                <div>
+                  <label class="mb-1 block text-sm font-medium text-secondary-700">
+                    {{ locale === 'ar' ? 'تاريخ إرسال الاستفسارات' : 'Inquiries Start Date' }}
+                  </label>
+                  <input
+                    v-model="useCompForm.inquiriesStartDate"
+                    type="date"
+                    class="w-full rounded-xl border border-secondary-200 bg-secondary-50 px-4 py-2.5 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
+                  />
+                </div>
+                <div>
+                  <label class="mb-1 block text-sm font-medium text-secondary-700">
+                    {{ locale === 'ar' ? 'مدة الاستفسارات (أيام)' : 'Inquiry Period (Days)' }}
+                  </label>
+                  <input
+                    v-model.number="useCompForm.inquiryPeriodDays"
+                    type="number"
+                    min="1"
+                    max="365"
+                    step="1"
+                    class="w-full rounded-xl border border-secondary-200 bg-secondary-50 px-4 py-2.5 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
+                  />
+                </div>
+                <div>
+                  <label class="mb-1 block text-sm font-medium text-secondary-700">
+                    {{ locale === 'ar' ? 'تاريخ تقديم العروض' : 'Offers Start Date' }}
+                  </label>
+                  <input
+                    v-model="useCompForm.offersStartDate"
+                    type="date"
+                    class="w-full rounded-xl border border-secondary-200 bg-secondary-50 px-4 py-2.5 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
+                  />
+                </div>
+                <div>
+                  <label class="mb-1 block text-sm font-medium text-secondary-700">
+                    {{ locale === 'ar' ? 'آخر موعد لتقديم العروض' : 'Submission Deadline' }}
+                  </label>
+                  <input
+                    v-model="useCompForm.submissionDeadline"
+                    type="date"
+                    class="w-full rounded-xl border border-secondary-200 bg-secondary-50 px-4 py-2.5 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
+                  />
+                </div>
+                <div>
+                  <label class="mb-1 block text-sm font-medium text-secondary-700">
+                    {{ locale === 'ar' ? 'التاريخ المتوقع للترسية' : 'Expected Award Date' }}
+                  </label>
+                  <input
+                    v-model="useCompForm.expectedAwardDate"
+                    type="date"
+                    class="w-full rounded-xl border border-secondary-200 bg-secondary-50 px-4 py-2.5 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
+                  />
+                </div>
+                <div>
+                  <label class="mb-1 block text-sm font-medium text-secondary-700">
+                    {{ locale === 'ar' ? 'تاريخ بدء الأعمال' : 'Work Start Date' }}
+                  </label>
+                  <input
+                    v-model="useCompForm.workStartDate"
+                    type="date"
+                    class="w-full rounded-xl border border-secondary-200 bg-secondary-50 px-4 py-2.5 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
+                  />
+                </div>
               </div>
-
-              <div>
-                <label class="mb-1 block text-sm font-medium text-secondary-700">
-                  {{ locale === 'ar' ? 'اسم المشروع (إنجليزي)' : 'Project Name (English)' }}
-                </label>
-                <input
-                  v-model="useCompForm.projectNameEn"
-                  type="text"
-                  dir="ltr"
-                  placeholder="Enter project name in English"
-                  class="w-full rounded-xl border border-secondary-200 bg-secondary-50 px-4 py-2.5 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
-                />
-              </div>
-
-              <div>
-                <label class="mb-1 block text-sm font-medium text-secondary-700">
-                  {{ locale === 'ar' ? 'وصف المشروع' : 'Project Description' }}
-                </label>
-                <textarea
-                  v-model="useCompForm.description"
-                  rows="3"
-                  :placeholder="locale === 'ar' ? 'وصف مختصر للمشروع...' : 'Brief project description...'"
-                  class="w-full rounded-xl border border-secondary-200 bg-secondary-50 px-4 py-2.5 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
-                ></textarea>
-              </div>
-
               <div v-if="copyCompError" class="rounded-lg bg-red-50 p-3 text-sm text-red-600">
                 <i class="pi pi-exclamation-triangle me-1"></i>{{ copyCompError }}
               </div>
@@ -1568,7 +1748,7 @@ onMounted(() => {
               </button>
               <button
                 class="inline-flex items-center gap-2 rounded-xl bg-primary px-5 py-2.5 text-sm font-semibold text-white transition-all hover:bg-primary-600 disabled:opacity-50"
-                :disabled="!useCompForm.projectNameAr.trim() || isCopyingComp"
+                :disabled="isCopyingComp"
                 @click="handleCopyFromCompTemplate"
               >
                 <i v-if="isCopyingComp" class="pi pi-spin pi-spinner text-xs"></i>
@@ -1580,6 +1760,7 @@ onMounted(() => {
         </div>
       </Transition>
     </Teleport>
+
 
     <!-- ═══════════════════════════════════════════════════════════ -->
     <!--  Success Toasts                                             -->

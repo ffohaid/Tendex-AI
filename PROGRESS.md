@@ -1471,3 +1471,86 @@ Production verification was completed after the final deployment by calling the 
 - Sample returned record: `projectNameAr = test`
 
 This confirms that the missing booklets were restored successfully in production.
+
+## 2026-04-29: RFP Creation Flow Stabilization (Issues from 29042026_2.docx)
+
+### Summary
+Completed a focused stabilization pass on the **Create New Booklet** journey, with emphasis on the **Upload & Extract** path and the wizard steps for **evaluation criteria** and **attachments**.
+
+### Root Causes Addressed
+- The extraction-driven create flow was forwarding raw AI-extracted metadata directly to the create endpoint, making the flow fragile when extraction returned noisy or oversized values.
+- Criteria validation depended too heavily on UI limits, so manually added criteria could still push the combined weight beyond 100% after AI-generated criteria had already consumed the full allocation.
+- The criteria description field had no hover affordance for long truncated text.
+- Extracted Arabic content previews were rendered without explicit RTL/plaintext handling, which made some extracted text appear visually reversed or unreadable.
+- The attachments step synchronized uploaded files with validation, but it did not enforce choosing at least one required base attachment type before moving forward.
+- The create-booklet method selection page still contained direct navigation links back to the booklet list, allowing premature exit from the flow.
+
+### Implemented Fixes
+- Hardened `createRfpFromExtraction()` in `frontend/src/services/rfpService.ts` by introducing a single normalization path for extracted metadata before sending it to the backend. The request now trims whitespace, caps project names at 500 chars, caps descriptions at 4000 chars, normalizes invalid budgets to `null`, and applies a deterministic `projectNameEn` fallback.
+- Removed all "Back to Booklets List" links from `frontend/src/views/rfp/RfpMethodSelectionView.vue`.
+- Updated extraction review rendering in `RfpMethodSelectionView.vue` to enforce proper Arabic display using explicit RTL/plaintext presentation for project description, extraction summary, and section preview HTML.
+- Enforced criteria-weight capping from the **Pinia store** in `frontend/src/stores/rfp.ts`, keeping the store as the single source of truth and preventing any caller from pushing the total criteria weight above 100%.
+- Added immediate user-facing feedback in `frontend/src/components/rfp/Step2Settings.vue` when a manual criterion weight exceeds the remaining available allocation, and added a hover tooltip for full criterion descriptions.
+- Strengthened centralized Zod validation in `frontend/src/validations/rfp.ts` to reject criteria totals above 100% and to require at least one selected `requiredAttachmentTypes` entry.
+- Updated `frontend/src/components/rfp/Step5Attachments.vue` so VeeValidate is synchronized with `requiredAttachmentTypes` during checkbox toggles, AI recommendation merge, and final step validation.
+- Added the new criteria validation translation key to `frontend/src/locales/en.json` and `frontend/src/locales/ar.json`.
+
+### Verification
+- Successfully ran a full frontend production build after the changes:
+  - `cd frontend && npm run build`
+- Performed a post-fix sanity check confirming:
+  - `backToList` no longer appears in `RfpMethodSelectionView.vue`
+  - the new criteria and attachment validation hooks are present in the affected components and schemas
+
+### Notes
+- The working tree already contained unrelated local modifications before this pass (for example in layout files), so any future commit should be created selectively and must include only the intended issue-fix files.
+
+## 2026-04-30 — Template creation consistency with manual flow
+
+Addressed the inconsistency between **Create from Scratch** and **Create from Template** in the RFP module.
+
+| Area | Update |
+|---|---|
+| Frontend template flow | Unified `TemplateLibraryView.vue` form fields with the same basic info fields used by the manual creation flow. |
+| Frontend validation | Reused the centralized `basicInfoSchema` from `frontend/src/validations/rfp.ts` through `safeParse` so template creation now follows the same validation rules as manual creation. |
+| Backend contract | Expanded `CompetitionTemplateEndpoints.cs` and `CopyFromTemplateCommand.cs` to accept the unified basic information fields. |
+| Backend application logic | Updated `CopyFromTemplateCommandHandler.cs` to create competitions from templates using the same unified data model expected by the current competition entity creation flow. |
+| Backend validation | Added `CopyFromTemplateCommandValidator.cs` to enforce structured validation for the template-copy flow. |
+| Verification | Frontend production build completed successfully after the change, `git diff --check` passed for the modified files, and `TemplateLibraryView.vue` was verified to import and use `basicInfoSchema`. |
+
+Operational note: these changes are currently prepared locally and verified at code/build level; they have not yet been isolated, committed, or deployed in this step.
+
+## 2026-04-30: Upload & Extract Timeout Regression Mitigation
+
+### Problem
+- The "Upload & Extract" pathway started failing again, but the active symptom is a **504 timeout during extraction** rather than the previously fixed post-extraction creation failure.
+- The earlier `rfpService.ts` normalization fix addressed the **CreateCompetition payload** after extraction and does not protect the extraction request itself.
+
+### Root Cause
+- `BookletExtractionService.cs` was still sending a very large extraction request to the AI provider:
+  - first attempt text budget: `90000` chars
+  - retry text budget: `60000` chars
+  - completion budget: `16000` tokens
+- The extraction path was also retrieving and embedding RAG context for a task that is already grounded in the uploaded document itself.
+- The effective prompt therefore became larger and slower than necessary, which can exceed upstream gateway/request budgets before the response returns to the UI.
+- Current infrastructure budgets observed in code:
+  - AI provider `HttpClient` timeout: `120s`
+  - frontend extraction timeout: `180s`
+
+### Fix Applied
+- Updated `backend/src/TendexAI.Infrastructure/AI/BookletExtractionService.cs` to make document extraction faster and more predictable:
+  - reduced first attempt text budget from `90000` to `45000`
+  - reduced retry text budget from `60000` to `25000`
+  - reduced completion cap from `16000` to `6000`
+  - disabled additional RAG injection for this pathway and kept extraction document-focused
+- This preserves the existing functional flow while reducing prompt size, provider latency, and timeout risk.
+
+### Verification
+- `frontend && npm run build` ✅
+- Backend local compilation could not be executed in this sandbox because the `dotnet` CLI is not installed here.
+
+### Files Modified
+- `backend/src/TendexAI.Infrastructure/AI/BookletExtractionService.cs`
+
+### Notes
+- Local uncommitted work for template-creation field unification remains intact and can be shipped together after final verification.
