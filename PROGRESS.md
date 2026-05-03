@@ -1639,3 +1639,27 @@ Static diff hygiene check passed via `git diff --check` for the modified handler
 
 ### Notes
 - Backend build could not be executed in this workspace because `dotnet` is not available locally here, so backend verification in this task was limited to contract/service consistency review and frontend integration validation.
+
+## 2026-05-03: Fixes for issues reported in 30042026.docx and live production validation
+
+**Status:** ✅ Code fixes deployed, validated on production with one remaining observation about extracted evaluation criteria visibility for the tested source file.
+
+### Summary
+This task implemented and deployed a focused fix set for the issues reported in `30042026.docx`, covering evaluation criteria enforcement, project description sanitization, field-level validation visibility in booklet content, BOQ read-only estimate behavior, edit locking in the RFP list, and extraction pipeline support for evaluation criteria. The deployed build was then verified live on `https://mof.netaq.pro` using the production account and an upload/extract-generated booklet.
+
+### Files updated in this task
+- `frontend/src/components/rfp/Step2Settings.vue`
+- `frontend/src/validations/rfp.ts`
+- `frontend/src/components/rfp/Step3Content.vue`
+- `frontend/src/components/rfp/Step4Boq.vue`
+- `frontend/src/views/rfp/RfpListView.vue`
+- `frontend/src/views/rfp/RfpMethodSelectionView.vue`
+- `frontend/src/services/bookletExtractionService.ts`
+- `frontend/src/stores/rfp.ts`
+- `frontend/src/types/rfp.ts`
+- `backend/src/TendexAI.Application/Common/Interfaces/AI/IBookletExtractionService.cs`
+- `backend/src/TendexAI.Infrastructure/AI/BookletExtractionService.cs`
+- `.live_validation_20260503.md`
+
+### Live validation outcome
+The production validation confirmed that evaluation criteria are now visually mandatory with an inline validation message, booklet content no longer fails with HTTP 500 in the verified path, field-level validation in content and BOQ behavior changes are effective, and non-draft RFPs are locked from edit with title navigation routed to read-only/export mode. Upload/extract also completed successfully and created a live editable booklet. The remaining observation is that the tested extracted booklet reached Step 2 with weighted evaluation selected but without visible extracted evaluation criteria populated, so this specific extraction visibility path should be treated as a follow-up check item.
