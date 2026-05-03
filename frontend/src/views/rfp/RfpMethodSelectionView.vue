@@ -30,6 +30,7 @@ import {
   createRfpFromExtraction,
   saveAllSections,
   saveAllBoqItems,
+  saveAllEvaluationCriteria,
   addRfpSection,
 } from '@/services/rfpService'
 
@@ -63,7 +64,7 @@ const extractionSteps = ref([
 ])
 
 /** Review tab state */
-const activeReviewTab = ref<'overview' | 'sections' | 'boq'>('overview')
+const activeReviewTab = ref<'overview' | 'criteria' | 'sections' | 'boq'>('overview')
 
 /** Creating state */
 const isCreating = ref(false)
@@ -319,7 +320,7 @@ async function createFromExtraction(): Promise<void> {
         contentHtml: s.contentHtml,
         order: s.sortOrder,
         isRequired: s.isMandatory,
-        colorCode: 'green' as const,
+        colorCode: '' as const,
         assignedTo: null,
         isCompleted: true,
       }))
@@ -335,7 +336,23 @@ async function createFromExtraction(): Promise<void> {
       }
     }
 
-    // 3. Save extracted BOQ items
+    // 3. Save extracted evaluation criteria
+    if (ext.evaluationCriteria.length > 0) {
+      const criteriaMapped = ext.evaluationCriteria.map((criterion, idx) => ({
+        id: `temp-criterion-${idx}`,
+        name: criterion.nameAr,
+        weight: criterion.weightPercentage || 0,
+        description: criterion.descriptionAr || '',
+        order: criterion.sortOrder,
+      }))
+
+      const criteriaResult = await saveAllEvaluationCriteria(competitionId, criteriaMapped)
+      if (!criteriaResult.success) {
+        console.warn('Failed to save extracted evaluation criteria.', criteriaResult.message)
+      }
+    }
+
+    // 4. Save extracted BOQ items
     if (ext.boqItems.length > 0) {
       const boqMapped = ext.boqItems.map((b, idx) => ({
         id: `temp-${idx}`,
@@ -353,7 +370,7 @@ async function createFromExtraction(): Promise<void> {
       await saveAllBoqItems(competitionId, boqMapped, false)
     }
 
-    // 4. Pre-fill the store and navigate to editor
+    // 5. Pre-fill the store and navigate to editor
     rfpStore.prefillFromExtraction(ext)
     rfpStore.formData.id = competitionId
 
@@ -706,6 +723,17 @@ async function createFromExtraction(): Promise<void> {
             نظرة عامة
           </button>
           <button
+            v-if="extractionResult.evaluationCriteria.length > 0"
+            class="flex-1 rounded-lg px-4 py-2.5 text-sm font-medium transition-all"
+            :class="activeReviewTab === 'criteria'
+              ? 'bg-white text-primary shadow-sm'
+              : 'text-tertiary hover:text-secondary'"
+            @click="activeReviewTab = 'criteria'"
+          >
+            <i class="pi pi-percentage me-1.5"></i>
+            معايير التقييم ({{ extractionResult.evaluationCriteria.length }})
+          </button>
+          <button
             class="flex-1 rounded-lg px-4 py-2.5 text-sm font-medium transition-all"
             :class="activeReviewTab === 'sections'
               ? 'bg-white text-primary shadow-sm'
@@ -770,6 +798,26 @@ async function createFromExtraction(): Promise<void> {
             <p dir="rtl" class="mt-1 text-sm leading-relaxed text-blue-800 text-right [unicode-bidi:plaintext]">
               {{ extractionResult.extractionSummaryAr }}
             </p>
+          </div>
+        </div>
+
+        <div v-if="activeReviewTab === 'criteria'" class="space-y-3">
+          <div
+            v-for="(criterion, idx) in extractionResult.evaluationCriteria"
+            :key="`criterion-${idx}`"
+            class="rounded-2xl border bg-white p-5 transition-all hover:shadow-sm"
+          >
+            <div class="flex items-start justify-between gap-4">
+              <div>
+                <h4 class="text-sm font-bold text-secondary">{{ criterion.nameAr }}</h4>
+                <p v-if="criterion.descriptionAr" class="mt-2 text-sm leading-7 text-tertiary">
+                  {{ criterion.descriptionAr }}
+                </p>
+              </div>
+              <div class="rounded-full bg-amber-50 px-3 py-1 text-xs font-bold text-amber-700">
+                {{ criterion.weightPercentage ?? 0 }}%
+              </div>
+            </div>
           </div>
         </div>
 

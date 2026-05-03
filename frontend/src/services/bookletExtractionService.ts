@@ -32,6 +32,14 @@ export interface ExtractedBoqItem {
   sortOrder: number
 }
 
+export interface ExtractedEvaluationCriterion {
+  nameAr: string
+  descriptionAr?: string
+  weightPercentage?: number
+  sortOrder: number
+  confidenceScore: number
+}
+
 export interface BookletExtractionResult {
   projectNameAr: string
   projectNameEn?: string
@@ -41,6 +49,7 @@ export interface BookletExtractionResult {
   projectDurationDays?: number
   sections: ExtractedSection[]
   boqItems: ExtractedBoqItem[]
+  evaluationCriteria: ExtractedEvaluationCriterion[]
   extractionSummaryAr: string
   confidenceScore: number
   warnings: string[]
@@ -92,12 +101,76 @@ export async function extractBookletFromDocument(
     },
   )
 
-  return response.data
+  if (!response.data.extraction) {
+    return response.data
+  }
+
+  return {
+    ...response.data,
+    extraction: normalizeExtractionResult(response.data.extraction),
+  }
 }
 
 // ═══════════════════════════════════════════════════════════════
 //  Utility Functions
 // ═══════════════════════════════════════════════════════════════
+
+function decodeHtmlEntities(value: string): string {
+  return value
+    .replace(/&nbsp;/gi, ' ')
+    .replace(/&amp;/gi, '&')
+    .replace(/&lt;/gi, '<')
+    .replace(/&gt;/gi, '>')
+    .replace(/&quot;/gi, '"')
+    .replace(/&#39;/gi, "'")
+}
+
+function stripHtmlTags(value?: string): string {
+  if (!value) return ''
+
+  return decodeHtmlEntities(value)
+    .replace(/<br\s*\/?>/gi, '\n')
+    .replace(/<\/p>/gi, '\n\n')
+    .replace(/<\/li>/gi, '\n')
+    .replace(/<[^>]*>/g, ' ')
+    .replace(/\r/g, '')
+    .replace(/\n{3,}/g, '\n\n')
+    .replace(/[ \t]{2,}/g, ' ')
+    .trim()
+}
+
+function normalizeExtractionResult(extraction: BookletExtractionResult): BookletExtractionResult {
+  return {
+    ...extraction,
+    projectDescription: stripHtmlTags(extraction.projectDescription) || undefined,
+    sections: [...extraction.sections]
+      .map(section => ({
+        ...section,
+        titleAr: stripHtmlTags(section.titleAr) || section.titleAr,
+        titleEn: stripHtmlTags(section.titleEn) || section.titleEn,
+        contentHtml: section.contentHtml?.trim() || '',
+      }))
+      .sort((a, b) => a.sortOrder - b.sortOrder),
+    boqItems: [...extraction.boqItems]
+      .map(item => ({
+        ...item,
+        itemNumber: stripHtmlTags(item.itemNumber) || item.itemNumber,
+        descriptionAr: stripHtmlTags(item.descriptionAr) || item.descriptionAr,
+        unit: stripHtmlTags(item.unit) || item.unit,
+        category: stripHtmlTags(item.category) || item.category,
+      }))
+      .sort((a, b) => a.sortOrder - b.sortOrder),
+    evaluationCriteria: [...(extraction.evaluationCriteria || [])]
+      .map((criterion, index) => ({
+        ...criterion,
+        nameAr: stripHtmlTags(criterion.nameAr) || criterion.nameAr,
+        descriptionAr: stripHtmlTags(criterion.descriptionAr) || undefined,
+        sortOrder: criterion.sortOrder || index + 1,
+      }))
+      .filter(criterion => criterion.nameAr?.trim().length > 0)
+      .sort((a, b) => a.sortOrder - b.sortOrder),
+  }
+}
 
 /**
  * Maps the section type string from the API to a human-readable Arabic label.

@@ -86,8 +86,10 @@ public sealed record BookletExtractionResult
 
     /// <summary>Extracted BOQ items (if found).</summary>
     public IReadOnlyList<ExtractedBoqItem> BoqItems { get; init; } = [];
-
+    /// <summary>Extracted evaluation criteria (if found).</summary>
+    public IReadOnlyList<ExtractedEvaluationCriterion> EvaluationCriteria { get; init; } = [];
     /// <summary>Summary of the extraction in Arabic.</summary>
+
     public required string ExtractionSummaryAr { get; init; }
 
     /// <summary>Confidence score (0-100) for the overall extraction quality.</summary>
@@ -143,22 +145,33 @@ public sealed record ExtractedBoqItem
 {
     /// <summary>Item number/code.</summary>
     public required string ItemNumber { get; init; }
-
     /// <summary>Item description in Arabic.</summary>
     public required string DescriptionAr { get; init; }
-
     /// <summary>Unit of measurement.</summary>
     public required string Unit { get; init; }
-
     /// <summary>Quantity.</summary>
     public required decimal Quantity { get; init; }
-
     /// <summary>Estimated unit price (if found).</summary>
     public decimal? EstimatedUnitPrice { get; init; }
-
     /// <summary>Category or group.</summary>
     public string? Category { get; init; }
-
     /// <summary>Sort order.</summary>
     public required int SortOrder { get; init; }
+}
+
+/// <summary>
+/// Represents an evaluation criterion extracted from the uploaded document.
+/// </summary>
+public sealed record ExtractedEvaluationCriterion
+{
+    /// <summary>Criterion name in Arabic.</summary>
+    public required string NameAr { get; init; }
+    /// <summary>Criterion description in Arabic (if found).</summary>
+    public string? DescriptionAr { get; init; }
+    /// <summary>Weight percentage if explicitly stated in the source document.</summary>
+    public decimal? WeightPercentage { get; init; }
+    /// <summary>Sort order.</summary>
+    public required int SortOrder { get; init; }
+    /// <summary>Confidence score for this criterion extraction.</summary>
+    public double ConfidenceScore { get; init; }
 }

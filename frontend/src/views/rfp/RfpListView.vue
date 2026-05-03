@@ -105,19 +105,33 @@ function goToCreate() {
   router.push({ name: 'rfp-method-selection' })
 }
 
+function isReadOnlyStatus(status: RfpStatus): boolean {
+  return status !== 'draft'
+}
+
 /** Navigate to edit */
 function goToEdit(id: string) {
   router.push({ name: 'rfp-edit', params: { id } })
 }
 
+function openBooklet(item: RfpListItem) {
+  if (isReadOnlyStatus(item.status)) {
+    router.push({ name: 'rfp-export', params: { id: item.id } })
+    return
+  }
+
+  goToEdit(item.id)
+}
+
 /**
- * Issue 22 Fix: Export/download booklet as PDF.
- * Opens the RFP detail in a new tab for print/PDF export.
+ * Navigate to export / print view.
+ * This is a temporary implementation to satisfy the "تحميل الكراسة" action.
  * A dedicated PDF generation endpoint will be added in a future iteration.
  */
 function exportBooklet(id: string) {
   router.push({ name: 'rfp-export', params: { id } })
 }
+
 
 /** Format date */
 function formatDate(dateStr: string): string {
@@ -284,7 +298,7 @@ onMounted(() => {
                   <button
                     type="button"
                     class="text-sm font-medium text-primary hover:underline"
-                    @click="goToEdit(item.id)"
+                    @click="openBooklet(item)"
                   >
                     {{ item.projectName }}
                   </button>
@@ -314,7 +328,7 @@ onMounted(() => {
                 <td class="px-4 py-3 text-center">
                   <div class="flex items-center justify-center gap-1">
                     <button
-                      v-if="canEditRfp"
+                      v-if="canEditRfp && !isReadOnlyStatus(item.status)"
                       type="button"
                       class="flex h-8 w-8 items-center justify-center rounded-lg transition-colors hover:bg-surface-muted"
                       :title="t('common.edit')"

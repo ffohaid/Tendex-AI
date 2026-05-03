@@ -1588,3 +1588,54 @@ Static diff hygiene check passed via `git diff --check` for the modified handler
   - keep the fallback booklet issue date,
   - generate a short unique fallback reference number (`UE-...`) only when `request.BookletNumber` is empty for `RfpCreationMethod.UploadExtract`.
 - This change is intentionally isolated to the UploadExtract creation path and does not modify manual or template-based creation behavior.
+
+## 2026-05-03: RFP creation flow quality fixes from 30042026.docx
+
+### Scope
+- Applied production-grade fixes for the RFP creation and editing workflow based on the defects listed in `30042026.docx`.
+- Kept the implementation limited in scope, reused the existing store/services as the single source of truth, and avoided introducing duplicate save logic.
+
+### Frontend fixes
+- **Step2Settings.vue**
+  - Enforced the presence of at least one evaluation criterion through the central validation flow.
+  - Surfaced a clearer validation message for the criteria block.
+  - Improved the criterion weight handling to remain within the allowed total.
+- **Step3Content.vue**
+  - Added explicit required indicators for section names.
+  - Surfaced field-level validation errors for both section title and section content instead of relying on a generic message only.
+  - Allowed the text classification field to remain unselected for newly extracted/manual sections until the user chooses a value.
+- **Step4Boq.vue**
+  - Updated the BOQ view so the estimated price is displayed as read-only information in line with the reported issue.
+  - Removed UI-only total rows from the BOQ presentation without changing the persisted data structure.
+- **RfpListView.vue**
+  - Restricted edit affordances for non-draft / locked records.
+  - Routed the competition name toward the read-only/export experience for locked states instead of the editing workflow.
+- **RfpMethodSelectionView.vue**
+  - Added a review tab for extracted evaluation criteria.
+  - Reused the existing save pipeline to persist extracted evaluation criteria alongside sections and BOQ items during the Upload & Extract flow.
+
+### Shared frontend data normalization
+- **bookletExtractionService.ts**
+  - Added `evaluationCriteria` to the extraction result contract.
+  - Centralized sanitization of extracted project description, section titles, BOQ text fields, and extracted criteria text.
+- **stores/rfp.ts**
+  - Extended `prefillFromExtraction()` so extracted evaluation criteria are mapped through the store, keeping one source of truth for extracted content.
+  - Kept extracted section text classification unselected by default while preserving the existing behavior for the other creation modes.
+- **types/rfp.ts / validations/rfp.ts**
+  - Updated the section text classification type and validation schema to allow an unselected state where appropriate.
+
+### Backend extraction improvements
+- **IBookletExtractionService.cs**
+  - Extended the shared extraction contract with structured `EvaluationCriteria` output.
+- **BookletExtractionService.cs**
+  - Strengthened the extraction prompt and JSON mapping so the AI response can return explicit evaluation criteria.
+  - Improved the extraction instructions for sections and BOQ coverage while preserving the current extraction workflow.
+
+### Verification
+- Installed missing frontend dependencies in this workspace and ran a full frontend production build successfully:
+  - `cd frontend && npm install`
+  - `cd frontend && npm run build`
+- Also ran `git diff --check` successfully after the edits.
+
+### Notes
+- Backend build could not be executed in this workspace because `dotnet` is not available locally here, so backend verification in this task was limited to contract/service consistency review and frontend integration validation.

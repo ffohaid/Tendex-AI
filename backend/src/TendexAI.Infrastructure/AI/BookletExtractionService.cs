@@ -247,6 +247,15 @@ public sealed class BookletExtractionService : IBookletExtractionService
                   "sortOrder": 1
                 }
               ],
+              "evaluationCriteria": [
+                {
+                  "nameAr": "المعيار الفني",
+                  "descriptionAr": "الوصف كما ورد في المصدر",
+                  "weightPercentage": 70.0,
+                  "sortOrder": 1,
+                  "confidenceScore": 85.0
+                }
+              ],
               "extractionSummaryAr": "ملخص عملية الاستخراج",
               "confidenceScore": 85.0,
               "warnings": ["أي تحذيرات"]
@@ -273,6 +282,7 @@ public sealed class BookletExtractionService : IBookletExtractionService
                هـ. مدة المشروع بالأيام (إن وُجدت)
                و. أقسام الكراسة مع محتواها
                ز. بنود جدول الكميات (إن وُجدت)
+               ح. معايير التقييم وأوزانها عندما تكون مذكورة صراحة في المستند
 
             2. لكل قسم مستخرج، حدد:
                - العنوان كما ورد في المصدر دون تعديل لغوي أو تلخيص أو تصحيح تلقائي
@@ -289,13 +299,22 @@ public sealed class BookletExtractionService : IBookletExtractionService
                - الكمية
                - السعر التقديري (إن وُجد)
                - التصنيف
+               - يجب فحص الجداول النصية وعناوين البنود والمتطلبات الفنية المرقمة؛ إذا كان المستند يحتوي جدول كميات فلا تترك boqItems فارغة.
 
-            4. استخدم الأرقام بالتنسيق الإنجليزي (0-9) حصراً.
-            5. إذا لم تتمكن من تحديد معلومة معينة، اتركها فارغة أو null ولا تخمن أبداً.
-            6. العناوين القانونية وأسماء الأقسام والمواد والنسب المئوية والأرقام المرجعية والتواريخ يجب أن تُنسخ كما وردت في المصدر دون استنتاج.
+            4. لمعـايير التقييم، استخرج فقط ما هو مذكور صراحة في المصدر:
+               - اسم المعيار
+               - الوصف إن وُجد
+               - الوزن النسبي/النسبة المئوية إذا كانت موجودة نصاً
+               - إذا لم توجد معايير تقييم صريحة، فأعد evaluationCriteria كمصفوفة فارغة دون تخمين.
+
+            5. يجب أن يكون استخراج الأقسام شاملاً قدر الإمكان؛ استخدم الفهرس والعناوين الرئيسية والفرعية داخل النص لاكتشاف جميع الأقسام، ولا تكتفِ بعينة جزئية من المستند.
+
+            6. استخدم الأرقام بالتنسيق الإنجليزي (0-9) حصراً.
+            7. إذا لم تتمكن من تحديد معلومة معينة، اتركها فارغة أو null ولا تخمن أبداً.
+            8. العناوين القانونية وأسماء الأقسام والمواد والنسب المئوية والأرقام المرجعية والتواريخ يجب أن تُنسخ كما وردت في المصدر دون استنتاج.
             {contentInstruction}
-            7. قدّر مستوى الثقة (0-100) لجودة الاستخراج الكلية.
-            8. أضف تحذيرات فقط عند وجود اقتطاع فعلي للنص، أو نص غير مقروء، أو أقسام لم يمكن تحديدها بثقة.
+            9. قدّر مستوى الثقة (0-100) لجودة الاستخراج الكلية.
+            10. أضف تحذيرات فقط عند وجود اقتطاع فعلي للنص، أو نص غير مقروء، أو أقسام لم يمكن تحديدها بثقة.
 
             ⚠️ مهم جداً: يجب أن يكون الرد JSON صالحاً ومكتملاً. لا تقطع الرد في المنتصف.
             إذا كان المحتوى كثيراً، فحافظ على النقل الحرفي لأهم المقاطع الظاهرة في النص المتاح ولا تكتب أي تلخيص إنشائي.
@@ -491,6 +510,29 @@ public sealed class BookletExtractionService : IBookletExtractionService
             }
         }
 
+        var evaluationCriteria = new List<ExtractedEvaluationCriterion>();
+        if (parsed.EvaluationCriteria is not null)
+        {
+            var sortOrder = 1;
+            foreach (var criterion in parsed.EvaluationCriteria)
+            {
+                if (string.IsNullOrWhiteSpace(criterion.NameAr))
+                {
+                    continue;
+                }
+
+                evaluationCriteria.Add(new ExtractedEvaluationCriterion
+                {
+                    NameAr = criterion.NameAr,
+                    DescriptionAr = criterion.DescriptionAr,
+                    WeightPercentage = criterion.WeightPercentage > 0 ? criterion.WeightPercentage : null,
+                    SortOrder = criterion.SortOrder > 0 ? criterion.SortOrder : sortOrder,
+                    ConfidenceScore = criterion.ConfidenceScore
+                });
+                sortOrder++;
+            }
+        }
+
         // Map competition type
         CompetitionType? detectedType = parsed.DetectedCompetitionType?.ToLowerInvariant() switch
         {
@@ -513,6 +555,7 @@ public sealed class BookletExtractionService : IBookletExtractionService
             ProjectDurationDays = parsed.ProjectDurationDays > 0 ? parsed.ProjectDurationDays : null,
             Sections = sections,
             BoqItems = boqItems,
+            EvaluationCriteria = evaluationCriteria,
             ExtractionSummaryAr = parsed.ExtractionSummaryAr ?? "تم استخراج محتوى الكراسة بنجاح.",
             ConfidenceScore = parsed.ConfidenceScore > 0 ? parsed.ConfidenceScore : 50.0,
             Warnings = parsed.Warnings ?? [],
@@ -780,6 +823,7 @@ public sealed class BookletExtractionService : IBookletExtractionService
         public int? ProjectDurationDays { get; init; }
         public List<SectionJsonResponse>? Sections { get; init; }
         public List<BoqItemJsonResponse>? BoqItems { get; init; }
+        public List<EvaluationCriterionJsonResponse>? EvaluationCriteria { get; init; }
         public string? ExtractionSummaryAr { get; init; }
         public double ConfidenceScore { get; init; }
         public List<string>? Warnings { get; init; }
@@ -805,5 +849,14 @@ public sealed class BookletExtractionService : IBookletExtractionService
         public decimal? EstimatedUnitPrice { get; init; }
         public string? Category { get; init; }
         public int SortOrder { get; init; }
+    }
+
+    private sealed record EvaluationCriterionJsonResponse
+    {
+        public string? NameAr { get; init; }
+        public string? DescriptionAr { get; init; }
+        public decimal? WeightPercentage { get; init; }
+        public int SortOrder { get; init; }
+        public double ConfidenceScore { get; init; }
     }
 }

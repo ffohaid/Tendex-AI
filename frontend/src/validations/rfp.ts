@@ -194,6 +194,7 @@ export const settingsSchema = z.object({
 
   evaluationCriteria: z
     .array(evaluationCriterionSchema)
+    .min(1, 'يرجى تعريف معيار تقييم واحد على الأقل قبل المتابعة')
     .default([]),
 }).refine(
   (data) => data.technicalWeight + data.financialWeight === 100,
@@ -216,11 +217,24 @@ export const sectionSchema = z.object({
   id: z.string(),
   title: z
     .string({ required_error: 'عنوان القسم مطلوب' })
+    .trim()
+    .min(1, 'عنوان القسم مطلوب')
     .min(3, 'يجب أن يكون عنوان القسم 3 أحرف على الأقل'),
-  content: z.string().default(''),
+  content: z
+    .string()
+    .default('')
+    .superRefine((value, ctx) => {
+      const plainText = value.replace(/<[^>]*>/g, ' ').replace(/&nbsp;/gi, ' ').replace(/\s+/g, ' ').trim()
+      if (!plainText) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: 'محتوى القسم مطلوب',
+        })
+      }
+    }),
   order: z.number(),
   isRequired: z.boolean().default(false),
-  colorCode: z.enum(['black', 'green', 'red', 'blue']).default('green'),
+  colorCode: z.enum(['', 'black', 'green', 'red', 'blue']).default(''),
   assignedTo: z.string().nullable().default(null),
   isCompleted: z.boolean().default(false),
 })
@@ -252,8 +266,9 @@ export const boqItemSchema = z.object({
     .number({ required_error: 'الكمية مطلوبة', invalid_type_error: 'يرجى إدخال كمية صحيحة' })
     .positive('يجب أن تكون الكمية أكبر من صفر'),
   estimatedPrice: z
-    .number({ required_error: 'السعر التقديري مطلوب', invalid_type_error: 'يرجى إدخال سعر صحيح' })
-    .min(0, 'يجب ألا يقل السعر عن صفر'),
+    .number({ invalid_type_error: 'يرجى إدخال سعر صحيح' })
+    .nullable()
+    .optional(),
   totalPrice: z.number().default(0),
   notes: z.string().default(''),
   order: z.number().default(0),

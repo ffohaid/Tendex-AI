@@ -56,7 +56,7 @@ export type UnitOfMeasure =
   | 'license'
 
 /** Section content color code per PRD template compliance */
-export type TextColorCode = 'black' | 'green' | 'red' | 'blue'
+export type TextColorCode = '' | 'black' | 'green' | 'red' | 'blue'
 
 /** A single section within the booklet */
 export interface RfpSection {

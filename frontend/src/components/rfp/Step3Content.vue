@@ -83,9 +83,14 @@ function handleAiContent(sectionId: string, content: string, contentHtml?: strin
 function addNewSection() {
   rfpStore.addSection({
     title: '',
-    colorCode: 'green',
+    colorCode: '',
     isRequired: false,
   })
+}
+
+function getSectionFieldError(index: number, field: 'title' | 'content') {
+  const validationErrors = errors.value as Record<string, string | undefined>
+  return validationErrors[`sections[${index}].${field}`] || validationErrors[`sections.${index}.${field}`] || ''
 }
 
 /** Handle drag end */
@@ -238,13 +243,24 @@ defineExpose({
             </span>
 
             <!-- Section title (inline edit) -->
-            <input
-              :value="section.title"
-              type="text"
-              class="flex-1 rounded border-0 bg-transparent px-2 py-1 text-sm font-medium text-secondary focus:bg-surface-muted focus:outline-none focus:ring-2 focus:ring-primary/20"
-              :placeholder="t('rfp.placeholders.sectionTitle')"
-              @input="rfpStore.updateSection(section.id, { title: ($event.target as HTMLInputElement).value })"
-            />
+            <div class="flex-1">
+              <label class="mb-1 block px-2 text-xs font-medium text-tertiary">
+                {{ t('rfp.fields.sectionName') }}
+                <span class="text-danger">*</span>
+              </label>
+              <input
+                :value="section.title"
+                type="text"
+                class="w-full rounded px-2 py-1 text-sm font-medium text-secondary focus:bg-surface-muted focus:outline-none focus:ring-2 focus:ring-primary/20"
+                :class="getSectionFieldError(index, 'title') ? 'border border-danger bg-danger/5 focus:ring-danger/20' : 'border-0 bg-transparent'"
+                :placeholder="t('rfp.placeholders.sectionTitle')"
+                @input="rfpStore.updateSection(section.id, { title: ($event.target as HTMLInputElement).value })"
+              />
+              <p v-if="getSectionFieldError(index, 'title')" class="mt-1 px-2 text-xs text-danger">
+                <i class="pi pi-exclamation-circle me-1"></i>
+                {{ getSectionFieldError(index, 'title') }}
+              </p>
+            </div>
 
             <!-- Color code badge -->
             <span
@@ -315,6 +331,7 @@ defineExpose({
                     :disabled="section.colorCode === 'black'"
                     @change="rfpStore.updateSection(section.id, { colorCode: ($event.target as HTMLSelectElement).value as any })"
                   >
+                    <option value="">{{ t('common.select') || 'اختر التصنيف' }}</option>
                     <option value="black">{{ t('rfp.colorCodes.mandatory') }}</option>
                     <option value="green">{{ t('rfp.colorCodes.editable') }}</option>
                     <option value="red">{{ t('rfp.colorCodes.example') }}</option>
@@ -340,15 +357,22 @@ defineExpose({
               <!-- Content editor -->
               <label class="mb-1 block text-xs font-medium text-tertiary">
                 {{ t('rfp.fields.sectionContent') }}
+                <span class="text-danger">*</span>
               </label>
-              <RichTextEditor
-                :model-value="section.content || ''"
-                :placeholder="t('rfp.placeholders.sectionContent')"
-                dir="rtl"
-                min-height="180px"
-                max-height="400px"
-                @update:model-value="(val: string) => rfpStore.updateSection(section.id, { content: val })"
-              />
+              <div :class="getSectionFieldError(index, 'content') ? 'rounded-lg border border-danger p-1' : ''">
+                <RichTextEditor
+                  :model-value="section.content || ''"
+                  :placeholder="t('rfp.placeholders.sectionContent')"
+                  dir="rtl"
+                  min-height="180px"
+                  max-height="400px"
+                  @update:model-value="(val: string) => rfpStore.updateSection(section.id, { content: val })"
+                />
+              </div>
+              <p v-if="getSectionFieldError(index, 'content')" class="mt-2 text-xs text-danger">
+                <i class="pi pi-exclamation-circle me-1"></i>
+                {{ getSectionFieldError(index, 'content') }}
+              </p>
 
               <!-- Mark as completed -->
               <div class="mt-3 flex items-center gap-2">

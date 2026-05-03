@@ -47,6 +47,9 @@ const evaluationMethods = computed(() => [
 ])
 
 const criteriaWeightError = ref('')
+const evaluationCriteriaErrorMessage = computed(
+  () => errors.value.evaluationCriteria || criteriaWeightError.value || '',
+)
 
 function getMaxAllowedCriterionWeight(criterionId: string): number {
   const criteria = rfpStore.formData.settings.evaluationCriteria
@@ -299,6 +302,7 @@ defineExpose({
       <div class="mb-4 flex items-center justify-between">
         <h3 class="text-lg font-bold text-secondary">
           {{ t('rfp.fields.evaluationCriteria') }}
+          <span class="text-danger">*</span>
         </h3>
         <div class="flex items-center gap-3">
           <button
@@ -315,10 +319,15 @@ defineExpose({
 
       <div
         v-if="rfpStore.formData.settings.evaluationCriteria.length === 0"
-        class="rounded-lg border-2 border-dashed border-surface-dim p-8 text-center"
+        class="rounded-lg border-2 border-dashed p-8 text-center"
+        :class="evaluationCriteriaErrorMessage ? 'border-danger bg-danger/5' : 'border-surface-dim'"
       >
         <i class="pi pi-list mb-2 text-3xl text-tertiary"></i>
         <p class="text-sm text-tertiary">{{ t('rfp.messages.noCriteria') }}</p>
+        <p v-if="evaluationCriteriaErrorMessage" class="mt-3 text-sm font-medium text-danger">
+          <i class="pi pi-exclamation-circle me-1"></i>
+          {{ evaluationCriteriaErrorMessage }}
+        </p>
       </div>
 
       <div v-else class="space-y-3">
@@ -340,7 +349,7 @@ defineExpose({
               type="number"
               min="0"
               :max="getMaxAllowedCriterionWeight(criterion.id)"
-              :placeholder="t('rfp.placeholders.criterionWeight')"
+              placeholder="%"
               class="rounded-lg border border-surface-dim px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
               @input="updateCriterionField(criterion.id, 'weight', Number(($event.target as HTMLInputElement).value))"
             />
@@ -375,11 +384,11 @@ defineExpose({
         </div>
 
         <div
-          v-if="criteriaWeightError"
+          v-if="evaluationCriteriaErrorMessage"
           class="rounded-lg border border-danger/20 bg-danger/5 p-3 text-sm text-danger"
         >
           <i class="pi pi-exclamation-circle me-1"></i>
-          {{ criteriaWeightError }}
+          {{ evaluationCriteriaErrorMessage }}
         </div>
       </div>
     </div>

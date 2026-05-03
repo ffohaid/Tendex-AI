@@ -51,23 +51,6 @@ const unitOptions = computed(() => [
   { value: 'license', label: t('rfp.units.license') },
 ])
 
-/** Subtotal before VAT */
-const subtotal = computed(() =>
-  rfpStore.formData.boq.items.reduce(
-    (sum, item) => sum + item.quantity * item.estimatedPrice,
-    0,
-  ),
-)
-
-/** VAT amount */
-const vatAmount = computed(() => {
-  if (!rfpStore.formData.boq.includesVat) return 0
-  return subtotal.value * (rfpStore.formData.boq.vatPercentage / 100)
-})
-
-/** Grand total */
-const grandTotal = computed(() => subtotal.value + vatAmount.value)
-
 /** Add new BOQ item */
 function addItem() {
   rfpStore.addBoqItem()
@@ -278,12 +261,10 @@ defineExpose({
               </td>
               <td class="px-3 py-2">
                 <input
-                  :value="item.estimatedPrice"
-                  type="number"
-                  min="0"
-                  step="0.01"
-                  class="w-full rounded border border-transparent bg-transparent px-2 py-1 text-sm text-end focus:border-primary focus:bg-white focus:outline-none"
-                  @input="rfpStore.updateBoqItem(item.id, { estimatedPrice: Number(($event.target as HTMLInputElement).value) })"
+                  :value="item.estimatedPrice || ''"
+                  type="text"
+                  readonly
+                  class="w-full cursor-not-allowed rounded border border-transparent bg-surface-muted px-2 py-1 text-sm text-end text-tertiary focus:outline-none"
                 />
               </td>
               <td class="px-3 py-2 text-end font-medium text-secondary">
@@ -303,36 +284,6 @@ defineExpose({
           </template>
         </draggable>
 
-        <!-- Totals footer -->
-        <tfoot class="border-t-2 border-primary/20 bg-surface-muted">
-          <tr>
-            <td colspan="6" class="px-3 py-3 text-end text-sm font-medium text-secondary">
-              {{ t('rfp.boqFields.subtotal') }}
-            </td>
-            <td class="px-3 py-3 text-end text-sm font-bold text-secondary">
-              {{ formatCurrency(subtotal) }}
-            </td>
-            <td></td>
-          </tr>
-          <tr v-if="rfpStore.formData.boq.includesVat">
-            <td colspan="6" class="px-3 py-2 text-end text-sm text-tertiary">
-              {{ t('rfp.boqFields.vat') }} ({{ rfpStore.formData.boq.vatPercentage }}%)
-            </td>
-            <td class="px-3 py-2 text-end text-sm text-tertiary">
-              {{ formatCurrency(vatAmount) }}
-            </td>
-            <td></td>
-          </tr>
-          <tr>
-            <td colspan="6" class="px-3 py-3 text-end text-sm font-bold text-primary">
-              {{ t('rfp.boqFields.grandTotal') }}
-            </td>
-            <td class="px-3 py-3 text-end text-sm font-bold text-primary">
-              {{ formatCurrency(grandTotal) }}
-            </td>
-            <td></td>
-          </tr>
-        </tfoot>
       </table>
     </div>
 

@@ -24,6 +24,7 @@ import type {
   WizardStep,
   EvaluationCriterion,
   CompetitionType,
+  UnitOfMeasure,
 } from '@/types/rfp'
 import {
   createRfp,
@@ -264,7 +265,7 @@ export const useRfpStore = defineStore('rfp', () => {
       contentHtml: section?.contentHtml || '',
       order: formData.value.content.sections.length,
       isRequired: section?.isRequired || false,
-      colorCode: section?.colorCode || 'green',
+      colorCode: section?.colorCode ?? 'green',
       assignedTo: section?.assignedTo || null,
       isCompleted: false,
     }
@@ -534,6 +535,90 @@ export const useRfpStore = defineStore('rfp', () => {
     await saveCurrentStep()
   }
 
+  function decodeHtmlEntities(value: string): string {
+    return value
+      .replace(/&nbsp;/gi, ' ')
+      .replace(/&amp;/gi, '&')
+      .replace(/&lt;/gi, '<')
+      .replace(/&gt;/gi, '>')
+      .replace(/&quot;/gi, '"')
+      .replace(/&#39;/gi, "'")
+  }
+
+  function stripExtractionHtml(value?: string | null): string {
+    if (!value) return ''
+
+    return decodeHtmlEntities(value)
+      .replace(/<br\s*\/?>/gi, '\n')
+      .replace(/<\/p>/gi, '\n\n')
+      .replace(/<\/li>/gi, '\n')
+      .replace(/<[^>]*>/g, ' ')
+      .replace(/\r/g, '')
+      .replace(/\n{3,}/g, '\n\n')
+      .replace(/[ \t]{2,}/g, ' ')
+      .trim()
+  }
+
+  function normalizeExtractedUnit(unit?: string | null): UnitOfMeasure {
+    const normalizedUnit = (unit || '').trim().toLowerCase()
+
+    switch (normalizedUnit) {
+      case 'متر':
+      case 'meter':
+      case 'm':
+        return 'meter'
+      case 'م2':
+      case 'متر مربع':
+      case 'sqm':
+        return 'sqm'
+      case 'م3':
+      case 'متر مكعب':
+      case 'cbm':
+        return 'cbm'
+      case 'كجم':
+      case 'كيلوغرام':
+      case 'kg':
+        return 'kg'
+      case 'طن':
+      case 'ton':
+        return 'ton'
+      case 'لتر':
+      case 'liter':
+        return 'liter'
+      case 'ساعة':
+      case 'hour':
+        return 'hour'
+      case 'يوم':
+      case 'day':
+        return 'day'
+      case 'شهر':
+      case 'month':
+        return 'month'
+      case 'سنة':
+      case 'عام':
+      case 'year':
+        return 'year'
+      case 'مقطوعية':
+      case 'lump sum':
+      case 'lump_sum':
+        return 'lump_sum'
+      case 'رحلة':
+      case 'trip':
+        return 'trip'
+      case 'مجموعة':
+      case 'set':
+        return 'set'
+      case 'فرد':
+      case 'person':
+        return 'person'
+      case 'رخصة':
+      case 'license':
+        return 'license'
+      default:
+        return 'unit'
+    }
+  }
+
   /**
    * Pre-fill the form from extraction results (Upload & Extract flow).
    * Maps AI-extracted data into the store's RfpFormData shape.
@@ -562,6 +647,12 @@ export const useRfpStore = defineStore('rfp', () => {
       category?: string
       sortOrder: number
     }>
+    evaluationCriteria?: Array<{
+      nameAr: string
+      descriptionAr?: string
+      weightPercentage?: number
+      sortOrder: number
+    }>
   }) {
     // Reset form first
     resetForm()
@@ -577,7 +668,7 @@ export const useRfpStore = defineStore('rfp', () => {
 
     // Pre-fill basic info
     formData.value.basicInfo.projectName = extraction.projectNameAr || ''
-    formData.value.basicInfo.projectDescription = extraction.projectDescription || ''
+    formData.value.basicInfo.projectDescription = stripExtractionHtml(extraction.projectDescription)
     formData.value.basicInfo.competitionType =
       competitionTypeMap[extraction.detectedCompetitionType || ''] || ''
     formData.value.basicInfo.estimatedValue = extraction.estimatedBudget || null
@@ -585,23 +676,32 @@ export const useRfpStore = defineStore('rfp', () => {
     // Pre-fill sections
     formData.value.content.creationMethod = 'upload_extract'
     formData.value.content.sections = []
-    for (const section of extraction.sections) {
+    for (const section of [...extraction.sections].sort((a, b) => a.sortOrder - b.sortOrder)) {
       addSection({
         title: section.titleAr,
-        content: '',
+        content: stripExtractionHtml(section.contentHtml),
         contentHtml: section.contentHtml,
         isRequired: section.isMandatory,
-        colorCode: 'green',
+        colorCode: '',
+      })
+    }
+
+    formData.value.settings.evaluationCriteria = []
+    for (const criterion of [...(extraction.evaluationCriteria || [])].sort((a, b) => a.sortOrder - b.sortOrder)) {
+      addCriterion({
+        name: stripExtractionHtml(criterion.nameAr),
+        description: stripExtractionHtml(criterion.descriptionAr),
+        weight: criterion.weightPercentage || 0,
       })
     }
 
     // Pre-fill BOQ items
     formData.value.boq.items = []
-    for (const item of extraction.boqItems) {
+    for (const item of [...extraction.boqItems].sort((a, b) => a.sortOrder - b.sortOrder)) {
       addBoqItem({
         category: item.category || '',
-        description: item.descriptionAr,
-        unit: 'unit', // Default; AI may not map exactly
+        description: stripExtractionHtml(item.descriptionAr),
+        unit: normalizeExtractedUnit(item.unit),
         quantity: item.quantity,
         estimatedPrice: item.estimatedUnitPrice || 0,
       })
