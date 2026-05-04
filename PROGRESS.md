@@ -1795,3 +1795,41 @@ The production validation confirmed that evaluation criteria are now visually ma
 
 ### Notes
 تم التحقق من اكتمال المراحل الثلاث لمسار النشر: **Test Gate** ثم **Build Docker Images** ثم **Deploy to Production**. النشر التشغيلي للحزمة أصبح معتمدًا على البيئة الحية.
+
+## 2026-05-04: Role-Based Booklet Approval Workflow Fix
+
+### Problem
+- Booklet approval did not execute correctly according to the configured workflow roles.
+- The approver task center path and the actual approval authorization logic were not fully aligned.
+- Submission from the booklet editor was bypassing the unified status transition path.
+- Rejected booklet approvals were not reliably returning the booklet to the expected preparation state.
+- Pending-approval booklets were still treated as editable in backend save paths.
+
+### Fix Applied
+- Added a shared `ApprovalActorResolver` to resolve workflow actors dynamically from identity roles and committee memberships.
+- Extended `IApprovalWorkflowService` and `ApprovalWorkflowService` with role-aware approve/reject overloads that validate against resolved role sets.
+- Updated workflow endpoints to forward authenticated role claims into approval/rejection execution.
+- Unified task-center matching with the same shared role/committee resolver used by the workflow service.
+- Updated `BookletEditorView.vue` to use `submitRfpForApproval()` instead of directly initiating the workflow.
+- Tightened backend editability so `PendingApproval` is no longer treated as an editable state.
+- Restricted auto-save to `Draft`, `UnderPreparation`, and `Rejected` only.
+- Enabled controlled lifecycle return from `PendingApproval` to `UnderPreparation` and applied explicit revert-on-rejection logic for booklet approval.
+
+### Files Modified
+- `backend/src/TendexAI.Application/Features/Workflow/Services/ApprovalActorResolver.cs`
+- `backend/src/TendexAI.Application/Features/Workflow/Services/IApprovalWorkflowService.cs`
+- `backend/src/TendexAI.Application/Features/Workflow/Services/ApprovalWorkflowService.cs`
+- `backend/src/TendexAI.API/Endpoints/Workflow/ApprovalWorkflowEndpoints.cs`
+- `backend/src/TendexAI.Application/Features/Dashboard/Queries/GetPendingTasks/GetPendingTasksQueryHandler.cs`
+- `backend/src/TendexAI.Domain/Entities/Rfp/Competition.cs`
+- `backend/src/TendexAI.Application/Features/Rfp/Commands/AutoSaveCompetition/AutoSaveCompetitionCommandHandler.cs`
+- `backend/src/TendexAI.Domain/StateMachine/CompetitionStateMachine.cs`
+- `frontend/src/views/rfp/BookletEditorView.vue`
+
+### Verification
+- Frontend production build completed successfully with `pnpm build`.
+- Verified statically that booklet submission now routes through the unified status transition path.
+- Verified statically that approval/rejection endpoints pass authenticated role claims into the workflow service.
+- Verified statically that task-center visibility uses the same shared role/committee resolution logic as approval execution.
+- Verified statically that auto-save/editability no longer permit modification while status is `PendingApproval`.
+- Backend full build was not executable in the current sandbox because the .NET SDK is unavailable (`dotnet: command not found`).

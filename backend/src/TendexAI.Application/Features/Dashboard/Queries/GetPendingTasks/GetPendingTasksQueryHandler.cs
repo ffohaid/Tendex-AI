@@ -218,21 +218,12 @@ public sealed class GetPendingTasksQueryHandler
 
 
             // Map role identifiers to SystemRole enum values
-            var userSystemRoles = new List<SystemRole>();
-            foreach (var role in userRoleIdentifiers)
-            {
-                var roleIdentifier = !string.IsNullOrWhiteSpace(role.NormalizedName)
-                    ? role.NormalizedName
-                    : role.NameEn;
-
-                if (string.IsNullOrWhiteSpace(roleIdentifier))
-                    continue;
-
-                var systemRole = MapRoleNameToSystemRole(roleIdentifier);
-                if (systemRole.HasValue)
-                    userSystemRoles.Add(systemRole.Value);
-            }
-
+            var userSystemRoles = ApprovalActorResolver
+                .ResolveSystemRoles(userRoleIdentifiers.Select(role =>
+                    !string.IsNullOrWhiteSpace(role.NormalizedName)
+                        ? role.NormalizedName
+                        : role.NameEn))
+                .ToList();
 
             var userCommitteeRoleAssignments = await committeeMembers
                 .AsNoTracking()
@@ -249,7 +240,7 @@ public sealed class GetPendingTasksQueryHandler
                     (x, cc) => new
                     {
                         cc.CompetitionId,
-                        WorkflowCommitteeRole = MapCommitteeAssignmentToWorkflowRole(x.Type, x.Role)
+                        WorkflowCommitteeRole = ApprovalActorResolver.MapCommitteeAssignmentToWorkflowRole(x.Type, x.Role)
                     })
                 .ToListAsync(cancellationToken);
 
@@ -373,73 +364,6 @@ public sealed class GetPendingTasksQueryHandler
     private static string BuildApprovalTaskActionUrl(Competition competition, ApprovalWorkflowStep step)
     {
         return $"/rfp/booklet-editor/{competition.Id}?stepId={step.Id}";
-    }
-
-    private static CommitteeRole? MapCommitteeAssignmentToWorkflowRole(
-        CommitteeType committeeType,
-        CommitteeMemberRole memberRole)
-    {
-        if (memberRole == CommitteeMemberRole.Secretary)
-        {
-            return CommitteeRole.CommitteeSecretary;
-        }
-
-        return committeeType switch
-        {
-            CommitteeType.BookletPreparation when memberRole == CommitteeMemberRole.Chair => CommitteeRole.PreparationCommitteeChair,
-            CommitteeType.BookletPreparation when memberRole == CommitteeMemberRole.Member => CommitteeRole.PreparationCommitteeMember,
-            CommitteeType.TechnicalEvaluation when memberRole == CommitteeMemberRole.Chair => CommitteeRole.TechnicalExamCommitteeChair,
-            CommitteeType.TechnicalEvaluation when memberRole == CommitteeMemberRole.Member => CommitteeRole.TechnicalExamCommitteeMember,
-            CommitteeType.FinancialEvaluation when memberRole == CommitteeMemberRole.Chair => CommitteeRole.FinancialExamCommitteeChair,
-            CommitteeType.FinancialEvaluation when memberRole == CommitteeMemberRole.Member => CommitteeRole.FinancialExamCommitteeMember,
-            CommitteeType.InquiryReview when memberRole == CommitteeMemberRole.Chair => CommitteeRole.InquiryReviewCommitteeChair,
-            CommitteeType.InquiryReview when memberRole == CommitteeMemberRole.Member => CommitteeRole.InquiryReviewCommitteeMember,
-            _ => null
-        };
-    }
-
-    /// <summary>
-    /// Maps a role English name to the SystemRole enum value.
-    /// </summary>
-    private static SystemRole? MapRoleNameToSystemRole(string roleNameEn)
-    {
-        // Case-insensitive matching with multiple name variants
-        var normalized = roleNameEn.Trim().ToLowerInvariant();
-        return normalized switch
-        {
-            "tenant primary admin"
-                or "tenantprimaryadmin"
-                or "primary admin"
-                or "authority owner"
-                or "authorityowner"
-                or "tenant owner"
-                or "tenantowner"
-                or "tenant admin"
-                or "tenantadmin"
-                or "owner" => SystemRole.TenantPrimaryAdmin,
-            "procurement manager" or "procurementmanager" => SystemRole.ProcurementManager,
-            "financial controller" or "financialcontroller" => SystemRole.FinancialController,
-            "sector representative" or "sectorrepresentative" => SystemRole.SectorRepresentative,
-            "committee chair" or "committeechair" or "chair" => SystemRole.CommitteeChair,
-            "committee member" or "committeemember" => SystemRole.CommitteeMember,
-            "member" => SystemRole.Member,
-            "viewer" or "readonly" => SystemRole.Viewer,
-            _ => TryParseSystemRole(normalized)
-        };
-    }
-
-    /// <summary>
-    /// Fallback: try to parse the role name as a SystemRole enum value.
-    /// </summary>
-    private static SystemRole? TryParseSystemRole(string normalized)
-    {
-        if (Enum.TryParse<SystemRole>(normalized, ignoreCase: true, out var role))
-            return role;
-        // Try removing spaces
-        var noSpaces = normalized.Replace(" ", "");
-        if (Enum.TryParse<SystemRole>(noSpaces, ignoreCase: true, out var role2))
-            return role2;
-        return null;
     }
 
     // ═══════════════════════════════════════════════════════════════

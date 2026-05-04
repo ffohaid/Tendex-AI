@@ -10,7 +10,7 @@ namespace TendexAI.Application.Features.Rfp.Commands.AutoSaveCompetition;
 /// <summary>
 /// Handles auto-saving a competition draft.
 /// Performs partial updates and records the auto-save timestamp.
-/// Works on competitions in Draft, UnderPreparation, PendingApproval, or Approved status.
+/// Works on competitions in Draft, UnderPreparation, or Rejected status.
 /// </summary>
 public sealed class AutoSaveCompetitionCommandHandler
     : ICommandHandler<AutoSaveCompetitionCommand, AutoSaveResultDto>
@@ -38,12 +38,11 @@ public sealed class AutoSaveCompetitionCommandHandler
         {
             CompetitionStatus.Draft,
             CompetitionStatus.UnderPreparation,
-            CompetitionStatus.PendingApproval,
-            CompetitionStatus.Approved
+            CompetitionStatus.Rejected
         };
         if (!editableStatuses.Contains(competition.Status))
             return Result.Failure<AutoSaveResultDto>(
-                $"Auto-save is only available for Draft, UnderPreparation, PendingApproval, or Approved competitions. Current status: {competition.Status}.");
+                $"Auto-save is only available for Draft, UnderPreparation, or Rejected competitions. Current status: {competition.Status}.");
 
         if (!string.IsNullOrWhiteSpace(request.BookletNumber) &&
             await _repository.IsReferenceNumberInUseAsync(request.BookletNumber, request.CompetitionId, cancellationToken))

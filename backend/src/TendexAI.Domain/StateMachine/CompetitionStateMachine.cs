@@ -32,6 +32,7 @@ public static class CompetitionStateMachine
         [CompetitionStatus.PendingApproval] = new()
         {
             CompetitionStatus.Approved,
+            CompetitionStatus.UnderPreparation,
             CompetitionStatus.Rejected,
             CompetitionStatus.Cancelled
         },

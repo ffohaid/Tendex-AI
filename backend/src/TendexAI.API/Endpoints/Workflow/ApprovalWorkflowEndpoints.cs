@@ -137,8 +137,16 @@ public static class ApprovalWorkflowEndpoints
         if (string.IsNullOrEmpty(userId))
             return Results.Problem("المستخدم غير مصادق عليه.", statusCode: StatusCodes.Status401Unauthorized);
 
+        var roleIdentifiers = httpContext.User.Claims
+            .Where(claim => claim.Type == System.Security.Claims.ClaimTypes.Role
+                || claim.Type == "role"
+                || claim.Type == "roles")
+            .Select(claim => claim.Value)
+            .Where(value => !string.IsNullOrWhiteSpace(value))
+            .ToArray();
+
         var result = await workflowService.ApproveStepAsync(
-            stepId, userId, request.Comment, cancellationToken);
+            stepId, userId, roleIdentifiers, request.Comment, cancellationToken);
 
         return result.IsSuccess
             ? Results.Ok(result.Value)
@@ -160,8 +168,16 @@ public static class ApprovalWorkflowEndpoints
         if (string.IsNullOrWhiteSpace(request.Reason))
             return Results.Problem("يجب ذكر سبب الرفض.", statusCode: StatusCodes.Status400BadRequest);
 
+        var roleIdentifiers = httpContext.User.Claims
+            .Where(claim => claim.Type == System.Security.Claims.ClaimTypes.Role
+                || claim.Type == "role"
+                || claim.Type == "roles")
+            .Select(claim => claim.Value)
+            .Where(value => !string.IsNullOrWhiteSpace(value))
+            .ToArray();
+
         var result = await workflowService.RejectStepAsync(
-            stepId, userId, request.Reason, cancellationToken);
+            stepId, userId, roleIdentifiers, request.Reason, cancellationToken);
 
         return result.IsSuccess
             ? Results.Ok(result.Value)

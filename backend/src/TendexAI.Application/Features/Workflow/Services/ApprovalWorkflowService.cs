@@ -1,3 +1,5 @@
+using Microsoft.EntityFrameworkCore;
+using TendexAI.Application.Common.Interfaces;
 using TendexAI.Domain.Common;
 using TendexAI.Domain.Entities.Rfp;
 using TendexAI.Domain.Entities.Workflow;
@@ -24,17 +26,20 @@ public sealed class ApprovalWorkflowService : IApprovalWorkflowService
     private readonly IApprovalWorkflowStepRepository _approvalStepRepository;
     private readonly ICompetitionRepository _competitionRepository;
     private readonly IWorkflowConditionEvaluator _conditionEvaluator;
+    private readonly ITenantDbContextFactory _tenantDbContextFactory;
 
     public ApprovalWorkflowService(
         IWorkflowDefinitionRepository workflowDefinitionRepository,
         IApprovalWorkflowStepRepository approvalStepRepository,
         ICompetitionRepository competitionRepository,
-        IWorkflowConditionEvaluator conditionEvaluator)
+        IWorkflowConditionEvaluator conditionEvaluator,
+        ITenantDbContextFactory tenantDbContextFactory)
     {
         _workflowDefinitionRepository = workflowDefinitionRepository;
         _approvalStepRepository = approvalStepRepository;
         _competitionRepository = competitionRepository;
         _conditionEvaluator = conditionEvaluator;
+        _tenantDbContextFactory = tenantDbContextFactory;
     }
 
     /// <inheritdoc />
@@ -124,6 +129,38 @@ public sealed class ApprovalWorkflowService : IApprovalWorkflowService
     public async Task<Result<ApprovalActionResult>> ApproveStepAsync(
         Guid stepId,
         string userId,
+        IReadOnlyCollection<string>? roleIdentifiers,
+        string? comment,
+        CancellationToken cancellationToken = default)
+    {
+        var step = await _approvalStepRepository.GetByIdForUpdateAsync(stepId, cancellationToken);
+        if (step is null)
+            return Result.Failure<ApprovalActionResult>("خطوة الاعتماد غير موجودة.");
+
+        var currentPendingSteps = await _approvalStepRepository.GetCurrentPendingStepsAsync(
+            step.CompetitionId, step.FromStatus, step.ToStatus, cancellationToken);
+
+        if (!currentPendingSteps.Any(s => s.Id == stepId))
+            return Result.Failure<ApprovalActionResult>(
+                "هذه الخطوة ليست الخطوة الحالية في مسار الاعتماد.");
+
+        var authorizationContext = await BuildAuthorizationContextAsync(
+            step.CompetitionId,
+            roleIdentifiers,
+            userId,
+            cancellationToken);
+
+        var roleAuthResult = ValidateStepAuthorization(step, authorizationContext.SystemRoles, authorizationContext.CommitteeRoles);
+        if (roleAuthResult.IsFailure)
+            return Result.Failure<ApprovalActionResult>(roleAuthResult.Error!);
+
+        return await ApproveStepAsync(stepId, userId, comment, cancellationToken);
+    }
+
+    /// <inheritdoc />
+    public async Task<Result<ApprovalActionResult>> ApproveStepAsync(
+        Guid stepId,
+        string userId,
         SystemRole userSystemRole,
         CommitteeRole userCommitteeRole,
         string? comment,
@@ -133,7 +170,6 @@ public sealed class ApprovalWorkflowService : IApprovalWorkflowService
         if (step is null)
             return Result.Failure<ApprovalActionResult>("خطوة الاعتماد غير موجودة.");
 
-        // Verify this step is currently actionable
         var currentPendingSteps = await _approvalStepRepository.GetCurrentPendingStepsAsync(
             step.CompetitionId, step.FromStatus, step.ToStatus, cancellationToken);
 
@@ -141,36 +177,16 @@ public sealed class ApprovalWorkflowService : IApprovalWorkflowService
             return Result.Failure<ApprovalActionResult>(
                 "هذه الخطوة ليست الخطوة الحالية في مسار الاعتماد.");
 
-        // Verify user has the required system role
-        var roleAuthResult = ValidateStepAuthorization(step, userSystemRole, userCommitteeRole);
+        var systemRoles = new[] { userSystemRole };
+        var committeeRoles = userCommitteeRole == CommitteeRole.None
+            ? Array.Empty<CommitteeRole>()
+            : new[] { userCommitteeRole };
+
+        var roleAuthResult = ValidateStepAuthorization(step, systemRoles, committeeRoles);
         if (roleAuthResult.IsFailure)
             return Result.Failure<ApprovalActionResult>(roleAuthResult.Error!);
 
-        // Approve the step
-        var result = step.Approve(userId, comment);
-        if (result.IsFailure)
-            return Result.Failure<ApprovalActionResult>(result.Error!);
-
-        _approvalStepRepository.Update(step);
-        await _approvalStepRepository.SaveChangesAsync(cancellationToken);
-
-        // Check if all steps are now completed
-        var allStepsCompleted = await _approvalStepRepository.AreAllStepsCompletedAsync(
-            step.CompetitionId, step.FromStatus, step.ToStatus, cancellationToken);
-
-        // Auto-transition competition status when all steps are completed
-        if (allStepsCompleted)
-        {
-            await TransitionCompetitionStatusAsync(
-                step.CompetitionId, step.ToStatus, userId, cancellationToken);
-        }
-
-        return Result.Success(new ApprovalActionResult(
-            StepId: stepId,
-            CompetitionId: step.CompetitionId,
-            IsWorkflowCompleted: allStepsCompleted,
-            FromStatus: step.FromStatus,
-            ToStatus: step.ToStatus));
+        return await ApproveStepAsync(stepId, userId, comment, cancellationToken);
     }
 
     /// <summary>
@@ -224,6 +240,7 @@ public sealed class ApprovalWorkflowService : IApprovalWorkflowService
     public async Task<Result<ApprovalActionResult>> RejectStepAsync(
         Guid stepId,
         string userId,
+        IReadOnlyCollection<string>? roleIdentifiers,
         string reason,
         CancellationToken cancellationToken = default)
     {
@@ -231,7 +248,6 @@ public sealed class ApprovalWorkflowService : IApprovalWorkflowService
         if (step is null)
             return Result.Failure<ApprovalActionResult>("خطوة الاعتماد غير موجودة.");
 
-        // Verify this step is currently actionable
         var currentPendingSteps = await _approvalStepRepository.GetCurrentPendingStepsAsync(
             step.CompetitionId, step.FromStatus, step.ToStatus, cancellationToken);
 
@@ -239,14 +255,43 @@ public sealed class ApprovalWorkflowService : IApprovalWorkflowService
             return Result.Failure<ApprovalActionResult>(
                 "هذه الخطوة ليست الخطوة الحالية في مسار الاعتماد.");
 
-        // Reject the step
+        var authorizationContext = await BuildAuthorizationContextAsync(
+            step.CompetitionId,
+            roleIdentifiers,
+            userId,
+            cancellationToken);
+
+        var roleAuthResult = ValidateStepAuthorization(step, authorizationContext.SystemRoles, authorizationContext.CommitteeRoles);
+        if (roleAuthResult.IsFailure)
+            return Result.Failure<ApprovalActionResult>(roleAuthResult.Error!);
+
+        return await RejectStepAsync(stepId, userId, reason, cancellationToken);
+    }
+
+    /// <inheritdoc />
+    public async Task<Result<ApprovalActionResult>> RejectStepAsync(
+        Guid stepId,
+        string userId,
+        string reason,
+        CancellationToken cancellationToken = default)
+    {
+        var step = await _approvalStepRepository.GetByIdForUpdateAsync(stepId, cancellationToken);
+        if (step is null)
+            return Result.Failure<ApprovalActionResult>("خطوة الاعتماد غير موجودة.");
+
+        var currentPendingSteps = await _approvalStepRepository.GetCurrentPendingStepsAsync(
+            step.CompetitionId, step.FromStatus, step.ToStatus, cancellationToken);
+
+        if (!currentPendingSteps.Any(s => s.Id == stepId))
+            return Result.Failure<ApprovalActionResult>(
+                "هذه الخطوة ليست الخطوة الحالية في مسار الاعتماد.");
+
         var result = step.Reject(userId, reason);
         if (result.IsFailure)
             return Result.Failure<ApprovalActionResult>(result.Error!);
 
         _approvalStepRepository.Update(step);
 
-        // Reset all subsequent steps back to pending
         var allSteps = await _approvalStepRepository.GetByCompetitionTransitionAsync(
             step.CompetitionId, step.FromStatus, step.ToStatus, cancellationToken);
 
@@ -260,6 +305,7 @@ public sealed class ApprovalWorkflowService : IApprovalWorkflowService
         }
 
         await _approvalStepRepository.SaveChangesAsync(cancellationToken);
+        await RevertCompetitionAfterRejectionAsync(step.CompetitionId, step.FromStatus, step.ToStatus, userId, reason, cancellationToken);
 
         return Result.Success(new ApprovalActionResult(
             StepId: stepId,
@@ -336,22 +382,28 @@ public sealed class ApprovalWorkflowService : IApprovalWorkflowService
     /// </summary>
     private static Result ValidateStepAuthorization(
         ApprovalWorkflowStep step,
-        SystemRole userSystemRole,
-        CommitteeRole userCommitteeRole)
+        IReadOnlyCollection<SystemRole> userSystemRoles,
+        IReadOnlyCollection<CommitteeRole> userCommitteeRoles)
     {
-        // Check system role requirement
-        if (step.RequiredRole != SystemRole.Member && userSystemRole != step.RequiredRole)
+        if (!userSystemRoles.Contains(step.RequiredRole))
         {
+            var currentRoles = userSystemRoles.Count == 0
+                ? "بدون أدوار مطابقة"
+                : string.Join(", ", userSystemRoles);
+
             return Result.Failure(
-                $"ليس لديك الصلاحية المطلوبة لاعتماد هذه الخطوة. الدور المطلوب: {step.RequiredRole}، دورك الحالي: {userSystemRole}.");
+                $"ليس لديك الصلاحية المطلوبة لاعتماد هذه الخطوة. الدور المطلوب: {step.RequiredRole}، أدوارك الحالية: {currentRoles}.");
         }
 
-        // Check committee role requirement (if specified)
         if (step.RequiredCommitteeRole != CommitteeRole.None &&
-            userCommitteeRole != step.RequiredCommitteeRole)
+            !userCommitteeRoles.Contains(step.RequiredCommitteeRole))
         {
+            var currentCommitteeRoles = userCommitteeRoles.Count == 0
+                ? "بدون عضوية لجنة مطابقة"
+                : string.Join(", ", userCommitteeRoles);
+
             return Result.Failure(
-                $"يجب أن تكون عضواً في اللجنة المطلوبة لاعتماد هذه الخطوة. الدور المطلوب: {step.RequiredCommitteeRole}، دورك الحالي: {userCommitteeRole}.");
+                $"يجب أن تكون عضواً في اللجنة المطلوبة لاعتماد هذه الخطوة. الدور المطلوب: {step.RequiredCommitteeRole}، عضوياتك الحالية: {currentCommitteeRoles}.");
         }
 
         return Result.Success();
@@ -366,6 +418,30 @@ public sealed class ApprovalWorkflowService : IApprovalWorkflowService
     /// are completed. This ensures the workflow engine drives the competition
     /// lifecycle forward without manual intervention.
     /// </summary>
+    private async Task<ApprovalAuthorizationContext> BuildAuthorizationContextAsync(
+        Guid competitionId,
+        IReadOnlyCollection<string>? roleIdentifiers,
+        string userId,
+        CancellationToken cancellationToken)
+    {
+        if (!Guid.TryParse(userId, out var parsedUserId))
+            return new ApprovalAuthorizationContext(Array.Empty<SystemRole>(), Array.Empty<CommitteeRole>());
+
+        var dbContext = _tenantDbContextFactory.CreateDbContext();
+        var systemRoles = ApprovalActorResolver.ResolveSystemRoles(roleIdentifiers).ToHashSet();
+        var committeeRoles = (await ApprovalActorResolver.ResolveCommitteeRolesForCompetitionAsync(
+                dbContext,
+                competitionId,
+                parsedUserId,
+                cancellationToken))
+            .ToHashSet();
+
+        if (committeeRoles.Count > 0)
+            systemRoles.Add(SystemRole.Member);
+
+        return new ApprovalAuthorizationContext(systemRoles.ToArray(), committeeRoles.ToArray());
+    }
+
     private async Task TransitionCompetitionStatusAsync(
         Guid competitionId,
         CompetitionStatus targetStatus,
@@ -398,6 +474,40 @@ public sealed class ApprovalWorkflowService : IApprovalWorkflowService
     // ═════════════════════════════════════════════════════════════
     //  Fallback: Hardcoded Template (Backward Compatibility)
     // ═════════════════════════════════════════════════════════════
+
+    private async Task RevertCompetitionAfterRejectionAsync(
+        Guid competitionId,
+        CompetitionStatus fromStatus,
+        CompetitionStatus toStatus,
+        string userId,
+        string reason,
+        CancellationToken cancellationToken)
+    {
+        try
+        {
+            var competition = await _competitionRepository.GetByIdForUpdateAsync(competitionId, cancellationToken);
+            if (competition is null)
+                return;
+
+            var targetStatus = fromStatus == CompetitionStatus.PendingApproval && toStatus == CompetitionStatus.Approved
+                ? CompetitionStatus.UnderPreparation
+                : fromStatus;
+
+            if (competition.Status != fromStatus)
+                return;
+
+            var transitionResult = competition.TransitionTo(targetStatus, userId, reason);
+            if (transitionResult.IsSuccess)
+            {
+                _competitionRepository.Update(competition);
+                await _competitionRepository.SaveChangesAsync(cancellationToken);
+            }
+        }
+        catch (Exception)
+        {
+            // The workflow rejection remains persisted even if the competition transition fails.
+        }
+    }
 
     private async Task<Result<ApprovalWorkflowInitiationResult>> InitiateFromHardcodedTemplateAsync(
         Guid competitionId,
@@ -440,6 +550,10 @@ public sealed class ApprovalWorkflowService : IApprovalWorkflowService
             TotalSteps: steps.Count,
             StepIds: steps.Select(s => s.Id).ToList()));
     }
+
+    private sealed record ApprovalAuthorizationContext(
+        IReadOnlyCollection<SystemRole> SystemRoles,
+        IReadOnlyCollection<CommitteeRole> CommitteeRoles);
 }
 
 // ═════════════════════════════════════════════════════════════

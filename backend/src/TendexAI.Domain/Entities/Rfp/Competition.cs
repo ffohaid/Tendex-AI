@@ -369,7 +369,7 @@ public sealed class Competition : AggregateRoot<Guid>
         string? fiscalYear,
         string modifiedBy)
     {
-        if (Status != CompetitionStatus.Draft && Status != CompetitionStatus.UnderPreparation && Status != CompetitionStatus.PendingApproval && Status != CompetitionStatus.Rejected)
+        if (!IsEditableDraftState())
             return Result.Failure("لا يمكن تحديث المعلومات الأساسية: المنافسة ليست في حالة مسودة أو قيد الإعداد أو بانتظار الاعتماد.");
 
         ProjectNameAr = projectNameAr;
@@ -403,7 +403,7 @@ public sealed class Competition : AggregateRoot<Guid>
         decimal? financialWeight,
         string modifiedBy)
     {
-        if (Status != CompetitionStatus.Draft && Status != CompetitionStatus.UnderPreparation && Status != CompetitionStatus.PendingApproval && Status != CompetitionStatus.Rejected)
+        if (!IsEditableDraftState())
             return Result.Failure("لا يمكن تحديث إعدادات التقييم: المنافسة ليست في حالة مسودة أو قيد الإعداد أو بانتظار الاعتماد.");
 
         if (technicalWeight.HasValue && financialWeight.HasValue &&
@@ -425,7 +425,7 @@ public sealed class Competition : AggregateRoot<Guid>
     /// </summary>
     public Result UpdateRequiredAttachmentTypes(IEnumerable<string>? requiredAttachmentTypes, string modifiedBy)
     {
-        if (Status != CompetitionStatus.Draft && Status != CompetitionStatus.UnderPreparation && Status != CompetitionStatus.PendingApproval && Status != CompetitionStatus.Rejected && Status != CompetitionStatus.Approved)
+        if (!IsEditableDraftState() && Status != CompetitionStatus.Approved)
             return Result.Failure("لا يمكن تحديث أنواع المرفقات الإلزامية: المنافسة ليست في حالة قابلة للتعديل.");
 
         RequiredAttachmentTypesSerialized = requiredAttachmentTypes is null
@@ -474,7 +474,7 @@ public sealed class Competition : AggregateRoot<Guid>
 
     public Result AddSection(RfpSection section)
     {
-        if (Status != CompetitionStatus.Draft && Status != CompetitionStatus.UnderPreparation && Status != CompetitionStatus.PendingApproval && Status != CompetitionStatus.Rejected)
+        if (!IsEditableDraftState())
             return Result.Failure("لا يمكن إضافة أقسام: المنافسة ليست في حالة قابلة للتعديل.");
 
         section.SetSortOrder(_sections.Count + 1);
@@ -487,7 +487,7 @@ public sealed class Competition : AggregateRoot<Guid>
 
     public Result RemoveSection(Guid sectionId)
     {
-        if (Status != CompetitionStatus.Draft && Status != CompetitionStatus.UnderPreparation && Status != CompetitionStatus.PendingApproval && Status != CompetitionStatus.Rejected)
+        if (!IsEditableDraftState())
             return Result.Failure("لا يمكن حذف أقسام: المنافسة ليست في حالة قابلة للتعديل.");
 
         var section = _sections.FirstOrDefault(s => s.Id == sectionId);
@@ -505,7 +505,7 @@ public sealed class Competition : AggregateRoot<Guid>
 
     public Result AddBoqItem(BoqItem item)
     {
-        if (Status != CompetitionStatus.Draft && Status != CompetitionStatus.UnderPreparation && Status != CompetitionStatus.PendingApproval && Status != CompetitionStatus.Rejected)
+        if (!IsEditableDraftState())
             return Result.Failure("لا يمكن إضافة بنود جدول الكميات: المنافسة ليست في حالة قابلة للتعديل.");
 
         _boqItems.Add(item);
@@ -514,7 +514,7 @@ public sealed class Competition : AggregateRoot<Guid>
 
     public Result RemoveBoqItem(Guid itemId)
     {
-        if (Status != CompetitionStatus.Draft && Status != CompetitionStatus.UnderPreparation && Status != CompetitionStatus.PendingApproval && Status != CompetitionStatus.Rejected)
+        if (!IsEditableDraftState())
             return Result.Failure("لا يمكن حذف بنود جدول الكميات: المنافسة ليست في حالة قابلة للتعديل.");
 
         var item = _boqItems.FirstOrDefault(i => i.Id == itemId);
@@ -531,7 +531,7 @@ public sealed class Competition : AggregateRoot<Guid>
 
     public Result AddEvaluationCriterion(EvaluationCriterion criterion)
     {
-        if (Status != CompetitionStatus.Draft && Status != CompetitionStatus.UnderPreparation && Status != CompetitionStatus.PendingApproval && Status != CompetitionStatus.Rejected)
+        if (!IsEditableDraftState())
             return Result.Failure("لا يمكن إضافة معايير التقييم: المنافسة ليست في حالة قابلة للتعديل.");
 
         _evaluationCriteria.Add(criterion);
@@ -540,7 +540,7 @@ public sealed class Competition : AggregateRoot<Guid>
 
     public Result RemoveEvaluationCriterion(Guid criterionId)
     {
-        if (Status != CompetitionStatus.Draft && Status != CompetitionStatus.UnderPreparation && Status != CompetitionStatus.PendingApproval && Status != CompetitionStatus.Rejected)
+        if (!IsEditableDraftState())
             return Result.Failure("لا يمكن حذف معايير التقييم: المنافسة ليست في حالة قابلة للتعديل.");
 
         var criterion = _evaluationCriteria.FirstOrDefault(c => c.Id == criterionId);
@@ -557,7 +557,7 @@ public sealed class Competition : AggregateRoot<Guid>
 
     public Result AddAttachment(RfpAttachment attachment)
     {
-        if (Status != CompetitionStatus.Draft && Status != CompetitionStatus.UnderPreparation && Status != CompetitionStatus.PendingApproval && Status != CompetitionStatus.Rejected)
+        if (!IsEditableDraftState())
             return Result.Failure("لا يمكن إضافة مرفقات: المنافسة ليست في حالة قابلة للتعديل.");
 
         _attachments.Add(attachment);
@@ -566,7 +566,7 @@ public sealed class Competition : AggregateRoot<Guid>
 
     public Result RemoveAttachment(Guid attachmentId)
     {
-        if (Status != CompetitionStatus.Draft && Status != CompetitionStatus.UnderPreparation && Status != CompetitionStatus.PendingApproval && Status != CompetitionStatus.Rejected)
+        if (!IsEditableDraftState())
             return Result.Failure("لا يمكن حذف مرفقات: المنافسة ليست في حالة قابلة للتعديل.");
 
         var attachment = _attachments.FirstOrDefault(a => a.Id == attachmentId);
@@ -575,6 +575,13 @@ public sealed class Competition : AggregateRoot<Guid>
 
         _attachments.Remove(attachment);
         return Result.Success();
+    }
+
+    private bool IsEditableDraftState()
+    {
+        return Status == CompetitionStatus.Draft
+            || Status == CompetitionStatus.UnderPreparation
+            || Status == CompetitionStatus.Rejected;
     }
 
     // ═════════════════════════════════════════════════════════════

@@ -23,6 +23,16 @@ public interface IApprovalWorkflowService
         CancellationToken cancellationToken = default);
 
     /// <summary>
+    /// Approves a specific step in the approval workflow with dynamic role authorization.
+    /// </summary>
+    Task<Result<ApprovalActionResult>> ApproveStepAsync(
+        Guid stepId,
+        string userId,
+        IReadOnlyCollection<string>? roleIdentifiers,
+        string? comment,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>
     /// Approves a specific step in the approval workflow with role authorization.
     /// Validates that the user has the required system role and committee role.
     /// </summary>
@@ -42,6 +52,16 @@ public interface IApprovalWorkflowService
         Guid stepId,
         string userId,
         string? comment,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Rejects a specific step in the approval workflow with role authorization.
+    /// </summary>
+    Task<Result<ApprovalActionResult>> RejectStepAsync(
+        Guid stepId,
+        string userId,
+        IReadOnlyCollection<string>? roleIdentifiers,
+        string reason,
         CancellationToken cancellationToken = default);
 
     /// <summary>

@@ -3,12 +3,12 @@ import { ref, computed, onMounted, nextTick, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { httpGet, httpPost, httpPut } from '@/services/http'
+import { submitRfpForApproval } from '@/services/rfpService'
 import RichTextEditor from '@/components/common/RichTextEditor.vue'
 import OfficialBookletDocument from '@/components/rfp/OfficialBookletDocument.vue'
 import { useBrandingStore } from '@/stores/branding'
 import { requestAiTextAssist } from '@/services/aiTextAssistService'
 import {
-  initiateWorkflow,
   getWorkflowStatus,
   approveStep,
   rejectStep,
@@ -631,12 +631,7 @@ async function submitForApproval() {
       competitionStatus.value = 1
     }
 
-    // Now initiate the approval workflow from UnderPreparation to PendingApproval
-    await initiateWorkflow({
-      competitionId: competitionId.value,
-      fromStatus: 1, // UnderPreparation
-      toStatus: 2, // PendingApproval
-    })
+    await submitRfpForApproval(competitionId.value)
 
     approvalSuccess.value = locale.value === 'ar'
       ? '\u062a\u0645 \u062a\u0642\u062f\u064a\u0645 \u0627\u0644\u0643\u0631\u0627\u0633\u0629 \u0644\u0644\u0627\u0639\u062a\u0645\u0627\u062f \u0628\u0646\u062c\u0627\u062d'
