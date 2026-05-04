@@ -21,6 +21,13 @@ function isWithinFiscalYear(value: string, fiscalYear: string): boolean {
   return value.startsWith(`${fiscalYear}-`)
 }
 
+const fiscalYearBoundedDateFields = new Set([
+  'bookletIssueDate',
+  'inquiriesStartDate',
+  'offersStartDate',
+  'submissionDeadline',
+])
+
 export const basicInfoSchema = z.object({
   projectName: z
     .string({ required_error: 'اسم المشروع مطلوب' })
@@ -101,7 +108,7 @@ export const basicInfoSchema = z.object({
       continue
     }
 
-    if (!isWithinFiscalYear(value, data.fiscalYear)) {
+    if (fiscalYearBoundedDateFields.has(dateField.key) && !isWithinFiscalYear(value, data.fiscalYear)) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
         message: `${dateField.label} يجب أن يكون ضمن السنة المالية المحددة`,

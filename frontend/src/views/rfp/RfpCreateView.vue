@@ -56,6 +56,7 @@ const step5Ref = ref<InstanceType<typeof Step5Attachments> | null>(null)
 
 const isSubmitting = ref(false)
 const submitError = ref('')
+const stepContentRef = ref<HTMLElement | null>(null)
 
 /** Load existing RFP if editing */
 onMounted(async () => {
@@ -94,9 +95,31 @@ async function validateCurrentStep(): Promise<boolean> {
 }
 
 /** Handle next step */
+function scrollToFirstValidationError() {
+  const container = stepContentRef.value
+  if (!container) return
+
+  const firstInvalidElement = container.querySelector<HTMLElement>(
+    '.border-danger, [aria-invalid="true"], .text-danger',
+  )
+
+  if (!firstInvalidElement) {
+    return
+  }
+
+  firstInvalidElement.scrollIntoView({ behavior: 'smooth', block: 'center' })
+
+  if ('focus' in firstInvalidElement) {
+    firstInvalidElement.focus({ preventScroll: true })
+  }
+}
+
 async function handleNext() {
   const isValid = await validateCurrentStep()
-  if (!isValid) return
+  if (!isValid) {
+    scrollToFirstValidationError()
+    return
+  }
 
   const saveSucceeded = await rfpStore.saveCurrentStep()
   if (!saveSucceeded) {
@@ -243,7 +266,7 @@ async function handleManualSave() {
       </div>
 
       <!-- Step content -->
-      <div v-else class="rounded-xl border border-surface-dim bg-white p-6 shadow-sm sm:p-8">
+      <div ref="stepContentRef" v-else class="rounded-xl border border-surface-dim bg-white p-6 shadow-sm sm:p-8">
         <!-- Step 1: Basic Info -->
         <Step1BasicInfo v-if="rfpStore.currentStep === 1" ref="step1Ref" />
 

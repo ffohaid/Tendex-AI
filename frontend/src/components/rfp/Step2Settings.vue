@@ -107,8 +107,8 @@ function updateCriterionField(id: string, field: string, value: string | number)
     const maxAllowed = getMaxAllowedCriterionWeight(id)
 
     if (normalizedValue > maxAllowed) {
-      criteriaWeightError.value = t('rfp.validation.criteriaWeightTotalExceeded', { maxAllowed })
       value = maxAllowed
+      criteriaWeightError.value = ''
     } else {
       criteriaWeightError.value = ''
       value = normalizedValue

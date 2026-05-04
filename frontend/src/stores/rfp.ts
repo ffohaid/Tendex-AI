@@ -46,6 +46,10 @@ function normalizePercentage(value: number | null | undefined): number {
   return Math.min(100, Math.max(0, value))
 }
 
+function getTodayIsoDate(): string {
+  return new Date().toISOString().split('T')[0]
+}
+
 /** Default empty form data */
 function createEmptyFormData(): RfpFormData {
   return {
@@ -58,8 +62,8 @@ function createEmptyFormData(): RfpFormData {
       currency: 'SAR',
       bookletNumber: '',
       department: '',
-      fiscalYear: '',
-      bookletIssueDate: '',
+      fiscalYear: String(new Date().getFullYear()),
+      bookletIssueDate: getTodayIsoDate(),
       inquiriesStartDate: '',
       inquiryPeriodDays: null,
       offersStartDate: '',

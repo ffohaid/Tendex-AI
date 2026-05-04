@@ -24,15 +24,27 @@ const route = useRoute()
 
 const hasChildren = computed(() => !!props.item.children?.length)
 
+function matchesRoute(targetRoute?: string): boolean {
+  if (!targetRoute) return false
+
+  const activeNav = typeof route.query.activeNav === 'string' ? route.query.activeNav : ''
+
+  return route.name === targetRoute || activeNav === targetRoute
+}
+
+function isChildActive(child: NavigationItem): boolean {
+  return matchesRoute(child.route)
+}
+
 /**
  * Checks if the current route matches this item or any of its children.
  */
 const isActive = computed(() => {
   if (props.item.route) {
-    return route.name === props.item.route
+    return matchesRoute(props.item.route)
   }
   if (props.item.children) {
-    return props.item.children.some((child) => route.name === child.route)
+    return props.item.children.some((child) => isChildActive(child))
   }
   return false
 })
@@ -166,7 +178,7 @@ function navigateToChild(child: NavigationItem): void {
             type="button"
             class="group relative flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-sm transition-all duration-150"
             :class="[
-              route.name === child.route
+              isChildActive(child)
                 ? 'bg-white/10 font-medium text-white'
                 : 'text-secondary-400 hover:bg-white/5 hover:text-secondary-200',
             ]"
@@ -174,7 +186,7 @@ function navigateToChild(child: NavigationItem): void {
           >
             <!-- Active dot for child -->
             <span
-              v-if="route.name === child.route"
+              v-if="isChildActive(child)"
               class="absolute h-1.5 w-1.5 rounded-full bg-primary"
               :style="{ insetInlineStart: '-0.75rem' }"
             ></span>
@@ -182,7 +194,7 @@ function navigateToChild(child: NavigationItem): void {
               :class="[
                 child.icon,
                 'text-sm',
-                route.name === child.route
+                isChildActive(child)
                   ? 'text-primary'
                   : 'text-secondary-500 group-hover:text-secondary-300',
               ]"

@@ -17,7 +17,7 @@
  */
 import { ref, computed } from 'vue'
 import { useI18n } from 'vue-i18n'
-import http from '@/services/http'
+import { requestAiTextAssist } from '@/services/aiTextAssistService'
 
 const props = defineProps<{
   /** Context information to help AI generate relevant content */
@@ -100,30 +100,24 @@ async function handleAction(actionKey: string) {
   error.value = ''
 
   try {
-    const response = await http.post<{ isSuccess: boolean; generatedText: string; errorMessage?: string }>(
-      '/v1/ai/text/assist',
-      {
-        action: actionKey,
-        currentText: props.currentText || '',
-        fieldName: props.context.fieldName,
-        fieldPurpose: props.context.fieldPurpose || '',
-        projectName: props.context.projectName || '',
-        projectDescription: props.context.projectDescription || '',
-        competitionType: props.context.competitionType || '',
-        additionalContext: props.context.additionalContext || '',
-        customPrompt: customPrompt.value || '',
-        language: 'ar',
-        maxCharacters: props.maxCharacters || 0,
+    const response = await requestAiTextAssist({
+      action: actionKey,
+      currentText: props.currentText || '',
+      context: {
+        ...props.context,
+        strictFieldScope: true,
       },
-      { timeout: 120_000 },
-    )
+      customPrompt: customPrompt.value || '',
+      language: 'ar',
+      maxCharacters: props.maxCharacters || 0,
+    })
 
-    if (response.data.isSuccess && response.data.generatedText) {
-      emit('text-generated', response.data.generatedText)
+    if (response.isSuccess && response.generatedText) {
+      emit('text-generated', response.generatedText)
       customPrompt.value = ''
       isExpanded.value = false
     } else {
-      error.value = response.data.errorMessage || (locale.value === 'ar' ? 'فشل في توليد النص' : 'Failed to generate text')
+      error.value = response.errorMessage || (locale.value === 'ar' ? 'فشل في توليد النص' : 'Failed to generate text')
     }
   } catch (err: any) {
     error.value = err?.response?.data?.errorMessage
@@ -141,29 +135,23 @@ async function handleCustomPrompt() {
   error.value = ''
 
   try {
-    const response = await http.post<{ isSuccess: boolean; generatedText: string; errorMessage?: string }>(
-      '/v1/ai/text/assist',
-      {
-        action: 'custom',
-        currentText: props.currentText || '',
-        fieldName: props.context.fieldName,
-        fieldPurpose: props.context.fieldPurpose || '',
-        projectName: props.context.projectName || '',
-        projectDescription: props.context.projectDescription || '',
-        competitionType: props.context.competitionType || '',
-        additionalContext: props.context.additionalContext || '',
-        customPrompt: customPrompt.value,
-        language: 'ar',
-        maxCharacters: props.maxCharacters || 0,
+    const response = await requestAiTextAssist({
+      action: 'custom',
+      currentText: props.currentText || '',
+      context: {
+        ...props.context,
+        strictFieldScope: true,
       },
-      { timeout: 120_000 },
-    )
+      customPrompt: customPrompt.value,
+      language: 'ar',
+      maxCharacters: props.maxCharacters || 0,
+    })
 
-    if (response.data.isSuccess && response.data.generatedText) {
-      emit('text-generated', response.data.generatedText)
+    if (response.isSuccess && response.generatedText) {
+      emit('text-generated', response.generatedText)
       customPrompt.value = ''
     } else {
-      error.value = response.data.errorMessage || (locale.value === 'ar' ? 'فشل في توليد النص' : 'Failed to generate text')
+      error.value = response.errorMessage || (locale.value === 'ar' ? 'فشل في توليد النص' : 'Failed to generate text')
     }
   } catch (err: any) {
     error.value = err?.response?.data?.errorMessage

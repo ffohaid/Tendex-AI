@@ -6,6 +6,7 @@ import { httpGet, httpPost, httpPut } from '@/services/http'
 import RichTextEditor from '@/components/common/RichTextEditor.vue'
 import OfficialBookletDocument from '@/components/rfp/OfficialBookletDocument.vue'
 import { useBrandingStore } from '@/stores/branding'
+import { requestAiTextAssist } from '@/services/aiTextAssistService'
 import {
   initiateWorkflow,
   getWorkflowStatus,
@@ -76,6 +77,7 @@ const brandingStore = useBrandingStore()
 // ─── State ──────────────────────────────────────────────
 const competitionId = computed(() => route.params.id as string)
 const isLoading = ref(true)
+const editorContentRef = ref<HTMLElement | null>(null)
 const loadError = ref('')
 const projectNameAr = ref('')
 const projectNameEn = ref('')
@@ -87,7 +89,12 @@ const issueDate = ref('')
 const sections = ref<BookletSection[]>([])
 const activeSectionId = ref('')
 const showGuidance = ref(true)
-const viewMode = ref<'preview' | 'edit'>('preview')
+
+function resolveViewMode(mode: unknown): 'preview' | 'edit' {
+  return mode === 'preview' ? 'preview' : 'edit'
+}
+
+const viewMode = ref<'preview' | 'edit'>(resolveViewMode(route.query.mode))
 const showMetadataDialog = ref(false)
 const isSavingMetadata = ref(false)
 const metadataError = ref('')
@@ -126,6 +133,7 @@ const competitionStatus = ref<number>(0) // 0=Draft, 1=UnderPreparation, 2=Pendi
 
 const isReadOnly = computed(() => competitionStatus.value >= 2) // PendingApproval or Approved
 const canSubmitForApproval = computed(() => competitionStatus.value <= 1)
+const canDownloadBooklet = computed(() => competitionStatus.value >= 2)
 // Reserved for future use:
 // const isApprovalPhase = computed(() => competitionStatus.value === 2)
 // const isApproved = computed(() => competitionStatus.value === 3)
@@ -320,6 +328,24 @@ function scrollToSection(sectionId: string) {
   activeSectionId.value = sectionId
 }
 
+async function setViewMode(mode: 'preview' | 'edit') {
+  viewMode.value = mode
+
+  if (route.query.mode === mode) {
+    return
+  }
+
+  await router.replace({
+    query: {
+      ...route.query,
+      mode,
+    },
+  })
+}
+
+function scrollEditorContentToTop() {
+  editorContentRef.value?.scrollTo({ top: 0, behavior: 'smooth' })
+}
 
 function updateBlockContent(blockId: string, newContent: string) {
   validationError.value = ''
@@ -446,19 +472,19 @@ async function generateWithAi(action: string) {
   aiResult.value = ''
 
   try {
-    const response = await httpPost<{ isSuccess: boolean; generatedText: string; errorMessage?: string }>('/v1/ai/text/assist', {
+    const response = await requestAiTextAssist({
       action,
       currentText: block.editedContent,
-      fieldName: getActiveSectionTitle(),
-      fieldPurpose: block.colorType === 'example'
-        ? 'استبدال نص المثال بمحتوى حقيقي مناسب لكراسة شروط ومواصفات حكومية'
-        : 'تحرير محتوى قسم في كراسة شروط ومواصفات حكومية',
-      projectName: projectNameAr.value,
-      projectDescription: '',
-      competitionType: 'PublicTender',
-      additionalContext: `القالب: ${templateNameAr.value}`,
+      context: {
+        fieldName: getActiveSectionTitle() || 'محتوى القسم',
+        fieldPurpose: block.colorType === 'example'
+          ? 'استبدال نص المثال بمحتوى حقيقي مناسب لهذا الحقل داخل كراسة شروط ومواصفات حكومية'
+          : 'تحرير محتوى الحقل الحالي فقط داخل كراسة شروط ومواصفات حكومية',
+        additionalContext: `القسم الحالي: ${getActiveSectionTitle()}`,
+        strictFieldScope: true,
+      },
       customPrompt: action === 'custom' ? aiPrompt.value : undefined,
-      language: 'ar'
+      language: 'ar',
     })
     if (response.isSuccess && response.generatedText) {
       aiResult.value = response.generatedText
@@ -721,6 +747,18 @@ watch(
   { deep: true }
 )
 
+watch(
+  () => route.query.mode,
+  (mode) => {
+    viewMode.value = resolveViewMode(mode)
+  }
+)
+
+watch(activeSectionId, async () => {
+  await nextTick()
+  scrollEditorContentToTop()
+})
+
 onMounted(async () => {
   await brandingStore.loadAndApplyBranding()
   await loadBookletData()
@@ -740,10 +778,11 @@ onMounted(async () => {
 </script>
 
 <template>
-  <div class="flex h-[calc(100vh-4rem)] flex-col">
+    <div class="flex h-[calc(100vh-4rem)] flex-col">
     <!-- Top Bar -->
-    <div class="flex items-center justify-between border-b border-secondary-100 bg-white px-6 py-3">
-      <div class="flex items-center gap-4">
+    <div class="flex flex-wrap items-start justify-between gap-4 border-b border-secondary-100 bg-white px-6 py-3">
+      <div class="flex min-w-0 flex-1 items-start gap-4">
+
         <button
           class="rounded-lg p-2 text-secondary-500 hover:bg-secondary-100"
           @click="router.push({ name: 'BookletTemplates' })"
@@ -751,7 +790,7 @@ onMounted(async () => {
           <i class="pi pi-arrow-right"></i>
         </button>
         <div>
-          <div class="flex items-center gap-3">
+          <div class="flex flex-wrap items-center gap-3">
             <h1 class="text-lg font-bold text-secondary-800">
               {{ projectNameAr || (locale === 'ar' ? 'محرر الكراسة' : 'Booklet Editor') }}
             </h1>
@@ -778,7 +817,7 @@ onMounted(async () => {
           </div>
         </div>
       </div>
-      <div class="flex items-center gap-3">
+      <div class="flex flex-wrap items-center justify-end gap-3">
         <!-- Status Badge -->
         <span
           class="inline-flex items-center rounded-md border px-2.5 py-1 text-xs font-semibold"
@@ -792,14 +831,14 @@ onMounted(async () => {
           <button
             class="rounded-md px-3 py-1.5 text-xs font-medium transition-all"
             :class="viewMode === 'preview' ? 'bg-primary text-white shadow-sm' : 'text-secondary-500 hover:bg-secondary-50'"
-            @click="viewMode = 'preview'"
+            @click="setViewMode('preview')"
           >
             <i class="pi pi-eye me-1"></i>{{ locale === 'ar' ? 'العرض الرسمي' : 'Official View' }}
           </button>
           <button
             class="rounded-md px-3 py-1.5 text-xs font-medium transition-all"
             :class="viewMode === 'edit' ? 'bg-primary text-white shadow-sm' : 'text-secondary-500 hover:bg-secondary-50'"
-            @click="viewMode = 'edit'"
+            @click="setViewMode('edit')"
           >
             <i class="pi pi-pencil me-1"></i>{{ locale === 'ar' ? 'وضع التحرير' : 'Edit Mode' }}
           </button>
@@ -828,6 +867,7 @@ onMounted(async () => {
         </button>
 
         <button
+          v-if="canDownloadBooklet"
           class="rounded-lg border border-secondary-200 px-3 py-1.5 text-xs font-medium text-secondary-600 transition-all hover:bg-secondary-50"
           @click="router.push({ name: 'rfp-export', params: { id: competitionId } })"
         >
@@ -957,7 +997,7 @@ onMounted(async () => {
       </div>
 
       <!-- Main Area -->
-      <div class="flex-1 overflow-y-auto" :class="viewMode === 'preview' ? 'bg-surface-ground' : 'bg-white'">
+      <div ref="editorContentRef" class="flex-1 overflow-y-auto" :class="viewMode === 'preview' ? 'bg-surface-ground' : 'bg-white'">
         <div v-if="viewMode === 'preview'" class="px-6 py-6">
           <OfficialBookletDocument
             :meta="officialBookletMeta"
@@ -1184,7 +1224,14 @@ onMounted(async () => {
                   <h4 class="mb-1 text-xs font-semibold text-secondary-400">
                     {{ locale === 'ar' ? 'النص الحالي' : 'Current Text' }}
                   </h4>
-                  <p class="line-clamp-4 text-xs text-secondary-600">{{ getActiveBlock()?.editedContent }}</p>
+                  <RichTextEditor
+                    :model-value="getActiveBlock()?.editedContent || ''"
+                    :editable="false"
+                    dir="rtl"
+                    min-height="96px"
+                    max-height="160px"
+                    compact
+                  />
                 </div>
 
                 <!-- Quick Actions -->

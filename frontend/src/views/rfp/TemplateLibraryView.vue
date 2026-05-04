@@ -153,7 +153,7 @@ const createTemplateCompetitionForm = () => ({
   bookletNumber: '',
   department: '',
   fiscalYear: new Date().getFullYear().toString(),
-  bookletIssueDate: '',
+  bookletIssueDate: new Date().toISOString().split('T')[0],
   inquiriesStartDate: '',
   inquiryPeriodDays: null as number | null,
   offersStartDate: '',
@@ -546,7 +546,15 @@ async function handleCreateBooklet(): Promise<void> {
     createBookletSuccess.value = true
     setTimeout(() => {
       createBookletSuccess.value = false
-      router.push({ name: 'BookletEditor', params: { id: result.rfpId } })
+      router.push({
+        name: 'BookletEditor',
+        params: { id: result.rfpId },
+        query: {
+          mode: 'edit',
+          source: 'template-library',
+          activeNav: 'TemplateLibrary',
+        },
+      })
     }, 1000)
   } catch (err: unknown) {
     createBookletError.value = err instanceof Error ? err.message : (locale.value === 'ar' ? 'حدث خطأ أثناء إنشاء الكراسة' : 'Error creating booklet')
@@ -1448,7 +1456,8 @@ onMounted(() => {
                   <input
                     v-model="useBookletForm.bookletIssueDate"
                     type="date"
-                    class="w-full rounded-xl border border-secondary-200 bg-secondary-50 px-4 py-2.5 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
+                    readonly
+                    class="w-full rounded-xl border border-secondary-200 bg-secondary-100 px-4 py-2.5 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
                   />
                 </div>
                 <div>

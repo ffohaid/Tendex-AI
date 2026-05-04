@@ -1663,3 +1663,57 @@ This task implemented and deployed a focused fix set for the issues reported in 
 
 ### Live validation outcome
 The production validation confirmed that evaluation criteria are now visually mandatory with an inline validation message, booklet content no longer fails with HTTP 500 in the verified path, field-level validation in content and BOQ behavior changes are effective, and non-draft RFPs are locked from edit with title navigation routed to read-only/export mode. Upload/extract also completed successfully and created a live editable booklet. The remaining observation is that the tested extracted booklet reached Step 2 with weighted evaluation selected but without visible extracted evaluation criteria populated, so this specific extraction visibility path should be treated as a follow-up check item.
+
+---
+
+### Task: Booklet Template Flow Stability & Validation Fixes
+**Date:** 2026-05-04
+**Status:** ✅ Completed
+
+#### Changes Made:
+
+1. **Template-to-Editor Navigation Stability**
+   - Preserved sidebar active state for deep booklet editor navigation by supporting `activeNav` route context.
+   - Updated the template library flow to open the booklet editor with explicit route query context.
+   - Persisted editor mode in the route query to keep the selected mode stable after refresh.
+
+2. **Booklet Editor UX Fixes**
+   - Defaulted the editor to edit mode for template creation flow.
+   - Improved the top header layout to reduce action misalignment in constrained widths.
+   - Hid the download action until the competition reaches a downloadable status.
+   - Reset the editor content scroll position to the top when switching sections.
+   - Replaced raw HTML preview in the AI side panel with read-only rich rendering.
+
+3. **AI Text Assistance Scope Hardening**
+   - Added a shared `aiTextAssistService.ts` service as a single source of truth for text assistance requests.
+   - Introduced strict field-scoped prompting to prevent unrelated project or booklet context from leaking into field-level AI output.
+   - Reused the shared service in both the generic field helper and the booklet editor AI panel.
+
+4. **Date Rules & Validation Corrections**
+   - Auto-generated the booklet issue date from the creation date and made it read-only in the affected creation flows.
+   - Set default fiscal year and booklet issue date values in the RFP store.
+   - Limited fiscal year enforcement to pre-award dates only in the shared validation schema.
+   - Allowed expected award date and work start date to extend beyond fiscal year boundaries while preserving chronological validation.
+
+5. **Wizard Validation UX Fixes**
+   - Cleared stale criteria weight overflow messaging after automatic correction to prevent conflicting error messages.
+   - Added automatic scroll-to-first-error behavior when validation fails on the current wizard step.
+
+#### Files Modified:
+- `frontend/src/components/ai/AiTextHelper.vue`
+- `frontend/src/components/layout/SidebarMenuItem.vue`
+- `frontend/src/components/rfp/Step1BasicInfo.vue`
+- `frontend/src/components/rfp/Step2Settings.vue`
+- `frontend/src/locales/ar.json`
+- `frontend/src/locales/en.json`
+- `frontend/src/stores/rfp.ts`
+- `frontend/src/validations/rfp.ts`
+- `frontend/src/views/rfp/BookletEditorView.vue`
+- `frontend/src/views/rfp/RfpCreateView.vue`
+- `frontend/src/views/rfp/TemplateLibraryView.vue`
+- `frontend/src/services/aiTextAssistService.ts` (NEW)
+
+#### Verification:
+- `npm run build` ✅
+- `git diff --check` ✅
+- `git diff --stat` reviewed ✅
