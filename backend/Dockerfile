@@ -51,9 +51,22 @@ WORKDIR /app
 RUN groupadd --gid 1001 tendex && \
     useradd --uid 1001 --gid tendex --shell /bin/false --create-home tendex
 
-# Install curl for healthcheck
-RUN apt-get update && \
-    apt-get install -y --no-install-recommends curl && \
+# Install curl for healthcheck with retries to reduce transient network failures in CI builds
+RUN set -eux; \
+    apt_get_update() { apt-get update -o Acquire::Retries=5 -o Acquire::http::Timeout=30 -o Acquire::https::Timeout=30; }; \
+    apt_get_update; \
+    for attempt in 1 2 3; do \
+        if apt-get install -y --no-install-recommends curl; then \
+            break; \
+        fi; \
+        if [ "$attempt" -eq 3 ]; then \
+            exit 1; \
+        fi; \
+        apt-get clean; \
+        rm -rf /var/lib/apt/lists/*; \
+        sleep 5; \
+        apt_get_update; \
+    done; \
     rm -rf /var/lib/apt/lists/*
 
 # Copy published output
