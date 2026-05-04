@@ -1,0 +1,5 @@
+Reference finding: The .NET ASP.NET runtime images do not include curl by default, and official discussion recommends either installing a tool, using Alpine-specific tooling when available, or shipping a custom probe utility.
+
+Deployment verification finding: https://mof.netaq.pro/ responds successfully after deployment and loads the login page at /auth/login?redirect=/ with visible Arabic login form fields, indicating the frontend is serving normally after run 73.
+
+HTTP verification finding: curl -I -L https://mof.netaq.pro/ returned HTTP/2 200 from nginx after deployment.

@@ -26,7 +26,7 @@ The repository diff was reviewed to confirm that the backend runtime and product
 
 ## Deployment Status
 
-At the time of this draft, the code changes are prepared for commit and push, after which a new production deployment run will be triggered and monitored.
+The fix was committed as `1636343` with message `fix(docker): replace curl healthcheck with dotnet probe`, pushed to `main`, and deployed successfully through GitHub Actions run **73** (`run_id: 25324611079`). The workflow completed successfully across all stages: **Test Gate**, **Build Docker Images**, and **Deploy to Production**.
 
 ## Files Included In This Fix
 
@@ -37,6 +37,10 @@ At the time of this draft, the code changes are prepared for commit and push, af
 | `backend/src/TendexAI.ContainerHealthcheck/Program.cs` | Implements the HTTP probe logic with proper exit codes. |
 | `infrastructure/docker-compose.prod.yml` | Aligns production orchestration healthcheck with the new probe. |
 
-## Next Actions
+## Live Verification
 
-The next steps are to update `PROGRESS.md`, commit only the relevant deployment fix files, push to `main`, trigger the production workflow again, monitor the new run to completion, and then verify the live environment response.
+The live environment responded successfully after deployment. An HTTP HEAD request to `https://mof.netaq.pro/` returned **HTTP/2 200** from Nginx, and a browser verification confirmed that the platform loads the Arabic login page at `https://mof.netaq.pro/auth/login?redirect=/` without a visible runtime error screen.
+
+## Outcome
+
+The production deployment blocker caused by runtime-stage `curl` installation is resolved. The fix batch is now deployed successfully on the live environment, and the backend image no longer depends on transient `apt-get` package index availability during CI builds.

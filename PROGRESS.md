@@ -1881,5 +1881,6 @@ Resolved the recurring production deployment blocker in GitHub Actions for the 2
 - Confirmed the branch is synchronized with `origin/main` before commit (`ahead/behind: 0/0`).
 
 ### Status
-- Code changes prepared locally for commit and push.
-- Next step: trigger a fresh production deployment run and monitor it to completion.
+- Commit pushed to `main`: `1636343` (`fix(docker): replace curl healthcheck with dotnet probe`).
+- Production deployment workflow run `73` (`run_id: 25324611079`) completed successfully.
+- Live verification completed successfully: `https://mof.netaq.pro/` returned HTTP 200 and the login page rendered correctly in the browser.
