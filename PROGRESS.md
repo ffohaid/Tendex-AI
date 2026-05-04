@@ -1734,3 +1734,38 @@ The production validation confirmed that evaluation criteria are now visually ma
 | Live `/health` path | HTTP 404 on public route |
 
 تم حفظ تقرير النشر في الملف `deployment_report_20260504.md` لمرجعية المتابعة اللاحقة.
+
+## 2026-05-04: Template Creation and Booklet Editing Stability Fixes (04052026_2)
+
+### Summary
+تم تنفيذ حزمة إصلاحات مركزة على تدفقات إنشاء الكراسة من القالب وتحرير الكراسة، بهدف معالجة فقدان بيانات النوافذ المنبثقة، توضيح حقل القيمة التقديرية، توحيد احتساب مدة الاستفسارات، تصحيح منطق اكتمال الأقسام، وتحسين التنقل داخل الأقسام الطويلة.
+
+### Key Fixes
+| Area | Update |
+|---|---|
+| Template creation dialogs | إضافة تأكيد قبل إغلاق نوافذ استخدام القالب عند وجود تغييرات غير محفوظة، سواء عبر النقر خارج النافذة أو زر الإغلاق أو الإلغاء. |
+| Estimated value | إظهار رمز الريال السعودي الجديد `﷼` بصريًا داخل حقول القيمة التقديرية في نماذج الإنشاء من القوالب. |
+| Inquiry duration | تحويل مدة الاستفسارات إلى قيمة محسوبة تلقائيًا من تاريخ بداية الاستفسارات وآخر موعد لتقديم العروض، مع جعل الحقل للعرض فقط. |
+| Section completion | نقل منطق الإكمال التلقائي إلى المخزن المركزي بحيث يبدأ القسم غير مكتمل افتراضيًا ويُعلَّم مكتملًا عند تعديل حقوله، مع الإبقاء على التحديد اليدوي. |
+| Extracted template sections | منع وسم الأقسام المستخرجة من القوالب كمكتملة بشكل افتراضي عند إنشاء المنافسة من ملف مستخرج. |
+| Add section UX | تمرير تلقائي إلى القسم الجديد وفتحه للكتابة مع تركيز أول حقل قابل للتحرير. |
+| Empty sections | إضافة إجراء واضح لتحرير القسم الفارغ الموجود مسبقًا بدل إبقائه مطويًا دون مسار واضح للإدخال. |
+| Booklet editor navigation | إضافة أزرار تنقل سفلية بين الأقسام داخل محرر الكراسة لتقليل الحاجة للعودة إلى أعلى القسم الطويل. |
+
+### Files Modified
+- `frontend/src/stores/rfp.ts`
+- `frontend/src/components/rfp/Step3Content.vue`
+- `frontend/src/views/rfp/RfpMethodSelectionView.vue`
+- `frontend/src/views/rfp/TemplateLibraryView.vue`
+- `frontend/src/views/rfp/BookletEditorView.vue`
+- `fix_report_04052026_2.md`
+
+### Verification
+| Check | Result |
+|---|---|
+| `pnpm build` | Passed |
+| `git diff --check` | Passed |
+| Regression scope review | Completed on targeted files only |
+
+### Notes
+الإصلاحات لم تُنشر حيًا بعد ضمن هذه المهمة. الحالة الحالية هي أن التعديلات جاهزة للالتزام والدفع ثم النشر عند الطلب.

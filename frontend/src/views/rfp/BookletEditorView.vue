@@ -1185,6 +1185,27 @@ onMounted(async () => {
                   {{ locale === 'ar' ? 'لا يوجد محتوى في هذا القسم' : 'No content in this section' }}
                 </p>
               </div>
+
+              <div v-if="sections.length > 1" class="mt-6 flex flex-wrap items-center justify-between gap-3 border-t border-secondary-100 pt-4">
+                <button
+                  type="button"
+                  class="inline-flex items-center gap-2 rounded-lg border border-secondary-200 bg-white px-3 py-2 text-xs font-medium text-secondary-600 transition hover:border-primary/40 hover:text-primary disabled:cursor-not-allowed disabled:opacity-50"
+                  :disabled="activeSectionIndex <= 0"
+                  @click="goToSectionOffset(-1)"
+                >
+                  <i class="pi pi-arrow-right text-[10px]"></i>
+                  {{ locale === 'ar' ? 'السابق' : 'Previous' }}
+                </button>
+                <button
+                  type="button"
+                  class="inline-flex items-center gap-2 rounded-lg border border-secondary-200 bg-white px-3 py-2 text-xs font-medium text-secondary-600 transition hover:border-primary/40 hover:text-primary disabled:cursor-not-allowed disabled:opacity-50"
+                  :disabled="activeSectionIndex === -1 || activeSectionIndex >= sections.length - 1"
+                  @click="goToSectionOffset(1)"
+                >
+                  {{ locale === 'ar' ? 'التالي' : 'Next' }}
+                  <i class="pi pi-arrow-left text-[10px]"></i>
+                </button>
+              </div>
             </div>
           </div>
         </div>

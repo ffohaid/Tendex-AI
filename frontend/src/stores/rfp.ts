@@ -271,10 +271,11 @@ export const useRfpStore = defineStore('rfp', () => {
       isRequired: section?.isRequired || false,
       colorCode: section?.colorCode ?? 'green',
       assignedTo: section?.assignedTo || null,
-      isCompleted: false,
+      isCompleted: section?.isCompleted ?? false,
     }
     formData.value.content.sections.push(newSection)
     isDirty.value = true
+    return newSection
   }
 
   function removeSection(sectionId: string) {
@@ -289,10 +290,24 @@ export const useRfpStore = defineStore('rfp', () => {
       (s) => s.id === sectionId,
     )
     if (index !== -1) {
-      formData.value.content.sections[index] = {
-        ...formData.value.content.sections[index],
+      const currentSection = formData.value.content.sections[index]
+      const updatedSection: RfpSection = {
+        ...currentSection,
         ...data,
       }
+
+      const hasExplicitCompletionUpdate = Object.prototype.hasOwnProperty.call(data, 'isCompleted')
+      const autoCompleteKeys: Array<keyof RfpSection> = ['title', 'content', 'contentHtml', 'assignedTo', 'colorCode']
+      const hasMeaningfulFieldChange = autoCompleteKeys.some((key) => {
+        if (!(key in data)) return false
+        return currentSection[key] !== updatedSection[key]
+      })
+
+      if (!hasExplicitCompletionUpdate && hasMeaningfulFieldChange) {
+        updatedSection.isCompleted = true
+      }
+
+      formData.value.content.sections[index] = updatedSection
       isDirty.value = true
     }
   }

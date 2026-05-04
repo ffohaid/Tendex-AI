@@ -322,7 +322,7 @@ async function createFromExtraction(): Promise<void> {
         isRequired: s.isMandatory,
         colorCode: '' as const,
         assignedTo: null,
-        isCompleted: true,
+        isCompleted: false,
       }))
 
       // clearExisting = false because the competition was just created (no existing sections)

@@ -10,7 +10,7 @@
  * - AI-powered structure generation
  * - AI-powered section content generation and refinement
  */
-import { ref } from 'vue'
+import { ref, nextTick } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useForm } from 'vee-validate'
 import { toTypedSchema } from '@vee-validate/zod'
@@ -22,7 +22,7 @@ import AiStructureGenerator from './AiStructureGenerator.vue'
 import RichTextEditor from '@/components/common/RichTextEditor.vue'
 import type { BookletSection } from '@/services/aiSpecificationService'
 
-const { t } = useI18n()
+const { t, locale } = useI18n()
 const rfpStore = useRfpStore()
 
 const schema = toTypedSchema(contentSchema)
@@ -79,13 +79,23 @@ function handleAiContent(sectionId: string, content: string, contentHtml?: strin
   rfpStore.updateSection(sectionId, { content, ...(contentHtml ? { contentHtml } : {}) })
 }
 
+function focusSectionEditor(sectionId: string) {
+  const sectionElement = document.getElementById(`rfp-section-${sectionId}`)
+  sectionElement?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+  const firstInput = sectionElement?.querySelector('input, textarea, [contenteditable="true"]') as HTMLElement | null
+  firstInput?.focus()
+}
+
 /** Add a new empty section */
-function addNewSection() {
-  rfpStore.addSection({
+async function addNewSection() {
+  const newSection = rfpStore.addSection({
     title: '',
     colorCode: '',
     isRequired: false,
   })
+  editingSectionId.value = newSection.id
+  await nextTick()
+  focusSectionEditor(newSection.id)
 }
 
 function getSectionFieldError(index: number, field: 'title' | 'content') {
@@ -115,8 +125,16 @@ function getColorCodeInfo(code: string) {
 }
 
 /** Toggle section editing */
-function toggleEdit(sectionId: string) {
-  editingSectionId.value = editingSectionId.value === sectionId ? null : sectionId
+async function toggleEdit(sectionId: string) {
+  const nextSectionId = editingSectionId.value === sectionId ? null : sectionId
+  editingSectionId.value = nextSectionId
+
+  if (!nextSectionId) {
+    return
+  }
+
+  await nextTick()
+  focusSectionEditor(nextSectionId)
 }
 
 defineExpose({
@@ -221,6 +239,7 @@ defineExpose({
     >
       <template #item="{ element: section, index }">
         <div
+          :id="`rfp-section-${section.id}`"
           class="mb-3 rounded-lg border bg-white transition-shadow hover:shadow-md"
           :class="{
             'border-primary shadow-md': editingSectionId === section.id,
@@ -299,6 +318,20 @@ defineExpose({
                 <i class="pi pi-trash text-sm text-danger"></i>
               </button>
             </div>
+          </div>
+
+          <div
+            v-if="editingSectionId !== section.id && !section.content?.trim()"
+            class="border-t border-surface-dim bg-surface-muted/50 px-4 py-3"
+          >
+            <button
+              type="button"
+              class="inline-flex items-center gap-2 rounded-lg border border-primary/20 bg-white px-3 py-2 text-sm font-medium text-primary transition-colors hover:bg-primary/5"
+              @click="toggleEdit(section.id)"
+            >
+              <i class="pi pi-file-edit text-xs"></i>
+              {{ locale === 'ar' ? 'إضافة محتوى لهذا القسم' : 'Add content to this section' }}
+            </button>
           </div>
 
           <!-- Section content editor (expandable) -->

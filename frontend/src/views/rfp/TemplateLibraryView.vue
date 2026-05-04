@@ -246,6 +246,69 @@ function trimOrNull(value: string): string | null {
   return trimmed ? trimmed : null
 }
 
+const closeDialogConfirmationMessage = computed(() => locale.value === 'ar'
+  ? 'لديك تغييرات غير محفوظة. هل تريد إغلاق النافذة وفقدان هذه التغييرات؟'
+  : 'You have unsaved changes. Do you want to close the dialog and lose them?')
+
+function calculateInquiryPeriodDays(startDate: string, endDate: string): number | null {
+  if (!startDate || !endDate) {
+    return null
+  }
+
+  const start = new Date(`${startDate}T00:00:00`)
+  const end = new Date(`${endDate}T00:00:00`)
+
+  if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime()) || end < start) {
+    return null
+  }
+
+  return Math.round((end.getTime() - start.getTime()) / 86400000)
+}
+
+function normalizeTemplateCompetitionForm(form: ReturnType<typeof createTemplateCompetitionForm>) {
+  return {
+    ...form,
+    projectNameAr: form.projectNameAr.trim(),
+    projectNameEn: form.projectNameEn.trim(),
+    descriptionAr: form.descriptionAr.trim(),
+    bookletNumber: form.bookletNumber.trim(),
+    department: form.department.trim(),
+    fiscalYear: form.fiscalYear.trim(),
+  }
+}
+
+function hasUnsavedTemplateCompetitionChanges(form: ReturnType<typeof createTemplateCompetitionForm>) {
+  return JSON.stringify(normalizeTemplateCompetitionForm(form)) !== JSON.stringify(normalizeTemplateCompetitionForm(createTemplateCompetitionForm()))
+}
+
+function confirmDiscardTemplateChanges(form: ReturnType<typeof createTemplateCompetitionForm>) {
+  if (!hasUnsavedTemplateCompetitionChanges(form)) {
+    return true
+  }
+
+  return window.confirm(closeDialogConfirmationMessage.value)
+}
+
+function requestCloseUseBookletDialog() {
+  if (isCreatingBooklet.value) {
+    return
+  }
+
+  if (confirmDiscardTemplateChanges(useBookletForm.value)) {
+    showUseBookletDialog.value = false
+  }
+}
+
+function requestCloseUseCompDialog() {
+  if (isCopyingComp.value) {
+    return
+  }
+
+  if (confirmDiscardTemplateChanges(useCompForm.value)) {
+    showUseCompDialog.value = false
+  }
+}
+
 function buildTemplateCompetitionPayload(form: ReturnType<typeof createTemplateCompetitionForm>) {
   return {
     projectNameAr: form.projectNameAr.trim(),
@@ -613,6 +676,22 @@ async function handleCopyFromCompTemplate(): Promise<void> {
 // ═══════════════════════════════════════════════════════════════
 //  Watchers
 // ═══════════════════════════════════════════════════════════════
+
+watch(
+  () => [useBookletForm.value.inquiriesStartDate, useBookletForm.value.submissionDeadline],
+  ([inquiriesStartDate, submissionDeadline]) => {
+    useBookletForm.value.inquiryPeriodDays = calculateInquiryPeriodDays(inquiriesStartDate, submissionDeadline)
+  },
+  { immediate: true }
+)
+
+watch(
+  () => [useCompForm.value.inquiriesStartDate, useCompForm.value.submissionDeadline],
+  ([inquiriesStartDate, submissionDeadline]) => {
+    useCompForm.value.inquiryPeriodDays = calculateInquiryPeriodDays(inquiriesStartDate, submissionDeadline)
+  },
+  { immediate: true }
+)
 
 watch(activeTab, () => {
   currentPage.value = 1
@@ -1337,13 +1416,13 @@ onMounted(() => {
     <!-- ═══════════════════════════════════════════════════════════ -->
     <Teleport to="body">
       <Transition name="fade">
-        <div v-if="showUseBookletDialog" class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" @click.self="showUseBookletDialog = false">
+        <div v-if="showUseBookletDialog" class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" @click.self="requestCloseUseBookletDialog">
           <div class="w-full max-w-3xl rounded-2xl bg-white shadow-2xl">
             <div class="flex items-center justify-between border-b border-secondary-100 p-5">
               <h2 class="text-lg font-bold text-secondary-800">
                 {{ locale === 'ar' ? 'إنشاء كراسة من القالب' : 'Create Booklet from Template' }}
               </h2>
-              <button class="rounded-lg p-1 text-secondary-400 hover:bg-secondary-100" @click="showUseBookletDialog = false">
+              <button class="rounded-lg p-1 text-secondary-400 hover:bg-secondary-100" @click="requestCloseUseBookletDialog">
                 <i class="pi pi-times"></i>
               </button>
             </div>
@@ -1409,13 +1488,16 @@ onMounted(() => {
                   <label class="mb-1 block text-sm font-medium text-secondary-700">
                     {{ locale === 'ar' ? 'القيمة التقديرية' : 'Estimated Value' }} *
                   </label>
-                  <input
-                    v-model.number="useBookletForm.estimatedBudget"
-                    type="number"
-                    min="0"
-                    step="0.01"
-                    class="w-full rounded-xl border border-secondary-200 bg-secondary-50 px-4 py-2.5 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
-                  />
+                  <div class="flex overflow-hidden rounded-xl border border-secondary-200 bg-secondary-50 focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/20">
+                    <input
+                      v-model.number="useBookletForm.estimatedBudget"
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      class="w-full bg-transparent px-4 py-2.5 text-sm outline-none"
+                    />
+                    <span class="flex items-center border-s border-secondary-200 bg-white px-4 text-sm font-semibold text-secondary-600">﷼</span>
+                  </div>
                 </div>
                 <div>
                   <label class="mb-1 block text-sm font-medium text-secondary-700">
@@ -1477,11 +1559,10 @@ onMounted(() => {
                   <input
                     v-model.number="useBookletForm.inquiryPeriodDays"
                     type="number"
-                    min="1"
-                    max="365"
-                    step="1"
-                    class="w-full rounded-xl border border-secondary-200 bg-secondary-50 px-4 py-2.5 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
+                    readonly
+                    class="w-full rounded-xl border border-secondary-200 bg-secondary-100 px-4 py-2.5 text-sm text-secondary-700 outline-none"
                   />
+                  <p class="mt-1 text-xs text-secondary-500">{{ locale === 'ar' ? 'تُحسب تلقائياً من تاريخ إرسال الاستفسارات وآخر موعد لتقديم العروض' : 'Calculated automatically from inquiries start date and submission deadline' }}</p>
                 </div>
                 <div>
                   <label class="mb-1 block text-sm font-medium text-secondary-700">
@@ -1532,7 +1613,7 @@ onMounted(() => {
             <div class="flex justify-end gap-3 border-t border-secondary-100 p-5">
               <button
                 class="rounded-xl border border-secondary-200 px-5 py-2.5 text-sm font-medium text-secondary-600 hover:bg-secondary-50"
-                @click="showUseBookletDialog = false"
+                @click="requestCloseUseBookletDialog"
               >
                 {{ locale === 'ar' ? 'إلغاء' : 'Cancel' }}
               </button>
@@ -1557,13 +1638,13 @@ onMounted(() => {
     <!-- ═══════════════════════════════════════════════════════════ -->
     <Teleport to="body">
       <Transition name="fade">
-        <div v-if="showUseCompDialog" class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" @click.self="showUseCompDialog = false">
+        <div v-if="showUseCompDialog" class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" @click.self="requestCloseUseCompDialog">
           <div class="w-full max-w-3xl rounded-2xl bg-white shadow-2xl">
             <div class="flex items-center justify-between border-b border-secondary-100 p-5">
               <h2 class="text-lg font-bold text-secondary-800">
                 {{ locale === 'ar' ? 'إنشاء منافسة من القالب' : 'Create Competition from Template' }}
               </h2>
-              <button class="rounded-lg p-1 text-secondary-400 hover:bg-secondary-100" @click="showUseCompDialog = false">
+              <button class="rounded-lg p-1 text-secondary-400 hover:bg-secondary-100" @click="requestCloseUseCompDialog">
                 <i class="pi pi-times"></i>
               </button>
             </div>
@@ -1630,13 +1711,16 @@ onMounted(() => {
                   <label class="mb-1 block text-sm font-medium text-secondary-700">
                     {{ locale === 'ar' ? 'القيمة التقديرية' : 'Estimated Value' }} *
                   </label>
-                  <input
-                    v-model.number="useCompForm.estimatedBudget"
-                    type="number"
-                    min="0"
-                    step="0.01"
-                    class="w-full rounded-xl border border-secondary-200 bg-secondary-50 px-4 py-2.5 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
-                  />
+                  <div class="flex overflow-hidden rounded-xl border border-secondary-200 bg-secondary-50 focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/20">
+                    <input
+                      v-model.number="useCompForm.estimatedBudget"
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      class="w-full bg-transparent px-4 py-2.5 text-sm outline-none"
+                    />
+                    <span class="flex items-center border-s border-secondary-200 bg-white px-4 text-sm font-semibold text-secondary-600">﷼</span>
+                  </div>
                 </div>
                 <div>
                   <label class="mb-1 block text-sm font-medium text-secondary-700">
@@ -1697,11 +1781,10 @@ onMounted(() => {
                   <input
                     v-model.number="useCompForm.inquiryPeriodDays"
                     type="number"
-                    min="1"
-                    max="365"
-                    step="1"
-                    class="w-full rounded-xl border border-secondary-200 bg-secondary-50 px-4 py-2.5 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
+                    readonly
+                    class="w-full rounded-xl border border-secondary-200 bg-secondary-100 px-4 py-2.5 text-sm text-secondary-700 outline-none"
                   />
+                  <p class="mt-1 text-xs text-secondary-500">{{ locale === 'ar' ? 'تُحسب تلقائياً من تاريخ إرسال الاستفسارات وآخر موعد لتقديم العروض' : 'Calculated automatically from inquiries start date and submission deadline' }}</p>
                 </div>
                 <div>
                   <label class="mb-1 block text-sm font-medium text-secondary-700">
@@ -1751,7 +1834,7 @@ onMounted(() => {
             <div class="flex justify-end gap-3 border-t border-secondary-100 p-5">
               <button
                 class="rounded-xl border border-secondary-200 px-5 py-2.5 text-sm font-medium text-secondary-600 hover:bg-secondary-50"
-                @click="showUseCompDialog = false"
+                @click="requestCloseUseCompDialog"
               >
                 {{ locale === 'ar' ? 'إلغاء' : 'Cancel' }}
               </button>
