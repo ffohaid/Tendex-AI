@@ -1717,3 +1717,20 @@ The production validation confirmed that evaluation criteria are now visually ma
 - `npm run build` ✅
 - `git diff --check` ✅
 - `git diff --stat` reviewed ✅
+
+---
+
+### Task: Live Deployment of 04052026 Fix Package
+**Date:** 2026-05-04
+**Status:** ✅ Completed
+
+تم نشر حزمة الإصلاحات المرتبطة بالالتزام `0aa5a3a` إلى البيئة الحية بنجاح عبر مسار **CD - Deploy to Production** في GitHub Actions بعد تعذر الاعتماد على الدخول المباشر إلى الخادم بكلمة المرور المتاحة. اكتمل تشغيل النشر رقم `25312378641` بالحالة `success`، ثم تم تنفيذ تحقق خارجي على النطاق الحي للتأكد من استجابة الواجهة بعد التحديث.
+
+| عنصر التحقق | النتيجة |
+|---|---|
+| GitHub Actions deployment run | Success |
+| Live root URL (`https://mof.netaq.pro/`) | HTTP 200 |
+| Browser verification | Dashboard loaded successfully |
+| Live `/health` path | HTTP 404 on public route |
+
+تم حفظ تقرير النشر في الملف `deployment_report_20260504.md` لمرجعية المتابعة اللاحقة.
