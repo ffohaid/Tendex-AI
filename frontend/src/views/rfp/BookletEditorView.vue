@@ -697,15 +697,12 @@ function openRejectModal(stepId: string) {
   showRejectModal.value = true
 }
 
-function isStepActionable(step: { stepOrder: number; status: ApprovalStepStatus }) {
+function isStepActionable(step: { canCurrentUserAct?: boolean }) {
   if (!approvalStatus.value || approvalStatus.value.isCompleted || approvalStatus.value.isRejected) {
     return false
   }
 
-  const isCurrentStep = step.stepOrder === approvalStatus.value.currentStepOrder
-  const isPendingLike = step.status === ApprovalStepStatus.Pending || step.status === ApprovalStepStatus.InProgress
-
-  return isCurrentStep && isPendingLike
+  return step.canCurrentUserAct === true
 }
 
 function getStepStatusBadge(status: ApprovalStepStatus) {

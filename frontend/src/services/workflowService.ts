@@ -26,6 +26,7 @@ export interface ApprovalStepDetail {
   comment: string | null
   slaDeadline: string | null
   isSlaExceeded: boolean
+  canCurrentUserAct: boolean
 }
 
 export const ApprovalStepStatus = {

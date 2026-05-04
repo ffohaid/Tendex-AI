@@ -27,19 +27,22 @@ public sealed class ApprovalWorkflowService : IApprovalWorkflowService
     private readonly ICompetitionRepository _competitionRepository;
     private readonly IWorkflowConditionEvaluator _conditionEvaluator;
     private readonly ITenantDbContextFactory _tenantDbContextFactory;
+    private readonly ICurrentUserService _currentUser;
 
     public ApprovalWorkflowService(
         IWorkflowDefinitionRepository workflowDefinitionRepository,
         IApprovalWorkflowStepRepository approvalStepRepository,
         ICompetitionRepository competitionRepository,
         IWorkflowConditionEvaluator conditionEvaluator,
-        ITenantDbContextFactory tenantDbContextFactory)
+        ITenantDbContextFactory tenantDbContextFactory,
+        ICurrentUserService currentUser)
     {
         _workflowDefinitionRepository = workflowDefinitionRepository;
         _approvalStepRepository = approvalStepRepository;
         _competitionRepository = competitionRepository;
         _conditionEvaluator = conditionEvaluator;
         _tenantDbContextFactory = tenantDbContextFactory;
+        _currentUser = currentUser;
     }
 
     /// <inheritdoc />
@@ -348,6 +351,24 @@ public sealed class ApprovalWorkflowService : IApprovalWorkflowService
             .DefaultIfEmpty(0)
             .Min();
 
+        var userSystemRoles = ApprovalActorResolver.ResolveSystemRoles(_currentUser.Roles).ToHashSet();
+        var userCommitteeRoles = new HashSet<CommitteeRole>();
+
+        if (_currentUser.UserId.HasValue)
+        {
+            var dbContext = _tenantDbContextFactory.CreateDbContext();
+            userCommitteeRoles = (await ApprovalActorResolver.ResolveCommitteeRolesForCompetitionAsync(
+                dbContext,
+                competitionId,
+                _currentUser.UserId.Value,
+                cancellationToken)).ToHashSet();
+
+            if (userCommitteeRoles.Count > 0 && !userSystemRoles.Contains(SystemRole.Member))
+            {
+                userSystemRoles.Add(SystemRole.Member);
+            }
+        }
+
         var stepDetails = steps.Select(s => new ApprovalStepDetail(
             StepId: s.Id,
             StepOrder: s.StepOrder,
@@ -360,7 +381,14 @@ public sealed class ApprovalWorkflowService : IApprovalWorkflowService
             CompletedAt: s.CompletedAt,
             Comment: s.Comment,
             SlaDeadline: s.SlaDeadline,
-            IsSlaExceeded: s.IsSlaExceeded)).ToList();
+            IsSlaExceeded: s.IsSlaExceeded,
+            CanCurrentUserAct: ApprovalStepAccessEvaluator.CanCurrentUserAct(
+                s,
+                currentPending,
+                isCompleted,
+                isRejected,
+                userSystemRoles,
+                userCommitteeRoles))).ToList();
 
         return new ApprovalWorkflowStatusResult(
             HasWorkflow: true,
@@ -722,4 +750,5 @@ public sealed record ApprovalStepDetail(
     DateTime? CompletedAt,
     string? Comment,
     DateTime? SlaDeadline,
-    bool IsSlaExceeded);
+    bool IsSlaExceeded,
+    bool CanCurrentUserAct);

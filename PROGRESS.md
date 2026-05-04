@@ -1884,3 +1884,11 @@ Resolved the recurring production deployment blocker in GitHub Actions for the 2
 - Commit pushed to `main`: `1636343` (`fix(docker): replace curl healthcheck with dotnet probe`).
 - Production deployment workflow run `73` (`run_id: 25324611079`) completed successfully.
 - Live verification completed successfully: `https://mof.netaq.pro/` returned HTTP 200 and the login page rendered correctly in the browser.
+
+## Task: Live Booklet Approval Role Visibility Fix
+**Date:** 2026-05-04
+**Status:** ✅ Implemented, pending production redeployment verification
+
+A live verification on the production environment confirmed that the previously deployed role-based approval changes did not fully resolve the user-facing problem. The residual issue was that the booklet editor rendered approval controls based only on the current pending workflow step, without checking whether the current authenticated user was actually eligible to act on that step. This made the workflow appear unchanged even when the backend authorization model had been improved.
+
+The fix introduced a backend eligibility evaluator that resolves the current user context against system roles, committee-role assignments, workflow completion state, and current step order. The workflow status response now returns a per-step `CanCurrentUserAct` flag, and the booklet editor renders approval and rejection controls only when that authoritative flag is `true`. A focused unit test file was also added to cover current-step eligibility, future-step denial, role mismatch denial, and committee-role gating. Frontend dependencies were installed in the clean working copy and the frontend production build completed successfully after the change.
