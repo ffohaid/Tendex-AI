@@ -21,6 +21,7 @@ COPY src/TendexAI.Domain/TendexAI.Domain.csproj src/TendexAI.Domain/
 COPY src/TendexAI.Application/TendexAI.Application.csproj src/TendexAI.Application/
 COPY src/TendexAI.Infrastructure/TendexAI.Infrastructure.csproj src/TendexAI.Infrastructure/
 COPY src/TendexAI.API/TendexAI.API.csproj src/TendexAI.API/
+COPY src/TendexAI.ContainerHealthcheck/TendexAI.ContainerHealthcheck.csproj src/TendexAI.ContainerHealthcheck/
 
 # Restore only the API project (which pulls all dependencies transitively)
 # NOTE: We do NOT use TendexAI.slnx because .dockerignore excludes tests/
@@ -41,6 +42,11 @@ RUN dotnet publish src/TendexAI.API/TendexAI.API.csproj \
     --output /app/publish \
     /p:UseAppHost=false
 
+RUN dotnet publish src/TendexAI.ContainerHealthcheck/TendexAI.ContainerHealthcheck.csproj \
+    --configuration Release \
+    --output /app/healthcheck \
+    /p:UseAppHost=false
+
 # ---------------------------------------------------------------------------
 # Stage 3: Runtime (minimal, non-root)
 # ---------------------------------------------------------------------------
@@ -51,26 +57,9 @@ WORKDIR /app
 RUN groupadd --gid 1001 tendex && \
     useradd --uid 1001 --gid tendex --shell /bin/false --create-home tendex
 
-# Install curl for healthcheck with retries to reduce transient network failures in CI builds
-RUN set -eux; \
-    apt_get_update() { apt-get update -o Acquire::Retries=5 -o Acquire::http::Timeout=30 -o Acquire::https::Timeout=30; }; \
-    apt_get_update; \
-    for attempt in 1 2 3; do \
-        if apt-get install -y --no-install-recommends curl; then \
-            break; \
-        fi; \
-        if [ "$attempt" -eq 3 ]; then \
-            exit 1; \
-        fi; \
-        apt-get clean; \
-        rm -rf /var/lib/apt/lists/*; \
-        sleep 5; \
-        apt_get_update; \
-    done; \
-    rm -rf /var/lib/apt/lists/*
-
 # Copy published output
 COPY --from=publish /app/publish .
+COPY --from=publish /app/healthcheck /app/healthcheck
 
 # Create keys directory for OpenIddict persistent RSA keys
 # This directory should be mounted as a Docker volume for persistence
@@ -91,6 +80,6 @@ USER tendex
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=10s --start-period=15s --retries=3 \
-    CMD curl -sf http://localhost:8080/api/v1/health || exit 1
+    CMD ["dotnet", "/app/healthcheck/TendexAI.ContainerHealthcheck.dll", "http://127.0.0.1:8080/api/v1/health", "5"]
 
 ENTRYPOINT ["dotnet", "TendexAI.API.dll"]

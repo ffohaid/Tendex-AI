@@ -1847,3 +1847,39 @@ A production-blocking issue was fixed in the template-based booklet creation flo
 | Verification | Frontend build passed successfully. A targeted sanity check confirmed the narrowed fiscal-year validation scope and the new API error extraction path. Backend local compilation was not available in the sandbox because `dotnet` is not installed. |
 
 This fix was prepared to be released together with the pending role-based booklet approval workflow changes in the same deployment batch.
+
+## 2026-05-04: Production Deployment Unblock for Current Fix Batch
+
+### Overview
+Resolved the recurring production deployment blocker in GitHub Actions for the 2026-05-04 fix batch. The backend image build was failing in the runtime stage because the container attempted to install `curl` through `apt-get`, which repeatedly failed when Debian package indexes could not be refreshed in CI.
+
+### Changes Made
+
+1. **Backend Runtime Image Hardening**
+   - Removed the runtime-stage dependency on `apt-get install curl` from `backend/Dockerfile`.
+   - Preserved container health monitoring without adding Linux package-manager dependency in the runtime image.
+
+2. **Dedicated .NET Container Healthcheck Utility**
+   - Added `backend/src/TendexAI.ContainerHealthcheck/TendexAI.ContainerHealthcheck.csproj`.
+   - Added `backend/src/TendexAI.ContainerHealthcheck/Program.cs`.
+   - Implemented an HTTP probe against `http://127.0.0.1:8080/api/v1/health` with non-zero exit codes on failure.
+
+3. **Production Healthcheck Alignment**
+   - Updated the image `HEALTHCHECK` in `backend/Dockerfile` to execute the .NET healthcheck utility.
+   - Updated the backend service healthcheck in `infrastructure/docker-compose.prod.yml` to execute the same utility, ensuring a single healthcheck strategy across image and compose runtime.
+
+### Files Modified
+- `backend/Dockerfile`
+- `backend/src/TendexAI.ContainerHealthcheck/TendexAI.ContainerHealthcheck.csproj`
+- `backend/src/TendexAI.ContainerHealthcheck/Program.cs`
+- `infrastructure/docker-compose.prod.yml`
+- `deployment_report_20260504_combined.md`
+
+### Validation
+- Confirmed the repository diff removes the runtime `apt-get install curl` dependency from the backend image.
+- Confirmed the production backend healthcheck no longer depends on `curl`.
+- Confirmed the branch is synchronized with `origin/main` before commit (`ahead/behind: 0/0`).
+
+### Status
+- Code changes prepared locally for commit and push.
+- Next step: trigger a fresh production deployment run and monitor it to completion.
