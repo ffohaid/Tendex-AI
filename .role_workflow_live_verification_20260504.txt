@@ -1,0 +1,8 @@
+Run 74 of the CD deployment workflow completed successfully for commit 7a7438c.
+
+Live verification after deployment on https://mof.netaq.pro/rfp/booklet-editor/d76962e7-7a77-4a05-9349-ce34669d61ff?stepId=1feb201e-c8dd-4ad0-a636-115d0e9ae480 showed the following:
+- The page loaded successfully while authenticated as Ahmed Al-Rashed (ahmed@mof.gov.sa).
+- The editor displayed booklet controls such as official view, edit mode, hide guidance, and download booklet.
+- The approval-specific controls for the current workflow step were not visible.
+- Browser keyword checks for "اعتماد" and "رفض" returned no matching text on the page.
+- This is consistent with the intended behavior for a user who can open a future workflow task but is not the current eligible actor for the pending approval step.

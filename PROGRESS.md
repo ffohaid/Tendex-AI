@@ -1887,8 +1887,10 @@ Resolved the recurring production deployment blocker in GitHub Actions for the 2
 
 ## Task: Live Booklet Approval Role Visibility Fix
 **Date:** 2026-05-04
-**Status:** ✅ Implemented, pending production redeployment verification
+**Status:** ✅ Deployed and live-verified
 
 A live verification on the production environment confirmed that the previously deployed role-based approval changes did not fully resolve the user-facing problem. The residual issue was that the booklet editor rendered approval controls based only on the current pending workflow step, without checking whether the current authenticated user was actually eligible to act on that step. This made the workflow appear unchanged even when the backend authorization model had been improved.
 
 The fix introduced a backend eligibility evaluator that resolves the current user context against system roles, committee-role assignments, workflow completion state, and current step order. The workflow status response now returns a per-step `CanCurrentUserAct` flag, and the booklet editor renders approval and rejection controls only when that authoritative flag is `true`. A focused unit test file was also added to cover current-step eligibility, future-step denial, role mismatch denial, and committee-role gating. Frontend dependencies were installed in the clean working copy and the frontend production build completed successfully after the change.
+
+The updated code was committed as `7a7438c` with the message `fix(workflow): hide booklet approval actions from non-current actors`, then deployed through GitHub Actions run **74**. The deployment completed successfully across test, image build, and production rollout stages. A post-deployment live verification against the previously failing booklet editor route confirmed that role-inappropriate approval controls were no longer visible for the authenticated non-current actor.

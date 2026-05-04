@@ -45,12 +45,18 @@ The validation completed in the current sandbox is summarized below.
 
 | Validation item | Result |
 |---|---|
-| Live reproduction analysis | Passed |
+| Live reproduction analysis before the fix | Passed |
 | Frontend dependency installation | Passed |
 | Frontend production build with updated workflow contract | Passed |
 | Backend static consistency review for new eligibility field | Passed |
-| Backend .NET test execution in sandbox | Not executed because neither local `dotnet` SDK nor Docker is available in this environment |
+| GitHub Actions deployment run 74 for commit `7a7438c` | Passed |
+| Live post-deployment verification on production booklet editor | Passed |
+| Backend .NET test execution inside the local sandbox | Not executed because neither local `dotnet` SDK nor Docker is available in this environment |
+
+## Production Verification Outcome
+
+The updated code was pushed to `main` and deployed through **GitHub Actions run 74**, which completed successfully across **Test Gate**, **Build Docker Images**, and **Deploy to Production**. A direct live verification was then performed against the same booklet editor route that previously reproduced the issue. After deployment, the editor still loaded correctly for the authenticated user, but the role-inappropriate approval controls were no longer rendered. Browser-side keyword checks for **اعتماد** and **رفض** on that page returned no matching action text, which aligns with the intended behavior for a user who can open a future task context but is not the current eligible actor for the pending workflow step.
 
 ## Expected Functional Outcome After Deployment
 
-After deployment, a user who opens a booklet approval view will only see **Approve** and **Reject** controls when all of the following are true: the workflow is still active, the step is the current pending step, the authenticated user matches the required system role, and any required committee-role condition is also satisfied. This removes the misleading live behavior where approval controls appeared for the wrong actor and makes the visible UI align with the server-side role-based workflow model.
+After deployment, a user who opens a booklet approval view will only see **Approve** and **Reject** controls when all of the following are true: the workflow is still active, the step is the current pending step, the authenticated user matches the required system role, and any required committee-role condition is also satisfied. This removes the misleading live behavior where approval controls appeared for the wrong actor and now makes the visible UI align with the server-side role-based workflow model on the production environment.
