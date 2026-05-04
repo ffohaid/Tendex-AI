@@ -25,8 +25,6 @@ public static class CompetitionBasicInfoValidation
             ValidateFiscalYear(inquiriesStartDate, fiscalYear, nameof(inquiriesStartDate), "Inquiries start date", failures);
             ValidateFiscalYear(offersStartDate, fiscalYear, nameof(offersStartDate), "Offers submission date", failures);
             ValidateFiscalYear(submissionDeadline, fiscalYear, nameof(submissionDeadline), "Submission deadline", failures);
-            ValidateFiscalYear(expectedAwardDate, fiscalYear, nameof(expectedAwardDate), "Expected award date", failures);
-            ValidateFiscalYear(workStartDate, fiscalYear, nameof(workStartDate), "Work start date", failures);
         }
 
         ValidateSequence(bookletIssueDate, inquiriesStartDate, nameof(inquiriesStartDate), "Inquiries start date must be on or after booklet issue date.", failures, strict: false);

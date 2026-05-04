@@ -1833,3 +1833,17 @@ The production validation confirmed that evaluation criteria are now visually ma
 - Verified statically that task-center visibility uses the same shared role/committee resolution logic as approval execution.
 - Verified statically that auto-save/editability no longer permit modification while status is `PendingApproval`.
 - Backend full build was not executable in the current sandbox because the .NET SDK is unavailable (`dotnet: command not found`).
+
+### Task: Fix Template-Based Booklet Creation 400 Error Before Deployment
+**Date:** 2026-05-04
+**Status:** ✅ Completed
+
+A production-blocking issue was fixed in the template-based booklet creation flow after a reported `400` failure occurred while creating a booklet from the template dialog. Root-cause analysis showed that the backend validator still enforced the selected fiscal year on `expectedAwardDate` and `workStartDate`, even though the approved business rule allows post-award dates to extend beyond the fiscal year boundary.
+
+| Area | Update |
+|---|---|
+| Backend validation | Updated `CompetitionBasicInfoValidation` so fiscal-year enforcement now applies only to booklet issue date, inquiries start date, offers submission date, and submission deadline. |
+| Frontend UX | Updated `TemplateLibraryView.vue` to surface the real API error message instead of the generic `Request failed with status code 400`. |
+| Verification | Frontend build passed successfully. A targeted sanity check confirmed the narrowed fiscal-year validation scope and the new API error extraction path. Backend local compilation was not available in the sandbox because `dotnet` is not installed. |
+
+This fix was prepared to be released together with the pending role-based booklet approval workflow changes in the same deployment batch.

@@ -246,6 +246,42 @@ function trimOrNull(value: string): string | null {
   return trimmed ? trimmed : null
 }
 
+function getApiErrorMessage(error: unknown, fallbackMessage: string): string {
+  const responseData = (error as {
+    response?: {
+      data?: string | { error?: string; title?: string; detail?: string; message?: string }
+    }
+  })?.response?.data
+
+  if (typeof responseData === 'string' && responseData.trim()) {
+    return responseData
+  }
+
+  if (responseData && typeof responseData === 'object') {
+    if (typeof responseData.error === 'string' && responseData.error.trim()) {
+      return responseData.error
+    }
+
+    if (typeof responseData.detail === 'string' && responseData.detail.trim()) {
+      return responseData.detail
+    }
+
+    if (typeof responseData.message === 'string' && responseData.message.trim()) {
+      return responseData.message
+    }
+
+    if (typeof responseData.title === 'string' && responseData.title.trim()) {
+      return responseData.title
+    }
+  }
+
+  if (error instanceof Error && error.message.trim()) {
+    return error.message
+  }
+
+  return fallbackMessage
+}
+
 const closeDialogConfirmationMessage = computed(() => locale.value === 'ar'
   ? 'لديك تغييرات غير محفوظة. هل تريد إغلاق النافذة وفقدان هذه التغييرات؟'
   : 'You have unsaved changes. Do you want to close the dialog and lose them?')
@@ -620,7 +656,10 @@ async function handleCreateBooklet(): Promise<void> {
       })
     }, 1000)
   } catch (err: unknown) {
-    createBookletError.value = err instanceof Error ? err.message : (locale.value === 'ar' ? 'حدث خطأ أثناء إنشاء الكراسة' : 'Error creating booklet')
+    createBookletError.value = getApiErrorMessage(
+      err,
+      locale.value === 'ar' ? 'حدث خطأ أثناء إنشاء الكراسة' : 'Error creating booklet',
+    )
   } finally {
     isCreatingBooklet.value = false
   }
