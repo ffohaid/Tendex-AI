@@ -264,6 +264,10 @@ public static class DependencyInjection
         services.AddScoped<IAuthorizationHandler, PermissionRequirementHandler>();
         services.AddScoped<IUserSystemRoleProvider, UserSystemRoleProvider>();
 
+        // ----- Phase Prerequisite Context Factory -----
+        services.AddScoped<Application.Features.Rfp.Commands.TransitionCompetition.IPhasePrerequisiteContextFactory,
+            Services.PhasePrerequisiteContextFactory>();
+
         // ----- Cross-Tenant User Search Service -----
         services.AddScoped<ICrossTenantUserSearchService, CrossTenantUserSearchService>();
 

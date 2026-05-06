@@ -26,6 +26,12 @@ export default defineConfig({
   },
   server: {
     allowedHosts: true,
+    proxy: {
+      '/api': {
+        target: 'http://localhost:5083',
+        changeOrigin: true,
+      },
+    },
   },
   build: {
     /* Performance optimizations */

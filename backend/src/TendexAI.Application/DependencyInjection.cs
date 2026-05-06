@@ -3,6 +3,7 @@ using FluentValidation;
 using MediatR;
 using Microsoft.Extensions.DependencyInjection;
 using TendexAI.Application.Common.Behaviors;
+using TendexAI.Domain.StateMachine;
 
 namespace TendexAI.Application;
 
@@ -27,6 +28,9 @@ public static class DependencyInjection
         // TASK-703: Register caching pipeline behaviors for automatic query caching and cache invalidation
         services.AddTransient(typeof(IPipelineBehavior<,>), typeof(CachingBehavior<,>));
         services.AddTransient(typeof(IPipelineBehavior<,>), typeof(CacheInvalidationBehavior<,>));
+
+        // Register domain services
+        services.AddScoped<CompetitionTransitionService>();
 
         return services;
     }
